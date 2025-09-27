@@ -17,7 +17,7 @@ namespace StockSharp.Samples.Strategies;
 /// Order commands supported by <see cref="ArdOrderManagementCommandStrategy"/>.
 /// Mirrors the constants used by the original MQL expert advisor.
 /// </summary>
-public enum ArdOrderCommand
+public enum ArdOrderCommands
 {
 	/// <summary>
 	/// No action requested.
@@ -60,7 +60,7 @@ public class ArdOrderManagementCommandStrategy : Strategy
 	private readonly StrategyParam<decimal> _modifyTakeProfitPoints;
 	private readonly StrategyParam<decimal> _minimumVolume;
 	private readonly StrategyParam<string> _orderComment;
-	private readonly StrategyParam<ArdOrderCommand> _command;
+	private readonly StrategyParam<ArdOrderCommands> _command;
 
 	private decimal? _lastBid;
 	private decimal? _lastAsk;
@@ -155,7 +155,7 @@ public class ArdOrderManagementCommandStrategy : Strategy
 	/// <summary>
 	/// Command that will be executed on the next market data tick.
 	/// </summary>
-	public ArdOrderCommand Command
+	public ArdOrderCommands Command
 	{
 		get => _command.Value;
 		set => _command.Value = value;
@@ -201,7 +201,7 @@ public class ArdOrderManagementCommandStrategy : Strategy
 		_orderComment = Param(nameof(OrderComment), "Placing Order")
 			.SetDisplay("Order comment", "Comment attached to every order for easier tracking.", "General");
 
-		_command = Param(nameof(Command), ArdOrderCommand.None)
+		_command = Param(nameof(Command), ArdOrderCommands.None)
 			.SetDisplay("Command", "Operation executed on the next tick (set back to None after completion).", "General");
 	}
 
@@ -246,33 +246,33 @@ public class ArdOrderManagementCommandStrategy : Strategy
 			return;
 
 		var command = Command;
-		if (command != ArdOrderCommand.None)
+		if (command != ArdOrderCommands.None)
 			ExecuteCommand(command);
 
 		TrySubmitPendingEntry();
 	}
 
-	private void ExecuteCommand(ArdOrderCommand command)
+	private void ExecuteCommand(ArdOrderCommands command)
 	{
 		switch (command)
 		{
-			case ArdOrderCommand.Buy:
+			case ArdOrderCommands.Buy:
 				ScheduleEntry(Sides.Buy, StopLossPoints, TakeProfitPoints);
 				break;
-			case ArdOrderCommand.Sell:
+			case ArdOrderCommands.Sell:
 				ScheduleEntry(Sides.Sell, StopLossPoints, TakeProfitPoints);
 				break;
-			case ArdOrderCommand.Close:
+			case ArdOrderCommands.Close:
 				HandleCloseCommand();
 				break;
-			case ArdOrderCommand.Modify:
+			case ArdOrderCommands.Modify:
 				HandleModifyCommand();
 				break;
 			default:
 				break;
 		}
 
-		Command = ArdOrderCommand.None;
+		Command = ArdOrderCommands.None;
 	}
 
 	private void ScheduleEntry(Sides side, decimal stopPoints, decimal takePoints)

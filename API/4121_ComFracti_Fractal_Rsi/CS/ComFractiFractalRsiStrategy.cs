@@ -478,7 +478,7 @@ public class ComFractiFractalRsiStrategy : Strategy
 	private sealed class FractalSeries
 	{
 		private readonly List<CandleSnapshot> _candles = new();
-		private readonly List<FractalDirection> _signals = new();
+		private readonly List<FractalDirections> _signals = new();
 
 		public void Reset()
 		{
@@ -493,7 +493,7 @@ public class ComFractiFractalRsiStrategy : Strategy
 
 			var data = new CandleSnapshot(candle.HighPrice, candle.LowPrice);
 			_candles.Add(data);
-			_signals.Add(FractalDirection.None);
+			_signals.Add(FractalDirections.None);
 
 			if (_candles.Count < 5)
 			return;
@@ -511,15 +511,15 @@ public class ComFractiFractalRsiStrategy : Strategy
 
 			if (isLower && !isUpper)
 			{
-				_signals[centerIndex] = FractalDirection.Lower;
+				_signals[centerIndex] = FractalDirections.Lower;
 			}
 			else if (isUpper && !isLower)
 			{
-				_signals[centerIndex] = FractalDirection.Upper;
+				_signals[centerIndex] = FractalDirections.Upper;
 			}
 			else if (!isUpper && !isLower)
 			{
-				_signals[centerIndex] = FractalDirection.None;
+				_signals[centerIndex] = FractalDirections.None;
 			}
 		}
 
@@ -531,17 +531,17 @@ public class ComFractiFractalRsiStrategy : Strategy
 			var direction = GetDirection(shift);
 			return direction switch
 			{
-				FractalDirection.Lower => 1,
-				FractalDirection.Upper => -1,
+				FractalDirections.Lower => 1,
+				FractalDirections.Upper => -1,
 				_ => 0,
 			};
 		}
 
-		private FractalDirection GetDirection(int shift)
+		private FractalDirections GetDirection(int shift)
 		{
 			var index = _signals.Count - 1 - shift;
 			if (index < 0 || index >= _signals.Count)
-			return FractalDirection.None;
+			return FractalDirections.None;
 
 			return _signals[index];
 		}
@@ -558,7 +558,7 @@ public class ComFractiFractalRsiStrategy : Strategy
 		public decimal Low { get; }
 		}
 
-		private enum FractalDirection
+		private enum FractalDirections
 		{
 			None,
 			Lower,

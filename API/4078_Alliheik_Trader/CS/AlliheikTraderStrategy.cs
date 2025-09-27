@@ -22,11 +22,11 @@ public class AlliheikTraderStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _jawsPeriod;
 	private readonly StrategyParam<int> _jawsShift;
-	private readonly StrategyParam<MovingAverageType> _jawsMethod;
-	private readonly StrategyParam<AppliedPriceType> _jawsPrice;
-	private readonly StrategyParam<MovingAverageType> _preSmoothMethod;
+	private readonly StrategyParam<MovingAverageTypes> _jawsMethod;
+	private readonly StrategyParam<AppliedPriceTypes> _jawsPrice;
+	private readonly StrategyParam<MovingAverageTypes> _preSmoothMethod;
 	private readonly StrategyParam<int> _preSmoothPeriod;
-	private readonly StrategyParam<MovingAverageType> _postSmoothMethod;
+	private readonly StrategyParam<MovingAverageTypes> _postSmoothMethod;
 	private readonly StrategyParam<int> _postSmoothPeriod;
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _trailingStopPoints;
@@ -89,7 +89,7 @@ public class AlliheikTraderStrategy : Strategy
 	/// <summary>
 	/// Moving average type used to build the jaw line.
 	/// </summary>
-	public MovingAverageType JawsMethod
+	public MovingAverageTypes JawsMethod
 	{
 		get => _jawsMethod.Value;
 		set => _jawsMethod.Value = value;
@@ -98,7 +98,7 @@ public class AlliheikTraderStrategy : Strategy
 	/// <summary>
 	/// Price component supplied to the jaw moving average.
 	/// </summary>
-	public AppliedPriceType JawsPrice
+	public AppliedPriceTypes JawsPrice
 	{
 		get => _jawsPrice.Value;
 		set => _jawsPrice.Value = value;
@@ -107,7 +107,7 @@ public class AlliheikTraderStrategy : Strategy
 	/// <summary>
 	/// Moving average used to pre-smooth raw OHLC prices for Heiken Ashi.
 	/// </summary>
-	public MovingAverageType PreSmoothMethod
+	public MovingAverageTypes PreSmoothMethod
 	{
 		get => _preSmoothMethod.Value;
 		set => _preSmoothMethod.Value = value;
@@ -125,7 +125,7 @@ public class AlliheikTraderStrategy : Strategy
 	/// <summary>
 	/// Moving average used to smooth Heiken Ashi derived buffers.
 	/// </summary>
-	public MovingAverageType PostSmoothMethod
+	public MovingAverageTypes PostSmoothMethod
 	{
 		get => _postSmoothMethod.Value;
 		set => _postSmoothMethod.Value = value;
@@ -192,20 +192,20 @@ public class AlliheikTraderStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Jaw Shift", "Forward shift applied to the jaw moving average.", "Alligator");
 
-		_jawsMethod = Param(nameof(JawsMethod), MovingAverageType.Simple)
+		_jawsMethod = Param(nameof(JawsMethod), MovingAverageTypes.Simple)
 		.SetDisplay("Jaw MA Type", "Moving average type used by the jaw.", "Alligator");
 
-		_jawsPrice = Param(nameof(JawsPrice), AppliedPriceType.Close)
+		_jawsPrice = Param(nameof(JawsPrice), AppliedPriceTypes.Close)
 		.SetDisplay("Jaw Applied Price", "Price component passed into the jaw moving average.", "Alligator");
 
-		_preSmoothMethod = Param(nameof(PreSmoothMethod), MovingAverageType.Exponential)
+		_preSmoothMethod = Param(nameof(PreSmoothMethod), MovingAverageTypes.Exponential)
 		.SetDisplay("Pre-smooth MA", "Moving average for smoothing OHLC prices.", "Heiken Ashi");
 
 		_preSmoothPeriod = Param(nameof(PreSmoothPeriod), 21)
 		.SetGreaterThanZero()
 		.SetDisplay("Pre-smooth Period", "Length used by the OHLC smoothers.", "Heiken Ashi");
 
-		_postSmoothMethod = Param(nameof(PostSmoothMethod), MovingAverageType.Weighted)
+		_postSmoothMethod = Param(nameof(PostSmoothMethod), MovingAverageTypes.Weighted)
 		.SetDisplay("Post-smooth MA", "Moving average used on Heiken Ashi buffers.", "Heiken Ashi");
 
 		_postSmoothPeriod = Param(nameof(PostSmoothPeriod), 1)
@@ -564,27 +564,27 @@ public class AlliheikTraderStrategy : Strategy
 		return _lastEntryBarTime != candle.OpenTime;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageType type, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageType.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageType.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageType.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceType type)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceTypes type)
 	{
 		return type switch
 		{
-			AppliedPriceType.Open => candle.OpenPrice,
-			AppliedPriceType.High => candle.HighPrice,
-			AppliedPriceType.Low => candle.LowPrice,
-			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			AppliedPriceTypes.Open => candle.OpenPrice,
+			AppliedPriceTypes.High => candle.HighPrice,
+			AppliedPriceTypes.Low => candle.LowPrice,
+			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
@@ -592,7 +592,7 @@ public class AlliheikTraderStrategy : Strategy
 	/// <summary>
 	/// Moving average families supported by the conversion.
 	/// </summary>
-	public enum MovingAverageType
+	public enum MovingAverageTypes
 	{
 		Simple,
 		Exponential,
@@ -603,7 +603,7 @@ public class AlliheikTraderStrategy : Strategy
 	/// <summary>
 	/// Price sources that can be supplied to the jaw moving average.
 	/// </summary>
-	public enum AppliedPriceType
+	public enum AppliedPriceTypes
 	{
 		Close,
 		Open,

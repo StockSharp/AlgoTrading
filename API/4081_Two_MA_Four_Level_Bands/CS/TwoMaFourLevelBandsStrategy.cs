@@ -27,10 +27,10 @@ public class TwoMaFourLevelBandsStrategy : Strategy
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<int> _calculationBar;
 	private readonly StrategyParam<int> _fastPeriod;
-	private readonly StrategyParam<MovingAverageMethod> _fastMethod;
+	private readonly StrategyParam<MovingAverageMethods> _fastMethod;
 	private readonly StrategyParam<CandlePrice> _fastPrice;
 	private readonly StrategyParam<int> _slowPeriod;
-	private readonly StrategyParam<MovingAverageMethod> _slowMethod;
+	private readonly StrategyParam<MovingAverageMethods> _slowMethod;
 	private readonly StrategyParam<CandlePrice> _slowPrice;
 	private readonly StrategyParam<int> _upperLevel1;
 	private readonly StrategyParam<int> _upperLevel2;
@@ -74,7 +74,7 @@ public class TwoMaFourLevelBandsStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(5, 40, 5);
 
-		_fastMethod = Param(nameof(FastMethod), MovingAverageMethod.Smoothed)
+		_fastMethod = Param(nameof(FastMethod), MovingAverageMethods.Smoothed)
 			.SetDisplay("Fast MA method", "Type of moving average used for the fast line.", "Indicators");
 
 		_fastPrice = Param(nameof(FastPrice), CandlePrice.Median)
@@ -86,7 +86,7 @@ public class TwoMaFourLevelBandsStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(60, 300, 20);
 
-		_slowMethod = Param(nameof(SlowMethod), MovingAverageMethod.Smoothed)
+		_slowMethod = Param(nameof(SlowMethod), MovingAverageMethods.Smoothed)
 			.SetDisplay("Slow MA method", "Type of moving average used for the slow line.", "Indicators");
 
 		_slowPrice = Param(nameof(SlowPrice), CandlePrice.Median)
@@ -168,7 +168,7 @@ public class TwoMaFourLevelBandsStrategy : Strategy
 	/// <summary>
 	/// Moving average method for the fast line.
 	/// </summary>
-	public MovingAverageMethod FastMethod
+	public MovingAverageMethods FastMethod
 	{
 		get => _fastMethod.Value;
 		set => _fastMethod.Value = value;
@@ -195,7 +195,7 @@ public class TwoMaFourLevelBandsStrategy : Strategy
 	/// <summary>
 	/// Moving average method for the slow line.
 	/// </summary>
-	public MovingAverageMethod SlowMethod
+	public MovingAverageMethods SlowMethod
 	{
 		get => _slowMethod.Value;
 		set => _slowMethod.Value = value;
@@ -383,14 +383,14 @@ public class TwoMaFourLevelBandsStrategy : Strategy
 		return prevFast >= prevSlow && currentFast < currentSlow;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethod method, int period, CandlePrice price)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int period, CandlePrice price)
 	{
 		var indicator = method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage(),
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage(),
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage(),
-			MovingAverageMethod.LinearWeighted => new WeightedMovingAverage(),
+			MovingAverageMethods.Simple => new SimpleMovingAverage(),
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage(),
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage(),
+			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage(),
 			_ => new SimpleMovingAverage(),
 		};
 
@@ -476,7 +476,7 @@ public class TwoMaFourLevelBandsStrategy : Strategy
 	/// <summary>
 	/// Moving average methods available in MetaTrader.
 	/// </summary>
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		Simple = 0,
 		Exponential = 1,

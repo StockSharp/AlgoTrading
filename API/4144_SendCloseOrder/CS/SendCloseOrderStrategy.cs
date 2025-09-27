@@ -57,13 +57,13 @@ public class SendCloseOrderStrategy : Strategy
 	private DateTimeOffset _t4;
 	private DateTimeOffset _t5;
 
-	private enum FractalKind
+	private enum FractalKinds
 	{
 		Up,
 		Down,
 	}
 
-	private enum LineType
+	private enum LineTypes
 	{
 		Sell,
 		Buy,
@@ -73,14 +73,14 @@ public class SendCloseOrderStrategy : Strategy
 
 	private sealed class FractalPoint
 	{
-		public FractalPoint(FractalKind type, DateTimeOffset time, decimal price)
+		public FractalPoint(FractalKinds type, DateTimeOffset time, decimal price)
 		{
 			Type = type;
 			Time = time;
 			Price = price;
 		}
 
-		public FractalKind Type { get; }
+		public FractalKinds Type { get; }
 
 		public DateTimeOffset Time { get; }
 
@@ -89,7 +89,7 @@ public class SendCloseOrderStrategy : Strategy
 
 	private sealed class LineInfo
 	{
-		public LineInfo(LineType type, DateTimeOffset firstTime, decimal firstPrice, DateTimeOffset secondTime, decimal secondPrice)
+		public LineInfo(LineTypes type, DateTimeOffset firstTime, decimal firstPrice, DateTimeOffset secondTime, decimal secondPrice)
 		{
 			Type = type;
 			FirstTime = firstTime;
@@ -98,7 +98,7 @@ public class SendCloseOrderStrategy : Strategy
 			SecondPrice = secondPrice;
 		}
 
-		public LineType Type { get; }
+		public LineTypes Type { get; }
 
 		public DateTimeOffset FirstTime { get; }
 
@@ -308,7 +308,7 @@ public class SendCloseOrderStrategy : Strategy
 		if (signal is null)
 			return;
 
-		if (signal == LineType.CloseLong || signal == LineType.CloseShort)
+		if (signal == LineTypes.CloseLong || signal == LineTypes.CloseShort)
 		{
 			if (Position != 0m)
 			{
@@ -328,7 +328,7 @@ public class SendCloseOrderStrategy : Strategy
 
 		var absPosition = Math.Abs(Position);
 
-		if (signal == LineType.Buy)
+		if (signal == LineTypes.Buy)
 		{
 			var hasShort = Position < 0m;
 			var hasCapacity = Position >= 0m && absPosition + TradeVolume <= maxVolume + VolumeTolerance;
@@ -343,7 +343,7 @@ public class SendCloseOrderStrategy : Strategy
 				BuyMarket(volume);
 			}
 		}
-		else if (signal == LineType.Sell)
+		else if (signal == LineTypes.Sell)
 		{
 			var hasLong = Position > 0m;
 			var hasCapacity = Position <= 0m && absPosition + TradeVolume <= maxVolume + VolumeTolerance;
@@ -389,14 +389,14 @@ public class SendCloseOrderStrategy : Strategy
 		// Bill Williams fractal requires the middle candle to dominate both sides.
 		var upFractal = _h3 >= _h2 && _h3 > _h1 && _h3 >= _h4 && _h3 > _h5;
 		if (upFractal)
-			RegisterFractal(FractalKind.Up, _t3, _h3);
+			RegisterFractal(FractalKinds.Up, _t3, _h3);
 
 		var downFractal = _l3 <= _l2 && _l3 < _l1 && _l3 <= _l4 && _l3 < _l5;
 		if (downFractal)
-			RegisterFractal(FractalKind.Down, _t3, _l3);
+			RegisterFractal(FractalKinds.Down, _t3, _l3);
 	}
 
-	private void RegisterFractal(FractalKind kind, DateTimeOffset time, decimal price)
+	private void RegisterFractal(FractalKinds kind, DateTimeOffset time, decimal price)
 	{
 		if (_fractals.Count > 0)
 		{
@@ -419,13 +419,13 @@ public class SendCloseOrderStrategy : Strategy
 	{
 		if (EnableSellLine || EnableCloseLongLine)
 		{
-			if (TryBuildLine(FractalKind.Up, FractalKind.Down, out var first, out var last))
+			if (TryBuildLine(FractalKinds.Up, FractalKinds.Down, out var first, out var last))
 			{
-				_sellLine = EnableSellLine ? new LineInfo(LineType.Sell, first.Time, first.Price, last.Time, last.Price) : null;
+				_sellLine = EnableSellLine ? new LineInfo(LineTypes.Sell, first.Time, first.Price, last.Time, last.Price) : null;
 
 				var offset = CloseOffsetPoints * priceStep;
 				_closeLongLine = EnableCloseLongLine
-					? new LineInfo(LineType.CloseLong, first.Time, first.Price + offset, last.Time, last.Price + offset)
+					? new LineInfo(LineTypes.CloseLong, first.Time, first.Price + offset, last.Time, last.Price + offset)
 					: null;
 			}
 			else
@@ -442,13 +442,13 @@ public class SendCloseOrderStrategy : Strategy
 
 		if (EnableBuyLine || EnableCloseShortLine)
 		{
-			if (TryBuildLine(FractalKind.Down, FractalKind.Up, out var first, out var last))
+			if (TryBuildLine(FractalKinds.Down, FractalKinds.Up, out var first, out var last))
 			{
-				_buyLine = EnableBuyLine ? new LineInfo(LineType.Buy, first.Time, first.Price, last.Time, last.Price) : null;
+				_buyLine = EnableBuyLine ? new LineInfo(LineTypes.Buy, first.Time, first.Price, last.Time, last.Price) : null;
 
 				var offset = CloseOffsetPoints * priceStep;
 				_closeShortLine = EnableCloseShortLine
-					? new LineInfo(LineType.CloseShort, first.Time, first.Price - offset, last.Time, last.Price - offset)
+					? new LineInfo(LineTypes.CloseShort, first.Time, first.Price - offset, last.Time, last.Price - offset)
 					: null;
 			}
 			else
@@ -464,7 +464,7 @@ public class SendCloseOrderStrategy : Strategy
 		}
 	}
 
-	private bool TryBuildLine(FractalKind outerKind, FractalKind middleKind, out FractalPoint first, out FractalPoint last)
+	private bool TryBuildLine(FractalKinds outerKind, FractalKinds middleKind, out FractalPoint first, out FractalPoint last)
 	{
 		first = default!;
 		last = default!;
@@ -502,7 +502,7 @@ public class SendCloseOrderStrategy : Strategy
 		return false;
 	}
 
-	private LineType? GetTriggeredLine(ICandleMessage candle, decimal priceStep)
+	private LineTypes? GetTriggeredLine(ICandleMessage candle, decimal priceStep)
 	{
 		var evaluationTime = candle.CloseTime != default ? candle.CloseTime : candle.OpenTime;
 		var tolerance = priceStep * 2m;

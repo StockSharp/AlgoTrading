@@ -21,7 +21,7 @@ using StockSharp.Messages;
 public class ColibriGridManagerStrategy : Strategy
 {
 	private readonly StrategyParam<bool> _enableGrid;
-	private readonly StrategyParam<GridOrderType> _orderType;
+	private readonly StrategyParam<GridOrderTypes> _orderType;
 	private readonly StrategyParam<bool> _allowBuy;
 	private readonly StrategyParam<bool> _allowSell;
 	private readonly StrategyParam<bool> _useCenterLine;
@@ -69,7 +69,7 @@ public class ColibriGridManagerStrategy : Strategy
 	/// <summary>
 	/// Supported entry order types.
 	/// </summary>
-	public enum GridOrderType
+	public enum GridOrderTypes
 	{
 		Limit,
 		Stop,
@@ -84,7 +84,7 @@ public class ColibriGridManagerStrategy : Strategy
 		_enableGrid = Param(nameof(EnableGrid), true)
 			.SetDisplay("Enable Grid", "Toggle automatic grid management", "General");
 
-		_orderType = Param(nameof(OrderType), GridOrderType.Limit)
+		_orderType = Param(nameof(OrderType), GridOrderTypes.Limit)
 			.SetDisplay("Order Type", "Entry order type for the grid", "General");
 
 		_allowBuy = Param(nameof(AllowBuy), true)
@@ -167,7 +167,7 @@ public class ColibriGridManagerStrategy : Strategy
 		set => _enableGrid.Value = value;
 	}
 
-	public GridOrderType OrderType
+	public GridOrderTypes OrderType
 	{
 		get => _orderType.Value;
 		set => _orderType.Value = value;
@@ -542,7 +542,7 @@ public class ColibriGridManagerStrategy : Strategy
 			return;
 
 		var spacing = ConvertPoints(LevelSpacingPoints);
-		if (OrderType != GridOrderType.Market && spacing <= 0m)
+		if (OrderType != GridOrderTypes.Market && spacing <= 0m)
 			return;
 
 		foreach (var side in directions)
@@ -557,7 +557,7 @@ public class ColibriGridManagerStrategy : Strategy
 		if (reference is null || reference.Value <= 0m)
 			return;
 
-		var levels = OrderType == GridOrderType.Market ? 1 : LevelsCount;
+		var levels = OrderType == GridOrderTypes.Market ? 1 : LevelsCount;
 		for (var index = 0; index < levels; index++)
 		{
 			var entry = CalculateEntryPrice(side, index, spacing, reference.Value);
@@ -594,25 +594,25 @@ public class ColibriGridManagerStrategy : Strategy
 	{
 		return OrderType switch
 		{
-			GridOrderType.Limit => side == Sides.Buy ? BuyLimit(volume, price) : SellLimit(volume, price),
-			GridOrderType.Stop => side == Sides.Buy ? BuyStop(volume, price) : SellStop(volume, price),
-			GridOrderType.Market => side == Sides.Buy ? BuyMarket(volume) : SellMarket(volume),
+			GridOrderTypes.Limit => side == Sides.Buy ? BuyLimit(volume, price) : SellLimit(volume, price),
+			GridOrderTypes.Stop => side == Sides.Buy ? BuyStop(volume, price) : SellStop(volume, price),
+			GridOrderTypes.Market => side == Sides.Buy ? BuyMarket(volume) : SellMarket(volume),
 			_ => null,
 		};
 	}
 
 	private decimal? CalculateEntryPrice(Sides side, int index, decimal spacing, decimal referencePrice)
 	{
-		if (OrderType == GridOrderType.Market && index > 0)
+		if (OrderType == GridOrderTypes.Market && index > 0)
 			return null;
 
 		if (UseCenterLine)
 		{
 			var center = CenterPrice > 0m ? CenterPrice : referencePrice;
-			if (OrderType == GridOrderType.Market)
+			if (OrderType == GridOrderTypes.Market)
 				return center;
 
-			if (OrderType == GridOrderType.Limit)
+			if (OrderType == GridOrderTypes.Limit)
 			{
 				var halfSpan = spacing * (Math.Max(LevelsCount, 1) - 1) / 2m;
 				return side == Sides.Buy
@@ -632,13 +632,13 @@ public class ColibriGridManagerStrategy : Strategy
 
 		return OrderType switch
 		{
-			GridOrderType.Limit => side == Sides.Buy
+			GridOrderTypes.Limit => side == Sides.Buy
 				? basePrice - spacing * index
 				: basePrice + spacing * index,
-			GridOrderType.Stop => side == Sides.Buy
+			GridOrderTypes.Stop => side == Sides.Buy
 				? basePrice + spacing * index
 				: basePrice - spacing * index,
-			GridOrderType.Market => basePrice,
+			GridOrderTypes.Market => basePrice,
 			_ => basePrice,
 		};
 	}
@@ -754,9 +754,9 @@ public class ColibriGridManagerStrategy : Strategy
 	{
 		return OrderType switch
 		{
-			GridOrderType.Limit => side == Sides.Buy ? GetBidPrice() : GetAskPrice(),
-			GridOrderType.Stop => side == Sides.Buy ? GetAskPrice() : GetBidPrice(),
-			GridOrderType.Market => GetMidPrice(),
+			GridOrderTypes.Limit => side == Sides.Buy ? GetBidPrice() : GetAskPrice(),
+			GridOrderTypes.Stop => side == Sides.Buy ? GetAskPrice() : GetBidPrice(),
+			GridOrderTypes.Market => GetMidPrice(),
 			_ => GetMidPrice(),
 		};
 	}

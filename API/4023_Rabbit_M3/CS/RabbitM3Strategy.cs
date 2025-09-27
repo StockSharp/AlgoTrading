@@ -54,7 +54,7 @@ public class RabbitM3Strategy : Strategy
 	private decimal? _previousDonchianUpper;
 	private decimal? _previousDonchianLower;
 
-	private TrendDirection _trendDirection;
+	private TrendDirections _trendDirection;
 	private bool _allowBuy;
 	private bool _allowSell;
 
@@ -67,7 +67,7 @@ public class RabbitM3Strategy : Strategy
 	private decimal _shortStopPrice;
 	private decimal _shortTakeProfitPrice;
 
-	private enum TrendDirection
+	private enum TrendDirections
 	{
 		Neutral,
 		Bullish,
@@ -312,7 +312,7 @@ public class RabbitM3Strategy : Strategy
 		_currentDonchianLower = null;
 		_previousDonchianUpper = null;
 		_previousDonchianLower = null;
-		_trendDirection = TrendDirection.Neutral;
+		_trendDirection = TrendDirections.Neutral;
 		_allowBuy = false;
 		_allowSell = false;
 		_longActive = false;
@@ -430,7 +430,7 @@ public class RabbitM3Strategy : Strategy
 	{
 		if (fastValue < slowValue)
 		{
-			if (_trendDirection == TrendDirection.Bearish)
+			if (_trendDirection == TrendDirections.Bearish)
 			return;
 
 			if (Position > 0m)
@@ -438,11 +438,11 @@ public class RabbitM3Strategy : Strategy
 
 			_allowSell = true;
 			_allowBuy = false;
-			_trendDirection = TrendDirection.Bearish;
+			_trendDirection = TrendDirections.Bearish;
 		}
 		else if (fastValue > slowValue)
 		{
-			if (_trendDirection == TrendDirection.Bullish)
+			if (_trendDirection == TrendDirections.Bullish)
 			return;
 
 			if (Position < 0m)
@@ -450,7 +450,7 @@ public class RabbitM3Strategy : Strategy
 
 			_allowSell = false;
 			_allowBuy = true;
-			_trendDirection = TrendDirection.Bullish;
+			_trendDirection = TrendDirections.Bullish;
 		}
 	}
 

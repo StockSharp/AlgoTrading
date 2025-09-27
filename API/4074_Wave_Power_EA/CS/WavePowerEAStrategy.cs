@@ -22,7 +22,7 @@ public class WavePowerEAStrategy : Strategy
 	/// <summary>
 	/// Entry logic selector matching the original advisor modes.
 	/// </summary>
-	public enum EntryMode
+	public enum EntryModes
 	{
 		/// <summary>
 		/// Signal based on the Stochastic oscillator cross above/below extreme levels.
@@ -55,7 +55,7 @@ public class WavePowerEAStrategy : Strategy
 		SmaTrend = 1,
 	}
 
-	private readonly StrategyParam<EntryMode> _entryMode;
+	private readonly StrategyParam<EntryModes> _entryMode;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _initialVolume;
 	private readonly StrategyParam<decimal> _gridStepPips;
@@ -87,7 +87,7 @@ public class WavePowerEAStrategy : Strategy
 	private SimpleMovingAverage _smaLongest = null!;
 
 	private decimal _pipSize;
-	private EntryDirection _gridDirection = EntryDirection.None;
+	private EntryDirections _gridDirection = EntryDirections.None;
 	private readonly List<PositionEntry> _entries = new();
 	private decimal? _lastOrderPrice;
 	private DateTimeOffset? _lastOrderTime;
@@ -106,7 +106,7 @@ public class WavePowerEAStrategy : Strategy
 	private decimal _aoLow;
 	private bool _aoInitialized;
 
-	private enum EntryDirection
+	private enum EntryDirections
 	{
 		None = 0,
 		Buy = 1,
@@ -120,7 +120,7 @@ public class WavePowerEAStrategy : Strategy
 	/// </summary>
 	public WavePowerEAStrategy()
 	{
-		_entryMode = Param(nameof(EntryLogic), EntryMode.Stochastic)
+		_entryMode = Param(nameof(EntryLogic), EntryModes.Stochastic)
 			.SetDisplay("Entry Mode", "Indicator logic used for the first order", "Signals");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -190,7 +190,7 @@ public class WavePowerEAStrategy : Strategy
 	/// <summary>
 	/// Entry logic selected by the trader.
 	/// </summary>
-	public EntryMode EntryLogic
+	public EntryModes EntryLogic
 	{
 		get => _entryMode.Value;
 		set => _entryMode.Value = value;
@@ -511,7 +511,7 @@ public class WavePowerEAStrategy : Strategy
 
 	private void ApplyProtections(ICandleMessage candle, decimal price)
 	{
-		if (_gridDirection == EntryDirection.None)
+		if (_gridDirection == EntryDirections.None)
 			return;
 
 		ApplyLifetimeProtection(candle.CloseTime);
@@ -535,14 +535,14 @@ public class WavePowerEAStrategy : Strategy
 
 	private void ApplyPriceTargets(decimal price)
 	{
-		if (_gridDirection == EntryDirection.Buy)
+		if (_gridDirection == EntryDirections.Buy)
 		{
 			if (_takeProfitPrice is decimal tp && price >= tp)
 				CloseAllPositions();
 			else if (_stopLossPrice is decimal sl && price <= sl)
 				CloseAllPositions();
 		}
-		else if (_gridDirection == EntryDirection.Sell)
+		else if (_gridDirection == EntryDirections.Sell)
 		{
 			if (_takeProfitPrice is decimal tp && price <= tp)
 				CloseAllPositions();
@@ -583,13 +583,13 @@ public class WavePowerEAStrategy : Strategy
 		}
 	}
 
-	private void TryOpenOrders(EntryDirection signal, DateTimeOffset time, decimal price)
+	private void TryOpenOrders(EntryDirections signal, DateTimeOffset time, decimal price)
 	{
 		var direction = ReverseCondition ? Reverse(signal) : signal;
 
 		if (_openOrderCount == 0)
 		{
-			if (direction == EntryDirection.None)
+			if (direction == EntryDirections.None)
 				return;
 
 			if (!TradeOnFriday && time.DayOfWeek == DayOfWeek.Friday)
@@ -623,16 +623,16 @@ public class WavePowerEAStrategy : Strategy
 		return Math.Abs(price - lastPrice) >= step;
 	}
 
-	private void OpenOrder(EntryDirection direction)
+	private void OpenOrder(EntryDirections direction)
 	{
-		if (direction == EntryDirection.None)
+		if (direction == EntryDirections.None)
 			return;
 
 		var volume = CalculateOrderVolume();
 		if (volume <= 0m)
 			return;
 
-		if (direction == EntryDirection.Buy)
+		if (direction == EntryDirections.Buy)
 			BuyMarket(volume);
 		else
 			SellMarket(volume);
@@ -664,7 +664,7 @@ public class WavePowerEAStrategy : Strategy
 		if (_lastOrderPrice is not decimal price)
 			return;
 
-		if (_gridDirection == EntryDirection.None)
+		if (_gridDirection == EntryDirections.None)
 		{
 			_takeProfitPrice = null;
 			_stopLossPrice = null;
@@ -684,7 +684,7 @@ public class WavePowerEAStrategy : Strategy
 			}
 
 			var offset = takePips * pipOffset;
-			_takeProfitPrice = _gridDirection == EntryDirection.Buy ? price + offset : price - offset;
+			_takeProfitPrice = _gridDirection == EntryDirections.Buy ? price + offset : price - offset;
 		}
 		else
 		{
@@ -694,7 +694,7 @@ public class WavePowerEAStrategy : Strategy
 		if (StopLossPips > 0m)
 		{
 			var offset = StopLossPips * pipOffset;
-			_stopLossPrice = _gridDirection == EntryDirection.Buy ? price - offset : price + offset;
+			_stopLossPrice = _gridDirection == EntryDirections.Buy ? price - offset : price + offset;
 		}
 		else
 		{
@@ -713,7 +713,7 @@ public class WavePowerEAStrategy : Strategy
 	private void ResetGridState()
 	{
 		_entries.Clear();
-		_gridDirection = EntryDirection.None;
+		_gridDirection = EntryDirections.None;
 		_lastOrderPrice = null;
 		_lastOrderTime = null;
 		_takeProfitPrice = null;
@@ -740,7 +740,7 @@ public class WavePowerEAStrategy : Strategy
 			_aoLow = scaled;
 	}
 
-	private EntryDirection EvaluateEntrySignal(
+	private EntryDirections EvaluateEntrySignal(
 		decimal stochMain,
 		decimal stochSignal,
 		decimal macd,
@@ -755,11 +755,11 @@ public class WavePowerEAStrategy : Strategy
 		decimal rsi)
 	{
 		var mode = EntryLogic;
-		var direction = EntryDirection.None;
+		var direction = EntryDirections.None;
 
 		switch (mode)
 		{
-			case EntryMode.Stochastic:
+			case EntryModes.Stochastic:
 			{
 				if (_prevStochMain is decimal prevMain && _prevStochSignal is decimal prevSignal)
 				{
@@ -767,40 +767,40 @@ public class WavePowerEAStrategy : Strategy
 					var crossDown = stochMain < stochSignal && prevMain >= prevSignal && prevSignal > 92m;
 
 					if (crossUp)
-						direction = EntryDirection.Buy;
+						direction = EntryDirections.Buy;
 					else if (crossDown)
-						direction = EntryDirection.Sell;
+						direction = EntryDirections.Sell;
 				}
 				break;
 			}
-			case EntryMode.MacdSlope:
+			case EntryModes.MacdSlope:
 			{
 				if (_prevMacd is decimal prevMacd)
 				{
 					if (macd > prevMacd)
-						direction = EntryDirection.Buy;
+						direction = EntryDirections.Buy;
 					else if (macd < prevMacd)
-						direction = EntryDirection.Sell;
+						direction = EntryDirections.Sell;
 				}
 				break;
 			}
-			case EntryMode.CciLevels:
+			case EntryModes.CciLevels:
 			{
 				if (cci < -120m)
-					direction = EntryDirection.Buy;
+					direction = EntryDirections.Buy;
 				else if (cci > 120m)
-					direction = EntryDirection.Sell;
+					direction = EntryDirections.Sell;
 				break;
 			}
-			case EntryMode.AwesomeBreakout:
+			case EntryModes.AwesomeBreakout:
 			{
 				if (awesome < _aoLow)
-					direction = EntryDirection.Buy;
+					direction = EntryDirections.Buy;
 				else if (awesome > _aoHigh)
-					direction = EntryDirection.Sell;
+					direction = EntryDirections.Sell;
 				break;
 			}
-			case EntryMode.RsiMa:
+			case EntryModes.RsiMa:
 			{
 				if (_prevFastMa is decimal prevFast && _prevSlowMa is decimal prevSlow)
 				{
@@ -808,13 +808,13 @@ public class WavePowerEAStrategy : Strategy
 					var crossDown = prevFast >= prevSlow && fastMa < slowMa && rsi <= 50m;
 
 					if (crossUp)
-						direction = EntryDirection.Buy;
+						direction = EntryDirections.Buy;
 					else if (crossDown)
-						direction = EntryDirection.Sell;
+						direction = EntryDirections.Sell;
 				}
 				break;
 			}
-			case EntryMode.SmaTrend:
+			case EntryModes.SmaTrend:
 			{
 				if (_prevSmaLong is decimal prevLong && _prevSmaLongest is decimal prevLongest)
 				{
@@ -822,9 +822,9 @@ public class WavePowerEAStrategy : Strategy
 					var prevSlope = prevLong - prevLongest;
 
 					if (smaShort > smaMedium && smaMedium > smaLong && slope >= TrendSlopeThreshold && prevSlope <= 0m)
-						direction = EntryDirection.Buy;
+						direction = EntryDirections.Buy;
 					else if (smaShort < smaMedium && smaMedium < smaLong && slope <= -TrendSlopeThreshold && prevSlope >= 0m)
-						direction = EntryDirection.Sell;
+						direction = EntryDirections.Sell;
 				}
 				break;
 			}
@@ -833,13 +833,13 @@ public class WavePowerEAStrategy : Strategy
 		return direction;
 	}
 
-	private EntryDirection Reverse(EntryDirection direction)
+	private EntryDirections Reverse(EntryDirections direction)
 	{
 		return direction switch
 		{
-			EntryDirection.Buy => EntryDirection.Sell,
-			EntryDirection.Sell => EntryDirection.Buy,
-			_ => EntryDirection.None,
+			EntryDirections.Buy => EntryDirections.Sell,
+			EntryDirections.Sell => EntryDirections.Buy,
+			_ => EntryDirections.None,
 		};
 	}
 
@@ -867,7 +867,7 @@ public class WavePowerEAStrategy : Strategy
 		{
 			if (Position > 0m)
 			{
-				_gridDirection = EntryDirection.Buy;
+				_gridDirection = EntryDirections.Buy;
 				_entries.Add(new PositionEntry(trade.Price, volume, Sides.Buy));
 				_totalVolume += volume;
 				_openOrderCount++;
@@ -882,7 +882,7 @@ public class WavePowerEAStrategy : Strategy
 		{
 			if (Position < 0m)
 			{
-				_gridDirection = EntryDirection.Sell;
+				_gridDirection = EntryDirections.Sell;
 				_entries.Add(new PositionEntry(trade.Price, volume, Sides.Sell));
 				_totalVolume += volume;
 				_openOrderCount++;

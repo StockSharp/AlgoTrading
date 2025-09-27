@@ -32,8 +32,8 @@ public class FtBillWilliamsAoStrategy : Strategy
 	private readonly StrategyParam<int> _teethShift;
 	private readonly StrategyParam<int> _lipsPeriod;
 	private readonly StrategyParam<int> _lipsShift;
-	private readonly StrategyParam<CloseDropTeethMode> _closeDropTeethMode;
-	private readonly StrategyParam<CloseReverseSignalMode> _closeReverseSignalMode;
+	private readonly StrategyParam<CloseDropTeethModes> _closeDropTeethMode;
+	private readonly StrategyParam<CloseReverseSignalModes> _closeReverseSignalMode;
 	private readonly StrategyParam<bool> _useTrailing;
 	private readonly StrategyParam<int> _trendSmaPeriod;
 	private readonly StrategyParam<decimal> _stopLossPoints;
@@ -161,7 +161,7 @@ public class FtBillWilliamsAoStrategy : Strategy
 	/// <summary>
 	/// Defines how long positions are closed when price touches the jaw line.
 	/// </summary>
-	public CloseDropTeethMode CloseDropTeeth
+	public CloseDropTeethModes CloseDropTeeth
 	{
 		get => _closeDropTeethMode.Value;
 		set => _closeDropTeethMode.Value = value;
@@ -170,7 +170,7 @@ public class FtBillWilliamsAoStrategy : Strategy
 	/// <summary>
 	/// Defines when the strategy exits on an opposite reversal signal.
 	/// </summary>
-	public CloseReverseSignalMode CloseReverseSignal
+	public CloseReverseSignalModes CloseReverseSignal
 	{
 		get => _closeReverseSignalMode.Value;
 		set => _closeReverseSignalMode.Value = value;
@@ -267,10 +267,10 @@ public class FtBillWilliamsAoStrategy : Strategy
 			.SetDisplay("Lips Shift", "Forward shift for the lips line", "Alligator")
 			.SetRange(0, 30);
 
-		_closeDropTeethMode = Param(nameof(CloseDropTeeth), CloseDropTeethMode.PreviousCloseBelowJaw)
+		_closeDropTeethMode = Param(nameof(CloseDropTeeth), CloseDropTeethModes.PreviousCloseBelowJaw)
 			.SetDisplay("Close Drop Teeth", "How long positions close relative to the jaw", "Risk");
 
-		_closeReverseSignalMode = Param(nameof(CloseReverseSignal), CloseReverseSignalMode.OnShortSignal)
+		_closeReverseSignalMode = Param(nameof(CloseReverseSignal), CloseReverseSignalModes.OnShortSignal)
 			.SetDisplay("Close Reverse", "When to close on opposite signals", "Risk");
 
 		_useTrailing = Param(nameof(UseTrailing), true)
@@ -529,14 +529,14 @@ public class FtBillWilliamsAoStrategy : Strategy
 		}
 
 		var jaw = GetShiftedValue(_jawHistory, JawShift, 1);
-		if (CloseDropTeeth == CloseDropTeethMode.BidBelowJaw && jaw is decimal jawValue && candle.ClosePrice <= jawValue)
+		if (CloseDropTeeth == CloseDropTeethModes.BidBelowJaw && jaw is decimal jawValue && candle.ClosePrice <= jawValue)
 		{
 			SellMarket(volume);
 			ResetLongState();
 			return;
 		}
 
-		if (CloseDropTeeth == CloseDropTeethMode.PreviousCloseBelowJaw && jaw is decimal jawPrev)
+		if (CloseDropTeeth == CloseDropTeethModes.PreviousCloseBelowJaw && jaw is decimal jawPrev)
 		{
 			var prevClose = GetValueBarsAgo(_closeHistory, 1);
 			if (prevClose is decimal closeValue && closeValue <= jawPrev)
@@ -547,14 +547,14 @@ public class FtBillWilliamsAoStrategy : Strategy
 			}
 		}
 
-		if (CloseReverseSignal == CloseReverseSignalMode.OnOppositeFractal && downFractalTriggered)
+		if (CloseReverseSignal == CloseReverseSignalModes.OnOppositeFractal && downFractalTriggered)
 		{
 			SellMarket(volume);
 			ResetLongState();
 			return;
 		}
 
-		if (CloseReverseSignal == CloseReverseSignalMode.OnShortSignal && _pendingShortLevel is not null)
+		if (CloseReverseSignal == CloseReverseSignalModes.OnShortSignal && _pendingShortLevel is not null)
 		{
 			SellMarket(volume);
 			ResetLongState();
@@ -591,14 +591,14 @@ public class FtBillWilliamsAoStrategy : Strategy
 		}
 
 		var jaw = GetShiftedValue(_jawHistory, JawShift, 1);
-		if (CloseDropTeeth == CloseDropTeethMode.BidBelowJaw && jaw is decimal jawValue && candle.ClosePrice >= jawValue)
+		if (CloseDropTeeth == CloseDropTeethModes.BidBelowJaw && jaw is decimal jawValue && candle.ClosePrice >= jawValue)
 		{
 			BuyMarket(volume);
 			ResetShortState();
 			return;
 		}
 
-		if (CloseDropTeeth == CloseDropTeethMode.PreviousCloseBelowJaw && jaw is decimal jawPrev)
+		if (CloseDropTeeth == CloseDropTeethModes.PreviousCloseBelowJaw && jaw is decimal jawPrev)
 		{
 			var prevClose = GetValueBarsAgo(_closeHistory, 1);
 			if (prevClose is decimal closeValue && closeValue >= jawPrev)
@@ -609,14 +609,14 @@ public class FtBillWilliamsAoStrategy : Strategy
 			}
 		}
 
-		if (CloseReverseSignal == CloseReverseSignalMode.OnOppositeFractal && upFractalTriggered)
+		if (CloseReverseSignal == CloseReverseSignalModes.OnOppositeFractal && upFractalTriggered)
 		{
 			BuyMarket(volume);
 			ResetShortState();
 			return;
 		}
 
-		if (CloseReverseSignal == CloseReverseSignalMode.OnShortSignal && _pendingLongLevel is not null)
+		if (CloseReverseSignal == CloseReverseSignalModes.OnShortSignal && _pendingLongLevel is not null)
 		{
 			BuyMarket(volume);
 			ResetShortState();
@@ -949,7 +949,7 @@ public class FtBillWilliamsAoStrategy : Strategy
 	/// <summary>
 	/// Defines how long trades are closed relative to the Alligator jaw.
 	/// </summary>
-	public enum CloseDropTeethMode
+	public enum CloseDropTeethModes
 	{
 	/// <summary>
 	/// Do not close positions based on the jaw line.
@@ -970,7 +970,7 @@ public class FtBillWilliamsAoStrategy : Strategy
 	/// <summary>
 	/// Defines when to exit an existing trade on opposite signals.
 	/// </summary>
-	public enum CloseReverseSignalMode
+	public enum CloseReverseSignalModes
 	{
 	/// <summary>
 	/// Keep the position despite opposite signals.

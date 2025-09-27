@@ -20,7 +20,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class EarlyBirdRangeBreakoutStrategy : Strategy
 {
-	private enum TradeDirection
+	private enum TradeDirections
 	{
 		Both = 0,
 		LongOnly = 1,
@@ -90,7 +90,7 @@ public class EarlyBirdRangeBreakoutStrategy : Strategy
 		.SetDisplay("Allow Hedging", "Permit reversing positions within the session", "Trading")
 		.SetCanOptimize(false);
 
-		_directionMode = Param(nameof(DirectionMode), (int)TradeDirection.Both)
+		_directionMode = Param(nameof(DirectionMode), (int)TradeDirections.Both)
 		.SetDisplay("Trade Direction", "0 = both, 1 = long only, 2 = short only", "Trading")
 		.SetCanOptimize(false);
 
@@ -748,7 +748,7 @@ public class EarlyBirdRangeBreakoutStrategy : Strategy
 
 	private bool AllowLongEntry()
 	{
-		if (DirectionMode == (int)TradeDirection.ShortOnly)
+		if (DirectionMode == (int)TradeDirections.ShortOnly)
 		return false;
 
 		if (_longTradedToday)
@@ -765,7 +765,7 @@ public class EarlyBirdRangeBreakoutStrategy : Strategy
 
 	private bool AllowShortEntry()
 	{
-		if (DirectionMode == (int)TradeDirection.LongOnly)
+		if (DirectionMode == (int)TradeDirections.LongOnly)
 		return false;
 
 		if (_shortTradedToday)

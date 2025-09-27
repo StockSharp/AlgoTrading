@@ -21,10 +21,10 @@ public class MaCrossMethodPriceModeStrategy : Strategy
 {
 	private readonly StrategyParam<int> _firstPeriod;
 	private readonly StrategyParam<int> _secondPeriod;
-	private readonly StrategyParam<MaMethod> _firstMethod;
-	private readonly StrategyParam<MaMethod> _secondMethod;
-	private readonly StrategyParam<AppliedPriceMode> _firstPriceMode;
-	private readonly StrategyParam<AppliedPriceMode> _secondPriceMode;
+	private readonly StrategyParam<MaMethods> _firstMethod;
+	private readonly StrategyParam<MaMethods> _secondMethod;
+	private readonly StrategyParam<AppliedPriceModes> _firstPriceMode;
+	private readonly StrategyParam<AppliedPriceModes> _secondPriceMode;
 	private readonly StrategyParam<int> _firstShift;
 	private readonly StrategyParam<int> _secondShift;
 	private readonly StrategyParam<decimal> _orderVolume;
@@ -53,19 +53,19 @@ public class MaCrossMethodPriceModeStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(5, 100, 1);
 
-		_firstMethod = Param(nameof(FirstMethod), MaMethod.Simple)
+		_firstMethod = Param(nameof(FirstMethod), MaMethods.Simple)
 			.SetDisplay("Fast MA Method", "Smoothing method applied to the first moving average.", "Indicators")
 			.SetCanOptimize(true);
 
-		_secondMethod = Param(nameof(SecondMethod), MaMethod.LinearWeighted)
+		_secondMethod = Param(nameof(SecondMethod), MaMethods.LinearWeighted)
 			.SetDisplay("Slow MA Method", "Smoothing method applied to the second moving average.", "Indicators")
 			.SetCanOptimize(true);
 
-		_firstPriceMode = Param(nameof(FirstPriceMode), AppliedPriceMode.Close)
+		_firstPriceMode = Param(nameof(FirstPriceMode), AppliedPriceModes.Close)
 			.SetDisplay("Fast MA Price", "Price source used for the first moving average.", "Indicators")
 			.SetCanOptimize(true);
 
-		_secondPriceMode = Param(nameof(SecondPriceMode), AppliedPriceMode.Median)
+		_secondPriceMode = Param(nameof(SecondPriceMode), AppliedPriceModes.Median)
 			.SetDisplay("Slow MA Price", "Price source used for the second moving average.", "Indicators")
 			.SetCanOptimize(true);
 
@@ -107,7 +107,7 @@ public class MaCrossMethodPriceModeStrategy : Strategy
 	/// <summary>
 	/// Smoothing method applied to the first moving average.
 	/// </summary>
-	public MaMethod FirstMethod
+	public MaMethods FirstMethod
 	{
 		get => _firstMethod.Value;
 		set => _firstMethod.Value = value;
@@ -116,7 +116,7 @@ public class MaCrossMethodPriceModeStrategy : Strategy
 	/// <summary>
 	/// Smoothing method applied to the second moving average.
 	/// </summary>
-	public MaMethod SecondMethod
+	public MaMethods SecondMethod
 	{
 		get => _secondMethod.Value;
 		set => _secondMethod.Value = value;
@@ -125,7 +125,7 @@ public class MaCrossMethodPriceModeStrategy : Strategy
 	/// <summary>
 	/// Applied price mode for the first moving average.
 	/// </summary>
-	public AppliedPriceMode FirstPriceMode
+	public AppliedPriceModes FirstPriceMode
 	{
 		get => _firstPriceMode.Value;
 		set => _firstPriceMode.Value = value;
@@ -134,7 +134,7 @@ public class MaCrossMethodPriceModeStrategy : Strategy
 	/// <summary>
 	/// Applied price mode for the second moving average.
 	/// </summary>
-	public AppliedPriceMode SecondPriceMode
+	public AppliedPriceModes SecondPriceMode
 	{
 		get => _secondPriceMode.Value;
 		set => _secondPriceMode.Value = value;
@@ -294,29 +294,29 @@ public class MaCrossMethodPriceModeStrategy : Strategy
 			|| (previousFast > currentSlow && currentFast <= currentSlow);
 	}
 
-	private static decimal SelectPrice(ICandleMessage candle, AppliedPriceMode mode)
+	private static decimal SelectPrice(ICandleMessage candle, AppliedPriceModes mode)
 	{
 		return mode switch
 		{
-			AppliedPriceMode.Close => candle.ClosePrice,
-			AppliedPriceMode.Open => candle.OpenPrice,
-			AppliedPriceMode.High => candle.HighPrice,
-			AppliedPriceMode.Low => candle.LowPrice,
-			AppliedPriceMode.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceMode.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceMode.Weighted => (candle.HighPrice + candle.LowPrice + (2m * candle.ClosePrice)) / 4m,
+			AppliedPriceModes.Close => candle.ClosePrice,
+			AppliedPriceModes.Open => candle.OpenPrice,
+			AppliedPriceModes.High => candle.HighPrice,
+			AppliedPriceModes.Low => candle.LowPrice,
+			AppliedPriceModes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceModes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceModes.Weighted => (candle.HighPrice + candle.LowPrice + (2m * candle.ClosePrice)) / 4m,
 			_ => candle.ClosePrice
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MaMethod method, int period)
+	private static LengthIndicator<decimal> CreateMovingAverage(MaMethods method, int period)
 	{
 		return method switch
 		{
-			MaMethod.Simple => new SimpleMovingAverage { Length = period },
-			MaMethod.Exponential => new ExponentialMovingAverage { Length = period },
-			MaMethod.Smoothed => new SmoothedMovingAverage { Length = period },
-			MaMethod.LinearWeighted => new WeightedMovingAverage { Length = period },
+			MaMethods.Simple => new SimpleMovingAverage { Length = period },
+			MaMethods.Exponential => new ExponentialMovingAverage { Length = period },
+			MaMethods.Smoothed => new SmoothedMovingAverage { Length = period },
+			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = period },
 			_ => new SimpleMovingAverage { Length = period }
 		};
 	}
@@ -324,7 +324,7 @@ public class MaCrossMethodPriceModeStrategy : Strategy
 	/// <summary>
 	/// Moving average smoothing methods that mirror the MetaTrader inputs.
 	/// </summary>
-	public enum MaMethod
+	public enum MaMethods
 	{
 		Simple,
 		Exponential,
@@ -335,7 +335,7 @@ public class MaCrossMethodPriceModeStrategy : Strategy
 	/// <summary>
 	/// Applied price options equivalent to the MetaTrader constants.
 	/// </summary>
-	public enum AppliedPriceMode
+	public enum AppliedPriceModes
 	{
 		Close,
 		Open,

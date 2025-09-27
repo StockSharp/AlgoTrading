@@ -19,13 +19,13 @@ namespace StockSharp.Samples.Strategies;
 public class AisTradeMachineStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<ManualCommand> _command;
+	private readonly StrategyParam<ManualCommands> _command;
 	private readonly StrategyParam<decimal> _stopPrice;
 	private readonly StrategyParam<decimal> _takePrice;
 	private readonly StrategyParam<decimal> _accountReserve;
 	private readonly StrategyParam<decimal> _orderReserve;
 
-	private ManualCommand _lastCommand;
+	private ManualCommands _lastCommand;
 	private bool _commandHandled;
 	private decimal _peakEquity;
 	private Order _stopOrder;
@@ -36,7 +36,7 @@ public class AisTradeMachineStrategy : Strategy
 	/// <summary>
 	/// Available manual commands.
 	/// </summary>
-	public enum ManualCommand
+	public enum ManualCommands
 	{
 		/// <summary>
 		/// Idle state, no action is performed.
@@ -72,7 +72,7 @@ public AisTradeMachineStrategy()
 	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 	.SetDisplay("Candle Type", "Type of candles used to read current prices.", "Market Data");
 
-	_command = Param(nameof(Command), ManualCommand.Wait)
+	_command = Param(nameof(Command), ManualCommands.Wait)
 	.SetDisplay("Command", "Manual command to execute. The value resets to Wait after handling.", "Control");
 
 	_stopPrice = Param(nameof(StopPrice), 0m)
@@ -108,7 +108,7 @@ public DataType CandleType
 /// <summary>
 /// Manual command parameter.
 /// </summary>
-public ManualCommand Command
+public ManualCommands Command
 {
 	get => _command.Value;
 	set => _command.Value = value;
@@ -231,22 +231,22 @@ private void ProcessCandle(ICandleMessage candle)
 
 switch (command)
 {
-	case ManualCommand.Wait:
+	case ManualCommands.Wait:
 	_commandHandled = true;
 	break;
 
-	case ManualCommand.Buy:
-	case ManualCommand.Sell:
+	case ManualCommands.Buy:
+	case ManualCommands.Sell:
 	TryHandleEntry(command, candle);
 	ResetCommandToWait();
 	break;
 
-	case ManualCommand.Modify:
+	case ManualCommands.Modify:
 	TryHandleModify(candle);
 	ResetCommandToWait();
 	break;
 
-	case ManualCommand.Close:
+	case ManualCommands.Close:
 	HandleCloseCommand();
 	ResetCommandToWait();
 	break;
@@ -260,7 +260,7 @@ switch (command)
 _lastCommand = Command;
 }
 
-private void TryHandleEntry(ManualCommand command, ICandleMessage candle)
+private void TryHandleEntry(ManualCommands command, ICandleMessage candle)
 {
 	if (!TryGetEquity(out var equity))
 	{
@@ -283,7 +283,7 @@ if (Security is null)
 	return;
 }
 
-var isLong = command == ManualCommand.Buy;
+var isLong = command == ManualCommands.Buy;
 var price = candle.ClosePrice;
 var stopPrice = StopPrice;
 var takePrice = TakePrice;
@@ -588,8 +588,8 @@ private void UpdatePeakEquity()
 
 private void ResetCommandToWait()
 {
-	Command = ManualCommand.Wait;
+	Command = ManualCommands.Wait;
 	_commandHandled = true;
-	_lastCommand = ManualCommand.Wait;
+	_lastCommand = ManualCommands.Wait;
 }
 }

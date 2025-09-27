@@ -306,7 +306,7 @@ public class YtgMultiStochStrategy : Strategy
 
 		if (position > 0m)
 		{
-			context.Direction = TradeDirection.Long;
+			context.Direction = TradeDirections.Long;
 
 			if (TryCloseLongByTargets(context, candle, position))
 			{
@@ -317,7 +317,7 @@ public class YtgMultiStochStrategy : Strategy
 		}
 		else if (position < 0m)
 		{
-			context.Direction = TradeDirection.Short;
+			context.Direction = TradeDirections.Short;
 
 			if (TryCloseShortByTargets(context, candle, position))
 			{
@@ -328,7 +328,7 @@ public class YtgMultiStochStrategy : Strategy
 		}
 		else
 		{
-			context.Direction = TradeDirection.Flat;
+			context.Direction = TradeDirections.Flat;
 
 			if (context.StopLossPrice.HasValue || context.TakeProfitPrice.HasValue)
 				context.ResetTargets();
@@ -341,7 +341,7 @@ public class YtgMultiStochStrategy : Strategy
 			return;
 		}
 
-		if (context.Direction == TradeDirection.Flat && position == 0m && context.PreviousK is decimal prevK && context.PreviousD is decimal prevD)
+		if (context.Direction == TradeDirections.Flat && position == 0m && context.PreviousK is decimal prevK && context.PreviousD is decimal prevD)
 		{
 			var buySignal = currentK < OversoldLevel && prevK < prevD && currentK > currentD;
 			var sellSignal = currentK > OverboughtLevel && prevK > prevD && currentK < currentD;
@@ -355,7 +355,7 @@ public class YtgMultiStochStrategy : Strategy
 				context.EntryPrice = candle.ClosePrice;
 				context.StopLossPrice = StopLossPips > 0m && pip > 0m ? candle.ClosePrice - StopLossPips * pip : null;
 				context.TakeProfitPrice = TakeProfitPips > 0m && pip > 0m ? candle.ClosePrice + TakeProfitPips * pip : null;
-				context.Direction = TradeDirection.Long;
+				context.Direction = TradeDirections.Long;
 			}
 			else if (sellSignal && TradeVolume > 0m)
 			{
@@ -366,7 +366,7 @@ public class YtgMultiStochStrategy : Strategy
 				context.EntryPrice = candle.ClosePrice;
 				context.StopLossPrice = StopLossPips > 0m && pip > 0m ? candle.ClosePrice + StopLossPips * pip : null;
 				context.TakeProfitPrice = TakeProfitPips > 0m && pip > 0m ? candle.ClosePrice - TakeProfitPips * pip : null;
-				context.Direction = TradeDirection.Short;
+				context.Direction = TradeDirections.Short;
 			}
 		}
 
@@ -459,7 +459,7 @@ public class YtgMultiStochStrategy : Strategy
 		return step;
 	}
 
-	private enum TradeDirection
+	private enum TradeDirections
 	{
 		Flat,
 		Long,
@@ -481,14 +481,14 @@ public class YtgMultiStochStrategy : Strategy
 		public decimal? StopLossPrice { get; set; }
 		public decimal? TakeProfitPrice { get; set; }
 		public decimal? EntryPrice { get; set; }
-		public TradeDirection Direction { get; set; } = TradeDirection.Flat;
+		public TradeDirections Direction { get; set; } = TradeDirections.Flat;
 
 		public void ResetTargets()
 		{
 			StopLossPrice = null;
 			TakeProfitPrice = null;
 			EntryPrice = null;
-			Direction = TradeDirection.Flat;
+			Direction = TradeDirections.Flat;
 		}
 	}
 }

@@ -19,12 +19,12 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class DailyStpEntryFrameStrategy : Strategy
 {
-	private enum EntrySide
-	{
-		Short = -1,
-		Both = 0,
-		Long = 1,
-	}
+private enum EntrySides
+{
+Short = -1,
+Both = 0,
+Long = 1,
+}
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _stopLossPoints;
@@ -247,7 +247,7 @@ public class DailyStpEntryFrameStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Trailing Slope", "Portion of profit retained when trailing is active", "Risk");
 
-		_sideFilter = Param(nameof(SideFilter), (int)EntrySide.Short)
+_sideFilter = Param(nameof(SideFilter), (int)EntrySides.Short)
 			.SetDisplay("Side Filter", "Allowed entry direction (-1 short, 0 both, 1 long)", "Signal");
 
 		_thresholdPoints = Param(nameof(ThresholdPoints), 5m)
@@ -667,18 +667,18 @@ public class DailyStpEntryFrameStrategy : Strategy
 
 	private bool AllowsLongEntries()
 	{
-		return GetEntrySide() != EntrySide.Short;
+return GetEntrySide() != EntrySides.Short;
 	}
 
 	private bool AllowsShortEntries()
 	{
-		return GetEntrySide() != EntrySide.Long;
+return GetEntrySide() != EntrySides.Long;
 	}
 
-	private EntrySide GetEntrySide()
-	{
-		return Enum.IsDefined(typeof(EntrySide), SideFilter) ? (EntrySide)SideFilter : EntrySide.Both;
-	}
+private EntrySides GetEntrySide()
+{
+return Enum.IsDefined(typeof(EntrySides), SideFilter) ? (EntrySides)SideFilter : EntrySides.Both;
+}
 
 	private bool IsTradingDay(DateTimeOffset time)
 	{

@@ -22,7 +22,7 @@ namespace StockSharp.Samples.Strategies;
 public class FuturePatternMemoryStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<PatternSource> _source;
+	private readonly StrategyParam<PatternSources> _source;
 	private readonly StrategyParam<int> _fastMaLength;
 	private readonly StrategyParam<int> _slowMaLength;
 	private readonly StrategyParam<int> _macdFastLength;
@@ -66,7 +66,7 @@ public class FuturePatternMemoryStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe for pattern detection", "General");
 
-		_source = Param(nameof(Source), PatternSource.MaSpread)
+		_source = Param(nameof(Source), PatternSources.MaSpread)
 		.SetDisplay("Pattern Source", "Indicator used to build pattern signatures", "Pattern Memory");
 
 		_fastMaLength = Param(nameof(FastMaLength), 6)
@@ -140,7 +140,7 @@ public class FuturePatternMemoryStrategy : Strategy
 	/// <summary>
 	/// Indicator used to build the pattern signature.
 	/// </summary>
-	public PatternSource Source
+	public PatternSources Source
 	{
 		get => _source.Value;
 		set => _source.Value = value;
@@ -379,7 +379,7 @@ public class FuturePatternMemoryStrategy : Strategy
 
 		switch (Source)
 		{
-		case PatternSource.MaSpread:
+		case PatternSources.MaSpread:
 			{
 				var median = (candle.HighPrice + candle.LowPrice) / 2m;
 				var fastValue = _fastSmma.Process(median, candle.OpenTime, true);
@@ -392,7 +392,7 @@ public class FuturePatternMemoryStrategy : Strategy
 				break;
 			}
 
-		case PatternSource.MacdHistogram:
+		case PatternSources.MacdHistogram:
 			{
 				var macdValue = (MovingAverageConvergenceDivergenceSignalValue)_macd.Process(candle.ClosePrice, candle.OpenTime, true);
 
@@ -732,7 +732,7 @@ public class FuturePatternMemoryStrategy : Strategy
 	/// <summary>
 	/// Data source used to build pattern hashes.
 	/// </summary>
-	public enum PatternSource
+	public enum PatternSources
 	{
 		/// <summary>
 		/// Use the spread between slow and fast SMMAs.

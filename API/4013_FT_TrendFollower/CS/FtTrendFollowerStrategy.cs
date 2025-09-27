@@ -712,20 +712,20 @@ ProcessExitModules(candle, channelHigh, channelLow);
 		}
 	}
 
-	private void UpdateLaguerreStates(TrendDirection trend, decimal laguerreValue, decimal close, decimal low, decimal high, decimal fastestGmma, decimal slowestGmma)
+	private void UpdateLaguerreStates(TrendDirections trend, decimal laguerreValue, decimal close, decimal low, decimal high, decimal fastestGmma, decimal slowestGmma)
 	{
-		if (trend == TrendDirection.Up && close > slowestGmma && low < fastestGmma && laguerreValue < LaguerreOversold)
+		if (trend == TrendDirections.Up && close > slowestGmma && low < fastestGmma && laguerreValue < LaguerreOversold)
 			_laguerreArmedLong = true;
 
-		if (trend == TrendDirection.Down && close < slowestGmma && high > fastestGmma && laguerreValue > LaguerreOverbought)
+		if (trend == TrendDirections.Down && close < slowestGmma && high > fastestGmma && laguerreValue > LaguerreOverbought)
 			_laguerreArmedShort = true;
 	}
 
-	private void UpdateEmaStates(TrendDirection trend, decimal emaFastValue, decimal emaSlowValue)
+	private void UpdateEmaStates(TrendDirections trend, decimal emaFastValue, decimal emaSlowValue)
 	{
-		if (trend == TrendDirection.Up && emaFastValue < emaSlowValue)
+		if (trend == TrendDirections.Up && emaFastValue < emaSlowValue)
 			_emaArmedLong = true;
-		if (trend == TrendDirection.Down && emaFastValue > emaSlowValue)
+		if (trend == TrendDirections.Down && emaFastValue > emaSlowValue)
 			_emaArmedShort = true;
 	}
 
@@ -772,7 +772,7 @@ ProcessExitModules(candle, channelHigh, channelLow);
 		return (up, down);
 	}
 
-	private TrendDirection DetermineTrend(decimal[] gmmaValues)
+	private TrendDirections DetermineTrend(decimal[] gmmaValues)
 	{
 		var total = gmmaValues.Length;
 		var group = BandsPerGroup;
@@ -780,16 +780,16 @@ ProcessExitModules(candle, channelHigh, channelLow);
 		var bIndex = total - group;
 
 		if (aIndex < 0 || bIndex < 0 || aIndex >= total || bIndex >= total)
-			return TrendDirection.Flat;
+			return TrendDirections.Flat;
 
 		var slow = gmmaValues[bIndex];
 		var slower = gmmaValues[aIndex];
 
 		if (slower > slow)
-			return TrendDirection.Up;
+			return TrendDirections.Up;
 		if (slower < slow)
-			return TrendDirection.Down;
-		return TrendDirection.Flat;
+			return TrendDirections.Down;
+		return TrendDirections.Flat;
 	}
 
 	private void UpdateGmmaHistory(decimal[] currentValues)
@@ -927,7 +927,7 @@ ProcessExitModules(candle, channelHigh, channelLow);
 			throw new InvalidOperationException("Enable only one exit module at a time.");
 	}
 
-	private enum TrendDirection
+	private enum TrendDirections
 	{
 		Flat,
 		Up,

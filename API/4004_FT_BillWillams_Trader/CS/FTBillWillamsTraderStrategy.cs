@@ -23,14 +23,14 @@ public class FTBillWillamsTraderStrategy : Strategy
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<int> _fractalPeriod;
 	private readonly StrategyParam<int> _indentPoints;
-	private readonly StrategyParam<EntryMode> _entryMode;
+	private readonly StrategyParam<EntryModes> _entryMode;
 	private readonly StrategyParam<bool> _useTeethFilter;
 	private readonly StrategyParam<int> _maxDistancePoints;
 	private readonly StrategyParam<bool> _useTrendAlignment;
 	private readonly StrategyParam<int> _jawTeethDistancePoints;
 	private readonly StrategyParam<int> _teethLipsDistancePoints;
-	private readonly StrategyParam<JawExitMode> _jawExitMode;
-	private readonly StrategyParam<ReverseExitMode> _reverseExitMode;
+	private readonly StrategyParam<JawExitModes> _jawExitMode;
+	private readonly StrategyParam<ReverseExitModes> _reverseExitMode;
 	private readonly StrategyParam<bool> _enableTrailing;
 	private readonly StrategyParam<int> _slopeSmaPeriod;
 	private readonly StrategyParam<decimal> _stopLossPoints;
@@ -41,7 +41,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 	private readonly StrategyParam<int> _teethShift;
 	private readonly StrategyParam<int> _lipsPeriod;
 	private readonly StrategyParam<int> _lipsShift;
-	private readonly StrategyParam<MovingAverageMethod> _maMethod;
+	private readonly StrategyParam<MovingAverageMethods> _maMethod;
 	private readonly StrategyParam<CandlePrice> _appliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -107,7 +107,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 	/// <summary>
 	/// Breakout confirmation method.
 	/// </summary>
-	public EntryMode EntryConfirmation
+	public EntryModes EntryConfirmation
 	{
 		get => _entryMode.Value;
 		set => _entryMode.Value = value;
@@ -161,7 +161,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 	/// <summary>
 	/// Exit mode when price falls back to the Alligator jaw.
 	/// </summary>
-	public JawExitMode JawExit
+	public JawExitModes JawExit
 	{
 		get => _jawExitMode.Value;
 		set => _jawExitMode.Value = value;
@@ -170,7 +170,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 	/// <summary>
 	/// Exit mode triggered by opposite signals.
 	/// </summary>
-	public ReverseExitMode ReverseExit
+	public ReverseExitModes ReverseExit
 	{
 		get => _reverseExitMode.Value;
 		set => _reverseExitMode.Value = value;
@@ -269,7 +269,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 	/// <summary>
 	/// Moving-average algorithm used for all Alligator lines.
 	/// </summary>
-	public MovingAverageMethod MaMethod
+	public MovingAverageMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -310,7 +310,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 		.SetRange(0, 1000)
 		.SetDisplay("Indent", "Points added to the breakout price", "Signals");
 
-		_entryMode = Param(nameof(EntryConfirmation), EntryMode.CloseBreakout)
+		_entryMode = Param(nameof(EntryConfirmation), EntryModes.CloseBreakout)
 		.SetDisplay("Entry Mode", "Breakout confirmation method", "Trading");
 
 		_useTeethFilter = Param(nameof(UseTeethFilter), true)
@@ -331,10 +331,10 @@ public class FTBillWillamsTraderStrategy : Strategy
 		.SetRange(0, 1000)
 		.SetDisplay("Teeth-Lips Distance", "Minimum gap between teeth and lips", "Filters");
 
-		_jawExitMode = Param(nameof(JawExit), JawExitMode.CloseCross)
+		_jawExitMode = Param(nameof(JawExit), JawExitModes.CloseCross)
 		.SetDisplay("Jaw Exit", "Exit condition when price crosses the jaw", "Risk Management");
 
-		_reverseExitMode = Param(nameof(ReverseExit), ReverseExitMode.OppositePosition)
+		_reverseExitMode = Param(nameof(ReverseExit), ReverseExitModes.OppositePosition)
 		.SetDisplay("Reverse Exit", "Exit behavior on opposite signals", "Risk Management");
 
 		_enableTrailing = Param(nameof(EnableTrailing), true)
@@ -376,7 +376,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 		.SetRange(0, 30)
 		.SetDisplay("Lips Shift", "Forward shift of the lips line", "Alligator");
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.Simple)
+		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Simple)
 		.SetDisplay("MA Method", "Moving-average type used for Alligator lines", "Alligator");
 
 		_appliedPrice = Param(nameof(AppliedPrice), CandlePrice.Median)
@@ -571,9 +571,9 @@ public class FTBillWillamsTraderStrategy : Strategy
 				return;
 			}
 
-			if (JawExit != JawExitMode.Disabled && hasJaw)
+			if (JawExit != JawExitModes.Disabled && hasJaw)
 			{
-				var threshold = JawExit == JawExitMode.PriceCross ? candle.LowPrice : candle.ClosePrice;
+				var threshold = JawExit == JawExitModes.PriceCross ? candle.LowPrice : candle.ClosePrice;
 				if (threshold <= jawPrev)
 				{
 					CloseLong();
@@ -606,7 +606,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 				}
 			}
 
-			if (ReverseExit == ReverseExitMode.OppositeFractal && _newDownFractal)
+			if (ReverseExit == ReverseExitModes.OppositeFractal && _newDownFractal)
 			{
 				CloseLong();
 				_newDownFractal = false;
@@ -621,9 +621,9 @@ public class FTBillWillamsTraderStrategy : Strategy
 				return;
 			}
 
-			if (JawExit != JawExitMode.Disabled && hasJaw)
+			if (JawExit != JawExitModes.Disabled && hasJaw)
 			{
-				var threshold = JawExit == JawExitMode.PriceCross ? candle.HighPrice : candle.ClosePrice;
+				var threshold = JawExit == JawExitModes.PriceCross ? candle.HighPrice : candle.ClosePrice;
 				if (threshold >= jawPrev)
 				{
 					CloseShort();
@@ -656,7 +656,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 				}
 			}
 
-			if (ReverseExit == ReverseExitMode.OppositeFractal && _newUpFractal)
+			if (ReverseExit == ReverseExitModes.OppositeFractal && _newUpFractal)
 			{
 				CloseShort();
 				_newUpFractal = false;
@@ -681,8 +681,8 @@ public class FTBillWillamsTraderStrategy : Strategy
 
 		var breakout = EntryConfirmation switch
 		{
-			EntryMode.PriceBreakout => candle.HighPrice > buyLevel,
-			EntryMode.CloseBreakout => _previousClose is decimal prev && prev > buyLevel,
+			EntryModes.PriceBreakout => candle.HighPrice > buyLevel,
+			EntryModes.CloseBreakout => _previousClose is decimal prev && prev > buyLevel,
 			_ => false,
 		};
 
@@ -709,7 +709,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 			return;
 		}
 
-		if (Position < 0 && ReverseExit == ReverseExitMode.OppositePosition)
+		if (Position < 0 && ReverseExit == ReverseExitModes.OppositePosition)
 		{
 			CloseShort();
 		}
@@ -740,8 +740,8 @@ public class FTBillWillamsTraderStrategy : Strategy
 
 		var breakout = EntryConfirmation switch
 		{
-			EntryMode.PriceBreakout => candle.LowPrice < sellLevel,
-			EntryMode.CloseBreakout => _previousClose is decimal prev && prev < sellLevel,
+			EntryModes.PriceBreakout => candle.LowPrice < sellLevel,
+			EntryModes.CloseBreakout => _previousClose is decimal prev && prev < sellLevel,
 			_ => false,
 		};
 
@@ -768,7 +768,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 			return;
 		}
 
-		if (Position > 0 && ReverseExit == ReverseExitMode.OppositePosition)
+		if (Position > 0 && ReverseExit == ReverseExitModes.OppositePosition)
 		{
 			CloseLong();
 		}
@@ -949,14 +949,14 @@ public class FTBillWillamsTraderStrategy : Strategy
 		return Math.Abs(first - second) <= _point / 2m;
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethod method, int length)
+	private LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		LengthIndicator<decimal> indicator = method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 
@@ -966,7 +966,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 	/// <summary>
 	/// Breakout confirmation methods.
 	/// </summary>
-	public enum EntryMode
+	public enum EntryModes
 	{
 		/// <summary>
 		/// Confirm using intrabar high/low penetration.
@@ -982,7 +982,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 	/// <summary>
 	/// Jaw exit options.
 	/// </summary>
-	public enum JawExitMode
+	public enum JawExitModes
 	{
 		/// <summary>
 		/// Do not close positions when price crosses the jaw.
@@ -1003,7 +1003,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 	/// <summary>
 	/// Reverse signal exit options.
 	/// </summary>
-	public enum ReverseExitMode
+	public enum ReverseExitModes
 	{
 		/// <summary>
 		/// Ignore opposite signals.
@@ -1024,7 +1024,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 	/// <summary>
 	/// Moving-average types supported by the original expert advisor.
 	/// </summary>
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		/// <summary>
 		/// Simple moving average.

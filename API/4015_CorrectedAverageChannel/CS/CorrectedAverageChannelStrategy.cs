@@ -26,7 +26,7 @@ public class CorrectedAverageChannelStrategy : Strategy
 	private readonly StrategyParam<int> _trailingPoints;
 	private readonly StrategyParam<int> _trailingStepPoints;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<MaType> _maType;
+	private readonly StrategyParam<MaTypes> _maType;
 	private readonly StrategyParam<int> _sigmaBuyPoints;
 	private readonly StrategyParam<int> _sigmaSellPoints;
 	private readonly StrategyParam<DataType> _candleType;
@@ -111,7 +111,7 @@ public class CorrectedAverageChannelStrategy : Strategy
 	/// <summary>
 	/// Moving average type replicated from the MetaTrader input.
 	/// </summary>
-	public MaType MaTypeOption
+	public MaTypes MaTypesOption
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -179,7 +179,7 @@ public class CorrectedAverageChannelStrategy : Strategy
 			.SetDisplay("MA Period", "Period of the moving average and standard deviation", "Indicator")
 			.SetCanOptimize(true);
 
-		_maType = Param(nameof(MaTypeOption), MaType.Sma)
+		_maType = Param(nameof(MaTypesOption), MaTypes.Sma)
 			.SetDisplay("MA Type", "Moving average type used inside the Corrected Average", "Indicator");
 
 		_sigmaBuyPoints = Param(nameof(SigmaBuyPoints), 5)
@@ -233,7 +233,7 @@ public class CorrectedAverageChannelStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_ma = CreateMa(MaTypeOption, MaPeriod);
+		_ma = CreateMa(MaTypesOption, MaPeriod);
 		_std = new StandardDeviation
 		{
 			Length = MaPeriod
@@ -506,14 +506,14 @@ public class CorrectedAverageChannelStrategy : Strategy
 		return points * _priceStep;
 	}
 
-	private static LengthIndicator<decimal> CreateMa(MaType type, int length)
+	private static LengthIndicator<decimal> CreateMa(MaTypes type, int length)
 	{
 		return type switch
 		{
-			MaType.Sma => new SimpleMovingAverage { Length = length },
-			MaType.Ema => new ExponentialMovingAverage { Length = length },
-			MaType.Smma => new SmoothedMovingAverage { Length = length },
-			MaType.Lwma => new WeightedMovingAverage { Length = length },
+			MaTypes.Sma => new SimpleMovingAverage { Length = length },
+			MaTypes.Ema => new ExponentialMovingAverage { Length = length },
+			MaTypes.Smma => new SmoothedMovingAverage { Length = length },
+			MaTypes.Lwma => new WeightedMovingAverage { Length = length },
 			_ => throw new ArgumentOutOfRangeException(nameof(type))
 		};
 	}
@@ -521,7 +521,7 @@ public class CorrectedAverageChannelStrategy : Strategy
 	/// <summary>
 	/// Supported moving average types.
 	/// </summary>
-	public enum MaType
+	public enum MaTypes
 	{
 		Sma,
 		Ema,
