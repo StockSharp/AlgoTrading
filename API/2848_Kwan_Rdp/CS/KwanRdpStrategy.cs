@@ -25,7 +25,7 @@ public class KwanRdpStrategy : Strategy
 	private readonly StrategyParam<int> _mfiPeriod;
 	private readonly StrategyParam<int> _momentumPeriod;
 	private readonly StrategyParam<int> _smoothingLength;
-	private readonly StrategyParam<SmoothingMethod> _smoothingMethod;
+	private readonly StrategyParam<SmoothingMethods> _smoothingMethod;
 	private readonly StrategyParam<bool> _buyEntriesEnabled;
 	private readonly StrategyParam<bool> _sellEntriesEnabled;
 	private readonly StrategyParam<bool> _closeLongsOnShortSignal;
@@ -41,7 +41,7 @@ public class KwanRdpStrategy : Strategy
 	private decimal? _previousHigh;
 	private decimal? _previousLow;
 	private decimal? _previousSmoothed;
-	private TrendDirection? _previousTrend;
+	private TrendDirections? _previousTrend;
 
 	/// <summary>
 	/// The candle type used for indicator calculations.
@@ -91,7 +91,7 @@ public class KwanRdpStrategy : Strategy
 	/// <summary>
 	/// Smoothing method applied to the KWAN RDP oscillator.
 	/// </summary>
-	public SmoothingMethod Smoothing
+	public SmoothingMethods Smoothing
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -183,7 +183,7 @@ public class KwanRdpStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(3, 20, 1);
 
-		_smoothingMethod = Param(nameof(Smoothing), SmoothingMethod.Jurik)
+		_smoothingMethod = Param(nameof(Smoothing), SmoothingMethods.Jurik)
 		.SetDisplay("Smoothing Method", "Moving average used for KWAN RDP", "Indicators");
 
 		_buyEntriesEnabled = Param(nameof(EnableLongEntries), true)
@@ -283,7 +283,7 @@ public class KwanRdpStrategy : Strategy
 
 		if (previousValue is null)
 		{
-			_previousTrend = TrendDirection.Neutral;
+			_previousTrend = TrendDirections.Neutral;
 			return;
 		}
 
@@ -322,57 +322,57 @@ public class KwanRdpStrategy : Strategy
 		return denominator == 0m ? 0m : maxAvg / denominator;
 	}
 
-	private void GenerateSignals(TrendDirection currentTrend)
+	private void GenerateSignals(TrendDirections currentTrend)
 	{
-		var previousTrend = _previousTrend ?? TrendDirection.Neutral;
+		var previousTrend = _previousTrend ?? TrendDirections.Neutral;
 
-		if (currentTrend == TrendDirection.Rising)
+		if (currentTrend == TrendDirections.Rising)
 		{
 			if (CloseShortsOnReverse && Position < 0)
 			ClosePosition();
 
-			if (EnableLongEntries && previousTrend != TrendDirection.Rising && Position <= 0)
+			if (EnableLongEntries && previousTrend != TrendDirections.Rising && Position <= 0)
 			BuyMarket();
 		}
-		else if (currentTrend == TrendDirection.Falling)
+		else if (currentTrend == TrendDirections.Falling)
 		{
 			if (CloseLongsOnReverse && Position > 0)
 			ClosePosition();
 
-			if (EnableShortEntries && previousTrend != TrendDirection.Falling && Position >= 0)
+			if (EnableShortEntries && previousTrend != TrendDirections.Falling && Position >= 0)
 			SellMarket();
 		}
 
 		_previousTrend = currentTrend;
 	}
 
-	private static LengthIndicator<decimal> CreateSmoother(SmoothingMethod method, int length)
+	private static LengthIndicator<decimal> CreateSmoother(SmoothingMethods method, int length)
 	{
 		return method switch
 		{
-			SmoothingMethod.Simple => new SMA { Length = length },
-			SmoothingMethod.Exponential => new EMA { Length = length },
-			SmoothingMethod.Smoothed => new SMMA { Length = length },
-			SmoothingMethod.Weighted => new WMA { Length = length },
+			SmoothingMethods.Simple => new SMA { Length = length },
+			SmoothingMethods.Exponential => new EMA { Length = length },
+			SmoothingMethods.Smoothed => new SMMA { Length = length },
+			SmoothingMethods.Weighted => new WMA { Length = length },
 			_ => new JurikMovingAverage { Length = length },
 		};
 	}
 
-	private static TrendDirection DetermineTrend(decimal previous, decimal current)
+	private static TrendDirections DetermineTrend(decimal previous, decimal current)
 	{
 		if (current > previous)
-		return TrendDirection.Rising;
+		return TrendDirections.Rising;
 
 		if (current < previous)
-		return TrendDirection.Falling;
+		return TrendDirections.Falling;
 
-		return TrendDirection.Neutral;
+		return TrendDirections.Neutral;
 	}
 
 	/// <summary>
 	/// Supported smoothing methods for KWAN RDP.
 	/// </summary>
-	public enum SmoothingMethod
+	public enum SmoothingMethods
 	{
 		Simple,
 		Exponential,
@@ -381,7 +381,7 @@ public class KwanRdpStrategy : Strategy
 		Jurik,
 	}
 
-	private enum TrendDirection
+	private enum TrendDirections
 	{
 		Neutral,
 		Rising,

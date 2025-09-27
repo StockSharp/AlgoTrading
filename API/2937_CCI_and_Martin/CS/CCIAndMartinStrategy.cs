@@ -21,7 +21,7 @@ public class CCIAndMartinStrategy : Strategy
 	/// <summary>
 	/// Step increment behaviour for volume adjustments.
 	/// </summary>
-	public enum StepMode
+	public enum StepModes
 	{
 		/// <summary>
 		/// Increase volume after a losing trade.
@@ -48,7 +48,7 @@ public class CCIAndMartinStrategy : Strategy
 	private readonly StrategyParam<bool> _enableStepAdjustments;
 	private readonly StrategyParam<decimal> _stepVolumeIncrement;
 	private readonly StrategyParam<decimal> _stepVolumeMax;
-	private readonly StrategyParam<StepMode> _stepAdjustmentMode;
+	private readonly StrategyParam<StepModes> _stepAdjustmentMode;
 
 	private CommodityChannelIndex _cci = null!;
 	private readonly List<decimal> _cciBuffer = new();
@@ -128,7 +128,7 @@ public class CCIAndMartinStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Step Volume Cap", "Maximum allowed volume when step rule is active", "Volume Management");
 
-		_stepAdjustmentMode = Param(nameof(StepAdjustmentMode), StepMode.Loss)
+		_stepAdjustmentMode = Param(nameof(StepAdjustmentMode), StepModes.Loss)
 			.SetDisplay("Step Mode", "Condition that increases position size", "Volume Management");
 	}
 
@@ -261,7 +261,7 @@ public class CCIAndMartinStrategy : Strategy
 	/// <summary>
 	/// Determines whether step adjustments react to losses or profits.
 	/// </summary>
-	public StepMode StepAdjustmentMode
+	public StepModes StepAdjustmentMode
 	{
 		get => _stepAdjustmentMode.Value;
 		set => _stepAdjustmentMode.Value = value;
@@ -557,7 +557,7 @@ public class CCIAndMartinStrategy : Strategy
 	{
 	var candidate = NormalizeVolume(_currentVolume + StepVolumeIncrement);
 
-	if (StepAdjustmentMode == StepMode.Loss)
+	if (StepAdjustmentMode == StepModes.Loss)
 	{
 	if (!isProfit)
 	{

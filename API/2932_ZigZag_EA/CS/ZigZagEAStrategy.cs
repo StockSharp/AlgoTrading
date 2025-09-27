@@ -23,8 +23,8 @@ public class ZigZagEAStrategy : Strategy
 	private readonly StrategyParam<int> _entryOffsetPips;
 	private readonly StrategyParam<int> _minCorridorPips;
 	private readonly StrategyParam<int> _maxCorridorPips;
-	private readonly StrategyParam<FiboLevel> _fiboStopLoss;
-	private readonly StrategyParam<FiboLevel> _fiboTakeProfit;
+	private readonly StrategyParam<FiboLevels> _fiboStopLoss;
+	private readonly StrategyParam<FiboLevels> _fiboTakeProfit;
 	private readonly StrategyParam<int> _startHour;
 	private readonly StrategyParam<int> _startMinute;
 	private readonly StrategyParam<int> _stopHour;
@@ -103,7 +103,7 @@ public class ZigZagEAStrategy : Strategy
 	/// <summary>
 	/// Fibonacci level for the stop loss distance.
 	/// </summary>
-	public FiboLevel FiboStopLoss
+	public FiboLevels FiboStopLoss
 	{
 		get => _fiboStopLoss.Value;
 		set => _fiboStopLoss.Value = value;
@@ -112,7 +112,7 @@ public class ZigZagEAStrategy : Strategy
 	/// <summary>
 	/// Fibonacci level for the take profit distance.
 	/// </summary>
-	public FiboLevel FiboTakeProfit
+	public FiboLevels FiboTakeProfit
 	{
 		get => _fiboTakeProfit.Value;
 		set => _fiboTakeProfit.Value = value;
@@ -201,10 +201,10 @@ public class ZigZagEAStrategy : Strategy
 			.SetDisplay("Max Corridor", "Upper bound for swing range", "Orders")
 			.SetNotNegative()
 			.SetCanOptimize(true);
-		_fiboStopLoss = Param(nameof(FiboStopLoss), FiboLevel.Level61_8)
+		_fiboStopLoss = Param(nameof(FiboStopLoss), FiboLevels.Level61_8)
 			.SetDisplay("Stop Loss Fibo", "Fibonacci ratio for stop distance", "Risk")
 			.SetCanOptimize(true);
-		_fiboTakeProfit = Param(nameof(FiboTakeProfit), FiboLevel.Level161_8)
+		_fiboTakeProfit = Param(nameof(FiboTakeProfit), FiboLevels.Level161_8)
 			.SetDisplay("Take Profit Fibo", "Fibonacci ratio for target", "Risk")
 			.SetCanOptimize(true);
 		_startHour = Param(nameof(StartHour), 0)
@@ -616,7 +616,7 @@ public class ZigZagEAStrategy : Strategy
 		return (bits[3] >> 16) & 0xFF;
 	}
 
-	private static decimal GetFiboValue(FiboLevel level)
+	private static decimal GetFiboValue(FiboLevels level)
 		=> (decimal)level / 10m;
 
 	/// <inheritdoc />
@@ -627,7 +627,7 @@ public class ZigZagEAStrategy : Strategy
 		base.OnStopped();
 	}
 
-	public enum FiboLevel
+	public enum FiboLevels
 	{
 		Level0_0 = 0,
 		Level23_6 = 236,

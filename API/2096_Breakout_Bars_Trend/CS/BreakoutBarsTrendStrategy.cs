@@ -20,20 +20,20 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BreakoutBarsTrendStrategy : Strategy
 {
-	public enum ReversalMode
+	public enum ReversalModes
 	{
 		Pips,
 		Percent,
 	}
 
-	private enum TrendDirection
+	private enum TrendDirections
 	{
 		Down = -1,
 		None = 0,
 		Up = 1,
 	}
 
-	private readonly StrategyParam<ReversalMode> _reversalMode;
+	private readonly StrategyParam<ReversalModes> _reversalMode;
 	private readonly StrategyParam<decimal> _delta;
 	private readonly StrategyParam<int> _negatives;
 	private readonly StrategyParam<decimal> _stopLoss;
@@ -42,14 +42,14 @@ public class BreakoutBarsTrendStrategy : Strategy
 
 	private decimal _entryPrice;
 	private decimal _lastReversalPrice;
-	private TrendDirection _lastTrend = TrendDirection.None;
+	private TrendDirections _lastTrend = TrendDirections.None;
 	private int _negativeCounter;
 	private bool _isLong;
 
 	/// <summary>
 	/// Calculation mode for distances.
 	/// </summary>
-	public ReversalMode Reversal
+	public ReversalModes Reversal
 	{
 		get => _reversalMode.Value;
 		set => _reversalMode.Value = value;
@@ -105,7 +105,7 @@ public class BreakoutBarsTrendStrategy : Strategy
 	/// </summary>
 	public BreakoutBarsTrendStrategy()
 	{
-		_reversalMode = Param(nameof(Reversal), ReversalMode.Percent)
+		_reversalMode = Param(nameof(Reversal), ReversalModes.Percent)
 			.SetDisplay("Reversal Mode", "Distance calculation type", "General");
 
 		_delta = Param(nameof(Delta), 1m)
@@ -149,7 +149,7 @@ public class BreakoutBarsTrendStrategy : Strategy
 
 		_entryPrice = 0m;
 		_lastReversalPrice = 0m;
-		_lastTrend = TrendDirection.None;
+		_lastTrend = TrendDirections.None;
 		_negativeCounter = 0;
 		_isLong = false;
 	}
@@ -182,13 +182,13 @@ public class BreakoutBarsTrendStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var trend = sarValue < candle.ClosePrice ? TrendDirection.Up : TrendDirection.Down;
+		var trend = sarValue < candle.ClosePrice ? TrendDirections.Up : TrendDirections.Down;
 
 		if (_lastTrend != trend)
 		{
-			if (_lastTrend != TrendDirection.None && _lastReversalPrice != 0m)
+			if (_lastTrend != TrendDirections.None && _lastReversalPrice != 0m)
 			{
-				var move = _lastTrend == TrendDirection.Up ? candle.ClosePrice - _lastReversalPrice : _lastReversalPrice - candle.ClosePrice;
+				var move = _lastTrend == TrendDirections.Up ? candle.ClosePrice - _lastReversalPrice : _lastReversalPrice - candle.ClosePrice;
 				if (move < 0)
 					_negativeCounter++;
 				else
@@ -198,18 +198,18 @@ public class BreakoutBarsTrendStrategy : Strategy
 			_lastReversalPrice = candle.ClosePrice;
 			_lastTrend = trend;
 
-			if ((trend == TrendDirection.Up && Position < 0) || (trend == TrendDirection.Down && Position > 0))
+			if ((trend == TrendDirections.Up && Position < 0) || (trend == TrendDirections.Down && Position > 0))
 				ClosePosition();
 
 			if (Negatives == 0 || _negativeCounter >= Negatives)
 			{
-				if (trend == TrendDirection.Up && Position <= 0)
+				if (trend == TrendDirections.Up && Position <= 0)
 				{
 					_entryPrice = candle.ClosePrice;
 					_isLong = true;
 					BuyMarket(Volume + Math.Abs(Position));
 				}
-				else if (trend == TrendDirection.Down && Position >= 0)
+				else if (trend == TrendDirections.Down && Position >= 0)
 				{
 					_entryPrice = candle.ClosePrice;
 					_isLong = false;
@@ -226,7 +226,7 @@ public class BreakoutBarsTrendStrategy : Strategy
 
 	private decimal GetDistance(decimal price, decimal value)
 	{
-		return Reversal == ReversalMode.Pips ? value * Security.PriceStep : price * value / 100m;
+		return Reversal == ReversalModes.Pips ? value * Security.PriceStep : price * value / 100m;
 	}
 
 	private void CheckRisk(decimal price)

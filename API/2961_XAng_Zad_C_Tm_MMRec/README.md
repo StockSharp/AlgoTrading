@@ -25,11 +25,11 @@ This strategy is a C# port of the MetaTrader expert advisor **Exp_XAng_Zad_C_Tm_
 | `TakeProfit` | Profit target distance expressed in multiples of `Security.PriceStep`. Set to `0` to disable. |
 | `SignalShift` | Number of already closed candles used for the crossover comparison. |
 | `CandleType` | Candle data type used for the indicator (default: 4-hour candles). |
-| `SmoothMethod` | Moving-average smoother inside the indicator. Unsupported values automatically use EMA. |
+| `SmoothMethods` | Moving-average smoother inside the indicator. Unsupported values automatically use EMA. |
 | `MaLength` | Smoothing length for the indicator. |
 | `MaPhase` | Additional phase parameter retained from the original indicator (currently informational). |
 | `Ki` | Ratio controlling how quickly the adaptive envelopes react to price changes. |
-| `AppliedPrice` | Price source used to feed the indicator (close, open, median, etc.). |
+| `AppliedPrices` | Price source used to feed the indicator (close, open, median, etc.). |
 
 ## Notes compared to the MQL5 version
 - MetaTrader money-management helpers relied on global trade history. The C# version tracks completed trades locally and applies the same trigger logic.

@@ -17,19 +17,19 @@ The indicator is calculated on an external timeframe and can optionally use diff
 4. Generate signals:
    * **Breakdown** – if the previous bar was above zero and the signal bar is below or equal to zero, open/flip long; if the previous bar was below zero and the signal bar is above or equal to zero, open/flip short. Optional exit flags close the opposite side when the previous bar crosses the zero line.
    * **Twist** – compare two previous bars; when momentum accelerates upward (previous &lt; older) and the signal bar confirms, open/flip long; when momentum accelerates downward (previous &gt; older) and the signal bar confirms, open/flip short. Optional exit flags close the opposite side on the same condition.
-5. Use `MoneyManagement` and `MarginMode` to size the position. Negative values mean fixed volume; positive values risk or allocate a fraction of the portfolio value. A simple time lock prevents immediate re-entries within the same candle.
+5. Use `MoneyManagement` and `MarginModes` to size the position. Negative values mean fixed volume; positive values risk or allocate a fraction of the portfolio value. A simple time lock prevents immediate re-entries within the same candle.
 
 ## Parameters
 | Group | Name | Description |
 |-------|------|-------------|
 | Trading | `MoneyManagement` | Share of capital for position sizing. Negative value = fixed volume. |
-| Trading | `MarginMode` | Interpretation of money management (`FreeMarginShare`, `BalanceShare`, `FreeMarginRisk`, `BalanceRisk`). Risk modes use stop-loss distance and `StepPrice`. |
+| Trading | `MarginModes` | Interpretation of money management (`FreeMarginShare`, `BalanceShare`, `FreeMarginRisk`, `BalanceRisk`). Risk modes use stop-loss distance and `StepPrice`. |
 | Risk | `StopLossPoints` | Stop-loss distance in instrument price steps (set `0` to disable). |
 | Risk | `TakeProfitPoints` | Take-profit distance in instrument price steps (set `0` to disable). |
 | Trading | `SlippagePoints` | Allowed slippage (kept for compatibility, not used for order placement). |
 | Trading | `EnableLongEntry`, `EnableShortEntry` | Allow opening long/short positions. |
 | Trading | `EnableLongExit`, `EnableShortExit` | Allow closing existing positions according to the indicator. |
-| Logic | `EntryMode` | `Breakdown` or `Twist`. |
+| Logic | `EntryModes` | `Breakdown` or `Twist`. |
 | Data | `CandleType` | Timeframe used for indicator calculations (default 4h). |
 | Indicator | `SmoothingMethod` | Moving-average method: `Simple`, `Exponential`, `Smoothed`, `LinearWeighted`, `Jurik`, `TripleExponential`, `Adaptive`. |
 | Indicator | `MomentumLength` | Raw momentum averaging depth (bars between the two price values). |

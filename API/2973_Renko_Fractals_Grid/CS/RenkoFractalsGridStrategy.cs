@@ -615,7 +615,7 @@ public class RenkoFractalsGridStrategy : Strategy
 		return _macd.IsFormed;
 	}
 
-	private void TryEnterLong(ICandleMessage candle, decimal fastMa, decimal slowMa, RenkoDirection renkoDirection, decimal macdMain, decimal macdSignal)
+	private void TryEnterLong(ICandleMessage candle, decimal fastMa, decimal slowMa, RenkoDirections renkoDirection, decimal macdMain, decimal macdSignal)
 	{
 		if (_upFractal is not decimal upFractal)
 		return;
@@ -630,7 +630,7 @@ public class RenkoFractalsGridStrategy : Strategy
 		if (fastMa <= slowMa)
 		return;
 
-		if (renkoDirection != RenkoDirection.Up)
+		if (renkoDirection != RenkoDirections.Up)
 		return;
 
 		if (!(_close2 <= upFractal || _close3 <= upFractal || _close4 <= upFractal))
@@ -659,7 +659,7 @@ public class RenkoFractalsGridStrategy : Strategy
 		_activeTrades++;
 	}
 
-	private void TryEnterShort(ICandleMessage candle, decimal fastMa, decimal slowMa, RenkoDirection renkoDirection, decimal macdMain, decimal macdSignal)
+	private void TryEnterShort(ICandleMessage candle, decimal fastMa, decimal slowMa, RenkoDirections renkoDirection, decimal macdMain, decimal macdSignal)
 	{
 		if (_downFractal is not decimal downFractal)
 		return;
@@ -674,7 +674,7 @@ public class RenkoFractalsGridStrategy : Strategy
 		if (fastMa >= slowMa)
 		return;
 
-		if (renkoDirection != RenkoDirection.Down)
+		if (renkoDirection != RenkoDirections.Down)
 		return;
 
 		if (!(_close2 >= downFractal || _close3 >= downFractal || _close4 >= downFractal))
@@ -831,22 +831,22 @@ public class RenkoFractalsGridStrategy : Strategy
 		}
 	}
 
-	private RenkoDirection EvaluateRenkoDirection(decimal closePrice, decimal atr)
+	private RenkoDirections EvaluateRenkoDirection(decimal closePrice, decimal atr)
 	{
 		var threshold = UseAtrFilter ? atr : ToPrice(BoxSizePips);
 		if (threshold <= 0m || _recentCount == 0)
-		return RenkoDirection.None;
+		return RenkoDirections.None;
 
 		for (var i = 0; i < _recentCount; i++)
 		{
 			if (closePrice - _recentLows[i] >= threshold)
-			return RenkoDirection.Up;
+			return RenkoDirections.Up;
 
 			if (_recentHighs[i] - closePrice >= threshold)
-			return RenkoDirection.Down;
+			return RenkoDirections.Down;
 		}
 
-		return RenkoDirection.None;
+		return RenkoDirections.None;
 	}
 
 	private decimal GetNextTradeVolume()
@@ -997,7 +997,7 @@ public class RenkoFractalsGridStrategy : Strategy
 		}
 	}
 
-	private enum RenkoDirection
+	private enum RenkoDirections
 	{
 		None,
 		Up,

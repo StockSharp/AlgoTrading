@@ -40,7 +40,7 @@ older values for confirmation. Set `SignalBar` to at least `1` because the conve
 - `First/Second/ThirdSmoothingLength` – EMA depths for the cascading momentum filters.
 - `SignalSmoothingLength` – EMA depth for the signal line.
 - `SignalBar` – index of the completed bar used to read signals (minimum `1`).
-- `AppliedPrice` – price source feeding the oscillator (close, open, median, typical, weighted, etc.).
+- `AppliedPrices` – price source feeding the oscillator (close, open, median, typical, weighted, etc.).
 - `AllowBuyEntry`, `AllowSellEntry`, `AllowBuyExit`, `AllowSellExit` – enable or disable specific operations.
 - `StopLossPoints`, `TakeProfitPoints` – protective distances in points (converted via `Security.PriceStep`).
 

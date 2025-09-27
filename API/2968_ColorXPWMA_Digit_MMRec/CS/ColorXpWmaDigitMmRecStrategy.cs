@@ -21,10 +21,10 @@ public class ColorXpWmaDigitMmRecStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _indicatorPeriod;
 	private readonly StrategyParam<decimal> _indicatorPower;
-	private readonly StrategyParam<SmoothMethod> _smoothingMethod;
+	private readonly StrategyParam<SmoothMethods> _smoothingMethod;
 	private readonly StrategyParam<int> _smoothingLength;
 	private readonly StrategyParam<int> _smoothingPhase;
-	private readonly StrategyParam<AppliedPrice> _appliedPrice;
+	private readonly StrategyParam<AppliedPrices> _appliedPrice;
 	private readonly StrategyParam<int> _roundingDigits;
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<bool> _enableBuyEntries;
@@ -68,7 +68,7 @@ public class ColorXpWmaDigitMmRecStrategy : Strategy
 			.SetDisplay("Power", "Exponent applied to weights", "Indicator")
 			.SetCanOptimize(true);
 
-		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothMethod.Sma)
+		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothMethods.Sma)
 			.SetDisplay("Smoothing Method", "Moving average applied to PWMA", "Indicator");
 
 		_smoothingLength = Param(nameof(SmoothingLength), 5)
@@ -80,7 +80,7 @@ public class ColorXpWmaDigitMmRecStrategy : Strategy
 			.SetDisplay("Smoothing Phase", "Phase parameter for some smoothers", "Indicator")
 			.SetCanOptimize(true);
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPrice.Close)
+		_appliedPrice = Param(nameof(AppliedPrices), AppliedPrices.Close)
 			.SetDisplay("Applied Price", "Price source for the indicator", "Indicator");
 
 		_roundingDigits = Param(nameof(RoundingDigits), 2)
@@ -167,7 +167,7 @@ public class ColorXpWmaDigitMmRecStrategy : Strategy
 	/// <summary>
 	/// Smoothing method applied to the weighted average.
 	/// </summary>
-	public SmoothMethod SmoothingMethod
+	public SmoothMethods SmoothingMethod
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -194,7 +194,7 @@ public class ColorXpWmaDigitMmRecStrategy : Strategy
 	/// <summary>
 	/// Selected price source.
 	/// </summary>
-	public AppliedPrice AppliedPrice
+	public AppliedPrices AppliedPrices
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -344,7 +344,7 @@ public class ColorXpWmaDigitMmRecStrategy : Strategy
 			Method = SmoothingMethod,
 			SmoothingLength = SmoothingLength,
 			Phase = SmoothingPhase,
-			AppliedPrice = AppliedPrice,
+			AppliedPrices = AppliedPrices,
 			RoundingDigits = RoundingDigits,
 		};
 
@@ -579,7 +579,7 @@ public class ColorXpWmaDigitIndicator : BaseIndicator<decimal>
 	private decimal _lastPower;
 	private decimal _weightsSum;
 	private IIndicator _smoother;
-	private SmoothMethod _lastMethod;
+	private SmoothMethods _lastMethod;
 	private int _lastLength;
 	private decimal? _previousLine;
 	private int? _previousColor;
@@ -597,7 +597,7 @@ public class ColorXpWmaDigitIndicator : BaseIndicator<decimal>
 	/// <summary>
 	/// Smoothing method applied to the weighted average.
 	/// </summary>
-	public SmoothMethod Method { get; set; } = SmoothMethod.Sma;
+	public SmoothMethods Method { get; set; } = SmoothMethods.Sma;
 
 	/// <summary>
 	/// Length of the smoothing moving average.
@@ -612,7 +612,7 @@ public class ColorXpWmaDigitIndicator : BaseIndicator<decimal>
 	/// <summary>
 	/// Price source used by the indicator.
 	/// </summary>
-	public AppliedPrice AppliedPrice { get; set; } = AppliedPrice.Close;
+	public AppliedPrices AppliedPrices { get; set; } = AppliedPrices.Close;
 
 	/// <summary>
 	/// Digits used to round the final line.
@@ -715,36 +715,36 @@ public class ColorXpWmaDigitIndicator : BaseIndicator<decimal>
 
 		_smoother = Method switch
 		{
-			SmoothMethod.Sma => new SimpleMovingAverage { Length = SmoothingLength },
-			SmoothMethod.Ema => new ExponentialMovingAverage { Length = SmoothingLength },
-			SmoothMethod.Smma => new SmoothedMovingAverage { Length = SmoothingLength },
-			SmoothMethod.Lwma => new WeightedMovingAverage { Length = SmoothingLength },
-			SmoothMethod.Jjma => new JurikMovingAverage { Length = SmoothingLength },
-			SmoothMethod.JurX => new JurikMovingAverage { Length = SmoothingLength },
-			SmoothMethod.ParMa => new ExponentialMovingAverage { Length = SmoothingLength },
-			SmoothMethod.T3 => new TripleExponentialMovingAverage { Length = SmoothingLength },
-			SmoothMethod.Vidya => new ExponentialMovingAverage { Length = SmoothingLength },
-			SmoothMethod.Ama => new KaufmanAdaptiveMovingAverage { Length = SmoothingLength },
+			SmoothMethods.Sma => new SimpleMovingAverage { Length = SmoothingLength },
+			SmoothMethods.Ema => new ExponentialMovingAverage { Length = SmoothingLength },
+			SmoothMethods.Smma => new SmoothedMovingAverage { Length = SmoothingLength },
+			SmoothMethods.Lwma => new WeightedMovingAverage { Length = SmoothingLength },
+			SmoothMethods.Jjma => new JurikMovingAverage { Length = SmoothingLength },
+			SmoothMethods.JurX => new JurikMovingAverage { Length = SmoothingLength },
+			SmoothMethods.ParMa => new ExponentialMovingAverage { Length = SmoothingLength },
+			SmoothMethods.T3 => new TripleExponentialMovingAverage { Length = SmoothingLength },
+			SmoothMethods.Vidya => new ExponentialMovingAverage { Length = SmoothingLength },
+			SmoothMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = SmoothingLength },
 			_ => new SimpleMovingAverage { Length = SmoothingLength },
 		};
 	}
 
 	private decimal GetPrice(ICandleMessage candle)
 	{
-		return AppliedPrice switch
+		return AppliedPrices switch
 		{
-			AppliedPrice.Close => candle.ClosePrice,
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-			AppliedPrice.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			AppliedPrice.Quarted => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
-			AppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
-			AppliedPrice.Demark => GetDemarkPrice(candle),
+			AppliedPrices.Close => candle.ClosePrice,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+			AppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			AppliedPrices.Quarted => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
+			AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
+			AppliedPrices.Demark => GetDemarkPrice(candle),
 			_ => candle.ClosePrice,
 		};
 	}
@@ -796,7 +796,7 @@ public class ColorXpWmaDigitValue : ComplexIndicatorValue
 /// <summary>
 /// Available smoothing methods.
 /// </summary>
-public enum SmoothMethod
+public enum SmoothMethods
 {
 	/// <summary>
 	/// Simple moving average.
@@ -852,7 +852,7 @@ public enum SmoothMethod
 /// <summary>
 /// Price sources for the indicator.
 /// </summary>
-public enum AppliedPrice
+public enum AppliedPrices
 {
 	/// <summary>
 	/// Close price.

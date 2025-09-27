@@ -19,7 +19,7 @@
 
 - `CandleType` – таймфрейм обрабатываемых свечей, по умолчанию 1 час.
 - `MaLength` – длина сглаживающего скользящего среднего, по умолчанию 30.
-- `MaMethod` – алгоритм скользящего среднего: `Simple`, `Exponential`, `Smma`, `Weighted`; по умолчанию `Weighted`.
+- `MaMethods` – алгоритм скользящего среднего: `Simple`, `Exponential`, `Smma`, `Weighted`; по умолчанию `Weighted`.
 
 ## Примечания
 

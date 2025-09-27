@@ -29,8 +29,8 @@
 | `CloseOppositePositions` | `bool` | `false` | При включении закрывает встречные позиции за счёт увеличения объёма сделки. |
 | `MaShift` | `int` | 0 | Горизонтальный сдвиг скользящей средней; положительные значения обращаются к более ранним значениям. |
 | `MaLength` | `int` | 55 | Период скользящей средней. |
-| `MaMethod` | `MovingAverageMethod` | `Exponential` | Метод сглаживания (`Simple`, `Exponential`, `Smoothed`, `Weighted`). |
-| `AppliedPrice` | `AppliedPriceType` | `Median` | Тип цены для расчёта (`Close`, `Open`, `High`, `Low`, `Median`, `Typical`, `Weighted`). |
+| `MaMethod` | `MovingAverageMethods` | `Exponential` | Метод сглаживания (`Simple`, `Exponential`, `Smoothed`, `Weighted`). |
+| `AppliedPrice` | `AppliedPriceTypes` | `Median` | Тип цены для расчёта (`Close`, `Open`, `High`, `Low`, `Median`, `Typical`, `Weighted`). |
 
 ## Управление позицией
 - Базовый объём задаётся свойством стратегии `Volume`; при активном `CloseOppositePositions` он автоматически дополняется величиной встречной позиции.

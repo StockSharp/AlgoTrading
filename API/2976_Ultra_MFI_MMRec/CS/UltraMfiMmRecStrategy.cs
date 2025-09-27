@@ -22,11 +22,11 @@ public class UltraMfiMmRecStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _mfiPeriod;
-	private readonly StrategyParam<SmoothingMethod> _stepSmoothingMethod;
+	private readonly StrategyParam<SmoothingMethods> _stepSmoothingMethod;
 	private readonly StrategyParam<int> _startLength;
 	private readonly StrategyParam<int> _stepSize;
 	private readonly StrategyParam<int> _stepsTotal;
-	private readonly StrategyParam<SmoothingMethod> _finalSmoothingMethod;
+	private readonly StrategyParam<SmoothingMethods> _finalSmoothingMethod;
 	private readonly StrategyParam<int> _finalSmoothingLength;
 	private readonly StrategyParam<int> _signalShift;
 	private readonly StrategyParam<decimal> _normalVolume;
@@ -56,7 +56,7 @@ public class UltraMfiMmRecStrategy : Strategy
 	/// <summary>
 	/// Supported smoothing methods for the Ultra MFI ladder.
 	/// </summary>
-	public enum SmoothingMethod
+	public enum SmoothingMethods
 	{
 		/// <summary>Simple moving average.</summary>
 		Simple,
@@ -82,7 +82,7 @@ public class UltraMfiMmRecStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("MFI Period", "Length of the base Money Flow Index", "Indicator");
 
-		_stepSmoothingMethod = Param(nameof(StepSmoothing), SmoothingMethod.Jurik)
+		_stepSmoothingMethod = Param(nameof(StepSmoothing), SmoothingMethods.Jurik)
 		.SetDisplay("Step Smoothing", "Method used for ladder smoothing", "Indicator");
 
 		_startLength = Param(nameof(StartLength), 3)
@@ -97,7 +97,7 @@ public class UltraMfiMmRecStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Steps Total", "Number of smoothing steps", "Indicator");
 
-		_finalSmoothingMethod = Param(nameof(FinalSmoothing), SmoothingMethod.Jurik)
+		_finalSmoothingMethod = Param(nameof(FinalSmoothing), SmoothingMethods.Jurik)
 		.SetDisplay("Final Smoothing", "Method used for bullish/bearish counters", "Indicator");
 
 		_finalSmoothingLength = Param(nameof(FinalSmoothingLength), 3)
@@ -158,7 +158,7 @@ public class UltraMfiMmRecStrategy : Strategy
 	public int MfiPeriod { get => _mfiPeriod.Value; set => _mfiPeriod.Value = value; }
 
 	/// <summary>Smoothing method for intermediate ladder averages.</summary>
-	public SmoothingMethod StepSmoothing { get => _stepSmoothingMethod.Value; set => _stepSmoothingMethod.Value = value; }
+	public SmoothingMethods StepSmoothing { get => _stepSmoothingMethod.Value; set => _stepSmoothingMethod.Value = value; }
 
 	/// <summary>Length of the first smoothing step.</summary>
 	public int StartLength { get => _startLength.Value; set => _startLength.Value = value; }
@@ -170,7 +170,7 @@ public class UltraMfiMmRecStrategy : Strategy
 	public int StepsTotal { get => _stepsTotal.Value; set => _stepsTotal.Value = value; }
 
 	/// <summary>Smoothing method used for bullish and bearish counters.</summary>
-	public SmoothingMethod FinalSmoothing { get => _finalSmoothingMethod.Value; set => _finalSmoothingMethod.Value = value; }
+	public SmoothingMethods FinalSmoothing { get => _finalSmoothingMethod.Value; set => _finalSmoothingMethod.Value = value; }
 
 	/// <summary>Length for the bullish and bearish counter smoothers.</summary>
 	public int FinalSmoothingLength { get => _finalSmoothingLength.Value; set => _finalSmoothingLength.Value = value; }
@@ -472,14 +472,14 @@ public class UltraMfiMmRecStrategy : Strategy
 		_recentSellResults.RemoveAt(0);
 	}
 
-	private IndicatorBase<decimal> CreateSmoother(SmoothingMethod method, int length)
+	private IndicatorBase<decimal> CreateSmoother(SmoothingMethods method, int length)
 	{
 		return method switch
 		{
-			SmoothingMethod.Simple => new SimpleMovingAverage { Length = length },
-			SmoothingMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			SmoothingMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			SmoothingMethod.LinearWeighted => new WeightedMovingAverage { Length = length },
+			SmoothingMethods.Simple => new SimpleMovingAverage { Length = length },
+			SmoothingMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			SmoothingMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new JurikMovingAverage { Length = length }
 		};
 	}

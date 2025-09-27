@@ -22,8 +22,8 @@ public class ForceDiverSignStrategy : Strategy
 {
 	private readonly StrategyParam<int> _period1;
 	private readonly StrategyParam<int> _period2;
-	private readonly StrategyParam<MovingAverageTypeEnum> _maType1;
-	private readonly StrategyParam<MovingAverageTypeEnum> _maType2;
+	private readonly StrategyParam<MovingAverageTypes> _maType1;
+	private readonly StrategyParam<MovingAverageTypes> _maType2;
 	private readonly StrategyParam<DataType> _candleType;
 	private LengthIndicator<decimal> _ma1;
 	private LengthIndicator<decimal> _ma2;
@@ -52,7 +52,7 @@ public class ForceDiverSignStrategy : Strategy
 	/// <summary>
 	/// Moving average type for the fast Force Index.
 	/// </summary>
-	public MovingAverageTypeEnum MaType1
+	public MovingAverageTypes MaType1
 	{
 		get => _maType1.Value;
 		set => _maType1.Value = value;
@@ -60,7 +60,7 @@ public class ForceDiverSignStrategy : Strategy
 	/// <summary>
 	/// Moving average type for the slow Force Index.
 	/// </summary>
-	public MovingAverageTypeEnum MaType2
+	public MovingAverageTypes MaType2
 	{
 		get => _maType2.Value;
 		set => _maType2.Value = value;
@@ -88,9 +88,9 @@ public class ForceDiverSignStrategy : Strategy
 		.SetDisplay("Slow Period", "Period for slow Force index", "Indicators")
 		.SetCanOptimize(true)
 		.SetOptimize(5, 20, 1);
-		_maType1 = Param(nameof(MaType1), MovingAverageTypeEnum.Exponential)
+		_maType1 = Param(nameof(MaType1), MovingAverageTypes.Exponential)
 		.SetDisplay("Fast MA Type", "Moving average type for fast Force", "Indicators");
-		_maType2 = Param(nameof(MaType2), MovingAverageTypeEnum.Exponential)
+		_maType2 = Param(nameof(MaType2), MovingAverageTypes.Exponential)
 		.SetDisplay("Slow MA Type", "Moving average type for slow Force", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
@@ -180,22 +180,22 @@ public class ForceDiverSignStrategy : Strategy
 		array[i] = array[i - 1];
 		array[0] = value;
 	}
-	private static LengthIndicator<decimal> CreateMa(MovingAverageTypeEnum type, int length)
+	private static LengthIndicator<decimal> CreateMa(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypeEnum.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageTypeEnum.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageTypeEnum.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageTypeEnum.Weighted => new WeightedMovingAverage { Length = length },
-			MovingAverageTypeEnum.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
+			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
 	/// <summary>
 	/// Moving average types.
 	/// </summary>
-	public enum MovingAverageTypeEnum
+	public enum MovingAverageTypes
 	{
 		/// <summary>Simple moving average.</summary>
 		Simple,

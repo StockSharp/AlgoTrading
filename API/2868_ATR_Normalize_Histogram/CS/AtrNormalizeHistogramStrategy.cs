@@ -19,9 +19,9 @@ namespace StockSharp.Samples.Strategies;
 public class AtrNormalizeHistogramStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<AtrNormalizeSmoothingMethod> _firstSmoothingMethod;
+	private readonly StrategyParam<AtrNormalizeSmoothingMethods> _firstSmoothingMethod;
 	private readonly StrategyParam<int> _firstLength;
-	private readonly StrategyParam<AtrNormalizeSmoothingMethod> _secondSmoothingMethod;
+	private readonly StrategyParam<AtrNormalizeSmoothingMethods> _secondSmoothingMethod;
 	private readonly StrategyParam<int> _secondLength;
 	private readonly StrategyParam<decimal> _highLevel;
 	private readonly StrategyParam<decimal> _middleLevel;
@@ -44,7 +44,7 @@ public class AtrNormalizeHistogramStrategy : Strategy
 	/// <summary>
 	/// Available smoothing methods for the normalized ATR components.
 	/// </summary>
-	public enum AtrNormalizeSmoothingMethod
+	public enum AtrNormalizeSmoothingMethods
 	{
 		Simple,
 		Exponential,
@@ -54,9 +54,9 @@ public class AtrNormalizeHistogramStrategy : Strategy
 	}
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public AtrNormalizeSmoothingMethod FirstSmoothingMethod { get => _firstSmoothingMethod.Value; set => _firstSmoothingMethod.Value = value; }
+	public AtrNormalizeSmoothingMethods FirstSmoothingMethod { get => _firstSmoothingMethod.Value; set => _firstSmoothingMethod.Value = value; }
 	public int FirstLength { get => _firstLength.Value; set => _firstLength.Value = value; }
-	public AtrNormalizeSmoothingMethod SecondSmoothingMethod { get => _secondSmoothingMethod.Value; set => _secondSmoothingMethod.Value = value; }
+	public AtrNormalizeSmoothingMethods SecondSmoothingMethod { get => _secondSmoothingMethod.Value; set => _secondSmoothingMethod.Value = value; }
 	public int SecondLength { get => _secondLength.Value; set => _secondLength.Value = value; }
 	public decimal HighLevel { get => _highLevel.Value; set => _highLevel.Value = value; }
 	public decimal MiddleLevel { get => _middleLevel.Value; set => _middleLevel.Value = value; }
@@ -75,7 +75,7 @@ public class AtrNormalizeHistogramStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for calculations", "General");
 
-		_firstSmoothingMethod = Param(nameof(FirstSmoothingMethod), AtrNormalizeSmoothingMethod.Simple)
+		_firstSmoothingMethod = Param(nameof(FirstSmoothingMethod), AtrNormalizeSmoothingMethods.Simple)
 			.SetDisplay("Diff Smoothing", "Smoother for close-low difference", "Indicator")
 			.SetCanOptimize(true);
 
@@ -84,7 +84,7 @@ public class AtrNormalizeHistogramStrategy : Strategy
 			.SetDisplay("Diff Length", "Length for difference smoothing", "Indicator")
 			.SetCanOptimize(true);
 
-		_secondSmoothingMethod = Param(nameof(SecondSmoothingMethod), AtrNormalizeSmoothingMethod.Simple)
+		_secondSmoothingMethod = Param(nameof(SecondSmoothingMethod), AtrNormalizeSmoothingMethods.Simple)
 			.SetDisplay("Range Smoothing", "Smoother for true range", "Indicator")
 			.SetCanOptimize(true);
 
@@ -316,17 +316,17 @@ public class AtrNormalizeHistogramStrategy : Strategy
 		return points * GetPriceStep();
 	}
 
-	private IIndicator CreateSmoother(AtrNormalizeSmoothingMethod method, int length)
+	private IIndicator CreateSmoother(AtrNormalizeSmoothingMethods method, int length)
 	{
 		if (length <= 0)
 		throw new ArgumentOutOfRangeException(nameof(length));
 
 		return method switch
 		{
-		AtrNormalizeSmoothingMethod.Exponential => new ExponentialMovingAverage { Length = length },
-		AtrNormalizeSmoothingMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-		AtrNormalizeSmoothingMethod.Weighted => new WeightedMovingAverage { Length = length },
-		AtrNormalizeSmoothingMethod.Jurik => new JurikMovingAverage { Length = length },
+		AtrNormalizeSmoothingMethods.Exponential => new ExponentialMovingAverage { Length = length },
+		AtrNormalizeSmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+		AtrNormalizeSmoothingMethods.Weighted => new WeightedMovingAverage { Length = length },
+		AtrNormalizeSmoothingMethods.Jurik => new JurikMovingAverage { Length = length },
 		_ => new SimpleMovingAverage { Length = length },
 		};
 	}

@@ -23,7 +23,7 @@ public class TrailingTakeProfitStrategy : Strategy
 	private readonly StrategyParam<bool> _trailInLossZone;
 	private readonly StrategyParam<decimal> _breakevenPoints;
 	private readonly StrategyParam<int> _spreadMultiplier;
-	private readonly StrategyParam<ManagedPositionType> _positionType;
+	private readonly StrategyParam<ManagedPositionTypes> _positionType;
 
 	private decimal? _lastBid;
 	private decimal? _lastAsk;
@@ -34,7 +34,7 @@ public class TrailingTakeProfitStrategy : Strategy
 	/// <summary>
 	/// Defines which position sides should be managed.
 	/// </summary>
-	public enum ManagedPositionType
+	public enum ManagedPositionTypes
 	{
 		/// <summary>
 		/// Manage both long and short positions.
@@ -100,7 +100,7 @@ public class TrailingTakeProfitStrategy : Strategy
 	/// <summary>
 	/// Position side that should be handled by the trailing logic.
 	/// </summary>
-	public ManagedPositionType PositionType
+	public ManagedPositionTypes PositionType
 	{
 		get => _positionType.Value;
 		set => _positionType.Value = value;
@@ -134,7 +134,7 @@ public class TrailingTakeProfitStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Spread Multiplier", "Stop level multiplier based on price step", "Execution");
 
-		_positionType = Param(nameof(PositionType), ManagedPositionType.All)
+		_positionType = Param(nameof(PositionType), ManagedPositionTypes.All)
 		.SetDisplay("Position Type", "Select which sides are managed", "Filters");
 	}
 
@@ -352,9 +352,9 @@ public class TrailingTakeProfitStrategy : Strategy
 	{
 		return PositionType switch
 		{
-			ManagedPositionType.All => true,
-			ManagedPositionType.Long => isLong,
-			ManagedPositionType.Short => !isLong,
+			ManagedPositionTypes.All => true,
+			ManagedPositionTypes.Long => isLong,
+			ManagedPositionTypes.Short => !isLong,
 			_ => true
 		};
 	}

@@ -18,16 +18,16 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BlauSmStochasticStrategy : Strategy
 {
-	private readonly StrategyParam<BlauSmStochasticMode> _mode;
+	private readonly StrategyParam<BlauSmStochasticModes> _mode;
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<int> _lookbackLength;
 	private readonly StrategyParam<int> _firstSmoothingLength;
 	private readonly StrategyParam<int> _secondSmoothingLength;
 	private readonly StrategyParam<int> _thirdSmoothingLength;
 	private readonly StrategyParam<int> _signalLength;
-	private readonly StrategyParam<BlauSmSmoothMethod> _smoothMethod;
+	private readonly StrategyParam<BlauSmSmoothMethods> _smoothMethod;
 	private readonly StrategyParam<int> _phase;
-	private readonly StrategyParam<BlauSmAppliedPrice> _priceType;
+	private readonly StrategyParam<BlauSmAppliedPrices> _priceType;
 	private readonly StrategyParam<bool> _enableLongEntry;
 	private readonly StrategyParam<bool> _enableShortEntry;
 	private readonly StrategyParam<bool> _enableLongExit;
@@ -44,7 +44,7 @@ public class BlauSmStochasticStrategy : Strategy
 	/// </summary>
 	public BlauSmStochasticStrategy()
 	{
-		_mode = Param(nameof(Mode), BlauSmStochasticMode.Twist)
+		_mode = Param(nameof(Mode), BlauSmStochasticModes.Twist)
 			.SetDisplay("Mode", "Signal generation mode", "Parameters");
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -81,13 +81,13 @@ public class BlauSmStochasticStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(2, 12, 1);
 
-		_smoothMethod = Param(nameof(SmoothMethod), BlauSmSmoothMethod.Ema)
+		_smoothMethod = Param(nameof(SmoothMethod), BlauSmSmoothMethods.Ema)
 			.SetDisplay("Smoothing Method", "Moving average type used for all smoothing stages", "Indicator");
 
 		_phase = Param(nameof(Phase), 15)
 			.SetDisplay("Phase", "Compatibility parameter kept from the original indicator", "Indicator");
 
-		_priceType = Param(nameof(PriceType), BlauSmAppliedPrice.Close)
+		_priceType = Param(nameof(PriceType), BlauSmAppliedPrices.Close)
 			.SetDisplay("Applied Price", "Price input used in oscillator calculations", "Indicator");
 
 		_enableLongEntry = Param(nameof(EnableLongEntry), true)
@@ -121,7 +121,7 @@ public class BlauSmStochasticStrategy : Strategy
 	/// <summary>
 	/// Strategy operating mode.
 	/// </summary>
-	public BlauSmStochasticMode Mode
+	public BlauSmStochasticModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -184,7 +184,7 @@ public class BlauSmStochasticStrategy : Strategy
 	/// <summary>
 	/// Moving average method.
 	/// </summary>
-	public BlauSmSmoothMethod SmoothMethod
+	public BlauSmSmoothMethods SmoothMethod
 	{
 		get => _smoothMethod.Value;
 		set => _smoothMethod.Value = value;
@@ -202,7 +202,7 @@ public class BlauSmStochasticStrategy : Strategy
 	/// <summary>
 	/// Applied price type.
 	/// </summary>
-	public BlauSmAppliedPrice PriceType
+	public BlauSmAppliedPrices PriceType
 	{
 		get => _priceType.Value;
 		set => _priceType.Value = value;
@@ -361,7 +361,7 @@ public class BlauSmStochasticStrategy : Strategy
 
 		switch (Mode)
 		{
-			case BlauSmStochasticMode.Breakdown:
+			case BlauSmStochasticModes.Breakdown:
 			{
 				// Detect histogram sign change through zero.
 				if (previousMain > 0m && currentMain <= 0m)
@@ -381,7 +381,7 @@ public class BlauSmStochasticStrategy : Strategy
 				}
 				break;
 			}
-			case BlauSmStochasticMode.Twist:
+			case BlauSmStochasticModes.Twist:
 			{
 				if (!TryGetMain(SignalBar + 2, out var olderMain))
 					return;
@@ -404,7 +404,7 @@ public class BlauSmStochasticStrategy : Strategy
 				}
 				break;
 			}
-			case BlauSmStochasticMode.CloudTwist:
+			case BlauSmStochasticModes.CloudTwist:
 			{
 				if (!hasCurrentSignal || !hasPreviousSignal)
 					return;
@@ -527,7 +527,7 @@ public class BlauSmStochasticIndicator : BaseIndicator<decimal>
 	/// <summary>
 	/// Moving average type used throughout the calculations.
 	/// </summary>
-	public BlauSmSmoothMethod SmoothMethod { get; set; } = BlauSmSmoothMethod.Ema;
+	public BlauSmSmoothMethods SmoothMethod { get; set; } = BlauSmSmoothMethods.Ema;
 
 	/// <summary>
 	/// Phase parameter kept for compatibility with the original code.
@@ -537,7 +537,7 @@ public class BlauSmStochasticIndicator : BaseIndicator<decimal>
 	/// <summary>
 	/// Applied price type.
 	/// </summary>
-	public BlauSmAppliedPrice PriceType { get; set; } = BlauSmAppliedPrice.Close;
+	public BlauSmAppliedPrices PriceType { get; set; } = BlauSmAppliedPrices.Close;
 
 	/// <inheritdoc />
 	protected override IIndicatorValue OnProcess(IIndicatorValue input)
@@ -640,22 +640,22 @@ public class BlauSmStochasticIndicator : BaseIndicator<decimal>
 		return min;
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, BlauSmAppliedPrice priceType)
+	private static decimal GetAppliedPrice(ICandleMessage candle, BlauSmAppliedPrices priceType)
 	{
 		return priceType switch
 		{
-			BlauSmAppliedPrice.Close => candle.ClosePrice,
-			BlauSmAppliedPrice.Open => candle.OpenPrice,
-			BlauSmAppliedPrice.High => candle.HighPrice,
-			BlauSmAppliedPrice.Low => candle.LowPrice,
-			BlauSmAppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			BlauSmAppliedPrice.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-			BlauSmAppliedPrice.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			BlauSmAppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			BlauSmAppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			BlauSmAppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
-			BlauSmAppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
-			BlauSmAppliedPrice.Demark => CalculateDemarkPrice(candle),
+			BlauSmAppliedPrices.Close => candle.ClosePrice,
+			BlauSmAppliedPrices.Open => candle.OpenPrice,
+			BlauSmAppliedPrices.High => candle.HighPrice,
+			BlauSmAppliedPrices.Low => candle.LowPrice,
+			BlauSmAppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			BlauSmAppliedPrices.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+			BlauSmAppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			BlauSmAppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			BlauSmAppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			BlauSmAppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
+			BlauSmAppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
+			BlauSmAppliedPrices.Demark => CalculateDemarkPrice(candle),
 			_ => candle.ClosePrice,
 		};
 	}
@@ -678,10 +678,10 @@ public class BlauSmStochasticIndicator : BaseIndicator<decimal>
 	{
 		return SmoothMethod switch
 		{
-			BlauSmSmoothMethod.Sma => new SimpleMovingAverage { Length = length },
-			BlauSmSmoothMethod.Ema => new ExponentialMovingAverage { Length = length },
-			BlauSmSmoothMethod.Smma => new SmoothedMovingAverage { Length = length },
-			BlauSmSmoothMethod.Lwma => new WeightedMovingAverage { Length = length },
+			BlauSmSmoothMethods.Sma => new SimpleMovingAverage { Length = length },
+			BlauSmSmoothMethods.Ema => new ExponentialMovingAverage { Length = length },
+			BlauSmSmoothMethods.Smma => new SmoothedMovingAverage { Length = length },
+			BlauSmSmoothMethods.Lwma => new WeightedMovingAverage { Length = length },
 			_ => new ExponentialMovingAverage { Length = length },
 		};
 	}
@@ -737,7 +737,7 @@ public class BlauSmStochasticValue : ComplexIndicatorValue
 /// <summary>
 /// Signal generation modes.
 /// </summary>
-public enum BlauSmStochasticMode
+public enum BlauSmStochasticModes
 {
 	/// <summary>
 	/// Uses histogram zero crossings.
@@ -758,7 +758,7 @@ public enum BlauSmStochasticMode
 /// <summary>
 /// Moving average options used in the oscillator smoothing stages.
 /// </summary>
-public enum BlauSmSmoothMethod
+public enum BlauSmSmoothMethods
 {
 	/// <summary>
 	/// Simple moving average.
@@ -784,7 +784,7 @@ public enum BlauSmSmoothMethod
 /// <summary>
 /// Applied price options for oscillator input.
 /// </summary>
-public enum BlauSmAppliedPrice
+public enum BlauSmAppliedPrices
 {
 	/// <summary>
 	/// Close price.

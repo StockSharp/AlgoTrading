@@ -29,7 +29,7 @@
 | `EnableTrailing` | 启用基于金额的移动止盈。 |
 | `TrailingTakeProfitMoney` | 激活金额移动止盈所需的浮动收益。 |
 | `TrailingStopMoney` | 金额移动止盈被激活后允许的利润回撤。 |
-| `MartingaleMode` | 选择 `Martingale1` 或 `Martingale2` 的马丁格尔逻辑。 |
+| `MartingaleModes` | 选择 `Martingale1` 或 `Martingale2` 的马丁格尔逻辑。 |
 | `UseMoveToBreakeven` | 启用自动移至保本。 |
 | `MoveToBreakevenTrigger` | 触发保本所需的价格步长数量。 |
 | `BreakevenOffset` | 将止损移至保本时在入场价上添加的偏移。 |

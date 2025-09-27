@@ -33,7 +33,7 @@ public class SupportResistTradeStrategy : Strategy
 	private decimal? _longStop;
 	private decimal? _shortStop;
 
-	private TrendDirection _trend = TrendDirection.None;
+	private TrendDirections _trend = TrendDirections.None;
 	private decimal _pipSize;
 	private bool _levelsInitialized;
 
@@ -116,7 +116,7 @@ public class SupportResistTradeStrategy : Strategy
 		_longStop = default;
 		_shortStop = default;
 
-		_trend = TrendDirection.None;
+		_trend = TrendDirections.None;
 		_pipSize = 0m;
 		_levelsInitialized = false;
 	}
@@ -184,25 +184,25 @@ public class SupportResistTradeStrategy : Strategy
 		// Update trend direction using candle open price against EMA.
 		if (candle.OpenPrice > emaValue)
 		{
-			_trend = TrendDirection.Bullish;
+			_trend = TrendDirections.Bullish;
 		}
 		else if (candle.OpenPrice < emaValue)
 		{
-			_trend = TrendDirection.Bearish;
+			_trend = TrendDirections.Bearish;
 		}
 
 		var exitPlaced = ManagePosition(candle);
 
 		if (!exitPlaced && Position == 0)
 		{
-			if (_trend == TrendDirection.Bullish && _prevResistance.HasValue && candle.ClosePrice > _prevResistance.Value)
+			if (_trend == TrendDirections.Bullish && _prevResistance.HasValue && candle.ClosePrice > _prevResistance.Value)
 			{
 				// Breakout above resistance in bullish trend opens long position.
 				BuyMarket();
 				_longStop = _prevSupport;
 				_shortStop = null;
 			}
-			else if (_trend == TrendDirection.Bearish && _prevSupport.HasValue && candle.ClosePrice < _prevSupport.Value)
+			else if (_trend == TrendDirections.Bearish && _prevSupport.HasValue && candle.ClosePrice < _prevSupport.Value)
 			{
 				// Breakout below support in bearish trend opens short position.
 				SellMarket();
@@ -328,7 +328,7 @@ public class SupportResistTradeStrategy : Strategy
 		}
 	}
 
-	private enum TrendDirection
+	private enum TrendDirections
 	{
 		None,
 		Bullish,

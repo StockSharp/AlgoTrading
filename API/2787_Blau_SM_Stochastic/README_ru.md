@@ -26,15 +26,15 @@
 
 ## Параметры
 - `CandleType` *(DataType, по умолчанию 4 часа)* – таймфрейм свечей и расчёта индикатора.
-- `Mode` *(BlauSmStochasticMode, по умолчанию Twist)* – режим генерации сигналов (Breakdown, Twist, CloudTwist).
+- `Mode` *(BlauSmStochasticModes, по умолчанию Twist)* – режим генерации сигналов (Breakdown, Twist, CloudTwist).
 - `SignalBar` *(int, по умолчанию 1)* – сдвиг по барам при анализе значений индикатора, соответствует параметру `SignalBar` в оригинале.
 - `LookbackLength` *(int, по умолчанию 5)* – количество баров для поиска максимумов и минимумов.
 - `FirstSmoothingLength` *(int, по умолчанию 20)* – период первого сглаживания.
 - `SecondSmoothingLength` *(int, по умолчанию 5)* – период второго сглаживания.
 - `ThirdSmoothingLength` *(int, по умолчанию 3)* – период третьего сглаживания.
 - `SignalLength` *(int, по умолчанию 3)* – период сглаживания сигнальной линии.
-- `SmoothMethod` *(BlauSmSmoothMethod, по умолчанию EMA)* – тип скользящих средних для всех этапов (SMA, EMA, SMMA, LWMA).
-- `PriceType` *(BlauSmAppliedPrice, по умолчанию Close)* – тип цены для расчётов (close, open, high, low, median, typical, weighted, simple, quarter, два варианта trend-follow и Demark).
+- `SmoothMethod` *(BlauSmSmoothMethods, по умолчанию EMA)* – тип скользящих средних для всех этапов (SMA, EMA, SMMA, LWMA).
+- `PriceType` *(BlauSmAppliedPrices, по умолчанию Close)* – тип цены для расчётов (close, open, high, low, median, typical, weighted, simple, quarter, два варианта trend-follow и Demark).
 - `EnableLongEntry` *(bool, по умолчанию true)* – разрешить открытие длинных позиций.
 - `EnableShortEntry` *(bool, по умолчанию true)* – разрешить открытие коротких позиций.
 - `EnableLongExit` *(bool, по умолчанию true)* – разрешить закрытие длинных позиций.

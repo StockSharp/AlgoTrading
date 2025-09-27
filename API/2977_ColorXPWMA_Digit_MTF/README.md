@@ -17,7 +17,7 @@ Each module can be enabled or disabled for long and short entries or exits throu
 The ColorXPWMA Digit indicator emulates the MT5 custom indicator. For every finished candle the algorithm:
 
 1. Builds a power-weighted average of the selected applied price (`Period` and `Power`).
-2. Smooths the value with the chosen moving average (`SmoothMethod` and `SmoothLength`).
+2. Smooths the value with the chosen moving average (`SmoothMethods` and `SmoothLength`).
 3. Rounds the result to the configured number of decimals (`Digit`).
 4. Assigns a colour code: **2** when the smoothed value increases, **0** when it decreases, otherwise the previous colour is reused.
 

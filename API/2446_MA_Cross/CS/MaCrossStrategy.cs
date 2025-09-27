@@ -21,10 +21,10 @@ public class MaCrossStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
-	private readonly StrategyParam<MovingAverageMethod> _fastMethod;
-	private readonly StrategyParam<MovingAverageMethod> _slowMethod;
-	private readonly StrategyParam<AppliedPrice> _fastPriceType;
-	private readonly StrategyParam<AppliedPrice> _slowPriceType;
+	private readonly StrategyParam<MovingAverageMethods> _fastMethod;
+	private readonly StrategyParam<MovingAverageMethods> _slowMethod;
+	private readonly StrategyParam<AppliedPrices> _fastPriceType;
+	private readonly StrategyParam<AppliedPrices> _slowPriceType;
 	private readonly StrategyParam<int> _fastShift;
 	private readonly StrategyParam<int> _slowShift;
 	private readonly StrategyParam<decimal> _orderVolume;
@@ -56,7 +56,7 @@ public class MaCrossStrategy : Strategy
 	/// <summary>
 	/// Calculation method for the fast moving average.
 	/// </summary>
-	public MovingAverageMethod FastMethod
+	public MovingAverageMethods FastMethod
 	{
 		get => _fastMethod.Value;
 		set => _fastMethod.Value = value;
@@ -65,7 +65,7 @@ public class MaCrossStrategy : Strategy
 	/// <summary>
 	/// Calculation method for the slow moving average.
 	/// </summary>
-	public MovingAverageMethod SlowMethod
+	public MovingAverageMethods SlowMethod
 	{
 		get => _slowMethod.Value;
 		set => _slowMethod.Value = value;
@@ -74,7 +74,7 @@ public class MaCrossStrategy : Strategy
 	/// <summary>
 	/// Applied price for the fast moving average.
 	/// </summary>
-	public AppliedPrice FastPriceType
+	public AppliedPrices FastPriceType
 	{
 		get => _fastPriceType.Value;
 		set => _fastPriceType.Value = value;
@@ -83,7 +83,7 @@ public class MaCrossStrategy : Strategy
 	/// <summary>
 	/// Applied price for the slow moving average.
 	/// </summary>
-	public AppliedPrice SlowPriceType
+	public AppliedPrices SlowPriceType
 	{
 		get => _slowPriceType.Value;
 		set => _slowPriceType.Value = value;
@@ -142,16 +142,16 @@ public class MaCrossStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(5, 60, 1);
 
-		_fastMethod = Param(nameof(FastMethod), MovingAverageMethod.Simple)
+		_fastMethod = Param(nameof(FastMethod), MovingAverageMethods.Simple)
 			.SetDisplay("Fast MA Method", "Calculation method for the fast moving average", "Moving Averages");
 
-		_slowMethod = Param(nameof(SlowMethod), MovingAverageMethod.LinearWeighted)
+		_slowMethod = Param(nameof(SlowMethod), MovingAverageMethods.LinearWeighted)
 			.SetDisplay("Slow MA Method", "Calculation method for the slow moving average", "Moving Averages");
 
-		_fastPriceType = Param(nameof(FastPriceType), AppliedPrice.Close)
+		_fastPriceType = Param(nameof(FastPriceType), AppliedPrices.Close)
 			.SetDisplay("Fast MA Price", "Applied price for the fast moving average", "Moving Averages");
 
-		_slowPriceType = Param(nameof(SlowPriceType), AppliedPrice.Median)
+		_slowPriceType = Param(nameof(SlowPriceType), AppliedPrices.Median)
 			.SetDisplay("Slow MA Price", "Applied price for the slow moving average", "Moving Averages");
 
 		_fastShift = Param(nameof(FastShift), 0)
@@ -306,29 +306,29 @@ public class MaCrossStrategy : Strategy
 			|| (fastPrevious > slowCurrent && fastCurrent <= slowCurrent);
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethod method, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.LinearWeighted => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrice priceType)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrices priceType)
 	{
 		return priceType switch
 		{
-			AppliedPrice.Close => candle.ClosePrice,
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
+			AppliedPrices.Close => candle.ClosePrice,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
@@ -336,7 +336,7 @@ public class MaCrossStrategy : Strategy
 	/// <summary>
 	/// Moving average calculation methods supported by the strategy.
 	/// </summary>
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		/// <summary>Simple moving average.</summary>
 		Simple,
@@ -351,7 +351,7 @@ public class MaCrossStrategy : Strategy
 	/// <summary>
 	/// Applied price modes compatible with MetaTrader inputs.
 	/// </summary>
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		/// <summary>Use closing price of the candle.</summary>
 		Close,

@@ -38,7 +38,7 @@ public class AbsolutelyNoLagLwmaRangeChannelTmPlusStrategy : Strategy
 	private WeightedMovingAverage _upperStage2 = null!;
 	private WeightedMovingAverage _lowerStage1 = null!;
 	private WeightedMovingAverage _lowerStage2 = null!;
-	private readonly List<ChannelState> _stateHistory = new();
+	private readonly List<ChannelStates> _stateHistory = new();
 	private DateTimeOffset? _longEntryTime;
 	private DateTimeOffset? _shortEntryTime;
 
@@ -344,7 +344,7 @@ public class AbsolutelyNoLagLwmaRangeChannelTmPlusStrategy : Strategy
 		return (longExit, shortExit);
 	}
 
-	private void UpdateStateHistory(ChannelState state, int signalBar)
+	private void UpdateStateHistory(ChannelStates state, int signalBar)
 	{
 		_stateHistory.Insert(0, state);
 
@@ -362,38 +362,38 @@ public class AbsolutelyNoLagLwmaRangeChannelTmPlusStrategy : Strategy
 		var signalState = _stateHistory[signalBar + 1];
 		var confirmState = _stateHistory[signalBar];
 
-		if (EnableBuyEntries && signalState == ChannelState.Above && confirmState != ChannelState.Above && Position <= 0)
+		if (EnableBuyEntries && signalState == ChannelStates.Above && confirmState != ChannelStates.Above && Position <= 0)
 		{
 			BuyMarket(OrderVolume + Math.Abs(Position));
 		}
 
-		if (EnableSellEntries && signalState == ChannelState.Below && confirmState != ChannelState.Below && Position >= 0)
+		if (EnableSellEntries && signalState == ChannelStates.Below && confirmState != ChannelStates.Below && Position >= 0)
 		{
 			SellMarket(OrderVolume + Math.Abs(Position));
 		}
 
-		if (!timeExit.longExit && EnableBuyExits && signalState == ChannelState.Below && Position > 0)
+		if (!timeExit.longExit && EnableBuyExits && signalState == ChannelStates.Below && Position > 0)
 		{
 			SellMarket(Position);
 			_longEntryTime = null;
 		}
 
-		if (!timeExit.shortExit && EnableSellExits && signalState == ChannelState.Above && Position < 0)
+		if (!timeExit.shortExit && EnableSellExits && signalState == ChannelStates.Above && Position < 0)
 		{
 			BuyMarket(Math.Abs(Position));
 			_shortEntryTime = null;
 		}
 	}
 
-	private static ChannelState DetermineState(ICandleMessage candle, decimal upper, decimal lower)
+	private static ChannelStates DetermineState(ICandleMessage candle, decimal upper, decimal lower)
 	{
 		if (candle.ClosePrice > upper)
-			return ChannelState.Above;
+			return ChannelStates.Above;
 
 		if (candle.ClosePrice < lower)
-			return ChannelState.Below;
+			return ChannelStates.Below;
 
-		return ChannelState.Inside;
+		return ChannelStates.Inside;
 	}
 
 	/// <inheritdoc />
@@ -418,7 +418,7 @@ public class AbsolutelyNoLagLwmaRangeChannelTmPlusStrategy : Strategy
 		}
 	}
 
-	private enum ChannelState
+	private enum ChannelStates
 	{
 		Inside,
 		Above,

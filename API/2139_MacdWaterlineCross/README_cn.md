@@ -15,7 +15,7 @@
 - **SignalPeriod** – 信号线EMA的周期。
 - **StopLoss** – 以绝对价格单位表示的止损距离。
 - **Volume** – 开仓时使用的手数。
-- **RiskBenefitRatio** – 从1:5到1:1的预设风险收益比，用于确定止盈距离。
+- **RiskBenefitRatios** – 从1:5到1:1的预设风险收益比，用于确定止盈距离。
 - **CandleType** – 策略所使用的K线时间框架。
 
 ## 说明

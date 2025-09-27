@@ -21,7 +21,7 @@ public class IchiOscillatorStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _ichimokuBasePeriod;
-	private readonly StrategyParam<SmoothingMethod> _smoothingMethod;
+	private readonly StrategyParam<SmoothingMethods> _smoothingMethod;
 	private readonly StrategyParam<int> _smoothingLength;
 	private readonly StrategyParam<int> _smoothingPhase;
 	private readonly StrategyParam<int> _signalBar;
@@ -53,7 +53,7 @@ public class IchiOscillatorStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(10, 40, 2);
 
-		_smoothingMethod = Param(nameof(Smoothing), SmoothingMethod.Jurik)
+		_smoothingMethod = Param(nameof(Smoothing), SmoothingMethods.Jurik)
 			.SetDisplay("Smoothing Method", "Moving average applied to the oscillator", "Oscillator");
 
 		_smoothingLength = Param(nameof(SmoothingLength), 5)
@@ -119,7 +119,7 @@ public class IchiOscillatorStrategy : Strategy
 	/// <summary>
 	/// Smoothing method applied to the oscillator.
 	/// </summary>
-	public SmoothingMethod Smoothing
+	public SmoothingMethods Smoothing
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -401,16 +401,16 @@ public class IchiOscillatorStrategy : Strategy
 		_previousSmoothed = smoothed;
 	}
 
-	private LengthIndicator<decimal> CreateSmoother(SmoothingMethod method, int length, int phase)
+	private LengthIndicator<decimal> CreateSmoother(SmoothingMethods method, int length, int phase)
 	{
 		return method switch
 		{
-			SmoothingMethod.Simple => new SimpleMovingAverage { Length = length },
-			SmoothingMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			SmoothingMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			SmoothingMethod.Weighted => new WeightedMovingAverage { Length = length },
-			SmoothingMethod.Jurik => new JurikMovingAverage { Length = length },
-			SmoothingMethod.Kaufman => new KaufmanAdaptiveMovingAverage { Length = length },
+			SmoothingMethods.Simple => new SimpleMovingAverage { Length = length },
+			SmoothingMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			SmoothingMethods.Weighted => new WeightedMovingAverage { Length = length },
+			SmoothingMethods.Jurik => new JurikMovingAverage { Length = length },
+			SmoothingMethods.Kaufman => new KaufmanAdaptiveMovingAverage { Length = length },
 			_ => new JurikMovingAverage { Length = length }
 		};
 	}
@@ -418,7 +418,7 @@ public class IchiOscillatorStrategy : Strategy
 	/// <summary>
 	/// Supported smoothing algorithms for the oscillator.
 	/// </summary>
-	public enum SmoothingMethod
+	public enum SmoothingMethods
 	{
 		/// <summary>
 		/// Simple moving average.

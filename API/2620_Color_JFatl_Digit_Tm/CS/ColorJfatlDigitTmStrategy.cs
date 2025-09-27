@@ -80,7 +80,7 @@ public class ColorJfatlDigitTmStrategy : Strategy
 	private readonly StrategyParam<DataType> _signalCandleType;
 	private readonly StrategyParam<int> _jmaLength;
 	private readonly StrategyParam<int> _jmaPhase;
-	private readonly StrategyParam<AppliedPrice> _appliedPrice;
+	private readonly StrategyParam<AppliedPrices> _appliedPrice;
 	private readonly StrategyParam<int> _digitRounding;
 	private readonly StrategyParam<int> _signalBar;
 
@@ -230,7 +230,7 @@ public class ColorJfatlDigitTmStrategy : Strategy
 	/// <summary>
 	/// Applied price mode.
 	/// </summary>
-	public AppliedPrice AppliedPriceMode
+	public AppliedPrices AppliedPriceMode
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -312,7 +312,7 @@ public class ColorJfatlDigitTmStrategy : Strategy
 		_jmaPhase = Param(nameof(JmaPhase), -100)
 			.SetDisplay("JMA Phase", "Phase shift for Jurik moving average", "Indicator");
 
-		_appliedPrice = Param(nameof(AppliedPriceMode), AppliedPrice.Close)
+		_appliedPrice = Param(nameof(AppliedPriceMode), AppliedPrices.Close)
 			.SetDisplay("Applied Price", "Price source for calculations", "Indicator");
 
 		_digitRounding = Param(nameof(DigitRounding), 2)
@@ -468,26 +468,26 @@ public class ColorJfatlDigitTmStrategy : Strategy
 	{
 		return AppliedPriceMode switch
 		{
-			AppliedPrice.Close => candle.ClosePrice,
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			AppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
+			AppliedPrices.Close => candle.ClosePrice,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			AppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
 				? candle.HighPrice
 				: candle.ClosePrice < candle.OpenPrice
 					? candle.LowPrice
 					: candle.ClosePrice,
-			AppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
+			AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
 				? (candle.HighPrice + candle.ClosePrice) / 2m
 				: candle.ClosePrice < candle.OpenPrice
 					? (candle.LowPrice + candle.ClosePrice) / 2m
 					: candle.ClosePrice,
-			AppliedPrice.Demark => CalculateDemarkPrice(candle),
+			AppliedPrices.Demark => CalculateDemarkPrice(candle),
 			_ => candle.ClosePrice,
 		};
 	}
@@ -558,7 +558,7 @@ public class ColorJfatlDigitTmStrategy : Strategy
 	/// <summary>
 	/// Applied price options replicated from the original MQL implementation.
 	/// </summary>
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		Close = 1,
 		Open,

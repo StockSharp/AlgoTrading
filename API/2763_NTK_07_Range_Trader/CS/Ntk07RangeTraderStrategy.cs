@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class Ntk07RangeTraderStrategy : Strategy
 {
-	public enum TradeModeOption
+	public enum TradeModeOptions
 	{
 		EdgesOfRange,
 		CenterOfRange,
@@ -36,7 +36,7 @@ public class Ntk07RangeTraderStrategy : Strategy
 	private readonly StrategyParam<int> _tradingStartHour;
 	private readonly StrategyParam<int> _tradingEndHour;
 	private readonly StrategyParam<int> _rangeBars;
-	private readonly StrategyParam<TradeModeOption> _tradeMode;
+	private readonly StrategyParam<TradeModeOptions> _tradeMode;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -165,7 +165,7 @@ public class Ntk07RangeTraderStrategy : Strategy
 	/// <summary>
 	/// Range interaction mode for entry logic.
 	/// </summary>
-	public TradeModeOption TradeMode
+	public TradeModeOptions TradeMode
 	{
 		get => _tradeMode.Value;
 		set => _tradeMode.Value = value;
@@ -238,7 +238,7 @@ public class Ntk07RangeTraderStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Range Bars", "Number of completed candles used for the range", "Entries");
 
-		_tradeMode = Param(nameof(TradeMode), TradeModeOption.EdgesOfRange)
+		_tradeMode = Param(nameof(TradeMode), TradeModeOptions.EdgesOfRange)
 		.SetDisplay("Trade Mode", "How price interacts with the range before placing orders", "Entries");
 
 		_maPeriod = Param(nameof(MovingAveragePeriod), 100)
@@ -395,8 +395,8 @@ public class Ntk07RangeTraderStrategy : Strategy
 		{
 			allowEntries = TradeMode switch
 			{
-				TradeModeOption.EdgesOfRange => candle.ClosePrice >= rangeHigh.Value || candle.ClosePrice <= rangeLow.Value,
-				TradeModeOption.CenterOfRange => Math.Abs(candle.ClosePrice - ((rangeHigh.Value + rangeLow.Value) / 2m)) <= _priceStep,
+				TradeModeOptions.EdgesOfRange => candle.ClosePrice >= rangeHigh.Value || candle.ClosePrice <= rangeLow.Value,
+				TradeModeOptions.CenterOfRange => Math.Abs(candle.ClosePrice - ((rangeHigh.Value + rangeLow.Value) / 2m)) <= _priceStep,
 				_ => true,
 			};
 		}

@@ -20,9 +20,9 @@ public class DirectedMovementStrategy : Strategy
 {
 		private readonly StrategyParam<DataType> _candleType;
 		private readonly StrategyParam<int> _rsiPeriod;
-		private readonly StrategyParam<MaType> _firstMaType;
+		private readonly StrategyParam<MaTypes> _firstMaType;
 		private readonly StrategyParam<int> _firstMaLength;
-		private readonly StrategyParam<MaType> _secondMaType;
+		private readonly StrategyParam<MaTypes> _secondMaType;
 		private readonly StrategyParam<int> _secondMaLength;
 		private readonly StrategyParam<decimal> _stopLossPercent;
 		private readonly StrategyParam<decimal> _takeProfitPercent;
@@ -43,7 +43,7 @@ public class DirectedMovementStrategy : Strategy
 						.SetDisplay("RSI Period", "RSI calculation period", "General")
 						.SetCanOptimize(true);
 
-				_firstMaType = Param(nameof(FirstMaType), MaType.SMA)
+				_firstMaType = Param(nameof(FirstMaType), MaTypes.SMA)
 						.SetDisplay("Fast MA Type", "Moving average for fast line", "General");
 
 				_firstMaLength = Param(nameof(FirstMaLength), 12)
@@ -51,7 +51,7 @@ public class DirectedMovementStrategy : Strategy
 						.SetDisplay("Fast MA Length", "Period of fast moving average", "General")
 						.SetCanOptimize(true);
 
-				_secondMaType = Param(nameof(SecondMaType), MaType.EMA)
+				_secondMaType = Param(nameof(SecondMaType), MaTypes.EMA)
 						.SetDisplay("Slow MA Type", "Moving average for slow line", "General");
 
 				_secondMaLength = Param(nameof(SecondMaLength), 5)
@@ -68,9 +68,9 @@ public class DirectedMovementStrategy : Strategy
 
 		public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 		public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
-		public MaType FirstMaType { get => _firstMaType.Value; set => _firstMaType.Value = value; }
+		public MaTypes FirstMaType { get => _firstMaType.Value; set => _firstMaType.Value = value; }
 		public int FirstMaLength { get => _firstMaLength.Value; set => _firstMaLength.Value = value; }
-		public MaType SecondMaType { get => _secondMaType.Value; set => _secondMaType.Value = value; }
+		public MaTypes SecondMaType { get => _secondMaType.Value; set => _secondMaType.Value = value; }
 		public int SecondMaLength { get => _secondMaLength.Value; set => _secondMaLength.Value = value; }
 		public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
 		public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
@@ -143,13 +143,13 @@ public class DirectedMovementStrategy : Strategy
 				_prevSlow = slow;
 		}
 
-		private static MovingAverage CreateMa(MaType type, int length)
+		private static MovingAverage CreateMa(MaTypes type, int length)
 				=> type switch
 				{
-						MaType.EMA => new ExponentialMovingAverage { Length = length },
-						MaType.SMMA => new SmoothedMovingAverage { Length = length },
-						MaType.WMA => new WeightedMovingAverage { Length = length },
-						MaType.HMA => new HullMovingAverage { Length = length },
+						MaTypes.EMA => new ExponentialMovingAverage { Length = length },
+						MaTypes.SMMA => new SmoothedMovingAverage { Length = length },
+						MaTypes.WMA => new WeightedMovingAverage { Length = length },
+						MaTypes.HMA => new HullMovingAverage { Length = length },
 						_ => new SimpleMovingAverage { Length = length },
 				};
 }
@@ -157,7 +157,7 @@ public class DirectedMovementStrategy : Strategy
 /// <summary>
 /// Types of moving averages available for smoothing.
 /// </summary>
-public enum MaType
+public enum MaTypes
 {
 		SMA,
 		EMA,

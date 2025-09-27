@@ -25,8 +25,8 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 	private readonly StrategyParam<decimal> _riskPercent;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<CandlePrice> _priceSource;
-	private readonly StrategyParam<MovingAverageTypeEnum> _fastMaType;
-	private readonly StrategyParam<MovingAverageTypeEnum> _slowMaType;
+	private readonly StrategyParam<MovingAverageTypes> _fastMaType;
+	private readonly StrategyParam<MovingAverageTypes> _slowMaType;
 
 	private decimal? _previousFast;
 	private decimal? _previousSlow;
@@ -78,13 +78,13 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 		set => _priceSource.Value = value;
 	}
 
-	public MovingAverageTypeEnum FastMaType
+	public MovingAverageTypes FastMaType
 	{
 		get => _fastMaType.Value;
 		set => _fastMaType.Value = value;
 	}
 
-	public MovingAverageTypeEnum SlowMaType
+	public MovingAverageTypes SlowMaType
 	{
 		get => _slowMaType.Value;
 		set => _slowMaType.Value = value;
@@ -121,10 +121,10 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 		_priceSource = Param(nameof(PriceSource), CandlePrice.Close)
 			.SetDisplay("MA Price Source", "Price source used by both moving averages", "Indicators");
 
-		_fastMaType = Param(nameof(FastMaType), MovingAverageTypeEnum.Simple)
+		_fastMaType = Param(nameof(FastMaType), MovingAverageTypes.Simple)
 			.SetDisplay("Fast MA Type", "Moving average algorithm for the fast line", "Indicators");
 
-		_slowMaType = Param(nameof(SlowMaType), MovingAverageTypeEnum.Simple)
+		_slowMaType = Param(nameof(SlowMaType), MovingAverageTypes.Simple)
 			.SetDisplay("Slow MA Type", "Moving average algorithm for the slow line", "Indicators");
 	}
 
@@ -340,19 +340,19 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 		_stopPrice = 0m;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypeEnum type, int length, CandlePrice price)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type, int length, CandlePrice price)
 	{
 		return type switch
 		{
-			MovingAverageTypeEnum.Simple => new SimpleMovingAverage { Length = length, CandlePrice = price },
-			MovingAverageTypeEnum.Exponential => new ExponentialMovingAverage { Length = length, CandlePrice = price },
-			MovingAverageTypeEnum.Smoothed => new SmoothedMovingAverage { Length = length, CandlePrice = price },
-			MovingAverageTypeEnum.Weighted => new WeightedMovingAverage { Length = length, CandlePrice = price },
+			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length, CandlePrice = price },
+			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length, CandlePrice = price },
+			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length, CandlePrice = price },
+			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length, CandlePrice = price },
 			_ => new SimpleMovingAverage { Length = length, CandlePrice = price },
 		};
 	}
 
-	public enum MovingAverageTypeEnum
+	public enum MovingAverageTypes
 	{
 		Simple,
 		Exponential,

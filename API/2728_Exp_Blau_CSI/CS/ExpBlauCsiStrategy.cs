@@ -18,15 +18,15 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ExpBlauCsiStrategy : Strategy
 {
-	private readonly StrategyParam<BlauCsiEntryMode> _entryMode;
-	private readonly StrategyParam<BlauCsiSmoothMethod> _smoothMethod;
+	private readonly StrategyParam<BlauCsiEntryModes> _entryMode;
+	private readonly StrategyParam<BlauCsiSmoothMethods> _smoothMethod;
 	private readonly StrategyParam<int> _momentumLength;
 	private readonly StrategyParam<int> _firstSmoothLength;
 	private readonly StrategyParam<int> _secondSmoothLength;
 	private readonly StrategyParam<int> _thirdSmoothLength;
 	private readonly StrategyParam<int> _smoothingPhase;
-	private readonly StrategyParam<BlauCsiAppliedPrice> _firstPrice;
-	private readonly StrategyParam<BlauCsiAppliedPrice> _secondPrice;
+	private readonly StrategyParam<BlauCsiAppliedPrices> _firstPrice;
+	private readonly StrategyParam<BlauCsiAppliedPrices> _secondPrice;
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
@@ -48,10 +48,10 @@ public class ExpBlauCsiStrategy : Strategy
 	/// </summary>
 	public ExpBlauCsiStrategy()
 	{
-		_entryMode = Param(nameof(EntryMode), BlauCsiEntryMode.Twist)
+		_entryMode = Param(nameof(EntryMode), BlauCsiEntryModes.Twist)
 			.SetDisplay("Entry Mode", "Zero cross or direction change logic", "Parameters");
 
-		_smoothMethod = Param(nameof(SmoothingMethod), BlauCsiSmoothMethod.Exponential)
+		_smoothMethod = Param(nameof(SmoothingMethod), BlauCsiSmoothMethods.Exponential)
 			.SetDisplay("Smoothing Method", "Moving average type used inside Blau CSI", "Indicator");
 
 		_momentumLength = Param(nameof(MomentumLength), 1)
@@ -81,10 +81,10 @@ public class ExpBlauCsiStrategy : Strategy
 		_smoothingPhase = Param(nameof(SmoothingPhase), 15)
 			.SetDisplay("Smoothing Phase", "Phase parameter used by Jurik smoothing", "Indicator");
 
-		_firstPrice = Param(nameof(FirstPrice), BlauCsiAppliedPrice.Close)
+		_firstPrice = Param(nameof(FirstPrice), BlauCsiAppliedPrices.Close)
 			.SetDisplay("Momentum Price", "Price constant for the leading value", "Indicator");
 
-		_secondPrice = Param(nameof(SecondPrice), BlauCsiAppliedPrice.Open)
+		_secondPrice = Param(nameof(SecondPrice), BlauCsiAppliedPrices.Open)
 			.SetDisplay("Reference Price", "Price constant for the lagging value", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -128,7 +128,7 @@ public class ExpBlauCsiStrategy : Strategy
 	/// <summary>
 	/// Entry mode determining how Blau CSI generates signals.
 	/// </summary>
-	public BlauCsiEntryMode EntryMode
+	public BlauCsiEntryModes EntryMode
 	{
 		get => _entryMode.Value;
 		set => _entryMode.Value = value;
@@ -137,7 +137,7 @@ public class ExpBlauCsiStrategy : Strategy
 	/// <summary>
 	/// Smoothing method used inside Blau CSI calculation.
 	/// </summary>
-	public BlauCsiSmoothMethod SmoothingMethod
+	public BlauCsiSmoothMethods SmoothingMethod
 	{
 		get => _smoothMethod.Value;
 		set => _smoothMethod.Value = value;
@@ -191,7 +191,7 @@ public class ExpBlauCsiStrategy : Strategy
 	/// <summary>
 	/// Price constant for the leading momentum value.
 	/// </summary>
-	public BlauCsiAppliedPrice FirstPrice
+	public BlauCsiAppliedPrices FirstPrice
 	{
 		get => _firstPrice.Value;
 		set => _firstPrice.Value = value;
@@ -200,7 +200,7 @@ public class ExpBlauCsiStrategy : Strategy
 	/// <summary>
 	/// Price constant for the lagging momentum value.
 	/// </summary>
-	public BlauCsiAppliedPrice SecondPrice
+	public BlauCsiAppliedPrices SecondPrice
 	{
 		get => _secondPrice.Value;
 		set => _secondPrice.Value = value;
@@ -409,7 +409,7 @@ public class ExpBlauCsiStrategy : Strategy
 
 	private (bool openLong, bool openShort, bool closeLong, bool closeShort) EvaluateSignals()
 	{
-		var required = EntryMode == BlauCsiEntryMode.Twist ? 3 : 2;
+		var required = EntryMode == BlauCsiEntryModes.Twist ? 3 : 2;
 		var count = _indicatorValues.Count;
 
 		if (SignalBar < 0)
@@ -424,7 +424,7 @@ public class ExpBlauCsiStrategy : Strategy
 		var closeLong = false;
 		var closeShort = false;
 
-		if (EntryMode == BlauCsiEntryMode.Breakdown)
+		if (EntryMode == BlauCsiEntryModes.Breakdown)
 		{
 			var current = _indicatorValues[signalIndex];
 			var previous = _indicatorValues[signalIndex - 1];
@@ -538,7 +538,7 @@ public class ExpBlauCsiStrategy : Strategy
 	{
 		_indicatorValues.Add(value);
 
-		var keep = SignalBar + (EntryMode == BlauCsiEntryMode.Twist ? 3 : 2) + 5;
+		var keep = SignalBar + (EntryMode == BlauCsiEntryModes.Twist ? 3 : 2) + 5;
 		if (keep < 10)
 			keep = 10;
 
@@ -550,7 +550,7 @@ public class ExpBlauCsiStrategy : Strategy
 /// <summary>
 /// Available entry modes for the Blau CSI strategy.
 /// </summary>
-public enum BlauCsiEntryMode
+public enum BlauCsiEntryModes
 {
 	/// <summary>
 	/// Use zero level breakdowns as signals.
@@ -566,7 +566,7 @@ public enum BlauCsiEntryMode
 /// <summary>
 /// Applied price constants supported by the Blau CSI indicator.
 /// </summary>
-public enum BlauCsiAppliedPrice
+public enum BlauCsiAppliedPrices
 {
 	/// <summary>
 	/// Close price.
@@ -632,7 +632,7 @@ public enum BlauCsiAppliedPrice
 /// <summary>
 /// Smoothing methods available for Blau CSI.
 /// </summary>
-public enum BlauCsiSmoothMethod
+public enum BlauCsiSmoothMethods
 {
 	/// <summary>
 	/// Simple moving average.
@@ -676,7 +676,7 @@ public class BlauCsiIndicator : BaseIndicator<decimal>
 	/// <summary>
 	/// Selected smoothing method.
 	/// </summary>
-	public BlauCsiSmoothMethod SmoothMethod { get; set; } = BlauCsiSmoothMethod.Exponential;
+	public BlauCsiSmoothMethods SmoothMethod { get; set; } = BlauCsiSmoothMethods.Exponential;
 
 	/// <summary>
 	/// Momentum length.
@@ -706,12 +706,12 @@ public class BlauCsiIndicator : BaseIndicator<decimal>
 	/// <summary>
 	/// Price constant used for the leading price.
 	/// </summary>
-	public BlauCsiAppliedPrice FirstPrice { get; set; } = BlauCsiAppliedPrice.Close;
+	public BlauCsiAppliedPrices FirstPrice { get; set; } = BlauCsiAppliedPrices.Close;
 
 	/// <summary>
 	/// Price constant used for the lagging price.
 	/// </summary>
-	public BlauCsiAppliedPrice SecondPrice { get; set; } = BlauCsiAppliedPrice.Open;
+	public BlauCsiAppliedPrices SecondPrice { get; set; } = BlauCsiAppliedPrices.Open;
 
 	/// <inheritdoc />
 	protected override IIndicatorValue OnProcess(IIndicatorValue input)
@@ -786,38 +786,38 @@ public class BlauCsiIndicator : BaseIndicator<decimal>
 	{
 		return SmoothMethod switch
 		{
-			BlauCsiSmoothMethod.Simple => new SimpleMovingAverage { Length = length },
-			BlauCsiSmoothMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			BlauCsiSmoothMethod.LinearWeighted => new LinearWeightedMovingAverage { Length = length },
-			BlauCsiSmoothMethod.Jurik => new JurikMovingAverage { Length = length, Phase = Phase },
+			BlauCsiSmoothMethods.Simple => new SimpleMovingAverage { Length = length },
+			BlauCsiSmoothMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			BlauCsiSmoothMethods.LinearWeighted => new LinearWeightedMovingAverage { Length = length },
+			BlauCsiSmoothMethods.Jurik => new JurikMovingAverage { Length = length, Phase = Phase },
 			_ => new ExponentialMovingAverage { Length = length }
 		};
 	}
 
-	private static decimal GetPrice(ICandleMessage candle, BlauCsiAppliedPrice price)
+	private static decimal GetPrice(ICandleMessage candle, BlauCsiAppliedPrices price)
 	{
 		return price switch
 		{
-			BlauCsiAppliedPrice.Close => candle.ClosePrice,
-			BlauCsiAppliedPrice.Open => candle.OpenPrice,
-			BlauCsiAppliedPrice.High => candle.HighPrice,
-			BlauCsiAppliedPrice.Low => candle.LowPrice,
-			BlauCsiAppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			BlauCsiAppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			BlauCsiAppliedPrice.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			BlauCsiAppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			BlauCsiAppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			BlauCsiAppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
+			BlauCsiAppliedPrices.Close => candle.ClosePrice,
+			BlauCsiAppliedPrices.Open => candle.OpenPrice,
+			BlauCsiAppliedPrices.High => candle.HighPrice,
+			BlauCsiAppliedPrices.Low => candle.LowPrice,
+			BlauCsiAppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			BlauCsiAppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			BlauCsiAppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			BlauCsiAppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			BlauCsiAppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			BlauCsiAppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
 				? candle.HighPrice
 				: candle.ClosePrice < candle.OpenPrice
 					? candle.LowPrice
 					: candle.ClosePrice,
-			BlauCsiAppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
+			BlauCsiAppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
 				? (candle.HighPrice + candle.ClosePrice) / 2m
 				: candle.ClosePrice < candle.OpenPrice
 					? (candle.LowPrice + candle.ClosePrice) / 2m
 					: candle.ClosePrice,
-			BlauCsiAppliedPrice.Demark => GetDemarkPrice(candle),
+			BlauCsiAppliedPrices.Demark => GetDemarkPrice(candle),
 			_ => candle.ClosePrice
 		};
 	}

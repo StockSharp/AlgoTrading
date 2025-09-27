@@ -29,12 +29,12 @@ public class ColorX2MaDigitNn3MmrecStrategy : Strategy
 	/// </summary>
 	public ColorX2MaDigitNn3MmrecStrategy()
 	{
-		_aContext = new TimeframeContext(this, "A", TimeSpan.FromHours(12), ColorX2MaAppliedPrice.Close, ColorX2MaSmoothMethod.Simple,
-		ColorX2MaSmoothMethod.Jurik, 12, 5, 1, 2);
-		_bContext = new TimeframeContext(this, "B", TimeSpan.FromHours(6), ColorX2MaAppliedPrice.Close, ColorX2MaSmoothMethod.Simple,
-		ColorX2MaSmoothMethod.Jurik, 12, 5, 1, 2);
-		_cContext = new TimeframeContext(this, "C", TimeSpan.FromHours(3), ColorX2MaAppliedPrice.Close, ColorX2MaSmoothMethod.Simple,
-		ColorX2MaSmoothMethod.Jurik, 12, 5, 1, 1);
+		_aContext = new TimeframeContext(this, "A", TimeSpan.FromHours(12), ColorX2MaAppliedPrices.Close, ColorX2MaSmoothMethods.Simple,
+		ColorX2MaSmoothMethods.Jurik, 12, 5, 1, 2);
+		_bContext = new TimeframeContext(this, "B", TimeSpan.FromHours(6), ColorX2MaAppliedPrices.Close, ColorX2MaSmoothMethods.Simple,
+		ColorX2MaSmoothMethods.Jurik, 12, 5, 1, 2);
+		_cContext = new TimeframeContext(this, "C", TimeSpan.FromHours(3), ColorX2MaAppliedPrices.Close, ColorX2MaSmoothMethods.Simple,
+		ColorX2MaSmoothMethods.Jurik, 12, 5, 1, 1);
 	}
 
 	/// <summary>
@@ -138,13 +138,13 @@ public class ColorX2MaDigitNn3MmrecStrategy : Strategy
 		private readonly string _label;
 
 		private readonly StrategyParam<DataType> _candleType;
-		private readonly StrategyParam<ColorX2MaSmoothMethod> _fastMethod;
-		private readonly StrategyParam<ColorX2MaSmoothMethod> _slowMethod;
+		private readonly StrategyParam<ColorX2MaSmoothMethods> _fastMethod;
+		private readonly StrategyParam<ColorX2MaSmoothMethods> _slowMethod;
 		private readonly StrategyParam<int> _fastLength;
 		private readonly StrategyParam<int> _slowLength;
 		private readonly StrategyParam<int> _signalBars;
 		private readonly StrategyParam<int> _digits;
-		private readonly StrategyParam<ColorX2MaAppliedPrice> _priceType;
+		private readonly StrategyParam<ColorX2MaAppliedPrices> _priceType;
 		private readonly StrategyParam<bool> _allowLongEntry;
 		private readonly StrategyParam<bool> _allowLongExit;
 		private readonly StrategyParam<bool> _allowShortEntry;
@@ -153,11 +153,11 @@ public class ColorX2MaDigitNn3MmrecStrategy : Strategy
 
 		private Subscription _subscription;
 		private ColorX2MaDigitIndicator _indicator;
-		private TrendDirection _pendingDirection = TrendDirection.None;
+		private TrendDirections _pendingDirection = TrendDirections.None;
 		private int _pendingCount;
 
-		public TimeframeContext(ColorX2MaDigitNn3MmrecStrategy parent, string label, TimeSpan timeframe, ColorX2MaAppliedPrice price,
-		ColorX2MaSmoothMethod fastMethod, ColorX2MaSmoothMethod slowMethod, int fastLength, int slowLength, int signalBars, int digits)
+		public TimeframeContext(ColorX2MaDigitNn3MmrecStrategy parent, string label, TimeSpan timeframe, ColorX2MaAppliedPrices price,
+		ColorX2MaSmoothMethods fastMethod, ColorX2MaSmoothMethods slowMethod, int fastLength, int slowLength, int signalBars, int digits)
 		{
 			_parent = parent;
 			_label = label;
@@ -251,7 +251,7 @@ public class ColorX2MaDigitNn3MmrecStrategy : Strategy
 			_indicator = null;
 
 			CurrentTarget = 0m;
-			_pendingDirection = TrendDirection.None;
+			_pendingDirection = TrendDirections.None;
 			_pendingCount = 0;
 		}
 
@@ -267,7 +267,7 @@ public class ColorX2MaDigitNn3MmrecStrategy : Strategy
 				return false;
 
 			var direction = colorValue.Direction;
-			if (direction == TrendDirection.None)
+			if (direction == TrendDirections.None)
 				return false;
 
 			if (direction != _pendingDirection)
@@ -285,7 +285,7 @@ public class ColorX2MaDigitNn3MmrecStrategy : Strategy
 
 			var target = CurrentTarget;
 
-			if (direction == TrendDirection.Up)
+			if (direction == TrendDirections.Up)
 			{
 				// Close short exposure when the direction flips to bullish.
 				if (target < 0m)
@@ -306,7 +306,7 @@ public class ColorX2MaDigitNn3MmrecStrategy : Strategy
 					target = _volume.Value;
 				}
 			}
-			else if (direction == TrendDirection.Down)
+			else if (direction == TrendDirections.Down)
 			{
 				// Close long exposure when the direction flips to bearish.
 				if (target > 0m)
@@ -340,7 +340,7 @@ public class ColorX2MaDigitNn3MmrecStrategy : Strategy
 /// <summary>
 /// Available price sources for the custom indicator.
 /// </summary>
-public enum ColorX2MaAppliedPrice
+public enum ColorX2MaAppliedPrices
 {
 	/// <summary>
 	/// Close price.
@@ -395,7 +395,7 @@ public enum ColorX2MaAppliedPrice
 /// <summary>
 /// Smoothing method used by the custom double moving average.
 /// </summary>
-public enum ColorX2MaSmoothMethod
+public enum ColorX2MaSmoothMethods
 {
 	/// <summary>
 	/// Simple moving average.
@@ -423,7 +423,7 @@ public enum ColorX2MaSmoothMethod
 	Adaptive
 }
 
-internal enum TrendDirection
+internal enum TrendDirections
 {
 	None,
 	Up,
@@ -432,9 +432,9 @@ internal enum TrendDirection
 
 internal sealed class ColorX2MaDigitIndicator : Indicator<ICandleMessage>
 {
-	public ColorX2MaAppliedPrice AppliedPrice { get; set; } = ColorX2MaAppliedPrice.Close;
-	public ColorX2MaSmoothMethod FastMethod { get; set; } = ColorX2MaSmoothMethod.Simple;
-	public ColorX2MaSmoothMethod SlowMethod { get; set; } = ColorX2MaSmoothMethod.Jurik;
+	public ColorX2MaAppliedPrices AppliedPrice { get; set; } = ColorX2MaAppliedPrices.Close;
+	public ColorX2MaSmoothMethods FastMethod { get; set; } = ColorX2MaSmoothMethods.Simple;
+	public ColorX2MaSmoothMethods SlowMethod { get; set; } = ColorX2MaSmoothMethods.Jurik;
 	public int FastLength { get; set; } = 12;
 	public int SlowLength { get; set; } = 5;
 	public int Digits { get; set; } = 2;
@@ -442,12 +442,12 @@ internal sealed class ColorX2MaDigitIndicator : Indicator<ICandleMessage>
 	private IIndicator _fastMa;
 	private IIndicator _slowMa;
 	private decimal? _previousValue;
-	private TrendDirection _previousDirection = TrendDirection.None;
+	private TrendDirections _previousDirection = TrendDirections.None;
 
 	protected override IIndicatorValue OnProcess(IIndicatorValue input)
 	{
 		if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
-		return new ColorX2MaDigitValue(this, input, 0m, TrendDirection.None);
+		return new ColorX2MaDigitValue(this, input, 0m, TrendDirections.None);
 
 		_fastMa ??= CreateAverage(FastMethod, FastLength);
 		_slowMa ??= CreateAverage(SlowMethod, SlowLength);
@@ -461,19 +461,19 @@ internal sealed class ColorX2MaDigitIndicator : Indicator<ICandleMessage>
 		if (!_slowMa.IsFormed)
 		{
 			_previousValue = current;
-			_previousDirection = TrendDirection.None;
+			_previousDirection = TrendDirections.None;
 			IsFormed = false;
-			return new ColorX2MaDigitValue(this, input, current, TrendDirection.None);
+			return new ColorX2MaDigitValue(this, input, current, TrendDirections.None);
 		}
 
-		var direction = TrendDirection.None;
+		var direction = TrendDirections.None;
 		if (_previousValue is decimal prev)
 		{
 			var diff = current - prev;
 			direction = diff > 0m
-			? TrendDirection.Up
+			? TrendDirections.Up
 			: diff < 0m
-			? TrendDirection.Down
+			? TrendDirections.Down
 			: _previousDirection;
 		}
 
@@ -493,7 +493,7 @@ internal sealed class ColorX2MaDigitIndicator : Indicator<ICandleMessage>
 		_fastMa = null;
 		_slowMa = null;
 		_previousValue = null;
-		_previousDirection = TrendDirection.None;
+		_previousDirection = TrendDirections.None;
 		IsFormed = false;
 	}
 
@@ -501,25 +501,25 @@ internal sealed class ColorX2MaDigitIndicator : Indicator<ICandleMessage>
 	{
 		return AppliedPrice switch
 		{
-			ColorX2MaAppliedPrice.Open => candle.OpenPrice,
-			ColorX2MaAppliedPrice.High => candle.HighPrice,
-			ColorX2MaAppliedPrice.Low => candle.LowPrice,
-			ColorX2MaAppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			ColorX2MaAppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			ColorX2MaAppliedPrice.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			ColorX2MaAppliedPrice.Simpl => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			ColorX2MaAppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			ColorX2MaAppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
+			ColorX2MaAppliedPrices.Open => candle.OpenPrice,
+			ColorX2MaAppliedPrices.High => candle.HighPrice,
+			ColorX2MaAppliedPrices.Low => candle.LowPrice,
+			ColorX2MaAppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			ColorX2MaAppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			ColorX2MaAppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			ColorX2MaAppliedPrices.Simpl => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			ColorX2MaAppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			ColorX2MaAppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
 			? candle.HighPrice
 			: candle.ClosePrice < candle.OpenPrice
 			? candle.LowPrice
 			: candle.ClosePrice,
-			ColorX2MaAppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
+			ColorX2MaAppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
 			? (candle.HighPrice + candle.ClosePrice) / 2m
 			: candle.ClosePrice < candle.OpenPrice
 			? (candle.LowPrice + candle.ClosePrice) / 2m
 			: candle.ClosePrice,
-			ColorX2MaAppliedPrice.Demark => CalculateDemarkPrice(candle),
+			ColorX2MaAppliedPrices.Demark => CalculateDemarkPrice(candle),
 			_ => candle.ClosePrice,
 		};
 	}
@@ -543,15 +543,15 @@ internal sealed class ColorX2MaDigitIndicator : Indicator<ICandleMessage>
 		return Digits < 0 ? value : Math.Round(value, Digits, MidpointRounding.AwayFromZero);
 	}
 
-	private static IIndicator CreateAverage(ColorX2MaSmoothMethod method, int length)
+	private static IIndicator CreateAverage(ColorX2MaSmoothMethods method, int length)
 	{
 		return method switch
 		{
-			ColorX2MaSmoothMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			ColorX2MaSmoothMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			ColorX2MaSmoothMethod.LinearWeighted => new WeightedMovingAverage { Length = length },
-			ColorX2MaSmoothMethod.Jurik => new JurikMovingAverage { Length = length },
-			ColorX2MaSmoothMethod.Adaptive => new KaufmanAdaptiveMovingAverage { Length = length },
+			ColorX2MaSmoothMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			ColorX2MaSmoothMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			ColorX2MaSmoothMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
+			ColorX2MaSmoothMethods.Jurik => new JurikMovingAverage { Length = length },
+			ColorX2MaSmoothMethods.Adaptive => new KaufmanAdaptiveMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
@@ -559,12 +559,12 @@ internal sealed class ColorX2MaDigitIndicator : Indicator<ICandleMessage>
 
 internal sealed class ColorX2MaDigitValue : ComplexIndicatorValue
 {
-	public ColorX2MaDigitValue(IIndicator indicator, IIndicatorValue input, decimal value, TrendDirection direction)
+	public ColorX2MaDigitValue(IIndicator indicator, IIndicatorValue input, decimal value, TrendDirections direction)
 	: base(indicator, input, (nameof(Value), value), (nameof(Direction), direction))
 	{
 	}
 
 	public decimal Value => (decimal)GetValue(nameof(Value));
 
-	public TrendDirection Direction => (TrendDirection)GetValue(nameof(Direction));
+	public TrendDirections Direction => (TrendDirections)GetValue(nameof(Direction));
 }

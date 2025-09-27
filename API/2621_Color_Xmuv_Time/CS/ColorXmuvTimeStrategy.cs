@@ -31,14 +31,14 @@ public class ColorXmuvTimeStrategy : Strategy
 	private readonly StrategyParam<int> _startMinute;
 	private readonly StrategyParam<int> _endHour;
 	private readonly StrategyParam<int> _endMinute;
-	private readonly StrategyParam<SmoothMethod> _xmaMethod;
+	private readonly StrategyParam<SmoothMethods> _xmaMethod;
 	private readonly StrategyParam<int> _xLength;
 	private readonly StrategyParam<int> _xPhase;
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 
-	private readonly List<TrendColor> _colorHistory = new();
+	private readonly List<TrendColors> _colorHistory = new();
 
 	private IIndicator _xma = null!;
 	private decimal? _previousXmuv;
@@ -145,7 +145,7 @@ public class ColorXmuvTimeStrategy : Strategy
 	/// <summary>
 	/// Smoothing method used by the Color XMUV line.
 	/// </summary>
-	public SmoothMethod XmaMethod
+	public SmoothMethods XmaMethod
 	{
 		get => _xmaMethod.Value;
 		set => _xmaMethod.Value = value;
@@ -252,7 +252,7 @@ public class ColorXmuvTimeStrategy : Strategy
 		.SetRange(0, 59)
 		.SetDisplay("End Minute", "Trading session end minute", "Time Filter");
 
-		_xmaMethod = Param(nameof(XmaMethod), SmoothMethod.Sma)
+		_xmaMethod = Param(nameof(XmaMethod), SmoothMethods.Sma)
 		.SetDisplay("Smoothing Method", "Algorithm for the Color XMUV line", "Indicator");
 
 		_xLength = Param(nameof(XLength), 14)
@@ -346,8 +346,8 @@ public class ColorXmuvTimeStrategy : Strategy
 			return;
 		}
 
-		var bullishFlip = currentColor == TrendColor.Bullish && previousColor != TrendColor.Bullish;
-		var bearishFlip = currentColor == TrendColor.Bearish && previousColor != TrendColor.Bearish;
+		var bullishFlip = currentColor == TrendColors.Bullish && previousColor != TrendColors.Bullish;
+		var bearishFlip = currentColor == TrendColors.Bearish && previousColor != TrendColors.Bearish;
 
 		if (bullishFlip)
 		{
@@ -398,27 +398,27 @@ public class ColorXmuvTimeStrategy : Strategy
 		return candle.ClosePrice;
 	}
 
-	private TrendColor DetermineColor(decimal currentXmuv)
+	private TrendColors DetermineColor(decimal currentXmuv)
 	{
 		if (_previousXmuv is not decimal previous)
 		{
-			return TrendColor.Neutral;
+			return TrendColors.Neutral;
 		}
 
 		if (currentXmuv > previous)
 		{
-			return TrendColor.Bullish;
+			return TrendColors.Bullish;
 		}
 
 		if (currentXmuv < previous)
 		{
-			return TrendColor.Bearish;
+			return TrendColors.Bearish;
 		}
 
-		return TrendColor.Neutral;
+		return TrendColors.Neutral;
 	}
 
-	private void StoreColor(TrendColor color)
+	private void StoreColor(TrendColors color)
 	{
 		var maxSize = Math.Clamp(SignalBar + 2, 2, MaxColorHistory);
 		_colorHistory.Add(color);
@@ -439,10 +439,10 @@ public class ColorXmuvTimeStrategy : Strategy
 		}
 	}
 
-	private bool TryGetSignalColors(int offset, out TrendColor current, out TrendColor previous)
+	private bool TryGetSignalColors(int offset, out TrendColors current, out TrendColors previous)
 	{
-		current = TrendColor.Neutral;
-		previous = TrendColor.Neutral;
+		current = TrendColors.Neutral;
+		previous = TrendColors.Neutral;
 
 		var count = _colorHistory.Count;
 		if (count <= offset)
@@ -512,25 +512,25 @@ public class ColorXmuvTimeStrategy : Strategy
 		return new Unit(step * TakeProfitPoints, UnitTypes.Absolute);
 	}
 
-	private IIndicator CreateMovingAverage(SmoothMethod method, int length)
+	private IIndicator CreateMovingAverage(SmoothMethods method, int length)
 	{
 		return method switch
 		{
-			SmoothMethod.Sma => new SimpleMovingAverage { Length = length },
-			SmoothMethod.Ema => new ExponentialMovingAverage { Length = length },
-			SmoothMethod.Smma => new SmoothedMovingAverage { Length = length },
-			SmoothMethod.Lwma => new WeightedMovingAverage { Length = length },
-			SmoothMethod.Jjma => new JurikMovingAverage { Length = length },
-			SmoothMethod.Jurx => new JurikMovingAverage { Length = length },
-			SmoothMethod.Parma => new WeightedMovingAverage { Length = length },
-			SmoothMethod.T3 => new ExponentialMovingAverage { Length = length },
-			SmoothMethod.Vidya => new ExponentialMovingAverage { Length = length },
-			SmoothMethod.Ama => new KaufmanAdaptiveMovingAverage { Length = length },
+			SmoothMethods.Sma => new SimpleMovingAverage { Length = length },
+			SmoothMethods.Ema => new ExponentialMovingAverage { Length = length },
+			SmoothMethods.Smma => new SmoothedMovingAverage { Length = length },
+			SmoothMethods.Lwma => new WeightedMovingAverage { Length = length },
+			SmoothMethods.Jjma => new JurikMovingAverage { Length = length },
+			SmoothMethods.Jurx => new JurikMovingAverage { Length = length },
+			SmoothMethods.Parma => new WeightedMovingAverage { Length = length },
+			SmoothMethods.T3 => new ExponentialMovingAverage { Length = length },
+			SmoothMethods.Vidya => new ExponentialMovingAverage { Length = length },
+			SmoothMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = length },
 			_ => new ExponentialMovingAverage { Length = length },
 		};
 	}
 
-	private enum TrendColor
+	private enum TrendColors
 	{
 		Bearish = 0,
 		Neutral = 1,
@@ -540,7 +540,7 @@ public class ColorXmuvTimeStrategy : Strategy
 	/// <summary>
 	/// Smoothing methods supported by the Color XMUV indicator.
 	/// </summary>
-	public enum SmoothMethod
+	public enum SmoothMethods
 	{
 		Sma,
 		Ema,

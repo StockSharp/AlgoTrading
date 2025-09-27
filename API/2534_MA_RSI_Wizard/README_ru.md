@@ -38,7 +38,7 @@
 | `ExpirationBars` | Кулдаун перед повторным входом в том же направлении (свечи). | 4 |
 | `MaPeriod` | Период скользящей средней. | 20 |
 | `MaShift` | Сдвиг средней вперёд (свечи). | 3 |
-| `MaMethod` | Метод MA (Simple, Exponential, Smoothed, LinearWeighted). | Simple |
+| `MaMethods` | Метод MA (Simple, Exponential, Smoothed, LinearWeighted). | Simple |
 | `MaAppliedPrice` | Источник цены для MA. | Close |
 | `MaWeight` | Вес вклада MA в общий балл. | 0.8 |
 | `RsiPeriod` | Период RSI. | 3 |

@@ -7,7 +7,7 @@
 - **CCI Period** – CCI 指标的周期。
 - **Upper Level** – 触发买入信号的上限。
 - **Lower Level** – 触发卖出信号的下限。
-- **Entry Mode** – `Breakdown` 处理突破，`Twist` 处理方向变化。
+- **Entry Modes** – `Breakdown` 处理突破，`Twist` 处理方向变化。
 - **Candle Type** – 计算所用蜡烛的时间框架。
 
 ## 原始来源

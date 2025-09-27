@@ -20,7 +20,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ExpDemaRangeChannelTmPlusStrategy : Strategy
 {
-	private enum ChannelSignal
+	private enum ChannelSignals
 	{
 		DownBearish = 0,
 		DownBullish = 1,
@@ -47,7 +47,7 @@ public class ExpDemaRangeChannelTmPlusStrategy : Strategy
 	private DoubleExponentialMovingAverage _lowDema;
 	private Queue<decimal> _upperHistory;
 	private Queue<decimal> _lowerHistory;
-	private Queue<ChannelSignal> _colorHistory;
+	private Queue<ChannelSignals> _colorHistory;
 	private DateTimeOffset? _positionOpenedTime;
 
 	/// <summary>
@@ -253,7 +253,7 @@ public class ExpDemaRangeChannelTmPlusStrategy : Strategy
 		_lowDema = new DoubleExponentialMovingAverage { Length = MaPeriod };
 		_upperHistory = new Queue<decimal>();
 		_lowerHistory = new Queue<decimal>();
-		_colorHistory = new Queue<ChannelSignal>();
+		_colorHistory = new Queue<ChannelSignals>();
 		_positionOpenedTime = null;
 
 		var subscription = SubscribeCandles(CandleType);
@@ -317,7 +317,7 @@ public class ExpDemaRangeChannelTmPlusStrategy : Strategy
 		while (_lowerHistory.Count > maxCount)
 			_lowerHistory.Dequeue();
 
-		var color = ChannelSignal.None;
+		var color = ChannelSignals.None;
 
 		if (_upperHistory.Count == maxCount && _lowerHistory.Count == maxCount)
 		{
@@ -327,14 +327,14 @@ public class ExpDemaRangeChannelTmPlusStrategy : Strategy
 			if (candle.ClosePrice > shiftedUpper)
 			{
 				color = candle.ClosePrice >= candle.OpenPrice
-				? ChannelSignal.UpBullish
-				: ChannelSignal.UpBearish;
+				? ChannelSignals.UpBullish
+				: ChannelSignals.UpBearish;
 			}
 			else if (candle.ClosePrice < shiftedLower)
 			{
 				color = candle.ClosePrice <= candle.OpenPrice
-				? ChannelSignal.DownBearish
-				: ChannelSignal.DownBullish;
+				? ChannelSignals.DownBearish
+				: ChannelSignals.DownBullish;
 			}
 		}
 
@@ -397,22 +397,22 @@ public class ExpDemaRangeChannelTmPlusStrategy : Strategy
 		}
 	}
 
-	private ChannelSignal GetSignal(int offset)
+	private ChannelSignals GetSignal(int offset)
 	{
 		if (offset < 0 || _colorHistory.Count == 0 || offset >= _colorHistory.Count)
-		return ChannelSignal.None;
+		return ChannelSignals.None;
 
 		return _colorHistory.ElementAt(_colorHistory.Count - 1 - offset);
 	}
 
-	private static bool IsUpSignal(ChannelSignal signal)
+	private static bool IsUpSignal(ChannelSignals signal)
 	{
-		return signal == ChannelSignal.UpBearish || signal == ChannelSignal.UpBullish;
+		return signal == ChannelSignals.UpBearish || signal == ChannelSignals.UpBullish;
 	}
 
-	private static bool IsDownSignal(ChannelSignal signal)
+	private static bool IsDownSignal(ChannelSignals signal)
 	{
-		return signal == ChannelSignal.DownBearish || signal == ChannelSignal.DownBullish;
+		return signal == ChannelSignals.DownBearish || signal == ChannelSignals.DownBullish;
 	}
 
 	private void CloseCurrentPosition()

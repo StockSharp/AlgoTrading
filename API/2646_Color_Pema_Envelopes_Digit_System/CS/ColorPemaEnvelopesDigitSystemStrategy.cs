@@ -23,7 +23,7 @@ public class ColorPemaEnvelopesDigitSystemStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _emaLength;
-	private readonly StrategyParam<AppliedPrice> _appliedPrice;
+	private readonly StrategyParam<AppliedPrices> _appliedPrice;
 	private readonly StrategyParam<decimal> _deviationPercent;
 	private readonly StrategyParam<int> _shift;
 	private readonly StrategyParam<decimal> _priceShift;
@@ -59,7 +59,7 @@ public class ColorPemaEnvelopesDigitSystemStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("PEMA Length", "Length of each EMA stage in PEMA", "Indicator");
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPrice.Close)
+		_appliedPrice = Param(nameof(AppliedPrices), AppliedPrices.Close)
 		.SetDisplay("Applied Price", "Price source passed to PEMA", "Indicator");
 
 		_deviationPercent = Param(nameof(DeviationPercent), 0.1m)
@@ -132,7 +132,7 @@ public class ColorPemaEnvelopesDigitSystemStrategy : Strategy
 	/// <summary>
 	/// Price source passed to PEMA.
 	/// </summary>
-	public AppliedPrice AppliedPrice
+	public AppliedPrices AppliedPrices
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -390,20 +390,20 @@ public class ColorPemaEnvelopesDigitSystemStrategy : Strategy
 		var low = candle.LowPrice;
 		var close = candle.ClosePrice;
 
-		return AppliedPrice switch
+		return AppliedPrices switch
 		{
-			Strategies.AppliedPrice.Close => close,
-			Strategies.AppliedPrice.Open => open,
-			Strategies.AppliedPrice.High => high,
-			Strategies.AppliedPrice.Low => low,
-			Strategies.AppliedPrice.Median => (high + low) / 2m,
-			Strategies.AppliedPrice.Typical => (close + high + low) / 3m,
-			Strategies.AppliedPrice.Weighted => (2m * close + high + low) / 4m,
-			Strategies.AppliedPrice.Simple => (open + close) / 2m,
-			Strategies.AppliedPrice.Quarter => (open + close + high + low) / 4m,
-			Strategies.AppliedPrice.TrendFollow0 => close > open ? high : close < open ? low : close,
-			Strategies.AppliedPrice.TrendFollow1 => close > open ? (high + close) / 2m : close < open ? (low + close) / 2m : close,
-			Strategies.AppliedPrice.Demark => CalculateDemarkPrice(open, high, low, close),
+			Strategies.AppliedPrices.Close => close,
+			Strategies.AppliedPrices.Open => open,
+			Strategies.AppliedPrices.High => high,
+			Strategies.AppliedPrices.Low => low,
+			Strategies.AppliedPrices.Median => (high + low) / 2m,
+			Strategies.AppliedPrices.Typical => (close + high + low) / 3m,
+			Strategies.AppliedPrices.Weighted => (2m * close + high + low) / 4m,
+			Strategies.AppliedPrices.Simple => (open + close) / 2m,
+			Strategies.AppliedPrices.Quarter => (open + close + high + low) / 4m,
+			Strategies.AppliedPrices.TrendFollow0 => close > open ? high : close < open ? low : close,
+			Strategies.AppliedPrices.TrendFollow1 => close > open ? (high + close) / 2m : close < open ? (low + close) / 2m : close,
+			Strategies.AppliedPrices.Demark => CalculateDemarkPrice(open, high, low, close),
 			_ => close,
 		};
 	}
@@ -475,7 +475,7 @@ public class ColorPemaEnvelopesDigitSystemStrategy : Strategy
 	/// <summary>
 	/// Price source options for PEMA calculation.
 	/// </summary>
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		Close = 1,
 		Open,

@@ -21,20 +21,20 @@ namespace StockSharp.Samples.Strategies;
 public class ExpColorX2MaX2Strategy : Strategy
 {
 	private readonly StrategyParam<DataType> _trendCandleType;
-	private readonly StrategyParam<SmoothMethod> _trendMethod1;
+	private readonly StrategyParam<SmoothMethods> _trendMethod1;
 	private readonly StrategyParam<int> _trendLength1;
 	private readonly StrategyParam<int> _trendPhase1;
-	private readonly StrategyParam<SmoothMethod> _trendMethod2;
+	private readonly StrategyParam<SmoothMethods> _trendMethod2;
 	private readonly StrategyParam<int> _trendLength2;
 	private readonly StrategyParam<int> _trendPhase2;
 	private readonly StrategyParam<AppliedPrice> _trendPrice;
 	private readonly StrategyParam<int> _trendSignalBar;
 
 	private readonly StrategyParam<DataType> _signalCandleType;
-	private readonly StrategyParam<SmoothMethod> _signalMethod1;
+	private readonly StrategyParam<SmoothMethods> _signalMethod1;
 	private readonly StrategyParam<int> _signalLength1;
 	private readonly StrategyParam<int> _signalPhase1;
-	private readonly StrategyParam<SmoothMethod> _signalMethod2;
+	private readonly StrategyParam<SmoothMethods> _signalMethod2;
 	private readonly StrategyParam<int> _signalLength2;
 	private readonly StrategyParam<int> _signalPhase2;
 	private readonly StrategyParam<AppliedPrice> _signalPrice;
@@ -70,14 +70,14 @@ public class ExpColorX2MaX2Strategy : Strategy
 		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromHours(6).TimeFrame())
 		.SetDisplay("Trend Candle", "Higher timeframe used for the trend ColorX2MA", "Trend");
 
-		_trendMethod1 = Param(nameof(TrendMethod1), SmoothMethod.Sma)
+		_trendMethod1 = Param(nameof(TrendMethod1), SmoothMethods.Sma)
 		.SetDisplay("Trend MA 1", "First smoothing method on the trend timeframe", "Trend");
 		_trendLength1 = Param(nameof(TrendLength1), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Trend Length 1", "Period for the first smoother", "Trend");
 		_trendPhase1 = Param(nameof(TrendPhase1), 15)
 		.SetDisplay("Trend Phase 1", "Phase parameter for Jurik smoothing", "Trend");
-		_trendMethod2 = Param(nameof(TrendMethod2), SmoothMethod.Jurik)
+		_trendMethod2 = Param(nameof(TrendMethod2), SmoothMethods.Jurik)
 		.SetDisplay("Trend MA 2", "Second smoothing method on the trend timeframe", "Trend");
 		_trendLength2 = Param(nameof(TrendLength2), 5)
 		.SetGreaterThanZero()
@@ -92,14 +92,14 @@ public class ExpColorX2MaX2Strategy : Strategy
 
 		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(30).TimeFrame())
 		.SetDisplay("Signal Candle", "Lower timeframe used for execution", "Signal");
-		_signalMethod1 = Param(nameof(SignalMethod1), SmoothMethod.Sma)
+		_signalMethod1 = Param(nameof(SignalMethod1), SmoothMethods.Sma)
 		.SetDisplay("Signal MA 1", "First smoothing method on the signal timeframe", "Signal");
 		_signalLength1 = Param(nameof(SignalLength1), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Signal Length 1", "Period for the first signal smoother", "Signal");
 		_signalPhase1 = Param(nameof(SignalPhase1), 15)
 		.SetDisplay("Signal Phase 1", "Phase parameter for the first signal smoother", "Signal");
-		_signalMethod2 = Param(nameof(SignalMethod2), SmoothMethod.Jurik)
+		_signalMethod2 = Param(nameof(SignalMethod2), SmoothMethods.Jurik)
 		.SetDisplay("Signal MA 2", "Second smoothing method on the signal timeframe", "Signal");
 		_signalLength2 = Param(nameof(SignalLength2), 5)
 		.SetGreaterThanZero()
@@ -143,7 +143,7 @@ public class ExpColorX2MaX2Strategy : Strategy
 	/// <summary>
 	/// First smoothing method for the trend ColorX2MA.
 	/// </summary>
-	public SmoothMethod TrendMethod1
+	public SmoothMethods TrendMethod1
 	{
 		get => _trendMethod1.Value;
 		set => _trendMethod1.Value = value;
@@ -170,7 +170,7 @@ public class ExpColorX2MaX2Strategy : Strategy
 	/// <summary>
 	/// Second smoothing method for the trend ColorX2MA.
 	/// </summary>
-	public SmoothMethod TrendMethod2
+	public SmoothMethods TrendMethod2
 	{
 		get => _trendMethod2.Value;
 		set => _trendMethod2.Value = value;
@@ -224,7 +224,7 @@ public class ExpColorX2MaX2Strategy : Strategy
 	/// <summary>
 	/// First smoothing method for the signal ColorX2MA.
 	/// </summary>
-	public SmoothMethod SignalMethod1
+	public SmoothMethods SignalMethod1
 	{
 		get => _signalMethod1.Value;
 		set => _signalMethod1.Value = value;
@@ -251,7 +251,7 @@ public class ExpColorX2MaX2Strategy : Strategy
 	/// <summary>
 	/// Second smoothing method for the signal ColorX2MA.
 	/// </summary>
-	public SmoothMethod SignalMethod2
+	public SmoothMethods SignalMethod2
 	{
 		get => _signalMethod2.Value;
 		set => _signalMethod2.Value = value;
@@ -596,15 +596,15 @@ public class ExpColorX2MaX2Strategy : Strategy
 		return ((sum - candle.LowPrice) + (sum - candle.HighPrice)) / 2m;
 	}
 
-	private static IIndicator CreateMovingAverage(SmoothMethod method, int length, int phase)
+	private static IIndicator CreateMovingAverage(SmoothMethods method, int length, int phase)
 	{
 		return method switch
 		{
-			SmoothMethod.Sma => new SimpleMovingAverage { Length = length },
-			SmoothMethod.Ema => new ExponentialMovingAverage { Length = length },
-			SmoothMethod.Smma => new SmoothedMovingAverage { Length = length },
-			SmoothMethod.Lwma => new WeightedMovingAverage { Length = length },
-			SmoothMethod.Jurik => CreateJurikMovingAverage(length, phase),
+			SmoothMethods.Sma => new SimpleMovingAverage { Length = length },
+			SmoothMethods.Ema => new ExponentialMovingAverage { Length = length },
+			SmoothMethods.Smma => new SmoothedMovingAverage { Length = length },
+			SmoothMethods.Lwma => new WeightedMovingAverage { Length = length },
+			SmoothMethods.Jurik => CreateJurikMovingAverage(length, phase),
 			_ => throw new NotSupportedException($"Smoothing method '{method}' is not supported."),
 		};
 	}
@@ -622,7 +622,7 @@ public class ExpColorX2MaX2Strategy : Strategy
 /// <summary>
 /// Supported smoothing methods for the ColorX2MA calculation.
 /// </summary>
-public enum SmoothMethod
+public enum SmoothMethods
 {
 	/// <summary>
 	/// Simple moving average.

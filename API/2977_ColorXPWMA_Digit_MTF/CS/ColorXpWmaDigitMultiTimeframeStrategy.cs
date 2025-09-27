@@ -31,10 +31,10 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 		TimeSpan.FromHours(8).TimeFrame(),
 		period: 1,
 		power: 2.00001m,
-		smoothMethod: SmoothMethod.Sma,
+		smoothMethod: SmoothMethods.Sma,
 		smoothLength: 5,
 		smoothPhase: 15,
-		appliedPrice: AppliedPrice.Close,
+		appliedPrice: AppliedPrices.Close,
 		digit: 2,
 		signalBar: 1,
 		buyMagic: 777,
@@ -45,7 +45,7 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 		sellLossTrigger: 3,
 		smallMoneyManagement: 0.01m,
 		normalMoneyManagement: 0.1m,
-		marginMode: MarginMode.Lot,
+		marginMode: MarginModes.Lot,
 		stopLossTicks: 3000m,
 		takeProfitTicks: 10000m,
 		deviationTicks: 10m,
@@ -58,10 +58,10 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 		TimeSpan.FromHours(4).TimeFrame(),
 		period: 1,
 		power: 2.00001m,
-		smoothMethod: SmoothMethod.Sma,
+		smoothMethod: SmoothMethods.Sma,
 		smoothLength: 5,
 		smoothPhase: 15,
-		appliedPrice: AppliedPrice.Close,
+		appliedPrice: AppliedPrices.Close,
 		digit: 2,
 		signalBar: 1,
 		buyMagic: 555,
@@ -72,7 +72,7 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 		sellLossTrigger: 3,
 		smallMoneyManagement: 0.01m,
 		normalMoneyManagement: 0.1m,
-		marginMode: MarginMode.Lot,
+		marginMode: MarginModes.Lot,
 		stopLossTicks: 2000m,
 		takeProfitTicks: 6000m,
 		deviationTicks: 10m,
@@ -85,10 +85,10 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 		TimeSpan.FromHours(1).TimeFrame(),
 		period: 1,
 		power: 2.00001m,
-		smoothMethod: SmoothMethod.Sma,
+		smoothMethod: SmoothMethods.Sma,
 		smoothLength: 5,
 		smoothPhase: 15,
-		appliedPrice: AppliedPrice.Close,
+		appliedPrice: AppliedPrices.Close,
 		digit: 2,
 		signalBar: 1,
 		buyMagic: 222,
@@ -99,7 +99,7 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 		sellLossTrigger: 3,
 		smallMoneyManagement: 0.01m,
 		normalMoneyManagement: 0.1m,
-		marginMode: MarginMode.Lot,
+		marginMode: MarginModes.Lot,
 		stopLossTicks: 1000m,
 		takeProfitTicks: 3000m,
 		deviationTicks: 10m,
@@ -183,7 +183,7 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 		processor.ProcessTrade(trade, action);
 	}
 
-	private bool TryParseComment(string comment, out TimeframeProcessor processor, out TradeAction action)
+	private bool TryParseComment(string comment, out TimeframeProcessor processor, out TradeActions action)
 	{
 		processor = default!;
 		action = default;
@@ -198,7 +198,7 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 		return Enum.TryParse(parts[1], out action);
 	}
 
-	private void PlaceOrder(TimeframeProcessor processor, TradeAction action, decimal volume)
+	private void PlaceOrder(TimeframeProcessor processor, TradeActions action, decimal volume)
 	{
 		if (volume <= 0m)
 		return;
@@ -209,16 +209,16 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 		{
 			switch (action)
 			{
-				case TradeAction.BuyOpen:
+				case TradeActions.BuyOpen:
 					BuyMarket(volume);
 					break;
-				case TradeAction.BuyClose:
+				case TradeActions.BuyClose:
 					SellMarket(volume);
 					break;
-				case TradeAction.SellOpen:
+				case TradeActions.SellOpen:
 					SellMarket(volume);
 					break;
-				case TradeAction.SellClose:
+				case TradeActions.SellClose:
 					BuyMarket(volume);
 					break;
 				default:
@@ -293,7 +293,7 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 			return;
 
 			processor.RegisterPendingLongOpen(volume);
-			PlaceOrder(processor, TradeAction.BuyOpen, volume);
+			PlaceOrder(processor, TradeActions.BuyOpen, volume);
 		}
 
 		private void CloseLong(TimeframeProcessor processor)
@@ -303,7 +303,7 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 			return;
 
 			processor.RegisterPendingLongClose(volume);
-			PlaceOrder(processor, TradeAction.BuyClose, volume);
+			PlaceOrder(processor, TradeActions.BuyClose, volume);
 		}
 
 		private void OpenShort(TimeframeProcessor processor)
@@ -316,7 +316,7 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 			return;
 
 			processor.RegisterPendingShortOpen(volume);
-			PlaceOrder(processor, TradeAction.SellOpen, volume);
+			PlaceOrder(processor, TradeActions.SellOpen, volume);
 		}
 
 		private void CloseShort(TimeframeProcessor processor)
@@ -326,12 +326,12 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 			return;
 
 			processor.RegisterPendingShortClose(volume);
-			PlaceOrder(processor, TradeAction.SellClose, volume);
+			PlaceOrder(processor, TradeActions.SellClose, volume);
 		}
 
 		private readonly struct PendingOrderContext
 		{
-			public PendingOrderContext(string key, TradeAction action)
+			public PendingOrderContext(string key, TradeActions action)
 			{
 				Comment = key + "|" + action;
 			}
@@ -339,7 +339,7 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 			public string Comment { get; }
 		}
 
-		private enum TradeAction
+		private enum TradeActions
 		{
 			BuyOpen,
 			BuyClose,
@@ -347,7 +347,7 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 			SellClose
 		}
 
-		public enum AppliedPrice
+		public enum AppliedPrices
 		{
 			Close = 1,
 			Open,
@@ -363,7 +363,7 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 			DeMark
 		}
 
-		public enum SmoothMethod
+		public enum SmoothMethods
 		{
 			Sma,
 			Ema,
@@ -377,7 +377,7 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 			Ama
 		}
 
-		public enum MarginMode
+		public enum MarginModes
 		{
 			FreeMargin,
 			Balance,
@@ -448,7 +448,7 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 				if (candle.State != CandleStates.Finished)
 				return;
 
-				var price = GetAppliedPrice(candle, Settings.AppliedPrice);
+				var price = GetAppliedPrice(candle, Settings.AppliedPrices);
 				UpdatePriceBuffer(price);
 
 				if (_priceBuffer.Count < Settings.Period)
@@ -476,7 +476,7 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 				_strategy.HandleSignal(this, signal.Value);
 			}
 
-			public void ProcessTrade(MyTrade trade, TradeAction action)
+			public void ProcessTrade(MyTrade trade, TradeActions action)
 			{
 				var volume = trade.Trade?.Volume ?? trade.Order.Volume ?? 0m;
 				if (volume <= 0m)
@@ -484,26 +484,26 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 
 				switch (action)
 				{
-					case TradeAction.BuyOpen:
+					case TradeActions.BuyOpen:
 						_pendingLongOpen = Math.Max(0m, _pendingLongOpen - volume);
 						_longEntryVolume += volume;
 						_longEntryValue += (trade.Trade?.Price ?? trade.Order!.Price ?? 0m) * volume;
 						break;
 
-					case TradeAction.BuyClose:
+					case TradeActions.BuyClose:
 						_pendingLongClose = Math.Max(0m, _pendingLongClose - volume);
 						_longExitVolume += volume;
 						_longExitValue += (trade.Trade?.Price ?? trade.Order!.Price ?? 0m) * volume;
 						FinalizeLongIfNeeded();
 						break;
 
-					case TradeAction.SellOpen:
+					case TradeActions.SellOpen:
 						_pendingShortOpen = Math.Max(0m, _pendingShortOpen - volume);
 						_shortEntryVolume += volume;
 						_shortEntryValue += (trade.Trade?.Price ?? trade.Order!.Price ?? 0m) * volume;
 						break;
 
-					case TradeAction.SellClose:
+					case TradeActions.SellClose:
 						_pendingShortClose = Math.Max(0m, _pendingShortClose - volume);
 						_shortExitVolume += volume;
 						_shortExitValue += (trade.Trade?.Price ?? trade.Order!.Price ?? 0m) * volume;
@@ -751,22 +751,22 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 			return Math.Round(value * factor, MidpointRounding.AwayFromZero) / factor;
 		}
 
-		private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrice price)
+		private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrices price)
 		{
 			return price switch
 			{
-				AppliedPrice.Close => candle.ClosePrice,
-				AppliedPrice.Open => candle.OpenPrice,
-				AppliedPrice.High => candle.HighPrice,
-				AppliedPrice.Low => candle.LowPrice,
-				AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-				AppliedPrice.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-				AppliedPrice.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-				AppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-				AppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-				AppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
-				AppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
-				AppliedPrice.DeMark =>
+				AppliedPrices.Close => candle.ClosePrice,
+				AppliedPrices.Open => candle.OpenPrice,
+				AppliedPrices.High => candle.HighPrice,
+				AppliedPrices.Low => candle.LowPrice,
+				AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+				AppliedPrices.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+				AppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+				AppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+				AppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+				AppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
+				AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
+				AppliedPrices.DeMark =>
 				CalculateDeMarkPrice(candle),
 				_ => candle.ClosePrice
 			};
@@ -802,16 +802,16 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 
 		private static IIndicator CreateSmoothingIndicator(TimeframeSettings settings)
 		{
-			return settings.SmoothMethod switch
+			return settings.SmoothMethods switch
 			{
-				SmoothMethod.Sma => new SimpleMovingAverage { Length = settings.SmoothLength },
-				SmoothMethod.Ema => new ExponentialMovingAverage { Length = settings.SmoothLength },
-				SmoothMethod.Smma => new SmoothedMovingAverage { Length = settings.SmoothLength },
-				SmoothMethod.Lwma => new WeightedMovingAverage { Length = settings.SmoothLength },
-				SmoothMethod.Jjma => new JurikMovingAverage { Length = settings.SmoothLength },
-				SmoothMethod.T3 => new TillsonMovingAverage { Length = settings.SmoothLength },
-				SmoothMethod.Ama => new KaufmanAdaptiveMovingAverage { Length = settings.SmoothLength },
-				SmoothMethod.Vidya => new VidyaIndicator { Length = settings.SmoothLength },
+				SmoothMethods.Sma => new SimpleMovingAverage { Length = settings.SmoothLength },
+				SmoothMethods.Ema => new ExponentialMovingAverage { Length = settings.SmoothLength },
+				SmoothMethods.Smma => new SmoothedMovingAverage { Length = settings.SmoothLength },
+				SmoothMethods.Lwma => new WeightedMovingAverage { Length = settings.SmoothLength },
+				SmoothMethods.Jjma => new JurikMovingAverage { Length = settings.SmoothLength },
+				SmoothMethods.T3 => new TillsonMovingAverage { Length = settings.SmoothLength },
+				SmoothMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = settings.SmoothLength },
+				SmoothMethods.Vidya => new VidyaIndicator { Length = settings.SmoothLength },
 				_ => new SimpleMovingAverage { Length = settings.SmoothLength }
 			};
 		}
@@ -886,10 +886,10 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 		private readonly StrategyParam<DataType> _candleType;
 		private readonly StrategyParam<int> _period;
 		private readonly StrategyParam<decimal> _power;
-		private readonly StrategyParam<SmoothMethod> _smoothMethod;
+		private readonly StrategyParam<SmoothMethods> _smoothMethod;
 		private readonly StrategyParam<int> _smoothLength;
 		private readonly StrategyParam<int> _smoothPhase;
-		private readonly StrategyParam<AppliedPrice> _appliedPrice;
+		private readonly StrategyParam<AppliedPrices> _appliedPrice;
 		private readonly StrategyParam<int> _digit;
 		private readonly StrategyParam<int> _signalBar;
 		private readonly StrategyParam<int> _buyMagic;
@@ -900,7 +900,7 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 		private readonly StrategyParam<int> _sellLossTrigger;
 		private readonly StrategyParam<decimal> _smallMoneyManagement;
 		private readonly StrategyParam<decimal> _normalMoneyManagement;
-		private readonly StrategyParam<MarginMode> _marginMode;
+		private readonly StrategyParam<MarginModes> _marginMode;
 		private readonly StrategyParam<decimal> _stopLossTicks;
 		private readonly StrategyParam<decimal> _takeProfitTicks;
 		private readonly StrategyParam<decimal> _deviationTicks;
@@ -909,10 +909,10 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 		private readonly StrategyParam<bool> _sellCloseAllowed;
 		private readonly StrategyParam<bool> _buyCloseAllowed;
 
-		public TimeframeSettings(ColorXpWmaDigitMultiTimeframeStrategy strategy, string key, DataType defaultType, int period, decimal power, SmoothMethod smoothMethod,
-		int smoothLength, int smoothPhase, AppliedPrice appliedPrice, int digit, int signalBar, int buyMagic, int sellMagic,
+		public TimeframeSettings(ColorXpWmaDigitMultiTimeframeStrategy strategy, string key, DataType defaultType, int period, decimal power, SmoothMethods smoothMethod,
+		int smoothLength, int smoothPhase, AppliedPrices appliedPrice, int digit, int signalBar, int buyMagic, int sellMagic,
 		int buyTotalTrigger, int buyLossTrigger, int sellTotalTrigger, int sellLossTrigger, decimal smallMoneyManagement,
-		decimal normalMoneyManagement, MarginMode marginMode, decimal stopLossTicks, decimal takeProfitTicks, decimal deviationTicks,
+		decimal normalMoneyManagement, MarginModes marginMode, decimal stopLossTicks, decimal takeProfitTicks, decimal deviationTicks,
 		bool buyOpenAllowed, bool sellOpenAllowed, bool sellCloseAllowed, bool buyCloseAllowed)
 		{
 			Key = key;
@@ -1011,10 +1011,10 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 		public DataType CandleType => _candleType.Value;
 		public int Period => Math.Max(1, _period.Value);
 		public decimal Power => _power.Value;
-		public SmoothMethod SmoothMethod => _smoothMethod.Value;
+		public SmoothMethods SmoothMethods => _smoothMethod.Value;
 		public int SmoothLength => Math.Max(1, _smoothLength.Value);
 		public int SmoothPhase => _smoothPhase.Value;
-		public AppliedPrice AppliedPrice => _appliedPrice.Value;
+		public AppliedPrices AppliedPrices => _appliedPrice.Value;
 		public int Digit => Math.Max(0, _digit.Value);
 		public int SignalBar => Math.Max(0, _signalBar.Value);
 		public int BuyMagic => _buyMagic.Value;
@@ -1025,7 +1025,7 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 		public int SellLossTrigger => Math.Max(0, _sellLossTrigger.Value);
 		public decimal SmallMoneyManagement => _smallMoneyManagement.Value;
 		public decimal NormalMoneyManagement => _normalMoneyManagement.Value;
-		public MarginMode MarginMode => _marginMode.Value;
+		public MarginModes MarginModes => _marginMode.Value;
 		public decimal StopLossTicks => _stopLossTicks.Value;
 		public decimal TakeProfitTicks => _takeProfitTicks.Value;
 		public decimal DeviationTicks => _deviationTicks.Value;

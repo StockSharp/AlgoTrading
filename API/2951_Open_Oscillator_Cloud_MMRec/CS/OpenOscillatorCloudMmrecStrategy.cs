@@ -20,7 +20,7 @@ public class OpenOscillatorCloudMmrecStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _period;
-	private readonly StrategyParam<SmoothingMethod> _smoothingMethod;
+	private readonly StrategyParam<SmoothingMethods> _smoothingMethod;
 	private readonly StrategyParam<int> _smoothingLength;
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<bool> _enableLongEntry;
@@ -45,7 +45,7 @@ public class OpenOscillatorCloudMmrecStrategy : Strategy
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int Period { get => _period.Value; set => _period.Value = value; }
-	public SmoothingMethod Smoothing { get => _smoothingMethod.Value; set => _smoothingMethod.Value = value; }
+	public SmoothingMethods Smoothing { get => _smoothingMethod.Value; set => _smoothingMethod.Value = value; }
 	public int SmoothingLength { get => _smoothingLength.Value; set => _smoothingLength.Value = value; }
 	public int SignalBar { get => _signalBar.Value; set => _signalBar.Value = value; }
 	public bool EnableLongEntry { get => _enableLongEntry.Value; set => _enableLongEntry.Value = value; }
@@ -67,7 +67,7 @@ public class OpenOscillatorCloudMmrecStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(10, 40, 5);
 
-		_smoothingMethod = Param(nameof(Smoothing), SmoothingMethod.Simple)
+		_smoothingMethod = Param(nameof(Smoothing), SmoothingMethods.Simple)
 		.SetDisplay("Smoothing Method", "Moving average used to smooth the open gaps", "Indicator");
 
 		_smoothingLength = Param(nameof(SmoothingLength), 10)
@@ -354,15 +354,15 @@ public class OpenOscillatorCloudMmrecStrategy : Strategy
 		// Build the moving average instance that will smooth the oscillator values.
 		return Smoothing switch
 		{
-			SmoothingMethod.Simple => new SimpleMovingAverage { Length = SmoothingLength },
-			SmoothingMethod.Exponential => new ExponentialMovingAverage { Length = SmoothingLength },
-			SmoothingMethod.Smoothed => new SmoothedMovingAverage { Length = SmoothingLength },
-			SmoothingMethod.Weighted => new WeightedMovingAverage { Length = SmoothingLength },
+			SmoothingMethods.Simple => new SimpleMovingAverage { Length = SmoothingLength },
+			SmoothingMethods.Exponential => new ExponentialMovingAverage { Length = SmoothingLength },
+			SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = SmoothingLength },
+			SmoothingMethods.Weighted => new WeightedMovingAverage { Length = SmoothingLength },
 			_ => throw new ArgumentOutOfRangeException(nameof(Smoothing), Smoothing, "Unsupported smoothing method."),
 };
 	}
 
-public enum SmoothingMethod
+public enum SmoothingMethods
 {
 	Simple,
 	Exponential,

@@ -22,7 +22,7 @@ public class VininITrendLrmaStrategy : Strategy
 	/// <summary>
 	/// Entry algorithm.
 	/// </summary>
-	public enum EntryMode
+	public enum EntryModes
 	{
 		/// <summary>Enter on level breakout.</summary>
 		Breakdown,
@@ -33,7 +33,7 @@ public class VininITrendLrmaStrategy : Strategy
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<int> _upLevel;
 	private readonly StrategyParam<int> _dnLevel;
-	private readonly StrategyParam<EntryMode> _mode;
+	private readonly StrategyParam<EntryModes> _mode;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private LinearRegression _lrma = null!;
@@ -49,7 +49,7 @@ public class VininITrendLrmaStrategy : Strategy
 		_period = Param(nameof(Period), 13).SetDisplay("LRMA period").SetCanOptimize(true);
 		_upLevel = Param(nameof(UpLevel), 10).SetDisplay("Upper level").SetCanOptimize(true);
 		_dnLevel = Param(nameof(DnLevel), -10).SetDisplay("Lower level").SetCanOptimize(true);
-		_mode = Param(nameof(Mode), EntryMode.Breakdown).SetDisplay("Entry mode");
+		_mode = Param(nameof(Mode), EntryModes.Breakdown).SetDisplay("Entry mode");
 		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type");
 	}
 
@@ -63,7 +63,7 @@ public class VininITrendLrmaStrategy : Strategy
 	public int DnLevel { get => _dnLevel.Value; set => _dnLevel.Value = value; }
 
 	/// <summary>Entry algorithm.</summary>
-	public EntryMode Mode { get => _mode.Value; set => _mode.Value = value; }
+	public EntryModes Mode { get => _mode.Value; set => _mode.Value = value; }
 
 	/// <summary>Candle series type.</summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
@@ -88,7 +88,7 @@ public class VininITrendLrmaStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (Mode == EntryMode.Breakdown)
+		if (Mode == EntryModes.Breakdown)
 		{
 			if (_prev is not null)
 			{

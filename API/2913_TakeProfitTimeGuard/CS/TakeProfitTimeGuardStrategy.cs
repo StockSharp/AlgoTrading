@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies;
 public class TakeProfitTimeGuardStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<ProfitTargetMode> _targetMode;
+	private readonly StrategyParam<ProfitTargetModes> _targetMode;
 	private readonly StrategyParam<decimal> _takeProfitValue;
 	private readonly StrategyParam<bool> _useTradingWindow;
 	private readonly StrategyParam<TimeSpan> _startTime;
@@ -36,7 +36,7 @@ public class TakeProfitTimeGuardStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	public ProfitTargetMode TargetMode
+	public ProfitTargetModes TargetMode
 	{
 		get => _targetMode.Value;
 		set => _targetMode.Value = value;
@@ -71,7 +71,7 @@ public class TakeProfitTimeGuardStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to evaluate profit and schedule", "General");
 
-		_targetMode = Param(nameof(TargetMode), ProfitTargetMode.Percent)
+		_targetMode = Param(nameof(TargetMode), ProfitTargetModes.Percent)
 			.SetDisplay("Target Mode", "Use percent of capital or absolute currency", "Risk Management");
 
 		_takeProfitValue = Param(nameof(TakeProfitValue), 100m)
@@ -166,7 +166,7 @@ public class TakeProfitTimeGuardStrategy : Strategy
 	{
 		switch (TargetMode)
 		{
-			case ProfitTargetMode.Percent:
+			case ProfitTargetModes.Percent:
 			{
 				var basis = _initialBalance ?? Portfolio?.CurrentValue ?? 0m;
 				if (basis <= 0m)
@@ -182,7 +182,7 @@ public class TakeProfitTimeGuardStrategy : Strategy
 				break;
 			}
 
-			case ProfitTargetMode.Currency:
+			case ProfitTargetModes.Currency:
 			{
 				if (Math.Abs(totalProfit) >= TakeProfitValue)
 				{
@@ -221,7 +221,7 @@ public class TakeProfitTimeGuardStrategy : Strategy
 		}
 	}
 
-	public enum ProfitTargetMode
+	public enum ProfitTargetModes
 	{
 		Percent,
 		Currency

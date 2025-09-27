@@ -25,11 +25,11 @@ public class ExpRsiomaV2Strategy : Strategy
 	private readonly StrategyParam<bool> _enableShortEntries;
 	private readonly StrategyParam<bool> _enableLongExits;
 	private readonly StrategyParam<bool> _enableShortExits;
-	private readonly StrategyParam<RsiomaSignalMode> _mode;
-	private readonly StrategyParam<RsiomaSmoothingMethod> _priceSmoothing;
+	private readonly StrategyParam<RsiomaSignalModes> _mode;
+	private readonly StrategyParam<RsiomaSmoothingMethods> _priceSmoothing;
 	private readonly StrategyParam<int> _rsiomaLength;
 	private readonly StrategyParam<int> _momentumPeriod;
-	private readonly StrategyParam<RsiomaAppliedPrice> _appliedPrice;
+	private readonly StrategyParam<RsiomaAppliedPrices> _appliedPrice;
 	private readonly StrategyParam<decimal> _mainTrendLong;
 	private readonly StrategyParam<decimal> _mainTrendShort;
 	private readonly StrategyParam<int> _signalBar;
@@ -66,10 +66,10 @@ public class ExpRsiomaV2Strategy : Strategy
 		_enableShortExits = Param(nameof(EnableShortExits), true)
 		.SetDisplay("Enable Short Exits", "Allow closing short positions", "Trading");
 
-		_mode = Param(nameof(Mode), RsiomaSignalMode.Breakdown)
+		_mode = Param(nameof(Mode), RsiomaSignalModes.Breakdown)
 		.SetDisplay("Signal Mode", "RSIOMA event that triggers trades", "Logic");
 
-		_priceSmoothing = Param(nameof(PriceSmoothing), RsiomaSmoothingMethod.Exponential)
+		_priceSmoothing = Param(nameof(PriceSmoothing), RsiomaSmoothingMethods.Exponential)
 		.SetDisplay("Price Smoothing", "Moving average applied to the price", "Indicator");
 
 		_rsiomaLength = Param(nameof(RsiomaLength), 14)
@@ -80,7 +80,7 @@ public class ExpRsiomaV2Strategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Period", "Lag used for momentum calculation", "Indicator");
 
-		_appliedPrice = Param(nameof(AppliedPrice), RsiomaAppliedPrice.Close)
+		_appliedPrice = Param(nameof(AppliedPrice), RsiomaAppliedPrices.Close)
 		.SetDisplay("Applied Price", "Source price for RSIOMA", "Indicator");
 
 		_mainTrendLong = Param(nameof(MainTrendLong), 60m)
@@ -127,12 +127,12 @@ public class ExpRsiomaV2Strategy : Strategy
 	/// <summary>
 	/// Gets or sets the entry logic that should be used.
 	/// </summary>
-	public RsiomaSignalMode Mode { get => _mode.Value; set => _mode.Value = value; }
+	public RsiomaSignalModes Mode { get => _mode.Value; set => _mode.Value = value; }
 
 	/// <summary>
 	/// Gets or sets the smoothing method applied to the price stream.
 	/// </summary>
-	public RsiomaSmoothingMethod PriceSmoothing { get => _priceSmoothing.Value; set => _priceSmoothing.Value = value; }
+	public RsiomaSmoothingMethods PriceSmoothing { get => _priceSmoothing.Value; set => _priceSmoothing.Value = value; }
 
 	/// <summary>
 	/// Gets or sets the RSI averaging length.
@@ -147,7 +147,7 @@ public class ExpRsiomaV2Strategy : Strategy
 	/// <summary>
 	/// Gets or sets which candle price is used.
 	/// </summary>
-	public RsiomaAppliedPrice AppliedPrice { get => _appliedPrice.Value; set => _appliedPrice.Value = value; }
+	public RsiomaAppliedPrices AppliedPrice { get => _appliedPrice.Value; set => _appliedPrice.Value = value; }
 
 	/// <summary>
 	/// Gets or sets the upper RSI threshold.
@@ -285,7 +285,7 @@ public class ExpRsiomaV2Strategy : Strategy
 
 		switch (Mode)
 		{
-		case RsiomaSignalMode.Breakdown:
+		case RsiomaSignalModes.Breakdown:
 			{
 				buyOpen = previous > MainTrendLong && current <= MainTrendLong;
 				sellClose = previous > MainTrendLong;
@@ -294,7 +294,7 @@ public class ExpRsiomaV2Strategy : Strategy
 				buyClose = previous < MainTrendShort;
 				break;
 			}
-		case RsiomaSignalMode.Twist:
+		case RsiomaSignalModes.Twist:
 			{
 				if (!TryGetRsi(SignalBar + 2, out var older))
 				return;
@@ -306,7 +306,7 @@ public class ExpRsiomaV2Strategy : Strategy
 				buyClose = previous > older;
 				break;
 			}
-		case RsiomaSignalMode.CloudTwist:
+		case RsiomaSignalModes.CloudTwist:
 			{
 				buyOpen = previous < MainTrendShort && current >= MainTrendShort;
 				sellClose = previous < MainTrendShort;
@@ -375,34 +375,34 @@ public class ExpRsiomaV2Strategy : Strategy
 		return true;
 	}
 
-	private static IIndicator CreateSmoother(RsiomaSmoothingMethod method, int length)
+	private static IIndicator CreateSmoother(RsiomaSmoothingMethods method, int length)
 	{
 		return method switch
 		{
-			RsiomaSmoothingMethod.Simple => new SimpleMovingAverage { Length = length },
-			RsiomaSmoothingMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			RsiomaSmoothingMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			RsiomaSmoothingMethod.Weighted => new WeightedMovingAverage { Length = length },
+			RsiomaSmoothingMethods.Simple => new SimpleMovingAverage { Length = length },
+			RsiomaSmoothingMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			RsiomaSmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			RsiomaSmoothingMethods.Weighted => new WeightedMovingAverage { Length = length },
 			_ => throw new NotSupportedException($"Smoothing method '{method}' is not supported."),
 		};
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, RsiomaAppliedPrice priceType)
+	private static decimal GetAppliedPrice(ICandleMessage candle, RsiomaAppliedPrices priceType)
 	{
 		return priceType switch
 		{
-			RsiomaAppliedPrice.Close => candle.ClosePrice,
-			RsiomaAppliedPrice.Open => candle.OpenPrice,
-			RsiomaAppliedPrice.High => candle.HighPrice,
-			RsiomaAppliedPrice.Low => candle.LowPrice,
-			RsiomaAppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			RsiomaAppliedPrice.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-			RsiomaAppliedPrice.Weighted => (candle.ClosePrice * 2m + candle.HighPrice + candle.LowPrice) / 4m,
-			RsiomaAppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			RsiomaAppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			RsiomaAppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
-			RsiomaAppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
-			RsiomaAppliedPrice.Demark => CalculateDemarkPrice(candle),
+			RsiomaAppliedPrices.Close => candle.ClosePrice,
+			RsiomaAppliedPrices.Open => candle.OpenPrice,
+			RsiomaAppliedPrices.High => candle.HighPrice,
+			RsiomaAppliedPrices.Low => candle.LowPrice,
+			RsiomaAppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			RsiomaAppliedPrices.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+			RsiomaAppliedPrices.Weighted => (candle.ClosePrice * 2m + candle.HighPrice + candle.LowPrice) / 4m,
+			RsiomaAppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			RsiomaAppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			RsiomaAppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
+			RsiomaAppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
+			RsiomaAppliedPrices.Demark => CalculateDemarkPrice(candle),
 			_ => candle.ClosePrice,
 		};
 	}
@@ -425,7 +425,7 @@ public class ExpRsiomaV2Strategy : Strategy
 /// <summary>
 /// Available smoothing algorithms for RSIOMA calculation.
 /// </summary>
-public enum RsiomaSmoothingMethod
+public enum RsiomaSmoothingMethods
 {
 	/// <summary>
 	/// Simple moving average.
@@ -451,7 +451,7 @@ public enum RsiomaSmoothingMethod
 /// <summary>
 /// Signal logic of the RSIOMA expert advisor.
 /// </summary>
-public enum RsiomaSignalMode
+public enum RsiomaSignalModes
 {
 	/// <summary>
 	/// React to oscillator leaving the main trend levels.
@@ -472,7 +472,7 @@ public enum RsiomaSignalMode
 /// <summary>
 /// Price source used by the RSIOMA computation.
 /// </summary>
-public enum RsiomaAppliedPrice
+public enum RsiomaAppliedPrices
 {
 	/// <summary>
 	/// Close price.

@@ -20,8 +20,8 @@ public class OmniTrendStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<MovingAverageMethod> _maType;
-	private readonly StrategyParam<AppliedPriceType> _appliedPrice;
+	private readonly StrategyParam<MovingAverageMethods> _maType;
+	private readonly StrategyParam<AppliedPriceTypes> _appliedPrice;
 	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<decimal> _volatilityFactor;
 	private readonly StrategyParam<decimal> _moneyRisk;
@@ -57,11 +57,11 @@ public class OmniTrendStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetCanOptimize(true);
 
-		_maType = Param(nameof(MaType), MovingAverageMethod.Exponential)
+		_maType = Param(nameof(MaType), MovingAverageMethods.Exponential)
 			.SetDisplay("MA Type", "Moving average calculation method", "Indicators")
 			.SetCanOptimize(true);
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceType.Close)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Close)
 			.SetDisplay("Applied Price", "Price field used by the moving average", "Indicators")
 			.SetCanOptimize(true);
 
@@ -117,13 +117,13 @@ public class OmniTrendStrategy : Strategy
 		set => _maLength.Value = Math.Max(1, value);
 	}
 
-	public MovingAverageMethod MaType
+	public MovingAverageMethods MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
 	}
 
-	public AppliedPriceType AppliedPrice
+	public AppliedPriceTypes AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -450,28 +450,28 @@ public class OmniTrendStrategy : Strategy
 		}
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceType type)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceTypes type)
 	{
 		return type switch
 		{
-			AppliedPriceType.Open => candle.OpenPrice,
-			AppliedPriceType.High => candle.HighPrice,
-			AppliedPriceType.Low => candle.LowPrice,
-			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			AppliedPriceTypes.Open => candle.OpenPrice,
+			AppliedPriceTypes.High => candle.HighPrice,
+			AppliedPriceTypes.Low => candle.LowPrice,
+			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}
 
-	private static IIndicator CreateMovingAverage(MovingAverageMethod type, int length)
+	private static IIndicator CreateMovingAverage(MovingAverageMethods type, int length)
 	{
 		return type switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.LinearWeighted => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new ExponentialMovingAverage { Length = length }
 		};
 	}
@@ -485,7 +485,7 @@ public class OmniTrendStrategy : Strategy
 		public bool SellClose;
 	}
 
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		Simple,
 		Exponential,
@@ -493,7 +493,7 @@ public class OmniTrendStrategy : Strategy
 		LinearWeighted
 	}
 
-	public enum AppliedPriceType
+	public enum AppliedPriceTypes
 	{
 		Close,
 		Open,

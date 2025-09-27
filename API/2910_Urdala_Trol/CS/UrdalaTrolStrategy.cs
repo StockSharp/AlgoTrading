@@ -284,7 +284,7 @@ public class UrdalaTrolStrategy : Strategy
 			}
 
 			if (position.StopPrice.HasValue && currentPrice <= position.StopPrice.Value)
-				ClosePosition(position, CloseReason.StopLoss);
+				ClosePosition(position, CloseReasons.StopLoss);
 		}
 
 		foreach (var position in _shortPositions.ToArray())
@@ -301,7 +301,7 @@ public class UrdalaTrolStrategy : Strategy
 			}
 
 			if (position.StopPrice.HasValue && currentPrice >= position.StopPrice.Value)
-				ClosePosition(position, CloseReason.StopLoss);
+				ClosePosition(position, CloseReasons.StopLoss);
 		}
 	}
 
@@ -339,7 +339,7 @@ public class UrdalaTrolStrategy : Strategy
 		RegisterOrder(order);
 	}
 
-	private void ClosePosition(PositionItem position, CloseReason reason)
+	private void ClosePosition(PositionItem position, CloseReasons reason)
 	{
 		if (Security == null || Portfolio == null)
 			return;
@@ -366,7 +366,7 @@ public class UrdalaTrolStrategy : Strategy
 			Volume = normalized,
 			Side = exitSide,
 			Type = OrderTypes.Market,
-			Comment = reason == CloseReason.StopLoss ? "UrdalaTrol:Stop" : "UrdalaTrol:Exit"
+			Comment = reason == CloseReasons.StopLoss ? "UrdalaTrol:Stop" : "UrdalaTrol:Exit"
 		};
 
 		_orders[order] = new PendingOrderInfo
@@ -374,7 +374,7 @@ public class UrdalaTrolStrategy : Strategy
 			IsEntry = false,
 			Position = position,
 			RemainingVolume = normalized,
-			CloseReason = reason
+			CloseReasons = reason
 		};
 
 		RegisterOrder(order);
@@ -424,13 +424,13 @@ public class UrdalaTrolStrategy : Strategy
 				: (position.EntryPrice - averagePrice) * info.FilledVolume;
 
 			position.Volume = info.FilledVolume;
-			HandlePositionClosed(position, profit, info.CloseReason, averagePrice);
+			HandlePositionClosed(position, profit, info.CloseReasons, averagePrice);
 		}
 	}
 
-	private void HandlePositionClosed(PositionItem position, decimal profit, CloseReason reason, decimal exitPrice)
+	private void HandlePositionClosed(PositionItem position, decimal profit, CloseReasons reason, decimal exitPrice)
 	{
-		if (reason != CloseReason.StopLoss)
+		if (reason != CloseReasons.StopLoss)
 			return;
 
 		var stepVolume = GetMinVolumeStep();
@@ -565,10 +565,10 @@ public class UrdalaTrolStrategy : Strategy
 		public decimal RemainingVolume { get; set; }
 		public decimal FilledVolume { get; set; }
 		public decimal WeightedPrice { get; set; }
-		public CloseReason CloseReason { get; set; }
+		public CloseReasons CloseReasons { get; set; }
 	}
 
-	private enum CloseReason
+	private enum CloseReasons
 	{
 		StopLoss
 	}

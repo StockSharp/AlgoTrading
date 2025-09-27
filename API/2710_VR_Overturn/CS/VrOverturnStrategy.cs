@@ -24,7 +24,7 @@ public class VrOverturnStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _volumeEpsilon;
 
-	private enum InitialDirection
+	private enum InitialDirections
 	{
 		/// <summary>
 		/// Start with a long position.
@@ -37,7 +37,7 @@ public class VrOverturnStrategy : Strategy
 		Sell
 	}
 
-	private enum TradeMode
+	private enum TradeModes
 	{
 		/// <summary>
 		/// Increase size after losses and reset after wins.
@@ -50,8 +50,8 @@ public class VrOverturnStrategy : Strategy
 		AntiMartingale
 	}
 
-	private readonly StrategyParam<InitialDirection> _initialDirection;
-	private readonly StrategyParam<TradeMode> _tradeMode;
+	private readonly StrategyParam<InitialDirections> _initialDirection;
+	private readonly StrategyParam<TradeModes> _tradeMode;
 	private readonly StrategyParam<decimal> _baseVolume;
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _takeProfitPips;
@@ -79,10 +79,10 @@ public class VrOverturnStrategy : Strategy
 			.SetGreaterThan(0m)
 			.SetDisplay("Volume Epsilon", "Minimum volume threshold to treat position as flat", "Risk");
 
-		_initialDirection = Param(nameof(FirstPositionDirection), InitialDirection.Buy)
+		_initialDirection = Param(nameof(FirstPositionDirection), InitialDirections.Buy)
 			.SetDisplay("Initial Direction", "Direction of the very first trade", "Trading");
 
-		_tradeMode = Param(nameof(Mode), TradeMode.Martingale)
+		_tradeMode = Param(nameof(Mode), TradeModes.Martingale)
 			.SetDisplay("Trading Mode", "Choose martingale or anti-martingale sizing", "Trading");
 
 		_baseVolume = Param(nameof(BaseVolume), 0.1m)
@@ -118,7 +118,7 @@ public class VrOverturnStrategy : Strategy
 	/// <summary>
 	/// Direction of the very first position.
 	/// </summary>
-	public InitialDirection FirstPositionDirection
+	public InitialDirections FirstPositionDirection
 	{
 		get => _initialDirection.Value;
 		set => _initialDirection.Value = value;
@@ -127,7 +127,7 @@ public class VrOverturnStrategy : Strategy
 	/// <summary>
 	/// Selected sizing regime.
 	/// </summary>
-	public TradeMode Mode
+	public TradeModes Mode
 	{
 		get => _tradeMode.Value;
 		set => _tradeMode.Value = value;
@@ -296,17 +296,17 @@ public class VrOverturnStrategy : Strategy
 
 		if (!_hasClosedHistory)
 		{
-			nextSide = FirstPositionDirection == InitialDirection.Buy ? Sides.Buy : Sides.Sell;
+			nextSide = FirstPositionDirection == InitialDirections.Buy ? Sides.Buy : Sides.Sell;
 			orderVolume = baseVolume;
 		}
 		else if (_lastClosedSide.HasValue)
 		{
 			var referenceVolume = _lastClosedVolume > 0m ? _lastClosedVolume : baseVolume;
 
-			if (_lastClosedProfit > 0m && Mode == TradeMode.Martingale)
+			if (_lastClosedProfit > 0m && Mode == TradeModes.Martingale)
 			referenceVolume = baseVolume;
 
-			if (_lastClosedProfit < 0m && Mode == TradeMode.AntiMartingale)
+			if (_lastClosedProfit < 0m && Mode == TradeModes.AntiMartingale)
 			referenceVolume = baseVolume;
 
 			if (_lastClosedSide == Sides.Buy)
@@ -346,7 +346,7 @@ public class VrOverturnStrategy : Strategy
 		}
 		else
 		{
-			nextSide = FirstPositionDirection == InitialDirection.Buy ? Sides.Buy : Sides.Sell;
+			nextSide = FirstPositionDirection == InitialDirections.Buy ? Sides.Buy : Sides.Sell;
 			orderVolume = baseVolume;
 		}
 
@@ -364,12 +364,12 @@ public class VrOverturnStrategy : Strategy
 
 	private decimal GetWinningMultiplier()
 	{
-		return Mode == TradeMode.Martingale ? 1m : LotMultiplier;
+		return Mode == TradeModes.Martingale ? 1m : LotMultiplier;
 	}
 
 	private decimal GetLosingMultiplier()
 	{
-		return Mode == TradeMode.Martingale ? LotMultiplier : 1m;
+		return Mode == TradeModes.Martingale ? LotMultiplier : 1m;
 	}
 
 	private decimal CalculatePipSize()

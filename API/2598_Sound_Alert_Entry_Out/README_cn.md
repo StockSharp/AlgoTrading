@@ -10,7 +10,7 @@
 - **离场条件**：成交方向与之前仓位方向相反时触发提醒流程。
 - **止损**：无。风控由产生成交的策略或交易者负责。
 - **默认值**：
-  - `Sound` = NotificationSound.Alert2
+  - `Sound` = NotificationSounds.Alert2
   - `NotificationEnabled` = false
 - **提醒**：
   - 当检测到平仓时会播放所选 `.wav` 文件。

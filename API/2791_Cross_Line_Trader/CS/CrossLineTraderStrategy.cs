@@ -21,21 +21,21 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class CrossLineTraderStrategy : Strategy
 {
-	public enum LineDirectionMode
+	public enum LineDirectionModes
 	{
 		FromLabel,
 		ForceBuy,
 		ForceSell,
 	}
 
-	private enum LineType
+	private enum LineTypes
 	{
 		Horizontal,
 		Trend,
 		Vertical,
 	}
 
-	private enum TradeDirection
+	private enum TradeDirections
 	{
 		Buy,
 		Sell,
@@ -43,7 +43,7 @@ public class CrossLineTraderStrategy : Strategy
 
 	private sealed class LineState
 	{
-		public LineState(string name, string label, LineType type, decimal basePrice, decimal slopePerBar, int length, bool ray)
+		public LineState(string name, string label, LineTypes type, decimal basePrice, decimal slopePerBar, int length, bool ray)
 		{
 			Name = name.IsEmptyOrWhiteSpace() ? type.ToString() : name;
 			Label = label ?? string.Empty;
@@ -60,7 +60,7 @@ public class CrossLineTraderStrategy : Strategy
 
 		public string Label { get; }
 
-		public LineType Type { get; }
+		public LineTypes Type { get; }
 
 		public decimal BasePrice { get; }
 
@@ -76,7 +76,7 @@ public class CrossLineTraderStrategy : Strategy
 
 		public decimal GetPrice(int index)
 		{
-			if (Type == LineType.Vertical)
+			if (Type == LineTypes.Vertical)
 				return 0m;
 
 			var clampedIndex = Math.Max(0, index);
@@ -90,7 +90,7 @@ public class CrossLineTraderStrategy : Strategy
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _tradeVolume;
-	private readonly StrategyParam<LineDirectionMode> _directionMode;
+	private readonly StrategyParam<LineDirectionModes> _directionMode;
 	private readonly StrategyParam<string> _buyLabel;
 	private readonly StrategyParam<string> _sellLabel;
 	private readonly StrategyParam<string> _lineDefinitions;
@@ -122,7 +122,7 @@ public class CrossLineTraderStrategy : Strategy
 	/// <summary>
 	/// Defines how the strategy resolves trade direction for every line.
 	/// </summary>
-	public LineDirectionMode DirectionMode
+	public LineDirectionModes DirectionMode
 	{
 		get => _directionMode.Value;
 		set => _directionMode.Value = value;
@@ -186,7 +186,7 @@ public class CrossLineTraderStrategy : Strategy
 			.SetDisplay("Trade Volume", "Order volume used for entries", "Trading")
 			.SetGreaterThanZero();
 
-		_directionMode = Param(nameof(DirectionMode), LineDirectionMode.FromLabel)
+		_directionMode = Param(nameof(DirectionMode), LineDirectionModes.FromLabel)
 			.SetDisplay("Direction Mode", "How to pick trade direction for a line", "Trading");
 
 		_buyLabel = Param(nameof(BuyLabel), "Buy")
@@ -258,7 +258,7 @@ public class CrossLineTraderStrategy : Strategy
 			var previousIndex = line.StepsProcessed;
 			var currentIndex = previousIndex + 1;
 
-			if (line.Type == LineType.Vertical)
+			if (line.Type == LineTypes.Vertical)
 			{
 				if (currentIndex >= Math.Max(1, line.Length))
 				{
@@ -294,22 +294,22 @@ public class CrossLineTraderStrategy : Strategy
 				continue;
 			}
 
-			var crossUp = line.Type == LineType.Horizontal
+			var crossUp = line.Type == LineTypes.Horizontal
 				? _previousOpen.Value <= previousLinePrice && currentOpen > previousLinePrice
 				: _previousOpen.Value <= previousLinePrice && currentOpen > currentLinePrice;
 
-			var crossDown = line.Type == LineType.Horizontal
+			var crossDown = line.Type == LineTypes.Horizontal
 				? _previousOpen.Value >= previousLinePrice && currentOpen < previousLinePrice
 				: _previousOpen.Value >= previousLinePrice && currentOpen < currentLinePrice;
 
-			if (crossUp && directionForLine == TradeDirection.Buy && Position <= 0)
+			if (crossUp && directionForLine == TradeDirections.Buy && Position <= 0)
 			{
-				if (TryOpenPosition(TradeDirection.Buy, line, candle))
+				if (TryOpenPosition(TradeDirections.Buy, line, candle))
 					line.IsActive = false;
 			}
-			else if (crossDown && directionForLine == TradeDirection.Sell && Position >= 0)
+			else if (crossDown && directionForLine == TradeDirections.Sell && Position >= 0)
 			{
-				if (TryOpenPosition(TradeDirection.Sell, line, candle))
+				if (TryOpenPosition(TradeDirections.Sell, line, candle))
 					line.IsActive = false;
 			}
 
@@ -324,31 +324,31 @@ public class CrossLineTraderStrategy : Strategy
 		_previousOpen = currentOpen;
 	}
 
-	private TradeDirection? ResolveDirection(LineState line)
+	private TradeDirections? ResolveDirection(LineState line)
 	{
 		switch (DirectionMode)
 		{
-			case LineDirectionMode.ForceBuy:
-				return TradeDirection.Buy;
-			case LineDirectionMode.ForceSell:
-				return TradeDirection.Sell;
-			case LineDirectionMode.FromLabel:
+			case LineDirectionModes.ForceBuy:
+				return TradeDirections.Buy;
+			case LineDirectionModes.ForceSell:
+				return TradeDirections.Sell;
+			case LineDirectionModes.FromLabel:
 				if (!BuyLabel.IsEmptyOrWhiteSpace() &&
 					line.Label.EqualsIgnoreCase(BuyLabel))
-					return TradeDirection.Buy;
+					return TradeDirections.Buy;
 
 				if (!SellLabel.IsEmptyOrWhiteSpace() &&
 					line.Label.EqualsIgnoreCase(SellLabel))
-					return TradeDirection.Sell;
+					return TradeDirections.Sell;
 				break;
 		}
 
 		return null;
 	}
 
-	private bool TryOpenPosition(TradeDirection direction, LineState line, ICandleMessage candle)
+	private bool TryOpenPosition(TradeDirections direction, LineState line, ICandleMessage candle)
 	{
-		if (direction == TradeDirection.Buy)
+		if (direction == TradeDirections.Buy)
 		{
 			if (Position > 0)
 				return false;
@@ -428,7 +428,7 @@ public class CrossLineTraderStrategy : Strategy
 			var lengthText = parts[5].Trim();
 			var rayText = parts[6].Trim();
 
-			if (!Enum.TryParse<LineType>(typeText, true, out var type))
+			if (!Enum.TryParse<LineTypes>(typeText, true, out var type))
 				continue;
 
 			if (!decimal.TryParse(basePriceText, NumberStyles.Number, CultureInfo.InvariantCulture, out var basePrice))
@@ -443,7 +443,7 @@ public class CrossLineTraderStrategy : Strategy
 			if (!bool.TryParse(rayText, out var ray))
 				ray = false;
 
-			if (type == LineType.Vertical && length <= 0)
+			if (type == LineTypes.Vertical && length <= 0)
 				length = 1;
 
 			result.Add(new LineState(name, label, type, basePrice, slope, length, ray));

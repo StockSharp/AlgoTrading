@@ -19,26 +19,26 @@ namespace StockSharp.Samples.Strategies;
 public class XDidiIndexCloudDuplexStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _longCandleType;
-	private readonly StrategyParam<SmoothingMethod> _longFastMethod;
+	private readonly StrategyParam<SmoothingMethods> _longFastMethod;
 	private readonly StrategyParam<int> _longFastLength;
-	private readonly StrategyParam<SmoothingMethod> _longMediumMethod;
+	private readonly StrategyParam<SmoothingMethods> _longMediumMethod;
 	private readonly StrategyParam<int> _longMediumLength;
-	private readonly StrategyParam<SmoothingMethod> _longSlowMethod;
+	private readonly StrategyParam<SmoothingMethods> _longSlowMethod;
 	private readonly StrategyParam<int> _longSlowLength;
-	private readonly StrategyParam<AppliedPrice> _longAppliedPrice;
+	private readonly StrategyParam<AppliedPrices> _longAppliedPrice;
 	private readonly StrategyParam<bool> _longEnableEntry;
 	private readonly StrategyParam<bool> _longEnableExit;
 	private readonly StrategyParam<bool> _longReverse;
 	private readonly StrategyParam<int> _longSignalBar;
 
 	private readonly StrategyParam<DataType> _shortCandleType;
-	private readonly StrategyParam<SmoothingMethod> _shortFastMethod;
+	private readonly StrategyParam<SmoothingMethods> _shortFastMethod;
 	private readonly StrategyParam<int> _shortFastLength;
-	private readonly StrategyParam<SmoothingMethod> _shortMediumMethod;
+	private readonly StrategyParam<SmoothingMethods> _shortMediumMethod;
 	private readonly StrategyParam<int> _shortMediumLength;
-	private readonly StrategyParam<SmoothingMethod> _shortSlowMethod;
+	private readonly StrategyParam<SmoothingMethods> _shortSlowMethod;
 	private readonly StrategyParam<int> _shortSlowLength;
-	private readonly StrategyParam<AppliedPrice> _shortAppliedPrice;
+	private readonly StrategyParam<AppliedPrices> _shortAppliedPrice;
 	private readonly StrategyParam<bool> _shortEnableEntry;
 	private readonly StrategyParam<bool> _shortEnableExit;
 	private readonly StrategyParam<bool> _shortReverse;
@@ -67,28 +67,28 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Long Candle Type", "Timeframe used for the long XDidi calculation", "General");
 
-		_longFastMethod = Param(nameof(LongFastMethod), SmoothingMethod.Sma)
+		_longFastMethod = Param(nameof(LongFastMethod), SmoothingMethods.Sma)
 			.SetDisplay("Long Fast Method", "Smoothing method for the short moving average in the long block", "Indicators");
 
 		_longFastLength = Param(nameof(LongFastLength), 3)
 			.SetDisplay("Long Fast Length", "Length for the short moving average in the long block", "Indicators")
 			.SetGreaterThanZero();
 
-		_longMediumMethod = Param(nameof(LongMediumMethod), SmoothingMethod.Sma)
+		_longMediumMethod = Param(nameof(LongMediumMethod), SmoothingMethods.Sma)
 			.SetDisplay("Long Medium Method", "Smoothing method for the middle moving average in the long block", "Indicators");
 
 		_longMediumLength = Param(nameof(LongMediumLength), 8)
 			.SetDisplay("Long Medium Length", "Length for the middle moving average in the long block", "Indicators")
 			.SetGreaterThanZero();
 
-		_longSlowMethod = Param(nameof(LongSlowMethod), SmoothingMethod.Sma)
+		_longSlowMethod = Param(nameof(LongSlowMethod), SmoothingMethods.Sma)
 			.SetDisplay("Long Slow Method", "Smoothing method for the slow moving average in the long block", "Indicators");
 
 		_longSlowLength = Param(nameof(LongSlowLength), 20)
 			.SetDisplay("Long Slow Length", "Length for the slow moving average in the long block", "Indicators")
 			.SetGreaterThanZero();
 
-		_longAppliedPrice = Param(nameof(LongAppliedPrice), AppliedPrice.Close)
+		_longAppliedPrice = Param(nameof(LongAppliedPrice), AppliedPrices.Close)
 			.SetDisplay("Long Applied Price", "Price source used for the long XDidi calculation", "Indicators");
 
 		_longEnableEntry = Param(nameof(EnableLongEntries), true)
@@ -107,28 +107,28 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Short Candle Type", "Timeframe used for the short XDidi calculation", "General");
 
-		_shortFastMethod = Param(nameof(ShortFastMethod), SmoothingMethod.Sma)
+		_shortFastMethod = Param(nameof(ShortFastMethod), SmoothingMethods.Sma)
 			.SetDisplay("Short Fast Method", "Smoothing method for the short moving average in the short block", "Indicators");
 
 		_shortFastLength = Param(nameof(ShortFastLength), 3)
 			.SetDisplay("Short Fast Length", "Length for the short moving average in the short block", "Indicators")
 			.SetGreaterThanZero();
 
-		_shortMediumMethod = Param(nameof(ShortMediumMethod), SmoothingMethod.Sma)
+		_shortMediumMethod = Param(nameof(ShortMediumMethod), SmoothingMethods.Sma)
 			.SetDisplay("Short Medium Method", "Smoothing method for the middle moving average in the short block", "Indicators");
 
 		_shortMediumLength = Param(nameof(ShortMediumLength), 8)
 			.SetDisplay("Short Medium Length", "Length for the middle moving average in the short block", "Indicators")
 			.SetGreaterThanZero();
 
-		_shortSlowMethod = Param(nameof(ShortSlowMethod), SmoothingMethod.Sma)
+		_shortSlowMethod = Param(nameof(ShortSlowMethod), SmoothingMethods.Sma)
 			.SetDisplay("Short Slow Method", "Smoothing method for the slow moving average in the short block", "Indicators");
 
 		_shortSlowLength = Param(nameof(ShortSlowLength), 20)
 			.SetDisplay("Short Slow Length", "Length for the slow moving average in the short block", "Indicators")
 			.SetGreaterThanZero();
 
-		_shortAppliedPrice = Param(nameof(ShortAppliedPrice), AppliedPrice.Close)
+		_shortAppliedPrice = Param(nameof(ShortAppliedPrice), AppliedPrices.Close)
 			.SetDisplay("Short Applied Price", "Price source used for the short XDidi calculation", "Indicators");
 
 		_shortEnableEntry = Param(nameof(EnableShortEntries), true)
@@ -165,7 +165,7 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 	/// <summary>
 	/// Smoothing method for the fast moving average in the long block.
 	/// </summary>
-	public SmoothingMethod LongFastMethod
+	public SmoothingMethods LongFastMethod
 	{
 		get => _longFastMethod.Value;
 		set => _longFastMethod.Value = value;
@@ -183,7 +183,7 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 	/// <summary>
 	/// Smoothing method for the medium moving average in the long block.
 	/// </summary>
-	public SmoothingMethod LongMediumMethod
+	public SmoothingMethods LongMediumMethod
 	{
 		get => _longMediumMethod.Value;
 		set => _longMediumMethod.Value = value;
@@ -201,7 +201,7 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 	/// <summary>
 	/// Smoothing method for the slow moving average in the long block.
 	/// </summary>
-	public SmoothingMethod LongSlowMethod
+	public SmoothingMethods LongSlowMethod
 	{
 		get => _longSlowMethod.Value;
 		set => _longSlowMethod.Value = value;
@@ -219,7 +219,7 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 	/// <summary>
 	/// Applied price for the long XDidi calculation.
 	/// </summary>
-	public AppliedPrice LongAppliedPrice
+	public AppliedPrices LongAppliedPrice
 	{
 		get => _longAppliedPrice.Value;
 		set => _longAppliedPrice.Value = value;
@@ -273,7 +273,7 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 	/// <summary>
 	/// Smoothing method for the fast moving average in the short block.
 	/// </summary>
-	public SmoothingMethod ShortFastMethod
+	public SmoothingMethods ShortFastMethod
 	{
 		get => _shortFastMethod.Value;
 		set => _shortFastMethod.Value = value;
@@ -291,7 +291,7 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 	/// <summary>
 	/// Smoothing method for the medium moving average in the short block.
 	/// </summary>
-	public SmoothingMethod ShortMediumMethod
+	public SmoothingMethods ShortMediumMethod
 	{
 		get => _shortMediumMethod.Value;
 		set => _shortMediumMethod.Value = value;
@@ -309,7 +309,7 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 	/// <summary>
 	/// Smoothing method for the slow moving average in the short block.
 	/// </summary>
-	public SmoothingMethod ShortSlowMethod
+	public SmoothingMethods ShortSlowMethod
 	{
 		get => _shortSlowMethod.Value;
 		set => _shortSlowMethod.Value = value;
@@ -327,7 +327,7 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 	/// <summary>
 	/// Applied price for the short XDidi calculation.
 	/// </summary>
-	public AppliedPrice ShortAppliedPrice
+	public AppliedPrices ShortAppliedPrice
 	{
 		get => _shortAppliedPrice.Value;
 		set => _shortAppliedPrice.Value = value;
@@ -646,30 +646,30 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 		slowHistory[requiredIndex].HasValue;
 	}
 
-	private static decimal GetAppliedPrice(AppliedPrice priceType, ICandleMessage candle)
+	private static decimal GetAppliedPrice(AppliedPrices priceType, ICandleMessage candle)
 	{
 		return priceType switch
 		{
-			AppliedPrice.Close => candle.ClosePrice,
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-			AppliedPrice.Weighted => (candle.ClosePrice * 2m + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			AppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
+			AppliedPrices.Close => candle.ClosePrice,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+			AppliedPrices.Weighted => (candle.ClosePrice * 2m + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			AppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
 				? candle.HighPrice
 				: candle.ClosePrice < candle.OpenPrice
 					? candle.LowPrice
 					: candle.ClosePrice,
-			AppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
+			AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
 				? (candle.HighPrice + candle.ClosePrice) / 2m
 				: candle.ClosePrice < candle.OpenPrice
 					? (candle.LowPrice + candle.ClosePrice) / 2m
 					: candle.ClosePrice,
-			AppliedPrice.Demark => CalculateDemarkPrice(candle),
+			AppliedPrices.Demark => CalculateDemarkPrice(candle),
 			_ => candle.ClosePrice,
 		};
 	}
@@ -685,16 +685,16 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 		return ((adjusted - candle.LowPrice) + (adjusted - candle.HighPrice)) / 2m;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(SmoothingMethod method, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(SmoothingMethods method, int length)
 	{
 		return method switch
 		{
-			SmoothingMethod.Sma => new SimpleMovingAverage { Length = length },
-			SmoothingMethod.Ema => new ExponentialMovingAverage { Length = length },
-			SmoothingMethod.Smma => new SmoothedMovingAverage { Length = length },
-			SmoothingMethod.Lwma => new WeightedMovingAverage { Length = length },
-			SmoothingMethod.T3 => new TripleExponentialMovingAverage { Length = length },
-			SmoothingMethod.Ama => new KaufmanAdaptiveMovingAverage { Length = length },
+			SmoothingMethods.Sma => new SimpleMovingAverage { Length = length },
+			SmoothingMethods.Ema => new ExponentialMovingAverage { Length = length },
+			SmoothingMethods.Smma => new SmoothedMovingAverage { Length = length },
+			SmoothingMethods.Lwma => new WeightedMovingAverage { Length = length },
+			SmoothingMethods.T3 => new TripleExponentialMovingAverage { Length = length },
+			SmoothingMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = length },
 			_ => new ExponentialMovingAverage { Length = length }
 		};
 	}
@@ -702,7 +702,7 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 	/// <summary>
 	/// Available smoothing methods that approximate the original MQL implementation.
 	/// </summary>
-	public enum SmoothingMethod
+	public enum SmoothingMethods
 	{
 		Sma,
 		Ema,
@@ -719,7 +719,7 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 	/// <summary>
 	/// Price sources supported by the strategy.
 	/// </summary>
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		Close = 1,
 		Open,

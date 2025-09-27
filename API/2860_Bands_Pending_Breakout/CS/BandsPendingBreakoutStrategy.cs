@@ -24,7 +24,7 @@ public class BandsPendingBreakoutStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _hourStart;
 	private readonly StrategyParam<int> _hourEnd;
-	private readonly StrategyParam<StopLossMode> _stopLossMode;
+	private readonly StrategyParam<StopLossModes> _stopLossMode;
 	private readonly StrategyParam<decimal> _firstTakeProfitPips;
 	private readonly StrategyParam<decimal> _secondTakeProfitPips;
 	private readonly StrategyParam<decimal> _thirdTakeProfitPips;
@@ -104,7 +104,7 @@ public class BandsPendingBreakoutStrategy : Strategy
 	/// <summary>
 	/// Stop loss placement mode.
 	/// </summary>
-	public StopLossMode StopLossMode
+	public StopLossModes StopLossModes
 	{
 		get => _stopLossMode.Value;
 		set => _stopLossMode.Value = value;
@@ -256,7 +256,7 @@ public class BandsPendingBreakoutStrategy : Strategy
 			.SetDisplay("End Hour", "Hour to stop placing orders", "Session")
 			.SetRange(1, 24);
 
-		_stopLossMode = Param(nameof(StopLossMode), StopLossMode.BollingerBands)
+		_stopLossMode = Param(nameof(StopLossModes), StopLossModes.BollingerBands)
 			.SetDisplay("Stop Loss Mode", "How stops are calculated", "Risk");
 
 		_firstTakeProfitPips = Param(nameof(FirstTakeProfitPips), 21m)
@@ -418,7 +418,7 @@ public class BandsPendingBreakoutStrategy : Strategy
 		if (shiftedUpper is null || shiftedLower is null || shiftedMiddle is null)
 			return;
 
-		if (StopLossMode == StopLossMode.MovingAverage && shiftedMa is null)
+		if (StopLossModes == StopLossModes.MovingAverage && shiftedMa is null)
 			return;
 
 		var closePrice = candle.ClosePrice;
@@ -446,13 +446,13 @@ public class BandsPendingBreakoutStrategy : Strategy
 			decimal? buyStopLoss = null;
 			decimal? sellStopLoss = null;
 
-			switch (StopLossMode)
+			switch (StopLossModes)
 			{
-				case StopLossMode.BollingerBands:
+				case StopLossModes.BollingerBands:
 					buyStopLoss = NormalizePrice(lowerBand + offset);
 					sellStopLoss = NormalizePrice(upperBand - offset);
 					break;
-				case StopLossMode.MovingAverage:
+				case StopLossModes.MovingAverage:
 					if (movingAverage is null)
 						return;
 
@@ -759,7 +759,7 @@ public class BandsPendingBreakoutStrategy : Strategy
 	}
 }
 
-public enum StopLossMode
+public enum StopLossModes
 {
 	/// <summary>
 	/// Place stops at the opposite Bollinger band plus the configured step.

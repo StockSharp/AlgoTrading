@@ -21,7 +21,7 @@ public class LevelsWithTrailStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _levelPrice;
-	private readonly StrategyParam<TrailMode> _trail;
+	private readonly StrategyParam<TrailModes> _trail;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _entryPrice;
@@ -45,7 +45,7 @@ public class LevelsWithTrailStrategy : Strategy
 		set => _levelPrice.Value = value;
 	}
 
-	public TrailMode Trail
+	public TrailModes Trail
 	{
 		get => _trail.Value;
 		set => _trail.Value = value;
@@ -68,7 +68,7 @@ public class LevelsWithTrailStrategy : Strategy
 		_levelPrice = Param(nameof(LevelPrice), 0m)
 			.SetDisplay("Level Price", "Price level for breakout", "Parameters");
 
-		_trail = Param(nameof(Trail), TrailMode.Off)
+		_trail = Param(nameof(Trail), TrailModes.Off)
 			.SetDisplay("Trail Stop", "Enable trailing stop", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -115,7 +115,7 @@ public class LevelsWithTrailStrategy : Strategy
 
 		if (Position > 0)
 		{
-			if (Trail == TrailMode.On)
+			if (Trail == TrailModes.On)
 			{
 				var newStop = close - StopLoss;
 				if (newStop > _currentStop)
@@ -127,7 +127,7 @@ public class LevelsWithTrailStrategy : Strategy
 		}
 		else if (Position < 0)
 		{
-			if (Trail == TrailMode.On)
+			if (Trail == TrailModes.On)
 			{
 				var newStop = close + StopLoss;
 				if (newStop < _currentStop)
@@ -154,7 +154,7 @@ public class LevelsWithTrailStrategy : Strategy
 		}
 	}
 
-	public enum TrailMode
+	public enum TrailModes
 	{
 		On,
 		Off

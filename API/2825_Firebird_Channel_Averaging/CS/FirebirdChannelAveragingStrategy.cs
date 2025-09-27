@@ -24,7 +24,7 @@ public class FirebirdChannelAveragingStrategy : Strategy
 	/// <summary>
 	/// Moving average calculation modes supported by the strategy.
 	/// </summary>
-	public enum MovingAverageTypeEnum
+	public enum MovingAverageTypes
 	{
 		/// <summary>
 		/// Simple moving average.
@@ -51,7 +51,7 @@ public class FirebirdChannelAveragingStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageTypeEnum> _maType;
+	private readonly StrategyParam<MovingAverageTypes> _maType;
 	private readonly StrategyParam<CandlePrice> _priceSource;
 	private readonly StrategyParam<decimal> _pricePercent;
 	private readonly StrategyParam<bool> _tradeOnFriday;
@@ -105,7 +105,7 @@ public class FirebirdChannelAveragingStrategy : Strategy
 	/// <summary>
 	/// Moving average calculation mode.
 	/// </summary>
-	public MovingAverageTypeEnum MaType
+	public MovingAverageTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -193,7 +193,7 @@ public class FirebirdChannelAveragingStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("MA Shift", "Forward shift for moving average", "Indicator");
 
-		_maType = Param(nameof(MaType), MovingAverageTypeEnum.Exponential)
+		_maType = Param(nameof(MaType), MovingAverageTypes.Exponential)
 			.SetDisplay("MA Type", "Moving average calculation mode", "Indicator");
 
 		_priceSource = Param(nameof(PriceSource), CandlePrice.Close)
@@ -523,13 +523,13 @@ public class FirebirdChannelAveragingStrategy : Strategy
 		return _maHistory.Peek();
 	}
 
-	private MovingAverage CreateMovingAverage(MovingAverageTypeEnum type)
+	private MovingAverage CreateMovingAverage(MovingAverageTypes type)
 	{
 		return type switch
 		{
-			MovingAverageTypeEnum.Simple => new SimpleMovingAverage(),
-			MovingAverageTypeEnum.Smoothed => new SmoothedMovingAverage(),
-			MovingAverageTypeEnum.Weighted => new WeightedMovingAverage(),
+			MovingAverageTypes.Simple => new SimpleMovingAverage(),
+			MovingAverageTypes.Smoothed => new SmoothedMovingAverage(),
+			MovingAverageTypes.Weighted => new WeightedMovingAverage(),
 			_ => new ExponentialMovingAverage()
 		};
 	}

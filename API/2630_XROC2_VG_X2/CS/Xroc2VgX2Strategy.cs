@@ -22,7 +22,7 @@ public class Xroc2VgX2Strategy : Strategy
 	/// <summary>
 	/// Available rate-of-change calculation modes.
 	/// </summary>
-	public enum RocMode
+	public enum RocModes
 	{
 		Momentum,
 		RateOfChange,
@@ -34,7 +34,7 @@ public class Xroc2VgX2Strategy : Strategy
 	/// <summary>
 	/// Smoothing methods supported by the strategy.
 	/// </summary>
-	public enum SmoothingMethod
+	public enum SmoothingMethods
 	{
 		Sma,
 		Ema,
@@ -52,22 +52,22 @@ public class Xroc2VgX2Strategy : Strategy
 	private readonly StrategyParam<DataType> _lowerCandleType;
 	private readonly StrategyParam<int> _higherSignalBar;
 	private readonly StrategyParam<int> _lowerSignalBar;
-	private readonly StrategyParam<RocMode> _higherRocMode;
+	private readonly StrategyParam<RocModes> _higherRocMode;
 	private readonly StrategyParam<int> _higherFastPeriod;
-	private readonly StrategyParam<SmoothingMethod> _higherFastMethod;
+	private readonly StrategyParam<SmoothingMethods> _higherFastMethod;
 	private readonly StrategyParam<int> _higherFastLength;
 	private readonly StrategyParam<int> _higherFastPhase;
 	private readonly StrategyParam<int> _higherSlowPeriod;
-	private readonly StrategyParam<SmoothingMethod> _higherSlowMethod;
+	private readonly StrategyParam<SmoothingMethods> _higherSlowMethod;
 	private readonly StrategyParam<int> _higherSlowLength;
 	private readonly StrategyParam<int> _higherSlowPhase;
-	private readonly StrategyParam<RocMode> _lowerRocMode;
+	private readonly StrategyParam<RocModes> _lowerRocMode;
 	private readonly StrategyParam<int> _lowerFastPeriod;
-	private readonly StrategyParam<SmoothingMethod> _lowerFastMethod;
+	private readonly StrategyParam<SmoothingMethods> _lowerFastMethod;
 	private readonly StrategyParam<int> _lowerFastLength;
 	private readonly StrategyParam<int> _lowerFastPhase;
 	private readonly StrategyParam<int> _lowerSlowPeriod;
-	private readonly StrategyParam<SmoothingMethod> _lowerSlowMethod;
+	private readonly StrategyParam<SmoothingMethods> _lowerSlowMethod;
 	private readonly StrategyParam<int> _lowerSlowLength;
 	private readonly StrategyParam<int> _lowerSlowPhase;
 	private readonly StrategyParam<bool> _allowBuyOpen;
@@ -100,14 +100,14 @@ public class Xroc2VgX2Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Lower Signal Bar", "Shift used for lower timeframe signals", "General");
 
-		_higherRocMode = Param(nameof(HigherRocMode), RocMode.Momentum)
+		_higherRocMode = Param(nameof(HigherRocMode), RocModes.Momentum)
 			.SetDisplay("Higher ROC Mode", "ROC calculation mode for the bias", "Higher Timeframe");
 
 		_higherFastPeriod = Param(nameof(HigherFastPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Higher Fast ROC", "Fast ROC period for bias", "Higher Timeframe");
 
-		_higherFastMethod = Param(nameof(HigherFastMethod), SmoothingMethod.Jurik)
+		_higherFastMethod = Param(nameof(HigherFastMethod), SmoothingMethods.Jurik)
 			.SetDisplay("Higher Fast Method", "Smoother for fast ROC", "Higher Timeframe");
 
 		_higherFastLength = Param(nameof(HigherFastLength), 5)
@@ -121,7 +121,7 @@ public class Xroc2VgX2Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Higher Slow ROC", "Slow ROC period for bias", "Higher Timeframe");
 
-		_higherSlowMethod = Param(nameof(HigherSlowMethod), SmoothingMethod.Jurik)
+		_higherSlowMethod = Param(nameof(HigherSlowMethod), SmoothingMethods.Jurik)
 			.SetDisplay("Higher Slow Method", "Smoother for slow ROC", "Higher Timeframe");
 
 		_higherSlowLength = Param(nameof(HigherSlowLength), 5)
@@ -131,14 +131,14 @@ public class Xroc2VgX2Strategy : Strategy
 		_higherSlowPhase = Param(nameof(HigherSlowPhase), 15)
 			.SetDisplay("Higher Slow Phase", "Phase parameter for slow smoother", "Higher Timeframe");
 
-		_lowerRocMode = Param(nameof(LowerRocMode), RocMode.Momentum)
+		_lowerRocMode = Param(nameof(LowerRocMode), RocModes.Momentum)
 			.SetDisplay("Lower ROC Mode", "ROC calculation mode for entries", "Lower Timeframe");
 
 		_lowerFastPeriod = Param(nameof(LowerFastPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Lower Fast ROC", "Fast ROC period for entries", "Lower Timeframe");
 
-		_lowerFastMethod = Param(nameof(LowerFastMethod), SmoothingMethod.Jurik)
+		_lowerFastMethod = Param(nameof(LowerFastMethod), SmoothingMethods.Jurik)
 			.SetDisplay("Lower Fast Method", "Smoother for fast ROC", "Lower Timeframe");
 
 		_lowerFastLength = Param(nameof(LowerFastLength), 5)
@@ -152,7 +152,7 @@ public class Xroc2VgX2Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Lower Slow ROC", "Slow ROC period for entries", "Lower Timeframe");
 
-		_lowerSlowMethod = Param(nameof(LowerSlowMethod), SmoothingMethod.Jurik)
+		_lowerSlowMethod = Param(nameof(LowerSlowMethod), SmoothingMethods.Jurik)
 			.SetDisplay("Lower Slow Method", "Smoother for slow ROC", "Lower Timeframe");
 
 		_lowerSlowLength = Param(nameof(LowerSlowLength), 5)
@@ -220,7 +220,7 @@ public class Xroc2VgX2Strategy : Strategy
 	/// <summary>
 	/// Rate-of-change mode for the higher timeframe stream.
 	/// </summary>
-	public RocMode HigherRocMode
+	public RocModes HigherRocMode
 	{
 		get => _higherRocMode.Value;
 		set => _higherRocMode.Value = value;
@@ -238,7 +238,7 @@ public class Xroc2VgX2Strategy : Strategy
 	/// <summary>
 	/// Smoothing method for the higher timeframe fast line.
 	/// </summary>
-	public SmoothingMethod HigherFastMethod
+	public SmoothingMethods HigherFastMethod
 	{
 		get => _higherFastMethod.Value;
 		set => _higherFastMethod.Value = value;
@@ -274,7 +274,7 @@ public class Xroc2VgX2Strategy : Strategy
 	/// <summary>
 	/// Smoothing method for the higher timeframe slow line.
 	/// </summary>
-	public SmoothingMethod HigherSlowMethod
+	public SmoothingMethods HigherSlowMethod
 	{
 		get => _higherSlowMethod.Value;
 		set => _higherSlowMethod.Value = value;
@@ -301,7 +301,7 @@ public class Xroc2VgX2Strategy : Strategy
 	/// <summary>
 	/// Rate-of-change mode for the lower timeframe stream.
 	/// </summary>
-	public RocMode LowerRocMode
+	public RocModes LowerRocMode
 	{
 		get => _lowerRocMode.Value;
 		set => _lowerRocMode.Value = value;
@@ -319,7 +319,7 @@ public class Xroc2VgX2Strategy : Strategy
 	/// <summary>
 	/// Smoothing method for the lower timeframe fast line.
 	/// </summary>
-	public SmoothingMethod LowerFastMethod
+	public SmoothingMethods LowerFastMethod
 	{
 		get => _lowerFastMethod.Value;
 		set => _lowerFastMethod.Value = value;
@@ -355,7 +355,7 @@ public class Xroc2VgX2Strategy : Strategy
 	/// <summary>
 	/// Smoothing method for the lower timeframe slow line.
 	/// </summary>
-	public SmoothingMethod LowerSlowMethod
+	public SmoothingMethods LowerSlowMethod
 	{
 		get => _lowerSlowMethod.Value;
 		set => _lowerSlowMethod.Value = value;
@@ -584,13 +584,13 @@ public class Xroc2VgX2Strategy : Strategy
 		private readonly int _maxHistory;
 
 		public Xroc2VgSeries(
-			RocMode mode,
+			RocModes mode,
 			int fastPeriod,
-			SmoothingMethod fastMethod,
+			SmoothingMethods fastMethod,
 			int fastLength,
 			int fastPhase,
 			int slowPeriod,
-			SmoothingMethod slowMethod,
+			SmoothingMethods slowMethod,
 			int slowLength,
 			int slowPhase,
 			int maxHistory = 1024)
@@ -651,12 +651,12 @@ public class Xroc2VgX2Strategy : Strategy
 
 	private sealed class RocSmoother
 	{
-		private readonly RocMode _mode;
+		private readonly RocModes _mode;
 		private readonly int _period;
 		private readonly IIndicator _smoother;
 		private readonly Queue<decimal> _window = new();
 
-		public RocSmoother(RocMode mode, int period, SmoothingMethod method, int length, int phase)
+		public RocSmoother(RocModes mode, int period, SmoothingMethods method, int length, int phase)
 		{
 			_mode = mode;
 			_period = Math.Max(1, period);
@@ -678,25 +678,25 @@ public class Xroc2VgX2Strategy : Strategy
 			decimal roc;
 			switch (_mode)
 			{
-				case RocMode.Momentum:
+				case RocModes.Momentum:
 					roc = close - prev;
 					break;
-				case RocMode.RateOfChange:
+				case RocModes.RateOfChange:
 					if (prev == 0m)
 						return null;
 					roc = (close / prev - 1m) * 100m;
 					break;
-				case RocMode.RateOfChangePercent:
+				case RocModes.RateOfChangePercent:
 					if (prev == 0m)
 						return null;
 					roc = (close - prev) / prev;
 					break;
-				case RocMode.RateOfChangeRatio:
+				case RocModes.RateOfChangeRatio:
 					if (prev == 0m)
 						return null;
 					roc = close / prev;
 					break;
-				case RocMode.RateOfChangeRatioPercent:
+				case RocModes.RateOfChangeRatioPercent:
 					if (prev == 0m)
 						return null;
 					roc = (close / prev) * 100m;
@@ -717,19 +717,19 @@ public class Xroc2VgX2Strategy : Strategy
 		}
 	}
 
-	private static IIndicator CreateSmoother(SmoothingMethod method, int length, int phase)
+	private static IIndicator CreateSmoother(SmoothingMethods method, int length, int phase)
 	{
 		var len = Math.Max(1, length);
 
 		return method switch
 		{
-			SmoothingMethod.Sma => new SimpleMovingAverage { Length = len },
-			SmoothingMethod.Ema => new ExponentialMovingAverage { Length = len },
-			SmoothingMethod.Smma => new SmoothedMovingAverage { Length = len },
-			SmoothingMethod.Lwma => new WeightedMovingAverage { Length = len },
-			SmoothingMethod.Jurik => new JurikMovingAverage { Length = len },
-			SmoothingMethod.Jurx => new JurikMovingAverage { Length = len },
-			SmoothingMethod.Ama => new KaufmanAdaptiveMovingAverage { Length = len },
+			SmoothingMethods.Sma => new SimpleMovingAverage { Length = len },
+			SmoothingMethods.Ema => new ExponentialMovingAverage { Length = len },
+			SmoothingMethods.Smma => new SmoothedMovingAverage { Length = len },
+			SmoothingMethods.Lwma => new WeightedMovingAverage { Length = len },
+			SmoothingMethods.Jurik => new JurikMovingAverage { Length = len },
+			SmoothingMethods.Jurx => new JurikMovingAverage { Length = len },
+			SmoothingMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = len },
 			_ => new ExponentialMovingAverage { Length = len },
 		};
 	}

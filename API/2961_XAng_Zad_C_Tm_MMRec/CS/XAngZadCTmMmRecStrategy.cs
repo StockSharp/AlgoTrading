@@ -37,11 +37,11 @@ public class XAngZadCTmMmRecStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<int> _signalShift;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<XAngZadCIndicator.SmoothMethod> _smoothMethod;
+	private readonly StrategyParam<XAngZadCIndicator.SmoothMethods> _smoothMethod;
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<int> _maPhase;
 	private readonly StrategyParam<decimal> _ki;
-	private readonly StrategyParam<XAngZadCIndicator.AppliedPrice> _appliedPrice;
+	private readonly StrategyParam<XAngZadCIndicator.AppliedPrices> _appliedPrice;
 
 	private readonly List<decimal> _buyPnls = new();
 	private readonly List<decimal> _sellPnls = new();
@@ -154,7 +154,7 @@ public class XAngZadCTmMmRecStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	public XAngZadCIndicator.SmoothMethod SmoothMethod
+	public XAngZadCIndicator.SmoothMethods SmoothMethods
 	{
 		get => _smoothMethod.Value;
 		set => _smoothMethod.Value = value;
@@ -178,7 +178,7 @@ public class XAngZadCTmMmRecStrategy : Strategy
 		set => _ki.Value = value <= 0m ? 1m : value;
 	}
 
-	public XAngZadCIndicator.AppliedPrice AppliedPrice
+	public XAngZadCIndicator.AppliedPrices AppliedPrices
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -250,7 +250,7 @@ public class XAngZadCTmMmRecStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Indicator Timeframe", "Candle type used for the indicator", "Data");
 
-		_smoothMethod = Param(nameof(SmoothMethod), XAngZadCIndicator.SmoothMethod.Jjma)
+		_smoothMethod = Param(nameof(SmoothMethods), XAngZadCIndicator.SmoothMethods.Jjma)
 			.SetDisplay("Smoothing Method", "Moving average used inside the indicator", "Indicator");
 
 		_maLength = Param(nameof(MaLength), 7)
@@ -264,7 +264,7 @@ public class XAngZadCTmMmRecStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Ki", "Smoothing ratio for price envelopes", "Indicator");
 
-		_appliedPrice = Param(nameof(AppliedPrice), XAngZadCIndicator.AppliedPrice.Close)
+		_appliedPrice = Param(nameof(AppliedPrices), XAngZadCIndicator.AppliedPrices.Close)
 			.SetDisplay("Applied Price", "Price source used by the indicator", "Indicator");
 	}
 
@@ -295,8 +295,8 @@ public class XAngZadCTmMmRecStrategy : Strategy
 			Ki = Ki,
 			Length = MaLength,
 			Phase = MaPhase,
-			Method = SmoothMethod,
-			PriceSource = AppliedPrice
+			Method = SmoothMethods,
+			PriceSource = AppliedPrices
 		};
 
 		var subscription = SubscribeCandles(CandleType);
@@ -572,7 +572,7 @@ private decimal GetBuyVolume()
 /// </summary>
 public class XAngZadCIndicator : BaseIndicator<decimal>
 {
-	public enum SmoothMethod
+	public enum SmoothMethods
 	{
 		Sma,
 		Ema,
@@ -586,7 +586,7 @@ public class XAngZadCIndicator : BaseIndicator<decimal>
 		Ama
 	}
 
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		Close,
 		Open,
@@ -605,15 +605,15 @@ public class XAngZadCIndicator : BaseIndicator<decimal>
 	public decimal Ki { get; set; } = 4.000001m;
 	public int Length { get; set; } = 7;
 	public int Phase { get; set; } = 15;
-	public SmoothMethod Method { get; set; } = SmoothMethod.Jjma;
-	public AppliedPrice PriceSource { get; set; } = AppliedPrice.Close;
+	public SmoothMethods Method { get; set; } = SmoothMethods.Jjma;
+	public AppliedPrices PriceSource { get; set; } = AppliedPrices.Close;
 
 	private decimal? _prevPrice;
 	private decimal? _prevZ;
 	private decimal? _prevZ2;
 	private IIndicator _upperMa = null!;
 	private IIndicator _lowerMa = null!;
-	private SmoothMethod _cachedMethod;
+	private SmoothMethods _cachedMethod;
 	private int _cachedLength;
 
 	protected override IIndicatorValue OnProcess(IIndicatorValue input)
@@ -675,9 +675,9 @@ public class XAngZadCIndicator : BaseIndicator<decimal>
 		// the ones that do not have direct equivalents in StockSharp.
 		return Method switch
 		{
-			SmoothMethod.Sma => new SimpleMovingAverage { Length = Length },
-			SmoothMethod.Smma => new SmoothedMovingAverage { Length = Length },
-			SmoothMethod.Lwma => new WeightedMovingAverage { Length = Length },
+			SmoothMethods.Sma => new SimpleMovingAverage { Length = Length },
+			SmoothMethods.Smma => new SmoothedMovingAverage { Length = Length },
+			SmoothMethods.Lwma => new WeightedMovingAverage { Length = Length },
 			_ => new ExponentialMovingAverage { Length = Length }
 		};
 	}
@@ -686,19 +686,19 @@ public class XAngZadCIndicator : BaseIndicator<decimal>
 	{
 		return PriceSource switch
 		{
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.Simpl => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			AppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.TrendFollow0 => candle.ClosePrice >= candle.OpenPrice ? candle.HighPrice : candle.LowPrice,
-			AppliedPrice.TrendFollow1 => candle.ClosePrice >= candle.OpenPrice
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.Simpl => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			AppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.TrendFollow0 => candle.ClosePrice >= candle.OpenPrice ? candle.HighPrice : candle.LowPrice,
+			AppliedPrices.TrendFollow1 => candle.ClosePrice >= candle.OpenPrice
 				? (candle.HighPrice + candle.ClosePrice) / 2m
 				: (candle.LowPrice + candle.ClosePrice) / 2m,
-			AppliedPrice.Demark => CalculateDemarkPrice(candle),
+			AppliedPrices.Demark => CalculateDemarkPrice(candle),
 			_ => candle.ClosePrice
 		};
 	}

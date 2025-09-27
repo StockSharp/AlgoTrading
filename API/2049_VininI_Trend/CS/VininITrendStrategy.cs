@@ -21,7 +21,7 @@ public class VininITrendStrategy : Strategy
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<int> _upLevel;
 	private readonly StrategyParam<int> _downLevel;
-	private readonly StrategyParam<Mode> _entryMode;
+	private readonly StrategyParam<Modes> _entryMode;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal? _prev1;
@@ -56,9 +56,9 @@ public class VininITrendStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Mode for entry signal calculation.
+	/// Modes for entry signal calculation.
 	/// </summary>
-	public Mode EntryMode
+	public Modes EntryMode
 	{
 		get => _entryMode.Value;
 		set => _entryMode.Value = value;
@@ -89,8 +89,8 @@ public class VininITrendStrategy : Strategy
 		_downLevel = Param(nameof(DownLevel), -10)
 			.SetDisplay("Lower Level", "Lower threshold to trigger sell", "Parameters");
 
-		_entryMode = Param(nameof(EntryMode), Mode.Breakdown)
-			.SetDisplay("Entry Mode", "Signal generation mode", "General");
+		_entryMode = Param(nameof(EntryMode), Modes.Breakdown)
+			.SetDisplay("Entry Modes", "Signal generation mode", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -145,7 +145,7 @@ public class VininITrendStrategy : Strategy
 
 		switch (EntryMode)
 		{
-			case Mode.Breakdown:
+			case Modes.Breakdown:
 				if (prev is not null)
 				{
 					if (prev <= UpLevel && cciValue > UpLevel)
@@ -156,7 +156,7 @@ public class VininITrendStrategy : Strategy
 				}
 				break;
 
-			case Mode.Twist:
+			case Modes.Twist:
 				if (prev is not null && prev2 is not null)
 				{
 					if (prev < prev2 && cciValue > prev)
@@ -182,7 +182,7 @@ public class VininITrendStrategy : Strategy
 	/// <summary>
 	/// Available entry modes.
 	/// </summary>
-	public enum Mode
+	public enum Modes
 	{
 		/// <summary>
 		/// Trigger when the oscillator breaks predefined levels.

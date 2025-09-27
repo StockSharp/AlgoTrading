@@ -19,7 +19,7 @@ source system while exposing every numeric input as a configurable parameter.
 - The SAR parameters `SarStep` and `SarMax` match the acceleration settings from the MQL version and may be optimised if needed.
 
 ### Direction scheduler
-- A `TradeDirection` flag represents the original `cmd` variable. It starts in the *buy* state.
+- A `TradeDirections` flag represents the original `cmd` variable. It starts in the *buy* state.
 - After a **take-profit** exit the flag flips to the opposite side, inviting a reversal trade.
 - After a **stop-loss** (or breakeven) exit the flag remains on the same side so that the next opportunity retries the previous
   direction.

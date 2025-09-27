@@ -15,7 +15,7 @@ namespace StockSharp.Samples.Strategies;
 
 public class OpeningAndClosingOnTimeV2Strategy : Strategy
 {
-	public enum TradeModes
+	public enum TradeModeses
 	{
 		Buy,
 		Sell,
@@ -24,7 +24,7 @@ public class OpeningAndClosingOnTimeV2Strategy : Strategy
 
 	private readonly StrategyParam<TimeSpan> _openTime;
 	private readonly StrategyParam<TimeSpan> _closeTime;
-	private readonly StrategyParam<TradeModes> _tradeMode;
+	private readonly StrategyParam<TradeModeses> _tradeMode;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _stopLossTicks;
@@ -51,7 +51,7 @@ public class OpeningAndClosingOnTimeV2Strategy : Strategy
 		set => _closeTime.Value = value;
 	}
 
-	public TradeModes TradeMode
+	public TradeModeses TradeMode
 	{
 		get => _tradeMode.Value;
 		set => _tradeMode.Value = value;
@@ -95,7 +95,7 @@ public class OpeningAndClosingOnTimeV2Strategy : Strategy
 		_closeTime = Param(nameof(CloseTime), new TimeSpan(21, 1, 0))
 			.SetDisplay("Close Time", "Time of day to close trades", "General");
 
-		_tradeMode = Param(nameof(TradeMode), TradeModes.BuyAndSell)
+		_tradeMode = Param(nameof(TradeMode), TradeModeses.BuyAndSell)
 			.SetDisplay("Trade Mode", "Allowed trade directions", "General");
 
 		_slowPeriod = Param(nameof(SlowPeriod), 200)
@@ -171,9 +171,9 @@ public class OpeningAndClosingOnTimeV2Strategy : Strategy
 		{
 			if (_hasPrev)
 			{
-				if ((TradeMode == TradeModes.Buy || TradeMode == TradeModes.BuyAndSell) && _prevFast > _prevSlow && Position <= 0)
+				if ((TradeMode == TradeModeses.Buy || TradeMode == TradeModeses.BuyAndSell) && _prevFast > _prevSlow && Position <= 0)
 					BuyMarket();
-				if ((TradeMode == TradeModes.Sell || TradeMode == TradeModes.BuyAndSell) && _prevFast < _prevSlow && Position >= 0)
+				if ((TradeMode == TradeModeses.Sell || TradeMode == TradeModeses.BuyAndSell) && _prevFast < _prevSlow && Position >= 0)
 					SellMarket();
 			}
 			_opened = true;

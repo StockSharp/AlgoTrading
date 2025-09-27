@@ -21,8 +21,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BollingerBandsRsiZonesStrategy : Strategy
 {
-	private readonly StrategyParam<BollingerBandsRsiEntryMode> _entryMode;
-	private readonly StrategyParam<BollingerBandsRsiClosureMode> _closureMode;
+	private readonly StrategyParam<BollingerBandsRsiEntryModes> _entryMode;
+	private readonly StrategyParam<BollingerBandsRsiClosureModes> _closureMode;
 	private readonly StrategyParam<int> _bandsPeriod;
 	private readonly StrategyParam<decimal> _deviation;
 	private readonly StrategyParam<bool> _useRsiFilter;
@@ -61,7 +61,7 @@ public class BollingerBandsRsiZonesStrategy : Strategy
 	/// <summary>
 	/// Entry zone selection.
 	/// </summary>
-	public BollingerBandsRsiEntryMode EntryMode
+	public BollingerBandsRsiEntryModes EntryMode
 	{
 		get => _entryMode.Value;
 		set => _entryMode.Value = value;
@@ -70,7 +70,7 @@ public class BollingerBandsRsiZonesStrategy : Strategy
 	/// <summary>
 	/// Exit zone selection.
 	/// </summary>
-	public BollingerBandsRsiClosureMode ClosureMode
+	public BollingerBandsRsiClosureModes ClosureMode
 	{
 		get => _closureMode.Value;
 		set => _closureMode.Value = value;
@@ -216,10 +216,10 @@ public class BollingerBandsRsiZonesStrategy : Strategy
 	/// </summary>
 	public BollingerBandsRsiZonesStrategy()
 	{
-		_entryMode = Param(nameof(EntryMode), BollingerBandsRsiEntryMode.BetweenYellowAndBlue)
+		_entryMode = Param(nameof(EntryMode), BollingerBandsRsiEntryModes.BetweenYellowAndBlue)
 			.SetDisplay("Entry Mode", "Bollinger zone used for entries", "Trading");
 
-		_closureMode = Param(nameof(ClosureMode), BollingerBandsRsiClosureMode.BetweenBlueAndRed)
+		_closureMode = Param(nameof(ClosureMode), BollingerBandsRsiClosureModes.BetweenBlueAndRed)
 			.SetDisplay("Closure Mode", "Bollinger zone used for exits", "Trading");
 
 		_bandsPeriod = Param(nameof(BandsPeriod), 140)
@@ -469,7 +469,7 @@ public class BollingerBandsRsiZonesStrategy : Strategy
 		// Exit logic mirrors the original EA: close longs on selected upper zone, shorts on selected lower zone.
 		switch (ClosureMode)
 		{
-			case BollingerBandsRsiClosureMode.MiddleLine:
+			case BollingerBandsRsiClosureModes.MiddleLine:
 				if (Position > 0m && candle.HighPrice >= baseTeeth)
 					SellMarket(Position);
 
@@ -477,8 +477,8 @@ public class BollingerBandsRsiZonesStrategy : Strategy
 					BuyMarket(Math.Abs(Position));
 				break;
 
-			case BollingerBandsRsiClosureMode.BetweenYellowAndBlue:
-			case BollingerBandsRsiClosureMode.BetweenBlueAndRed:
+			case BollingerBandsRsiClosureModes.BetweenYellowAndBlue:
+			case BollingerBandsRsiClosureModes.BetweenBlueAndRed:
 				if (Position > 0m && candle.HighPrice >= exitLong)
 					SellMarket(Position);
 
@@ -486,7 +486,7 @@ public class BollingerBandsRsiZonesStrategy : Strategy
 					BuyMarket(Math.Abs(Position));
 				break;
 
-			case BollingerBandsRsiClosureMode.YellowLine:
+			case BollingerBandsRsiClosureModes.YellowLine:
 				if (Position > 0m && candle.HighPrice >= upperTeeth)
 					SellMarket(Position);
 
@@ -494,7 +494,7 @@ public class BollingerBandsRsiZonesStrategy : Strategy
 					BuyMarket(Math.Abs(Position));
 				break;
 
-			case BollingerBandsRsiClosureMode.BlueLine:
+			case BollingerBandsRsiClosureModes.BlueLine:
 				if (Position > 0m && candle.HighPrice >= upperJaws)
 					SellMarket(Position);
 
@@ -502,7 +502,7 @@ public class BollingerBandsRsiZonesStrategy : Strategy
 					BuyMarket(Math.Abs(Position));
 				break;
 
-			case BollingerBandsRsiClosureMode.RedLine:
+			case BollingerBandsRsiClosureModes.RedLine:
 				if (Position > 0m && candle.HighPrice >= upperLips)
 					SellMarket(Position);
 
@@ -518,11 +518,11 @@ public class BollingerBandsRsiZonesStrategy : Strategy
 	{
 		return EntryMode switch
 		{
-			BollingerBandsRsiEntryMode.BetweenYellowAndBlue => lowerTeeth - (lowerTeeth - lowerJaws) / 2m,
-			BollingerBandsRsiEntryMode.BetweenBlueAndRed => lowerJaws - (lowerJaws - lowerLips) / 2m,
-			BollingerBandsRsiEntryMode.YellowLine => lowerTeeth,
-			BollingerBandsRsiEntryMode.BlueLine => lowerJaws,
-			BollingerBandsRsiEntryMode.RedLine => lowerLips,
+			BollingerBandsRsiEntryModes.BetweenYellowAndBlue => lowerTeeth - (lowerTeeth - lowerJaws) / 2m,
+			BollingerBandsRsiEntryModes.BetweenBlueAndRed => lowerJaws - (lowerJaws - lowerLips) / 2m,
+			BollingerBandsRsiEntryModes.YellowLine => lowerTeeth,
+			BollingerBandsRsiEntryModes.BlueLine => lowerJaws,
+			BollingerBandsRsiEntryModes.RedLine => lowerLips,
 			_ => lowerTeeth
 		};
 	}
@@ -531,19 +531,19 @@ public class BollingerBandsRsiZonesStrategy : Strategy
 	{
 		return EntryMode switch
 		{
-			BollingerBandsRsiEntryMode.BetweenYellowAndBlue => upperTeeth + (upperJaws - upperTeeth) / 2m,
-			BollingerBandsRsiEntryMode.BetweenBlueAndRed => upperJaws + (upperLips - upperJaws) / 2m,
-			BollingerBandsRsiEntryMode.YellowLine => upperTeeth,
-			BollingerBandsRsiEntryMode.BlueLine => upperJaws,
-			BollingerBandsRsiEntryMode.RedLine => upperLips,
+			BollingerBandsRsiEntryModes.BetweenYellowAndBlue => upperTeeth + (upperJaws - upperTeeth) / 2m,
+			BollingerBandsRsiEntryModes.BetweenBlueAndRed => upperJaws + (upperLips - upperJaws) / 2m,
+			BollingerBandsRsiEntryModes.YellowLine => upperTeeth,
+			BollingerBandsRsiEntryModes.BlueLine => upperJaws,
+			BollingerBandsRsiEntryModes.RedLine => upperLips,
 			_ => upperTeeth
 		};
 	}
 
 	private (decimal exitLong, decimal exitShort) GetExitLevels(decimal shortEntryPrice, decimal longEntryPrice, decimal upperJaws, decimal lowerJaws, decimal upperLips, decimal lowerLips)
 	{
-		if ((ClosureMode == BollingerBandsRsiClosureMode.BetweenYellowAndBlue && EntryMode == BollingerBandsRsiEntryMode.BetweenYellowAndBlue) ||
-			(ClosureMode == BollingerBandsRsiClosureMode.BetweenBlueAndRed && EntryMode == BollingerBandsRsiEntryMode.BetweenBlueAndRed))
+		if ((ClosureMode == BollingerBandsRsiClosureModes.BetweenYellowAndBlue && EntryMode == BollingerBandsRsiEntryModes.BetweenYellowAndBlue) ||
+			(ClosureMode == BollingerBandsRsiClosureModes.BetweenBlueAndRed && EntryMode == BollingerBandsRsiEntryModes.BetweenBlueAndRed))
 		{
 			return (shortEntryPrice, longEntryPrice);
 		}
@@ -612,7 +612,7 @@ public class BollingerBandsRsiZonesStrategy : Strategy
 /// <summary>
 /// Entry location for Bollinger Bands RSI strategy.
 /// </summary>
-public enum BollingerBandsRsiEntryMode
+public enum BollingerBandsRsiEntryModes
 {
 	/// <summary>
 	/// Midpoint between yellow (primary) and blue (narrow) bands.
@@ -643,7 +643,7 @@ public enum BollingerBandsRsiEntryMode
 /// <summary>
 /// Exit location for Bollinger Bands RSI strategy.
 /// </summary>
-public enum BollingerBandsRsiClosureMode
+public enum BollingerBandsRsiClosureModes
 {
 	/// <summary>
 	/// Exit on the middle Bollinger band.

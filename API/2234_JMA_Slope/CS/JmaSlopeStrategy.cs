@@ -20,7 +20,7 @@ public class JmaSlopeStrategy : Strategy
 {
 	private readonly StrategyParam<int> _jmaLength;
 	private readonly StrategyParam<int> _jmaPhase;
-	private readonly StrategyParam<JmaSlopeMode> _mode;
+	private readonly StrategyParam<JmaSlopeModes> _mode;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal? _prevJma;
@@ -41,7 +41,7 @@ public class JmaSlopeStrategy : Strategy
 	/// <summary>
 	/// Entry mode algorithm.
 	/// </summary>
-	public JmaSlopeMode Mode { get => _mode.Value; set => _mode.Value = value; }
+	public JmaSlopeModes Mode { get => _mode.Value; set => _mode.Value = value; }
 
 	/// <summary>
 	/// Candle type.
@@ -61,7 +61,7 @@ public class JmaSlopeStrategy : Strategy
 		_jmaPhase = Param(nameof(JmaPhase), 0)
 			.SetDisplay("JMA Phase", "Phase parameter", "Indicators");
 
-		_mode = Param(nameof(Mode), JmaSlopeMode.Breakdown)
+		_mode = Param(nameof(Mode), JmaSlopeModes.Breakdown)
 			.SetDisplay("Mode", "Entry algorithm", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -111,12 +111,12 @@ public class JmaSlopeStrategy : Strategy
 
 			switch (Mode)
 			{
-				case JmaSlopeMode.Breakdown:
+				case JmaSlopeModes.Breakdown:
 					buy = s2 > 0m && s1 <= 0m;
 					sell = s2 < 0m && s1 >= 0m;
 					break;
 
-				case JmaSlopeMode.Twist:
+				case JmaSlopeModes.Twist:
 					buy = s2 < s3 && s1 > s2;
 					sell = s2 > s3 && s1 < s2;
 					break;
@@ -138,7 +138,7 @@ public class JmaSlopeStrategy : Strategy
 /// <summary>
 /// JMA slope entry modes.
 /// </summary>
-public enum JmaSlopeMode
+public enum JmaSlopeModes
 {
 	/// <summary>
 	/// Signals when slope crosses zero.

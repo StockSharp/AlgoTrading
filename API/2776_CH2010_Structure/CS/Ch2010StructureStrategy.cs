@@ -294,15 +294,15 @@ public class Ch2010StructureStrategy : Strategy
 		
 		if (candle.ClosePrice > candle.OpenPrice)
 		{
-			context.Bias = BiasDirection.Long;
+			context.Bias = BiasDirections.Long;
 		}
 		else if (candle.ClosePrice < candle.OpenPrice)
 		{
-			context.Bias = BiasDirection.Short;
+			context.Bias = BiasDirections.Short;
 		}
 		else
 		{
-			context.Bias = BiasDirection.Neutral;
+			context.Bias = BiasDirections.Neutral;
 		}
 		
 		LogInfo($"[{context.Alias}] Daily candle captured. High={candle.HighPrice} Low={candle.LowPrice} Close={candle.ClosePrice}");
@@ -358,7 +358,7 @@ public class Ch2010StructureStrategy : Strategy
 		var longTrigger = context.DailyHigh + buffer;
 		var shortTrigger = context.DailyLow - buffer;
 		
-		if (!context.LongTriggered && context.Bias != BiasDirection.Short)
+		if (!context.LongTriggered && context.Bias != BiasDirections.Short)
 		{
 			if (candle.ClosePrice > longTrigger)
 			{
@@ -367,7 +367,7 @@ public class Ch2010StructureStrategy : Strategy
 			}
 		}
 		
-		if (!context.ShortTriggered && context.Bias != BiasDirection.Long)
+		if (!context.ShortTriggered && context.Bias != BiasDirections.Long)
 		{
 			if (candle.ClosePrice < shortTrigger)
 			{
@@ -572,7 +572,7 @@ public class Ch2010StructureStrategy : Strategy
 			context.TakeProfitPrice = price - takeOffset;
 		}
 	}
-	private enum BiasDirection
+	private enum BiasDirections
 	{
 		Neutral,
 		Long,
@@ -602,7 +602,7 @@ public class Ch2010StructureStrategy : Strategy
 		
 		public decimal DailyClose { get; set; }
 		
-		public BiasDirection Bias { get; set; }
+		public BiasDirections Bias { get; set; }
 		
 		public bool HasLevels { get; set; }
 		
@@ -628,7 +628,7 @@ public class Ch2010StructureStrategy : Strategy
 			DailyHigh = 0m;
 			DailyLow = 0m;
 			DailyClose = 0m;
-			Bias = BiasDirection.Neutral;
+			Bias = BiasDirections.Neutral;
 			HasLevels = false;
 			LongTriggered = false;
 			ShortTriggered = false;

@@ -13,7 +13,7 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum MaMethod
+public enum MaMethods
 {
 	Simple,
 	Exponential,
@@ -34,9 +34,9 @@ public class BssTripleEmaSeparationStrategy : Strategy
 	private readonly StrategyParam<int> _firstMaPeriod;
 	private readonly StrategyParam<int> _secondMaPeriod;
 	private readonly StrategyParam<int> _thirdMaPeriod;
-	private readonly StrategyParam<MaMethod> _firstMaMethod;
-	private readonly StrategyParam<MaMethod> _secondMaMethod;
-	private readonly StrategyParam<MaMethod> _thirdMaMethod;
+	private readonly StrategyParam<MaMethods> _firstMaMethod;
+	private readonly StrategyParam<MaMethods> _secondMaMethod;
+	private readonly StrategyParam<MaMethods> _thirdMaMethod;
 	private readonly StrategyParam<DataType> _candleType;
 
 	// Indicator instances created according to the selected parameters.
@@ -98,19 +98,19 @@ public class BssTripleEmaSeparationStrategy : Strategy
 		set => _thirdMaPeriod.Value = value;
 	}
 
-	public MaMethod FirstMaMethod
+	public MaMethods FirstMaMethod
 	{
 		get => _firstMaMethod.Value;
 		set => _firstMaMethod.Value = value;
 	}
 
-	public MaMethod SecondMaMethod
+	public MaMethods SecondMaMethod
 	{
 		get => _secondMaMethod.Value;
 		set => _secondMaMethod.Value = value;
 	}
 
-	public MaMethod ThirdMaMethod
+	public MaMethods ThirdMaMethod
 	{
 		get => _thirdMaMethod.Value;
 		set => _thirdMaMethod.Value = value;
@@ -148,21 +148,21 @@ public class BssTripleEmaSeparationStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("First MA Period", "Period for the fastest moving average", "Indicators");
 
-		_firstMaMethod = Param(nameof(FirstMaMethod), MaMethod.Exponential)
+		_firstMaMethod = Param(nameof(FirstMaMethod), MaMethods.Exponential)
 			.SetDisplay("First MA Method", "Smoothing method for the fastest moving average", "Indicators");
 
 		_secondMaPeriod = Param(nameof(SecondMaPeriod), 25)
 			.SetGreaterThanZero()
 			.SetDisplay("Second MA Period", "Period for the medium moving average", "Indicators");
 
-		_secondMaMethod = Param(nameof(SecondMaMethod), MaMethod.Exponential)
+		_secondMaMethod = Param(nameof(SecondMaMethod), MaMethods.Exponential)
 			.SetDisplay("Second MA Method", "Smoothing method for the medium moving average", "Indicators");
 
 		_thirdMaPeriod = Param(nameof(ThirdMaPeriod), 125)
 			.SetGreaterThanZero()
 			.SetDisplay("Third MA Period", "Period for the slowest moving average", "Indicators");
 
-		_thirdMaMethod = Param(nameof(ThirdMaMethod), MaMethod.Exponential)
+		_thirdMaMethod = Param(nameof(ThirdMaMethod), MaMethods.Exponential)
 			.SetDisplay("Third MA Method", "Smoothing method for the slowest moving average", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -203,13 +203,13 @@ public class BssTripleEmaSeparationStrategy : Strategy
 		StartProtection();
 	}
 
-	private static IIndicator CreateMovingAverage(MaMethod method, int period)
+	private static IIndicator CreateMovingAverage(MaMethods method, int period)
 	{
 		return method switch
 		{
-			MaMethod.Simple => new SMA { Length = period },
-			MaMethod.Smoothed => new SmoothedMovingAverage { Length = period },
-			MaMethod.LinearWeighted => new WeightedMovingAverage { Length = period },
+			MaMethods.Simple => new SMA { Length = period },
+			MaMethods.Smoothed => new SmoothedMovingAverage { Length = period },
+			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = period },
 			_ => new ExponentialMovingAverage { Length = period },
 		};
 	}

@@ -24,7 +24,7 @@ public class DualLotStepHedgeStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _minProfit;
-	private readonly StrategyParam<LotScalingMode> _scalingMode;
+	private readonly StrategyParam<LotScalingModes> _scalingMode;
 
 	private decimal _volumeStep;
 	private decimal _maxVolume;
@@ -52,7 +52,7 @@ public class DualLotStepHedgeStrategy : Strategy
 	/// <summary>
 	/// Defines the lot stepping mode that matches the original MetaTrader experts.
 	/// </summary>
-	public enum LotScalingMode
+	public enum LotScalingModes
 	{
 		/// <summary>
 		/// Start with the maximum lot multiplier and drop to the next step after the first cycle.
@@ -104,7 +104,7 @@ public class DualLotStepHedgeStrategy : Strategy
 	/// <summary>
 	/// Selected lot stepping mode.
 	/// </summary>
-	public LotScalingMode ScalingMode
+	public LotScalingModes ScalingMode
 	{
 		get => _scalingMode.Value;
 		set => _scalingMode.Value = value;
@@ -136,7 +136,7 @@ public class DualLotStepHedgeStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(5m, 200m, 5m);
 
-		_scalingMode = Param(nameof(ScalingMode), LotScalingMode.HighToLow)
+		_scalingMode = Param(nameof(ScalingMode), LotScalingModes.HighToLow)
 		.SetDisplay("Scaling Mode", "How the lot size evolves after entries", "Trading");
 	}
 
@@ -188,7 +188,7 @@ public class DualLotStepHedgeStrategy : Strategy
 		if (_maxVolume <= 0m)
 		_maxVolume = _volumeStep;
 
-		_currentVolume = ScalingMode == LotScalingMode.HighToLow ? _maxVolume : _volumeStep;
+		_currentVolume = ScalingMode == LotScalingModes.HighToLow ? _maxVolume : _volumeStep;
 		_pipValue = CalculatePipValue();
 
 		SubscribeTicks().Bind(ProcessTrade).Start();
@@ -302,7 +302,7 @@ public class DualLotStepHedgeStrategy : Strategy
 
 	private void AdjustVolumeAfterEntry()
 	{
-		if (ScalingMode == LotScalingMode.HighToLow)
+		if (ScalingMode == LotScalingModes.HighToLow)
 		{
 			_currentVolume = LotCheck(_currentVolume - _volumeStep);
 		}
@@ -439,7 +439,7 @@ public class DualLotStepHedgeStrategy : Strategy
 
 	private void ResetCurrentVolumeIfNeeded()
 	{
-		if (ScalingMode == LotScalingMode.HighToLow)
+		if (ScalingMode == LotScalingModes.HighToLow)
 		{
 			if (_currentVolume < _volumeStep)
 			_currentVolume = _maxVolume;
@@ -517,7 +517,7 @@ public class DualLotStepHedgeStrategy : Strategy
 		_resetRequested = false;
 		_initialEquity = 0m;
 
-		if (ScalingMode == LotScalingMode.HighToLow)
+		if (ScalingMode == LotScalingModes.HighToLow)
 		{
 			_currentVolume = 0m;
 		}

@@ -21,7 +21,7 @@ public class OrderEscortStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _targetBar;
 	private readonly StrategyParam<decimal> _deltaPoints;
-	private readonly StrategyParam<TrailingType> _trailingMode;
+	private readonly StrategyParam<TrailingTypes> _trailingMode;
 	private readonly StrategyParam<decimal> _exponent;
 	private readonly StrategyParam<decimal> _eBase;
 	private readonly StrategyParam<bool> _escortTakeProfit;
@@ -60,7 +60,7 @@ public class OrderEscortStrategy : Strategy
 	/// <summary>
 	/// Trailing mode selection.
 	/// </summary>
-	public TrailingType TrailingMode
+	public TrailingTypes TrailingMode
 	{
 		get => _trailingMode.Value;
 		set => _trailingMode.Value = value;
@@ -128,7 +128,7 @@ public class OrderEscortStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(20m, 120m, 10m);
 
-		_trailingMode = Param(nameof(TrailingMode), TrailingType.Linear)
+		_trailingMode = Param(nameof(TrailingMode), TrailingTypes.Linear)
 			.SetDisplay("Trailing Mode", "Shape of the trailing curve", "Trailing");
 
 		_exponent = Param(nameof(Exponent), 0.5m)
@@ -297,9 +297,9 @@ public class OrderEscortStrategy : Strategy
 	{
 		return TrailingMode switch
 		{
-			TrailingType.Linear => _linearCoefficient * barNumber,
-			TrailingType.Parabolic => _parabolicCoefficient * (decimal)Math.Pow(barNumber, (double)Exponent),
-			TrailingType.Exponential => _exponentialCoefficient * (decimal)Math.Pow((double)EBase, barNumber),
+			TrailingTypes.Linear => _linearCoefficient * barNumber,
+			TrailingTypes.Parabolic => _parabolicCoefficient * (decimal)Math.Pow(barNumber, (double)Exponent),
+			TrailingTypes.Exponential => _exponentialCoefficient * (decimal)Math.Pow((double)EBase, barNumber),
 			_ => 0m,
 		};
 	}
@@ -323,7 +323,7 @@ public class OrderEscortStrategy : Strategy
 /// <summary>
 /// Available trailing curve types.
 /// </summary>
-public enum TrailingType
+public enum TrailingTypes
 {
 	/// <summary>
 	/// Trailing grows linearly with each bar.

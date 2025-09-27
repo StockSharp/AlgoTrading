@@ -17,7 +17,7 @@
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `CandleType` | `DataType` | 1 分钟蜡烛 | 用于评估逻辑的蜡烛序列。 |
-| `TargetMode` | `ProfitTargetMode`（`Percent` / `Currency`） | `Percent` | 控制 `TakeProfitValue` 解释为资本百分比还是绝对货币值。 |
+| `TargetMode` | `ProfitTargetModes`（`Percent` / `Currency`） | `Percent` | 控制 `TakeProfitValue` 解释为资本百分比还是绝对货币值。 |
 | `TakeProfitValue` | `decimal` | `100` | 止盈阈值。必须大于零。 |
 | `UseTradingWindow` | `bool` | `true` | 是否启用时间窗口过滤。 |
 | `StartTime` | `TimeSpan` | `00:00:00` | 允许交易的起始时间（包含）。 |

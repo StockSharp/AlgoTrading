@@ -23,7 +23,7 @@
 - `CandleType` – 使用的 K 线类型/周期。
 - `TradeVolume` – 市价单下单数量。
 - `EmaLength` – PEMA 各层 EMA 的长度（可为小数）。
-- `AppliedPrice` – 计算用的价格来源（收盘、开盘、中价、加权价、TrendFollow、DeMark 等）。
+- `AppliedPrices` – 计算用的价格来源（收盘、开盘、中价、加权价、TrendFollow、DeMark 等）。
 - `DeviationPercent` – 包络线的百分比宽度。
 - `Shift` – 计算颜色时向后偏移的已完成 K 线数量。
 - `PriceShift` – 对 PEMA 的附加绝对偏移。
@@ -38,7 +38,7 @@
 - `CandleType = TimeSpan.FromHours(4).TimeFrame()`
 - `TradeVolume = 1m`
 - `EmaLength = 50.01m`
-- `AppliedPrice = AppliedPrice.Close`
+- `AppliedPrices = AppliedPrices.Close`
 - `DeviationPercent = 0.1m`
 - `Shift = 1`
 - `PriceShift = 0m`

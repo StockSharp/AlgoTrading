@@ -20,7 +20,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class RviHistogramReversalStrategy : Strategy
 {
-	public enum TrendMode
+	public enum TrendModes
 	{
 		Levels,
 		Cross
@@ -29,7 +29,7 @@ public class RviHistogramReversalStrategy : Strategy
 	private readonly StrategyParam<int> _rviPeriod;
 	private readonly StrategyParam<decimal> _highLevel;
 	private readonly StrategyParam<decimal> _lowLevel;
-	private readonly StrategyParam<TrendMode> _mode;
+	private readonly StrategyParam<TrendModes> _mode;
 	private readonly StrategyParam<bool> _enableBuyOpen;
 	private readonly StrategyParam<bool> _enableSellOpen;
 	private readonly StrategyParam<bool> _enableBuyClose;
@@ -60,7 +60,7 @@ public class RviHistogramReversalStrategy : Strategy
 	/// <summary>
 	/// Signal generation mode.
 	/// </summary>
-	public TrendMode Mode { get => _mode.Value; set => _mode.Value = value; }
+	public TrendModes Mode { get => _mode.Value; set => _mode.Value = value; }
 
 	/// <summary>
 	/// Allow opening long positions.
@@ -105,7 +105,7 @@ public class RviHistogramReversalStrategy : Strategy
 		.SetDisplay("Low Level", "Lower RVI threshold", "General")
 		.SetCanOptimize(true);
 
-		_mode = Param(nameof(Mode), TrendMode.Cross)
+		_mode = Param(nameof(Mode), TrendModes.Cross)
 		.SetDisplay("Mode", "Signal generation mode", "General");
 
 		_enableBuyOpen = Param(nameof(EnableBuyOpen), true)
@@ -186,7 +186,7 @@ public class RviHistogramReversalStrategy : Strategy
 		bool buyClose = false;
 		bool sellClose = false;
 
-		if (Mode == TrendMode.Levels)
+		if (Mode == TrendModes.Levels)
 		{
 			if (_prevRvi.HasValue)
 			{

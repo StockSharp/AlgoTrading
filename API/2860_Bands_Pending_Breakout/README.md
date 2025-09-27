@@ -33,11 +33,11 @@ The approach is designed for breakouts from the Bollinger bands. The stop-loss r
 | `OrderVolume` | Volume for each pending order (same volume for all six orders). |
 | `CandleType` | Timeframe/data type used for indicator calculations. |
 | `HourStart`, `HourEnd` | Inclusive/exclusive hours (0-24) that allow placing new pending orders. `HourEnd` must be greater than `HourStart`. |
-| `StopLossMode` | Placement reference for initial stop-loss (`BollingerBands`, `MovingAverage`, `None`). |
+| `StopLossModes` | Placement reference for initial stop-loss (`BollingerBands`, `MovingAverage`, `None`). |
 | `FirstTakeProfitPips`, `SecondTakeProfitPips`, `ThirdTakeProfitPips` | Take-profit distances (in pips) converted to price offsets for the first, second and third entries. |
 | `TrailingStopPips`, `TrailingStepPips` | Trailing stop distance and the extra step required before the stop is advanced. Set zero to disable trailing. |
 | `StepPips` | Spacing between consecutive pending orders (converted to price). |
-| `MaPeriod`, `MaShift`, `MaMethod`, `MaPriceType` | Moving average configuration used for Bollinger input and optionally for stop placement when `StopLossMode` is `MovingAverage`. The `MaShift` emulates the forward shift of the original EA. |
+| `MaPeriod`, `MaShift`, `MaMethod`, `MaPriceType` | Moving average configuration used for Bollinger input and optionally for stop placement when `StopLossModes` is `MovingAverage`. The `MaShift` emulates the forward shift of the original EA. |
 | `BandsPeriod`, `BandsShift`, `BandsDeviation`, `BandsPriceType` | Bollinger band settings (period, shift, deviation multiplier and applied price). |
 
 ## Behaviour Summary

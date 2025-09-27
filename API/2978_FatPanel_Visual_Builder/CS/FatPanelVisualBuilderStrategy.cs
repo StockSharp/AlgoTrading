@@ -177,7 +177,7 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 	{
 		foreach (var pair in contexts)
 		{
-			if (pair.Key.Type == SignalType.Bid)
+			if (pair.Key.Type == SignalTypes.Bid)
 				return true;
 		}
 
@@ -265,7 +265,7 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 		for (var i = 0; i < conditions.Count; i++)
 		{
 			var condition = conditions[i];
-			if (condition.Type != ConditionType.Comparison)
+			if (condition.Type != ConditionTypes.Comparison)
 				continue;
 
 			if (condition.Left == null || condition.Right == null)
@@ -296,10 +296,10 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 	{
 		return condition.Type switch
 		{
-			ConditionType.Comparison => BuildComparisonCondition(condition, signals),
-			ConditionType.Position => BuildPositionCondition(condition),
-			ConditionType.Time => BuildTimeCondition(condition),
-			ConditionType.DayOfWeek => BuildDayOfWeekCondition(condition),
+			ConditionTypes.Comparison => BuildComparisonCondition(condition, signals),
+			ConditionTypes.Position => BuildPositionCondition(condition),
+			ConditionTypes.Time => BuildTimeCondition(condition),
+			ConditionTypes.DayOfWeek => BuildDayOfWeekCondition(condition),
 			_ => throw new InvalidOperationException($"Unsupported condition type: {condition.Type}.")
 		};
 	}
@@ -321,16 +321,16 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 
 	private FatPanelConditionContext BuildPositionCondition(FatPanelCondition condition)
 	{
-		var requirement = condition.Required ?? PositionRequirement.Any;
+		var requirement = condition.Required ?? PositionRequirements.Any;
 
 		return new FatPanelConditionContext(_ => requirement switch
 		{
-			PositionRequirement.Any => true,
-			PositionRequirement.FlatOnly => Position == 0m,
-			PositionRequirement.FlatOrShort => Position <= 0m,
-			PositionRequirement.FlatOrLong => Position >= 0m,
-			PositionRequirement.LongOnly => Position > 0m,
-			PositionRequirement.ShortOnly => Position < 0m,
+			PositionRequirements.Any => true,
+			PositionRequirements.FlatOnly => Position == 0m,
+			PositionRequirements.FlatOrShort => Position <= 0m,
+			PositionRequirements.FlatOrLong => Position >= 0m,
+			PositionRequirements.LongOnly => Position > 0m,
+			PositionRequirements.ShortOnly => Position < 0m,
 			_ => true
 		});
 	}
@@ -394,13 +394,13 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 		};
 	}
 
-	private static decimal GetPrice(ICandleMessage candle, PriceSource source)
+	private static decimal GetPrice(ICandleMessage candle, PriceSources source)
 	{
 		return source switch
 		{
-			PriceSource.Open => candle.OpenPrice,
-			PriceSource.High => candle.HighPrice,
-			PriceSource.Low => candle.LowPrice,
+			PriceSources.Open => candle.OpenPrice,
+			PriceSources.High => candle.HighPrice,
+			PriceSources.Low => candle.LowPrice,
 			_ => candle.ClosePrice
 		};
 	}
@@ -417,7 +417,7 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 		{
 			_definition = definition;
 
-			if (definition.Type == SignalType.MovingAverage)
+			if (definition.Type == SignalTypes.MovingAverage)
 			{
 				var period = definition.Period ?? 0;
 				if (period <= 0)
@@ -425,14 +425,14 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 
 				_indicator = definition.Method switch
 				{
-					MovingAverageMethod.Simple => new SMA { Length = period },
-					MovingAverageMethod.Exponential => new EMA { Length = period },
-					MovingAverageMethod.Smoothed => new SMMA { Length = period },
-					MovingAverageMethod.LinearWeighted => new WMA { Length = period },
+					MovingAverageMethods.Simple => new SMA { Length = period },
+					MovingAverageMethods.Exponential => new EMA { Length = period },
+					MovingAverageMethods.Smoothed => new SMMA { Length = period },
+					MovingAverageMethods.LinearWeighted => new WMA { Length = period },
 					_ => new SMA { Length = period }
 				};
 			}
-			else if (definition.Type == SignalType.Constant)
+			else if (definition.Type == SignalTypes.Constant)
 			{
 				var level = definition.Level ?? 0m;
 				Current = level;
@@ -444,7 +444,7 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 		{
 			switch (_definition.Type)
 			{
-				case SignalType.MovingAverage:
+				case SignalTypes.MovingAverage:
 				{
 					if (_indicator == null)
 						return;
@@ -460,7 +460,7 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 
 					break;
 				}
-				case SignalType.Bid:
+				case SignalTypes.Bid:
 				{
 					var bid = bestBid ?? candle.ClosePrice;
 					if (bid > 0)
@@ -471,7 +471,7 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 
 					break;
 				}
-				case SignalType.Constant:
+				case SignalTypes.Constant:
 				{
 					// Constant signal does not change over time.
 					break;
@@ -484,10 +484,10 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 	{
 		private readonly SignalContext _left;
 		private readonly SignalContext _right;
-		private readonly OperatorType _operator;
+		private readonly OperatorTypes _operator;
 		private readonly decimal _threshold;
 
-		public FatPanelComparisonContext(SignalContext left, SignalContext right, OperatorType @operator, decimal threshold)
+		public FatPanelComparisonContext(SignalContext left, SignalContext right, OperatorTypes @operator, decimal threshold)
 		{
 			_left = left;
 			_right = right;
@@ -505,11 +505,11 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 
 			return _operator switch
 			{
-				OperatorType.Greater => left.Value - right.Value > _threshold,
-				OperatorType.Less => right.Value - left.Value > _threshold,
-				OperatorType.Equal => Math.Abs(left.Value - right.Value) <= _threshold,
-				OperatorType.CrossAbove => IsCrossAbove(),
-				OperatorType.CrossBelow => IsCrossBelow(),
+				OperatorTypes.Greater => left.Value - right.Value > _threshold,
+				OperatorTypes.Less => right.Value - left.Value > _threshold,
+				OperatorTypes.Equal => Math.Abs(left.Value - right.Value) <= _threshold,
+				OperatorTypes.CrossAbove => IsCrossAbove(),
+				OperatorTypes.CrossBelow => IsCrossBelow(),
 				_ => false
 			};
 		}
@@ -617,12 +617,12 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 
 	private sealed class FatPanelActionContext
 	{
-		private readonly ActionType _type;
+		private readonly ActionTypes _type;
 		private readonly decimal? _volume;
 
 		public FatPanelActionContext(FatPanelAction action)
 		{
-			_type = action?.Type ?? ActionType.Buy;
+			_type = action?.Type ?? ActionTypes.Buy;
 			_volume = action?.Volume;
 		}
 
@@ -634,7 +634,7 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 
 			switch (_type)
 			{
-				case ActionType.Buy:
+				case ActionTypes.Buy:
 				{
 					if (strategy.Position <= 0)
 					{
@@ -644,7 +644,7 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 
 					break;
 				}
-				case ActionType.SellShort:
+				case ActionTypes.SellShort:
 				{
 					if (strategy.Position >= 0)
 					{
@@ -654,7 +654,7 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 
 					break;
 				}
-				case ActionType.Close:
+				case ActionTypes.Close:
 				{
 					if (strategy.Position != 0)
 					{
@@ -695,7 +695,7 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 	private sealed class FatPanelAction
 	{
 		[JsonPropertyName("type")]
-		public ActionType Type { get; init; } = ActionType.Buy;
+		public ActionTypes Type { get; init; } = ActionTypes.Buy;
 
 		[JsonPropertyName("volume")]
 		public decimal? Volume { get; init; }
@@ -704,10 +704,10 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 	private sealed class FatPanelCondition
 	{
 		[JsonPropertyName("type")]
-		public ConditionType Type { get; init; }
+		public ConditionTypes Type { get; init; }
 
 		[JsonPropertyName("operator")]
-		public OperatorType? Operator { get; init; }
+		public OperatorTypes? Operator { get; init; }
 
 		[JsonPropertyName("left")]
 		public FatPanelSignalDefinition Left { get; init; }
@@ -719,7 +719,7 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 		public decimal? Threshold { get; init; }
 
 		[JsonPropertyName("required")]
-		public PositionRequirement? Required { get; init; }
+		public PositionRequirements? Required { get; init; }
 
 		[JsonPropertyName("start")]
 		public string Start { get; init; }
@@ -734,29 +734,29 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 	private sealed record class FatPanelSignalDefinition
 	{
 		[JsonPropertyName("type")]
-		public SignalType Type { get; init; }
+		public SignalTypes Type { get; init; }
 
 		[JsonPropertyName("period")]
 		public int? Period { get; init; }
 
 		[JsonPropertyName("method")]
-		public MovingAverageMethod Method { get; init; } = MovingAverageMethod.Simple;
+		public MovingAverageMethods Method { get; init; } = MovingAverageMethods.Simple;
 
 		[JsonPropertyName("price")]
-		public PriceSource Price { get; init; } = PriceSource.Close;
+		public PriceSources Price { get; init; } = PriceSources.Close;
 
 		[JsonPropertyName("level")]
 		public decimal? Level { get; init; }
 	}
 
-	private enum SignalType
+	private enum SignalTypes
 	{
 		MovingAverage,
 		Bid,
 		Constant
 	}
 
-	private enum MovingAverageMethod
+	private enum MovingAverageMethods
 	{
 		Simple,
 		Exponential,
@@ -764,7 +764,7 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 		LinearWeighted
 	}
 
-	private enum PriceSource
+	private enum PriceSources
 	{
 		Close,
 		Open,
@@ -772,7 +772,7 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 		Low
 	}
 
-	private enum OperatorType
+	private enum OperatorTypes
 	{
 		CrossAbove,
 		CrossBelow,
@@ -781,7 +781,7 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 		Equal
 	}
 
-	private enum ConditionType
+	private enum ConditionTypes
 	{
 		Comparison,
 		Position,
@@ -789,14 +789,14 @@ private readonly StrategyParam<decimal> _takeProfitPoints;
 		DayOfWeek
 	}
 
-	private enum ActionType
+	private enum ActionTypes
 	{
 		Buy,
 		SellShort,
 		Close
 	}
 
-	private enum PositionRequirement
+	private enum PositionRequirements
 	{
 		Any,
 		FlatOnly,

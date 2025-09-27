@@ -29,7 +29,7 @@ The **Martingale Bone Crusher Strategy** replicates the behaviour of the origina
 | `EnableTrailing` | Enables the money-based trailing stop.
 | `TrailingTakeProfitMoney` | Floating profit required to arm the money trailing stop.
 | `TrailingStopMoney` | Allowed drawdown from the peak floating profit after the trailing stop is active.
-| `MartingaleMode` | Selects between `Martingale1` and `Martingale2` behaviour.
+| `MartingaleModes` | Selects between `Martingale1` and `Martingale2` behaviour.
 | `UseMoveToBreakeven` | Enables the breakeven stop adjustment.
 | `MoveToBreakevenTrigger` | Price steps that the trade must move in favour before breakeven protection is activated.
 | `BreakevenOffset` | Distance added to the entry price when the breakeven stop is placed.

@@ -22,7 +22,7 @@ public class WeightOscillatorStrategy : Strategy
 	/// <summary>
 	/// Trade direction modes.
 	/// </summary>
-	public enum TrendMode
+	public enum TrendModes
 	{
 		/// <summary>
 		/// Trade in the direction of oscillator signals.
@@ -46,7 +46,7 @@ public class WeightOscillatorStrategy : Strategy
     private readonly StrategyParam<int> _smoothingPeriod;
     private readonly StrategyParam<decimal> _highLevel;
     private readonly StrategyParam<decimal> _lowLevel;
-    private readonly StrategyParam<TrendMode> _trend;
+    private readonly StrategyParam<TrendModes> _trend;
     private readonly StrategyParam<DataType> _candleType;
 
     private readonly WeightOscillator _oscillator = new();
@@ -111,7 +111,7 @@ public class WeightOscillatorStrategy : Strategy
     /// <summary>
     /// Trading direction relative to oscillator signals.
     /// </summary>
-    public TrendMode Trend { get => _trend.Value; set => _trend.Value = value; }
+    public TrendModes Trend { get => _trend.Value; set => _trend.Value = value; }
 
     /// <summary>
     /// Candle type for calculations.
@@ -134,7 +134,7 @@ public class WeightOscillatorStrategy : Strategy
         _smoothingPeriod = Param(nameof(SmoothingPeriod), 5).SetGreaterThanZero().SetDisplay("SMA Period", "Smoothing period", "Indicators");
         _highLevel = Param(nameof(HighLevel), 70m).SetRange(0m, 100m).SetDisplay("High Level", "Overbought level", "Signals");
         _lowLevel = Param(nameof(LowLevel), 30m).SetRange(0m, 100m).SetDisplay("Low Level", "Oversold level", "Signals");
-        _trend = Param(nameof(Trend), TrendMode.Direct).SetDisplay("Trend Mode", "Trade direction", "General");
+        _trend = Param(nameof(Trend), TrendModes.Direct).SetDisplay("Trend Mode", "Trade direction", "General");
         _candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame()).SetDisplay("Candle Type", "Working candles", "General");
     }
 
@@ -183,7 +183,7 @@ public class WeightOscillatorStrategy : Strategy
         var crossHigh = _prevValue < HighLevel && osc >= HighLevel;
         _prevValue = osc;
 
-        if (Trend == TrendMode.Direct)
+        if (Trend == TrendModes.Direct)
         {
             if (crossLow && Position <= 0)
             {

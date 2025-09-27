@@ -21,7 +21,7 @@ public class HiddenStopLossTakeProfitStrategy : Strategy
 {
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
-	private readonly StrategyParam<ReferencePriceOption> _referencePrice;
+	private readonly StrategyParam<ReferencePriceOptions> _referencePrice;
 	private readonly StrategyParam<bool> _drawLines;
 
 	private decimal? _hiddenStopLoss;
@@ -55,7 +55,7 @@ public class HiddenStopLossTakeProfitStrategy : Strategy
 	/// <summary>
 	/// Chooses the reference price used to calculate hidden levels.
 	/// </summary>
-	public ReferencePriceOption ReferencePrice
+	public ReferencePriceOptions ReferencePrice
 	{
 		get => _referencePrice.Value;
 		set => _referencePrice.Value = value;
@@ -87,7 +87,7 @@ public class HiddenStopLossTakeProfitStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(10, 200, 10);
 
-		_referencePrice = Param(nameof(ReferencePrice), ReferencePriceOption.OpenPrice)
+		_referencePrice = Param(nameof(ReferencePrice), ReferencePriceOptions.OpenPrice)
 			.SetDisplay("Reference Price", "Base price for hidden level calculation", "Hidden Protection");
 
 		_drawLines = Param(nameof(DrawLines), true)
@@ -283,8 +283,8 @@ public class HiddenStopLossTakeProfitStrategy : Strategy
 
 		return ReferencePrice switch
 		{
-			ReferencePriceOption.OpenPrice => averagePrice,
-			ReferencePriceOption.MidPrice => GetMidPrice() ?? averagePrice,
+			ReferencePriceOptions.OpenPrice => averagePrice,
+			ReferencePriceOptions.MidPrice => GetMidPrice() ?? averagePrice,
 			_ => averagePrice,
 		};
 	}
@@ -325,7 +325,7 @@ public class HiddenStopLossTakeProfitStrategy : Strategy
 	/// <summary>
 	/// Defines the reference price used for hidden stop-loss and take-profit.
 	/// </summary>
-	public enum ReferencePriceOption
+	public enum ReferencePriceOptions
 	{
 		/// <summary>
 		/// Use the average entry price of the current position.

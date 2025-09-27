@@ -23,7 +23,7 @@ public class CorrectedAverageBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<MaType> _maType;
+	private readonly StrategyParam<MaTypes> _maType;
 	private readonly StrategyParam<int> _levelPoints;
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
@@ -52,7 +52,7 @@ public class CorrectedAverageBreakoutStrategy : Strategy
 	/// <summary>
 	/// Moving average type.
 	/// </summary>
-	public MaType MaTypeOption { get => _maType.Value; set => _maType.Value = value; }
+	public MaTypes MaTypeOption { get => _maType.Value; set => _maType.Value = value; }
 
 	/// <summary>
 	/// Breakout level in price steps.
@@ -91,7 +91,7 @@ public class CorrectedAverageBreakoutStrategy : Strategy
 			.SetRange(2, 200)
 			.SetDisplay("Length", "Period of moving average and standard deviation", "Indicator");
 
-		_maType = Param(nameof(MaTypeOption), MaType.Sma)
+		_maType = Param(nameof(MaTypeOption), MaTypes.Sma)
 			.SetDisplay("MA Type", "Type of moving average used", "Indicator");
 
 		_levelPoints = Param(nameof(LevelPoints), 300)
@@ -197,14 +197,14 @@ public class CorrectedAverageBreakoutStrategy : Strategy
 		_prevClose = candle.ClosePrice;
 	}
 
-	private static LengthIndicator<decimal> CreateMa(MaType type, int length)
+	private static LengthIndicator<decimal> CreateMa(MaTypes type, int length)
 	{
 		return type switch
 		{
-			MaType.Sma => new SimpleMovingAverage { Length = length },
-			MaType.Ema => new ExponentialMovingAverage { Length = length },
-			MaType.Smma => new SmoothedMovingAverage { Length = length },
-			MaType.Lwma => new WeightedMovingAverage { Length = length },
+			MaTypes.Sma => new SimpleMovingAverage { Length = length },
+			MaTypes.Ema => new ExponentialMovingAverage { Length = length },
+			MaTypes.Smma => new SmoothedMovingAverage { Length = length },
+			MaTypes.Lwma => new WeightedMovingAverage { Length = length },
 			_ => throw new ArgumentOutOfRangeException(nameof(type))
 		};
 	}
@@ -212,7 +212,7 @@ public class CorrectedAverageBreakoutStrategy : Strategy
 	/// <summary>
 	/// Supported moving average types.
 	/// </summary>
-	public enum MaType
+	public enum MaTypes
 	{
 		Sma,
 		Ema,

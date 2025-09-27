@@ -20,7 +20,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class UniversalTrailingStopHedgeStrategy : Strategy
 {
-	private readonly StrategyParam<TrailingMode> _mode;
+	private readonly StrategyParam<TrailingModes> _mode;
 	private readonly StrategyParam<int> _delta;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
@@ -36,7 +36,7 @@ public class UniversalTrailingStopHedgeStrategy : Strategy
 	/// <summary>
 	/// Trailing stop calculation mode.
 	/// </summary>
-	public TrailingMode Mode { get => _mode.Value; set => _mode.Value = value; }
+	public TrailingModes Mode { get => _mode.Value; set => _mode.Value = value; }
 
 	/// <summary>
 	/// Offset in ticks for pips, MA and Parabolic SAR modes.
@@ -83,7 +83,7 @@ public class UniversalTrailingStopHedgeStrategy : Strategy
 	/// </summary>
 	public UniversalTrailingStopHedgeStrategy()
 	{
-		_mode = Param(nameof(Mode), TrailingMode.Atr)
+		_mode = Param(nameof(Mode), TrailingModes.Atr)
 			.SetDisplay("Trailing Mode", "Algorithm to move stop loss", "General");
 
 		_delta = Param(nameof(Delta), 10)
@@ -140,19 +140,19 @@ public class UniversalTrailingStopHedgeStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		switch (Mode)
 		{
-			case TrailingMode.Atr:
+			case TrailingModes.Atr:
 				var atr = new AverageTrueRange { Length = AtrPeriod };
 				subscription.Bind(atr, ProcessAtr).Start();
 				break;
-			case TrailingMode.ParabolicSar:
+			case TrailingModes.ParabolicSar:
 				var sar = new ParabolicSar { Acceleration = SarStep, AccelerationMax = SarMax };
 				subscription.Bind(sar, ProcessParabolic).Start();
 				break;
-			case TrailingMode.MovingAverage:
+			case TrailingModes.MovingAverage:
 				var ma = new SimpleMovingAverage { Length = MaPeriod };
 				subscription.Bind(ma, ProcessMa).Start();
 				break;
-			case TrailingMode.Percent:
+			case TrailingModes.Percent:
 				subscription.Bind(ProcessPercent).Start();
 				break;
 			default:
@@ -334,7 +334,7 @@ public class UniversalTrailingStopHedgeStrategy : Strategy
 /// <summary>
 /// Supported trailing stop modes.
 /// </summary>
-public enum TrailingMode
+public enum TrailingModes
 {
 	/// <summary>
 	/// Fixed distance in pips.

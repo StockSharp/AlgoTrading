@@ -22,10 +22,10 @@ public class UniversalMaCrossStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastMaPeriod;
 	private readonly StrategyParam<int> _slowMaPeriod;
-	private readonly StrategyParam<MovingAverageMethod> _fastMaType;
-	private readonly StrategyParam<MovingAverageMethod> _slowMaType;
-	private readonly StrategyParam<AppliedPrice> _fastPriceType;
-	private readonly StrategyParam<AppliedPrice> _slowPriceType;
+	private readonly StrategyParam<MovingAverageMethods> _fastMaType;
+	private readonly StrategyParam<MovingAverageMethods> _slowMaType;
+	private readonly StrategyParam<AppliedPrices> _fastPriceType;
+	private readonly StrategyParam<AppliedPrices> _slowPriceType;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _trailingStop;
@@ -50,7 +50,7 @@ public class UniversalMaCrossStrategy : Strategy
 	private decimal? _slowPrevPrev;
 
 	private DateTimeOffset? _lastEntryBar;
-	private TradeDirection _lastTrade = TradeDirection.None;
+	private TradeDirections _lastTrade = TradeDirections.None;
 
 	private decimal? _entryPrice;
 	private decimal? _stopPrice;
@@ -77,7 +77,7 @@ public class UniversalMaCrossStrategy : Strategy
 	/// <summary>
 	/// Fast moving average method.
 	/// </summary>
-	public MovingAverageMethod FastMaType
+	public MovingAverageMethods FastMaType
 	{
 		get => _fastMaType.Value;
 		set => _fastMaType.Value = value;
@@ -86,7 +86,7 @@ public class UniversalMaCrossStrategy : Strategy
 	/// <summary>
 	/// Slow moving average method.
 	/// </summary>
-	public MovingAverageMethod SlowMaType
+	public MovingAverageMethods SlowMaType
 	{
 		get => _slowMaType.Value;
 		set => _slowMaType.Value = value;
@@ -95,7 +95,7 @@ public class UniversalMaCrossStrategy : Strategy
 	/// <summary>
 	/// Price type used for the fast moving average.
 	/// </summary>
-	public AppliedPrice FastPriceType
+	public AppliedPrices FastPriceType
 	{
 		get => _fastPriceType.Value;
 		set => _fastPriceType.Value = value;
@@ -104,7 +104,7 @@ public class UniversalMaCrossStrategy : Strategy
 	/// <summary>
 	/// Price type used for the slow moving average.
 	/// </summary>
-	public AppliedPrice SlowPriceType
+	public AppliedPrices SlowPriceType
 	{
 		get => _slowPriceType.Value;
 		set => _slowPriceType.Value = value;
@@ -254,16 +254,16 @@ public class UniversalMaCrossStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(30, 200, 5);
 
-		_fastMaType = Param(nameof(FastMaType), MovingAverageMethod.Exponential)
+		_fastMaType = Param(nameof(FastMaType), MovingAverageMethods.Exponential)
 			.SetDisplay("Fast MA Type", "Method for fast average", "Indicators");
 
-		_slowMaType = Param(nameof(SlowMaType), MovingAverageMethod.Exponential)
+		_slowMaType = Param(nameof(SlowMaType), MovingAverageMethods.Exponential)
 			.SetDisplay("Slow MA Type", "Method for slow average", "Indicators");
 
-		_fastPriceType = Param(nameof(FastPriceType), AppliedPrice.Close)
+		_fastPriceType = Param(nameof(FastPriceType), AppliedPrices.Close)
 			.SetDisplay("Fast Price Type", "Price source for fast MA", "Indicators");
 
-		_slowPriceType = Param(nameof(SlowPriceType), AppliedPrice.Close)
+		_slowPriceType = Param(nameof(SlowPriceType), AppliedPrices.Close)
 			.SetDisplay("Slow Price Type", "Price source for slow MA", "Indicators");
 
 		_stopLoss = Param(nameof(StopLoss), 0m)
@@ -328,7 +328,7 @@ public class UniversalMaCrossStrategy : Strategy
 		_slowPrev = null;
 		_slowPrevPrev = null;
 		_lastEntryBar = null;
-		_lastTrade = TradeDirection.None;
+		_lastTrade = TradeDirections.None;
 		ResetProtection();
 	}
 
@@ -437,7 +437,7 @@ public class UniversalMaCrossStrategy : Strategy
 
 		if (StopAndReverse && Position != 0)
 		{
-			if ((_lastTrade == TradeDirection.Long && sellSignal) || (_lastTrade == TradeDirection.Short && buySignal))
+			if ((_lastTrade == TradeDirections.Long && sellSignal) || (_lastTrade == TradeDirections.Short && buySignal))
 			{
 				ClosePosition();
 				ResetProtection();
@@ -456,14 +456,14 @@ public class UniversalMaCrossStrategy : Strategy
 		{
 			BuyMarket(Volume);
 			SetProtectionLevels(candle.ClosePrice, true);
-			_lastTrade = TradeDirection.Long;
+			_lastTrade = TradeDirections.Long;
 			_lastEntryBar = candle.OpenTime;
 		}
 		else if (sellSignal)
 		{
 			SellMarket(Volume);
 			SetProtectionLevels(candle.ClosePrice, false);
-			_lastTrade = TradeDirection.Short;
+			_lastTrade = TradeDirections.Short;
 			_lastEntryBar = candle.OpenTime;
 		}
 	}
@@ -558,28 +558,28 @@ public class UniversalMaCrossStrategy : Strategy
 		return hour >= start || hour <= end;
 	}
 
-	private static IIndicator CreateMovingAverage(MovingAverageMethod method, int length)
+	private static IIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.LinearWeighted => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
 
-	private static decimal GetPrice(ICandleMessage candle, AppliedPrice priceType)
+	private static decimal GetPrice(ICandleMessage candle, AppliedPrices priceType)
 	{
 		return priceType switch
 		{
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}
@@ -609,7 +609,7 @@ public class UniversalMaCrossStrategy : Strategy
 		_takeProfitPrice = null;
 	}
 
-	private enum TradeDirection
+	private enum TradeDirections
 	{
 		None,
 		Long,
@@ -620,7 +620,7 @@ public class UniversalMaCrossStrategy : Strategy
 /// <summary>
 /// Moving average calculation methods supported by the strategy.
 /// </summary>
-public enum MovingAverageMethod
+public enum MovingAverageMethods
 {
 	Simple,
 	Exponential,
@@ -631,7 +631,7 @@ public enum MovingAverageMethod
 /// <summary>
 /// Price sources that can feed the moving averages.
 /// </summary>
-public enum AppliedPrice
+public enum AppliedPrices
 {
 	Close,
 	Open,

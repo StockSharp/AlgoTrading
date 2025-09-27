@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// by evaluating the oscillator on a higher timeframe and optionally restricting
 /// trading to a custom time window.
 /// </summary>
-public enum BlauErgodicMdiMode
+public enum BlauErgodicMdiModes
 {
 	/// <summary>
 	/// Generates entries when the histogram crosses the zero line.
@@ -40,7 +40,7 @@ public enum BlauErgodicMdiMode
 /// <summary>
 /// Price source used to feed the Blau Ergodic MDI calculation.
 /// </summary>
-public enum PriceInputMode
+public enum PriceInputModes
 {
 	/// <summary>
 	/// Candle close price.
@@ -108,8 +108,8 @@ public enum PriceInputMode
 /// </summary>
 public class BlauErgodicMdiTimeStrategy : Strategy
 {
-	private readonly StrategyParam<BlauErgodicMdiMode> _mode;
-	private readonly StrategyParam<PriceInputMode> _priceMode;
+	private readonly StrategyParam<BlauErgodicMdiModes> _mode;
+	private readonly StrategyParam<PriceInputModes> _priceMode;
 	private readonly StrategyParam<int> _baseLength;
 	private readonly StrategyParam<int> _firstSmoothingLength;
 	private readonly StrategyParam<int> _secondSmoothingLength;
@@ -151,7 +151,7 @@ public class BlauErgodicMdiTimeStrategy : Strategy
 	/// <summary>
 	/// Selected signal mode.
 	/// </summary>
-	public BlauErgodicMdiMode Mode
+	public BlauErgodicMdiModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -160,7 +160,7 @@ public class BlauErgodicMdiTimeStrategy : Strategy
 	/// <summary>
 	/// Selected price source.
 	/// </summary>
-	public PriceInputMode PriceMode
+	public PriceInputModes PriceMode
 	{
 		get => _priceMode.Value;
 		set => _priceMode.Value = value;
@@ -324,10 +324,10 @@ public class BlauErgodicMdiTimeStrategy : Strategy
 	/// </summary>
 	public BlauErgodicMdiTimeStrategy()
 	{
-		_mode = Param(nameof(Mode), BlauErgodicMdiMode.Twist)
+		_mode = Param(nameof(Mode), BlauErgodicMdiModes.Twist)
 		.SetDisplay("Mode", "Signal mode", "General");
 
-		_priceMode = Param(nameof(PriceMode), PriceInputMode.Close)
+		_priceMode = Param(nameof(PriceMode), PriceInputModes.Close)
 		.SetDisplay("Price Mode", "Price input used for the oscillator", "General");
 
 		_baseLength = Param(nameof(BaseLength), 20)
@@ -503,7 +503,7 @@ public class BlauErgodicMdiTimeStrategy : Strategy
 
 		switch (Mode)
 		{
-			case BlauErgodicMdiMode.Breakdown:
+			case BlauErgodicMdiModes.Breakdown:
 			{
 				if (!HasSufficientData(signalBar + 1))
 				{
@@ -547,7 +547,7 @@ public class BlauErgodicMdiTimeStrategy : Strategy
 				break;
 			}
 
-			case BlauErgodicMdiMode.Twist:
+			case BlauErgodicMdiModes.Twist:
 			{
 				if (!HasSufficientData(signalBar + 2))
 				{
@@ -592,7 +592,7 @@ public class BlauErgodicMdiTimeStrategy : Strategy
 				break;
 			}
 
-			case BlauErgodicMdiMode.CloudTwist:
+			case BlauErgodicMdiModes.CloudTwist:
 			{
 				if (!HasSufficientData(signalBar + 1))
 				{
@@ -682,17 +682,17 @@ public class BlauErgodicMdiTimeStrategy : Strategy
 
 		return PriceMode switch
 		{
-			PriceInputMode.Open => open,
-			PriceInputMode.High => high,
-			PriceInputMode.Low => low,
-			PriceInputMode.Median => (high + low) / 2m,
-			PriceInputMode.Typical => (close + high + low) / 3m,
-			PriceInputMode.Weighted => (2m * close + high + low) / 4m,
-			PriceInputMode.Simple => (open + close) / 2m,
-			PriceInputMode.Quarter => (open + high + low + close) / 4m,
-			PriceInputMode.TrendFollow0 => close > open ? high : close < open ? low : close,
-			PriceInputMode.TrendFollow1 => close > open ? (high + close) / 2m : close < open ? (low + close) / 2m : close,
-			PriceInputMode.Demark => CalculateDemarkPrice(open, high, low, close),
+			PriceInputModes.Open => open,
+			PriceInputModes.High => high,
+			PriceInputModes.Low => low,
+			PriceInputModes.Median => (high + low) / 2m,
+			PriceInputModes.Typical => (close + high + low) / 3m,
+			PriceInputModes.Weighted => (2m * close + high + low) / 4m,
+			PriceInputModes.Simple => (open + close) / 2m,
+			PriceInputModes.Quarter => (open + high + low + close) / 4m,
+			PriceInputModes.TrendFollow0 => close > open ? high : close < open ? low : close,
+			PriceInputModes.TrendFollow1 => close > open ? (high + close) / 2m : close < open ? (low + close) / 2m : close,
+			PriceInputModes.Demark => CalculateDemarkPrice(open, high, low, close),
 			_ => close,
 		};
 	}
@@ -749,7 +749,7 @@ public class BlauErgodicMdiTimeStrategy : Strategy
 
 		return Mode switch
 		{
-			BlauErgodicMdiMode.Twist => signalBar + 3,
+			BlauErgodicMdiModes.Twist => signalBar + 3,
 			_ => signalBar + 2,
 		};
 	}

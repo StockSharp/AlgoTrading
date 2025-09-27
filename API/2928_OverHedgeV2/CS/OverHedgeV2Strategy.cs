@@ -51,7 +51,7 @@ public class OverHedgeV2Strategy : Strategy
 	private decimal _bestBid;
 	private decimal _bestAsk;
 
-	private readonly List<TradeDirection> _openTrades = new();
+	private readonly List<TradeDirections> _openTrades = new();
 
 	/// <summary>
 	/// Initial order size.
@@ -143,7 +143,7 @@ public class OverHedgeV2Strategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	private enum TradeDirection
+	private enum TradeDirections
 	{
 		Buy,
 		Sell
@@ -327,8 +327,8 @@ public class OverHedgeV2Strategy : Strategy
 		if (_tradingStopped)
 			return;
 
-		var buyCount = _openTrades.Count(d => d == TradeDirection.Buy);
-		var sellCount = _openTrades.Count(d => d == TradeDirection.Sell);
+		var buyCount = _openTrades.Count(d => d == TradeDirections.Buy);
+		var sellCount = _openTrades.Count(d => d == TradeDirections.Sell);
 
 		if (buyCount + sellCount == 0)
 		{
@@ -376,12 +376,12 @@ public class OverHedgeV2Strategy : Strategy
 		if (wantLong && _okToBuy && askPrice >= _startBuyPrice)
 		{
 			BuyMarket(desiredVolume);
-			_openTrades.Add(TradeDirection.Buy);
+			_openTrades.Add(TradeDirections.Buy);
 		}
 		else if (!wantLong && _okToSell && askPrice <= _startSellPrice)
 		{
 			SellMarket(desiredVolume);
-			_openTrades.Add(TradeDirection.Sell);
+			_openTrades.Add(TradeDirections.Sell);
 		}
 	}
 

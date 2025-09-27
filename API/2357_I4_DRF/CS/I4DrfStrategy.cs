@@ -23,7 +23,7 @@ public class I4DrfStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<int> _signalBar;
-	private readonly StrategyParam<Mode> _trendMode;
+	private readonly StrategyParam<Modes> _trendMode;
 	private readonly StrategyParam<bool> _buyPosOpen;
 	private readonly StrategyParam<bool> _sellPosOpen;
 	private readonly StrategyParam<bool> _buyPosClose;
@@ -36,7 +36,7 @@ public class I4DrfStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int Period { get => _period.Value; set => _period.Value = value; }
 	public int SignalBar { get => _signalBar.Value; set => _signalBar.Value = value; }
-	public Mode TrendMode { get => _trendMode.Value; set => _trendMode.Value = value; }
+	public Modes TrendMode { get => _trendMode.Value; set => _trendMode.Value = value; }
 	public bool BuyPosOpen { get => _buyPosOpen.Value; set => _buyPosOpen.Value = value; }
 	public bool SellPosOpen { get => _sellPosOpen.Value; set => _sellPosOpen.Value = value; }
 	public bool BuyPosClose { get => _buyPosClose.Value; set => _buyPosClose.Value = value; }
@@ -52,8 +52,8 @@ public class I4DrfStrategy : Strategy
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetGreaterThanZero()
 		.SetDisplay("Signal Bar", "Shift for signal", "Parameters");
-		_trendMode = Param(nameof(TrendMode), Mode.Direct)
-		.SetDisplay("Trend Mode", "Trading mode", "Parameters");
+		_trendMode = Param(nameof(TrendMode), Modes.Direct)
+		.SetDisplay("Trend Modes", "Trading mode", "Parameters");
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)
 		.SetDisplay("Open Long", "Allow opening long positions", "Switches");
 		_sellPosOpen = Param(nameof(SellPosOpen), true)
@@ -118,7 +118,7 @@ public class I4DrfStrategy : Strategy
 		var buyClose = false;
 		var sellClose = false;
 
-		if (TrendMode == Mode.Direct)
+		if (TrendMode == Modes.Direct)
 		{
 			if (_prevPrevColor == 1m)
 			{
@@ -172,7 +172,7 @@ public class I4DrfStrategy : Strategy
 		_prevColor = color;
 	}
 
-	public enum Mode
+	public enum Modes
 	{
 		Direct,
 		NotDirect

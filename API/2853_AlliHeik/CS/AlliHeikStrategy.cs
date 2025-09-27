@@ -22,7 +22,7 @@ public class AlliHeikStrategy : Strategy
 	/// <summary>
 	/// Available moving average types for smoothing.
 	/// </summary>
-	public enum MaType
+	public enum MaTypes
 	{
 		/// <summary>
 		/// Simple moving average.
@@ -52,11 +52,11 @@ public class AlliHeikStrategy : Strategy
 	private readonly StrategyParam<bool> _reverseSignals;
 	private readonly StrategyParam<bool> _closeOpposite;
 	private readonly StrategyParam<int> _preSmoothPeriod;
-	private readonly StrategyParam<MaType> _preSmoothMethod;
+	private readonly StrategyParam<MaTypes> _preSmoothMethod;
 	private readonly StrategyParam<int> _postSmoothPeriod;
-	private readonly StrategyParam<MaType> _postSmoothMethod;
+	private readonly StrategyParam<MaTypes> _postSmoothMethod;
 	private readonly StrategyParam<int> _signalPeriod;
-	private readonly StrategyParam<MaType> _signalMethod;
+	private readonly StrategyParam<MaTypes> _signalMethod;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private LengthIndicator<decimal> _preOpenMa = null!;
@@ -144,7 +144,7 @@ public class AlliHeikStrategy : Strategy
 	/// <summary>
 	/// Moving average type used for pre-smoothing.
 	/// </summary>
-	public MaType PreSmoothMethod
+	public MaTypes PreSmoothMethod
 	{
 		get => _preSmoothMethod.Value;
 		set => _preSmoothMethod.Value = value;
@@ -162,7 +162,7 @@ public class AlliHeikStrategy : Strategy
 	/// <summary>
 	/// Moving average type used for post-smoothing.
 	/// </summary>
-	public MaType PostSmoothMethod
+	public MaTypes PostSmoothMethod
 	{
 		get => _postSmoothMethod.Value;
 		set => _postSmoothMethod.Value = value;
@@ -180,7 +180,7 @@ public class AlliHeikStrategy : Strategy
 	/// <summary>
 	/// Moving average type used for the signal line.
 	/// </summary>
-	public MaType SignalMethod
+	public MaTypes SignalMethod
 	{
 		get => _signalMethod.Value;
 		set => _signalMethod.Value = value;
@@ -227,21 +227,21 @@ public class AlliHeikStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Pre Smooth Period", "Period for pre-smoothing open/high/low/close", "Indicator");
 
-		_preSmoothMethod = Param(nameof(PreSmoothMethod), MaType.Lwma)
+		_preSmoothMethod = Param(nameof(PreSmoothMethod), MaTypes.Lwma)
 			.SetDisplay("Pre Smooth Method", "Moving average type for pre-smoothing", "Indicator");
 
 		_postSmoothPeriod = Param(nameof(PostSmoothPeriod), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("Post Smooth Period", "Period for smoothing Heikin Ashi midpoint", "Indicator");
 
-		_postSmoothMethod = Param(nameof(PostSmoothMethod), MaType.Lwma)
+		_postSmoothMethod = Param(nameof(PostSmoothMethod), MaTypes.Lwma)
 			.SetDisplay("Post Smooth Method", "Moving average type for post-smoothing", "Indicator");
 
 		_signalPeriod = Param(nameof(SignalPeriod), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Period", "Period of the oscillator signal line", "Indicator");
 
-		_signalMethod = Param(nameof(SignalMethod), MaType.Smma)
+		_signalMethod = Param(nameof(SignalMethod), MaTypes.Smma)
 			.SetDisplay("Signal Method", "Moving average type for the signal line", "Indicator");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -504,14 +504,14 @@ public class AlliHeikStrategy : Strategy
 		return pips * priceStep * multiplier;
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverage(MaType type, int length)
+	private LengthIndicator<decimal> CreateMovingAverage(MaTypes type, int length)
 	{
 		return type switch
 		{
-			MaType.Sma => new SMA { Length = length },
-			MaType.Ema => new EMA { Length = length },
-			MaType.Smma => new SmoothedMovingAverage { Length = length },
-			MaType.Lwma => new WeightedMovingAverage { Length = length },
+			MaTypes.Sma => new SMA { Length = length },
+			MaTypes.Ema => new EMA { Length = length },
+			MaTypes.Smma => new SmoothedMovingAverage { Length = length },
+			MaTypes.Lwma => new WeightedMovingAverage { Length = length },
 			_ => new SMA { Length = length },
 		};
 	}

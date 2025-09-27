@@ -36,7 +36,7 @@
 - `First/Second/ThirdSmoothingLength`：动量级联 EMA 的长度。
 - `SignalSmoothingLength`：信号线 EMA 的长度。
 - `SignalBar`：用于读取信号的已完成柱索引（至少为 `1`）。
-- `AppliedPrice`：振荡器使用的价格来源（收盘价、开盘价、均价等）。
+- `AppliedPrices`：振荡器使用的价格来源（收盘价、开盘价、均价等）。
 - `AllowBuyEntry`、`AllowSellEntry`、`AllowBuyExit`、`AllowSellExit`：分别控制多空的开平仓权限。
 - `StopLossPoints`、`TakeProfitPoints`：以点数表示的止损/止盈距离（通过 `Security.PriceStep` 转换）。
 

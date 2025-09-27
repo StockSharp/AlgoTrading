@@ -23,8 +23,8 @@ public class AboveBelowMaStrategy : Strategy
 {
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageMethod> _maMethod;
-	private readonly StrategyParam<AppliedPriceType> _appliedPrice;
+	private readonly StrategyParam<MovingAverageMethods> _maMethod;
+	private readonly StrategyParam<AppliedPriceTypes> _appliedPrice;
 	private readonly StrategyParam<int> _minimumDistancePips;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _tradeVolume;
@@ -56,7 +56,7 @@ public class AboveBelowMaStrategy : Strategy
 	/// <summary>
 	/// Moving average smoothing method.
 	/// </summary>
-	public MovingAverageMethod MaMethod
+	public MovingAverageMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -65,7 +65,7 @@ public class AboveBelowMaStrategy : Strategy
 	/// <summary>
 	/// Price source used in the moving average calculation.
 	/// </summary>
-	public AppliedPriceType AppliedPrice
+	public AppliedPriceTypes AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -113,10 +113,10 @@ public class AboveBelowMaStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("MA Shift", "Number of bars to shift the MA forward", "Moving Average");
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.Exponential)
+		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Exponential)
 			.SetDisplay("MA Method", "Moving average smoothing method", "Moving Average");
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceType.Typical)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Typical)
 			.SetDisplay("Applied Price", "Price type passed to the moving average", "Moving Average");
 
 		_minimumDistancePips = Param(nameof(MinimumDistancePips), 5)
@@ -288,13 +288,13 @@ public class AboveBelowMaStrategy : Strategy
 	{
 		return AppliedPrice switch
 		{
-			AppliedPriceType.Close => candle.ClosePrice,
-			AppliedPriceType.Open => candle.OpenPrice,
-			AppliedPriceType.High => candle.HighPrice,
-			AppliedPriceType.Low => candle.LowPrice,
-			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
+			AppliedPriceTypes.Close => candle.ClosePrice,
+			AppliedPriceTypes.Open => candle.OpenPrice,
+			AppliedPriceTypes.High => candle.HighPrice,
+			AppliedPriceTypes.Low => candle.LowPrice,
+			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
@@ -341,14 +341,14 @@ public class AboveBelowMaStrategy : Strategy
 		return selected;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethod method, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new ExponentialMovingAverage { Length = length },
 		};
 	}
@@ -356,7 +356,7 @@ public class AboveBelowMaStrategy : Strategy
 	/// <summary>
 	/// Supported moving average methods.
 	/// </summary>
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		Simple,
 		Exponential,
@@ -367,7 +367,7 @@ public class AboveBelowMaStrategy : Strategy
 	/// <summary>
 	/// Supported price inputs for the moving average calculation.
 	/// </summary>
-	public enum AppliedPriceType
+	public enum AppliedPriceTypes
 	{
 		Close,
 		Open,

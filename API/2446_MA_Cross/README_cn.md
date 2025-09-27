@@ -35,7 +35,7 @@
 - **执行方式：** 使用 `BuyMarket` 与 `SellMarket` 发出市价单，策略本身不设置止损或止盈，风险控制可由其他模块补充。
 
 ## 转换说明
-- `MovingAverageMethod` 枚举对应 MetaTrader 的 `MODE_SMA`、`MODE_EMA`、`MODE_SMMA` 与 `MODE_LWMA`，分别映射到 `SimpleMovingAverage`、`ExponentialMovingAverage`、`SmoothedMovingAverage` 和 `WeightedMovingAverage`。
+- `MovingAverageMethods` 枚举对应 MetaTrader 的 `MODE_SMA`、`MODE_EMA`、`MODE_SMMA` 与 `MODE_LWMA`，分别映射到 `SimpleMovingAverage`、`ExponentialMovingAverage`、`SmoothedMovingAverage` 和 `WeightedMovingAverage`。
 - 应用价格计算严格遵循 MetaTrader 的 `ENUM_APPLIED_PRICE` 定义，通过蜡烛的高、低、收盘价组合得到中价、典型价和加权价。
 - `FastShift` 与 `SlowShift` 的实现保留了原脚本逻辑：策略缓存指标值，并在比较时引用位移后的历史数值。
 - 持仓管理逻辑与原版一致：出现反向信号时先平掉现有仓位，再在同一根蜡烛上建立新仓位。

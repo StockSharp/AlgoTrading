@@ -28,13 +28,13 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 	private readonly StrategyParam<int> _maxPositionCount;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _fastShift;
-	private readonly StrategyParam<MovingAverageMode> _fastMaType;
+	private readonly StrategyParam<MovingAverageModes> _fastMaType;
 	private readonly StrategyParam<int> _middlePeriod;
 	private readonly StrategyParam<int> _middleShift;
-	private readonly StrategyParam<MovingAverageMode> _middleMaType;
+	private readonly StrategyParam<MovingAverageModes> _middleMaType;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _slowShift;
-	private readonly StrategyParam<MovingAverageMode> _slowMaType;
+	private readonly StrategyParam<MovingAverageModes> _slowMaType;
 	private readonly StrategyParam<int> _channelPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -157,7 +157,7 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 	/// <summary>
 	/// Type of the fast moving average.
 	/// </summary>
-	public MovingAverageMode FastMaType
+	public MovingAverageModes FastMaType
 	{
 		get => _fastMaType.Value;
 		set => _fastMaType.Value = value;
@@ -184,7 +184,7 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 	/// <summary>
 	/// Type of the middle moving average.
 	/// </summary>
-	public MovingAverageMode MiddleMaType
+	public MovingAverageModes MiddleMaType
 	{
 		get => _middleMaType.Value;
 		set => _middleMaType.Value = value;
@@ -211,7 +211,7 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 	/// <summary>
 	/// Type of the slow moving average.
 	/// </summary>
-	public MovingAverageMode SlowMaType
+	public MovingAverageModes SlowMaType
 	{
 		get => _slowMaType.Value;
 		set => _slowMaType.Value = value;
@@ -273,7 +273,7 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 		_fastShift = Param(nameof(FastShift), 0)
 			.SetDisplay("Fast MA Shift", "Bars to shift fast MA", "Moving Averages");
 
-		_fastMaType = Param(nameof(FastMaType), MovingAverageMode.Smoothed)
+		_fastMaType = Param(nameof(FastMaType), MovingAverageModes.Smoothed)
 			.SetDisplay("Fast MA Type", "Method for fast MA", "Moving Averages");
 
 		_middlePeriod = Param(nameof(MiddlePeriod), 61)
@@ -283,7 +283,7 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 		_middleShift = Param(nameof(MiddleShift), 0)
 			.SetDisplay("Middle MA Shift", "Bars to shift middle MA", "Moving Averages");
 
-		_middleMaType = Param(nameof(MiddleMaType), MovingAverageMode.Smoothed)
+		_middleMaType = Param(nameof(MiddleMaType), MovingAverageModes.Smoothed)
 			.SetDisplay("Middle MA Type", "Method for middle MA", "Moving Averages");
 
 		_slowPeriod = Param(nameof(SlowPeriod), 122)
@@ -293,7 +293,7 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 		_slowShift = Param(nameof(SlowShift), 0)
 			.SetDisplay("Slow MA Shift", "Bars to shift slow MA", "Moving Averages");
 
-		_slowMaType = Param(nameof(SlowMaType), MovingAverageMode.Smoothed)
+		_slowMaType = Param(nameof(SlowMaType), MovingAverageModes.Smoothed)
 			.SetDisplay("Slow MA Type", "Method for slow MA", "Moving Averages");
 
 		_channelPeriod = Param(nameof(ChannelPeriod), 15)
@@ -748,13 +748,13 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 		_shortBreakEvenActivated = false;
 	}
 
-	private MovingAverage CreateMovingAverage(MovingAverageMode mode, int length)
+	private MovingAverage CreateMovingAverage(MovingAverageModes mode, int length)
 	{
 		return mode switch
 		{
-			MovingAverageMode.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMode.Weighted => new WeightedMovingAverage { Length = length },
-			MovingAverageMode.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageModes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageModes.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageModes.Smoothed => new SmoothedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -763,7 +763,7 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 /// <summary>
 /// Moving average calculation modes supported by <see cref="TripleMaChannelCrossoverStrategy"/>.
 /// </summary>
-public enum MovingAverageMode
+public enum MovingAverageModes
 {
 	/// <summary>
 	/// Simple moving average.

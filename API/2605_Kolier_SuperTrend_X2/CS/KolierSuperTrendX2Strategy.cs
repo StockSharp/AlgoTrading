@@ -26,8 +26,8 @@ public class KolierSuperTrendX2Strategy : Strategy
 	private readonly StrategyParam<decimal> _trendAtrMultiplier;
 	private readonly StrategyParam<int> _entryAtrPeriod;
 	private readonly StrategyParam<decimal> _entryAtrMultiplier;
-	private readonly StrategyParam<KolierTrendMode> _trendMode;
-	private readonly StrategyParam<KolierTrendMode> _entryMode;
+	private readonly StrategyParam<KolierTrendModes> _trendMode;
+	private readonly StrategyParam<KolierTrendModes> _entryMode;
 	private readonly StrategyParam<int> _trendSignalShift;
 	private readonly StrategyParam<int> _entrySignalShift;
 	private readonly StrategyParam<bool> _enableBuyEntries;
@@ -77,10 +77,10 @@ public class KolierSuperTrendX2Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Entry ATR Multiplier", "ATR multiplier for entry SuperTrend", "Entry");
 
-		_trendMode = Param(nameof(TrendMode), KolierTrendMode.NewWay)
+		_trendMode = Param(nameof(TrendMode), KolierTrendModes.NewWay)
 			.SetDisplay("Trend Mode", "Mode used for trend confirmation", "Trend");
 
-		_entryMode = Param(nameof(EntryMode), KolierTrendMode.NewWay)
+		_entryMode = Param(nameof(EntryMode), KolierTrendModes.NewWay)
 			.SetDisplay("Entry Mode", "Mode used for entry detection", "Entry");
 
 		_trendSignalShift = Param(nameof(TrendSignalShift), 1)
@@ -174,7 +174,7 @@ public class KolierSuperTrendX2Strategy : Strategy
 	/// <summary>
 	/// Confirmation mode for the trend timeframe.
 	/// </summary>
-	public KolierTrendMode TrendMode
+	public KolierTrendModes TrendMode
 	{
 		get => _trendMode.Value;
 		set => _trendMode.Value = value;
@@ -183,7 +183,7 @@ public class KolierSuperTrendX2Strategy : Strategy
 	/// <summary>
 	/// Confirmation mode for the entry timeframe.
 	/// </summary>
-	public KolierTrendMode EntryMode
+	public KolierTrendModes EntryMode
 	{
 		get => _entryMode.Value;
 		set => _entryMode.Value = value;
@@ -376,7 +376,7 @@ public class KolierSuperTrendX2Strategy : Strategy
 
 		switch (TrendMode)
 		{
-			case KolierTrendMode.NewWay:
+			case KolierTrendModes.NewWay:
 				_trendDirection = current.Value;
 				break;
 			default:
@@ -533,7 +533,7 @@ public class KolierSuperTrendX2Strategy : Strategy
 
 		return EntryMode switch
 		{
-			KolierTrendMode.NewWay => previous != targetDirection,
+			KolierTrendModes.NewWay => previous != targetDirection,
 			_ => previous == -targetDirection,
 		};
 	}
@@ -541,7 +541,7 @@ public class KolierSuperTrendX2Strategy : Strategy
 	/// <summary>
 	/// Enumeration mirroring the original MQL SuperTrend modes.
 	/// </summary>
-	public enum KolierTrendMode
+	public enum KolierTrendModes
 	{
 		/// <summary>
 		/// Classic SuperTrend confirmation requiring consecutive candles.

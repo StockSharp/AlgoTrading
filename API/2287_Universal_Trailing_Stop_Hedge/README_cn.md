@@ -12,7 +12,7 @@
 - **出场条件**：触发移动止损
 - **止损**：根据选择的模式使用 ATR、Parabolic SAR、MA、利润百分比或固定点数
 - **默认值**：
-  - `Mode` = `TrailingMode.Atr`
+  - `Mode` = `TrailingModes.Atr`
   - `Delta` = 10
   - `AtrPeriod` = 14
   - `AtrMultiplier` = 1m

@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Sends breakout alerts when price crosses user defined horizontal levels.
 /// </summary>
-public enum BreakoutNotificationMode
+public enum BreakoutNotificationModes
 {
 	Sound,
 	Alert,
@@ -36,7 +36,7 @@ public class ExpBreakoutSignalsStrategy : Strategy
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<string> _prefix;
-	private readonly StrategyParam<BreakoutNotificationMode> _signalMode;
+	private readonly StrategyParam<BreakoutNotificationModes> _signalMode;
 	private readonly StrategyParam<string> _soundName;
 	private readonly StrategyParam<string> _levels;
 	private readonly StrategyParam<bool> _clearOnStop;
@@ -66,7 +66,7 @@ public class ExpBreakoutSignalsStrategy : Strategy
 	/// <summary>
 	/// Notification type describing how alerts should be presented.
 	/// </summary>
-	public BreakoutNotificationMode SignalMode
+	public BreakoutNotificationModes SignalMode
 	{
 		get => _signalMode.Value;
 		set => _signalMode.Value = value;
@@ -110,7 +110,7 @@ public class ExpBreakoutSignalsStrategy : Strategy
 		_prefix = Param(nameof(Prefix), "bot_")
 			.SetDisplay("Prefix", "Text prefix for generated alerts", "Notifications");
 
-		_signalMode = Param(nameof(SignalMode), BreakoutNotificationMode.Sound)
+		_signalMode = Param(nameof(SignalMode), BreakoutNotificationModes.Sound)
 			.SetDisplay("Signal Mode", "Type of notification to produce", "Notifications");
 
 		_soundName = Param(nameof(SoundName), "Alert2.wav")
@@ -174,7 +174,7 @@ public class ExpBreakoutSignalsStrategy : Strategy
 	// Ensure configuration values do not contradict each other.
 	private bool ValidateParameters()
 	{
-		if (SignalMode == BreakoutNotificationMode.Sound && SoundName.IsEmptyOrWhiteSpace())
+		if (SignalMode == BreakoutNotificationModes.Sound && SoundName.IsEmptyOrWhiteSpace())
 		{
 			LogError("Sound mode requires a non-empty sound file name.");
 			return false;
@@ -265,16 +265,16 @@ public class ExpBreakoutSignalsStrategy : Strategy
 
 		switch (SignalMode)
 		{
-			case BreakoutNotificationMode.Sound:
+			case BreakoutNotificationModes.Sound:
 				LogInfo("{0}. Play sound '{1}'.", message, SoundName);
 				break;
-			case BreakoutNotificationMode.Alert:
+			case BreakoutNotificationModes.Alert:
 				LogWarning("{0}. Alert notification triggered.", message);
 				break;
-			case BreakoutNotificationMode.Push:
+			case BreakoutNotificationModes.Push:
 				LogInfo("{0}. Push notification requested.", message);
 				break;
-			case BreakoutNotificationMode.Mail:
+			case BreakoutNotificationModes.Mail:
 				LogInfo("{0}. Email notification requested.", message);
 				break;
 			default:

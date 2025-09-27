@@ -246,7 +246,7 @@ public class AltrTrendSignalStrategy : Strategy
 		var candleInfo = new CandleInfo(candle.OpenTime, candle.HighPrice, candle.LowPrice, candle.ClosePrice);
 		_candles.Add(candleInfo);
 
-		SignalInfo signal = new SignalInfo(SignalType.None, null);
+		SignalInfo signal = new SignalInfo(SignalTypes.None, null);
 		if (_previousAdx.HasValue)
 		{
 			signal = CalculateSignal(_candles.Count - 1, _previousAdx.Value);
@@ -267,7 +267,7 @@ public class AltrTrendSignalStrategy : Strategy
 	private SignalInfo CalculateSignal(int lastIndex, decimal previousAdx)
 	{
 		if (lastIndex < 0)
-			return new SignalInfo(SignalType.None, null);
+			return new SignalInfo(SignalTypes.None, null);
 
 		var available = lastIndex + 1;
 		var adx = Math.Max(previousAdx, 1m);
@@ -298,7 +298,7 @@ public class AltrTrendSignalStrategy : Strategy
 		}
 
 		if (ssMax == decimal.MinValue || ssMin == decimal.MaxValue)
-			return new SignalInfo(SignalType.None, null);
+			return new SignalInfo(SignalTypes.None, null);
 
 		var range = rangeSum / (length + 1);
 		var bandWidth = ssMax - ssMin;
@@ -318,19 +318,19 @@ public class AltrTrendSignalStrategy : Strategy
 		if (previousTrend == 0)
 			previousTrend = trend;
 
-		SignalType signalType = SignalType.None;
+		SignalTypes signalType = SignalTypes.None;
 		decimal? arrowPrice = null;
 
 		if (trend != previousTrend)
 		{
 			if (current.Close > upperBound)
 			{
-				signalType = SignalType.Buy;
+				signalType = SignalTypes.Buy;
 				arrowPrice = current.Low - range * KStop;
 			}
 			else if (current.Close < lowerBound)
 			{
-				signalType = SignalType.Sell;
+				signalType = SignalTypes.Sell;
 				arrowPrice = current.High + range * KStop;
 			}
 		}
@@ -351,17 +351,17 @@ public class AltrTrendSignalStrategy : Strategy
 			return;
 
 		var action = _signals[signalIndex];
-		if (action.Type == SignalType.None)
+		if (action.Type == SignalTypes.None)
 			return;
 
 		var signalCandle = _candles[candleIndex];
 
 		switch (action.Type)
 		{
-			case SignalType.Buy:
+			case SignalTypes.Buy:
 				ExecuteBuy(signalCandle, candle.ClosePrice, action.ArrowPrice);
 				break;
-			case SignalType.Sell:
+			case SignalTypes.Sell:
 				ExecuteSell(signalCandle, candle.ClosePrice, action.ArrowPrice);
 				break;
 		}
@@ -512,9 +512,9 @@ public class AltrTrendSignalStrategy : Strategy
 	}
 
 	private readonly record struct CandleInfo(DateTimeOffset OpenTime, decimal High, decimal Low, decimal Close);
-	private readonly record struct SignalInfo(SignalType Type, decimal? ArrowPrice);
+	private readonly record struct SignalInfo(SignalTypes Type, decimal? ArrowPrice);
 
-	private enum SignalType
+	private enum SignalTypes
 	{
 		None,
 		Buy,

@@ -26,15 +26,15 @@ Entry and exit switches (`EnableLongEntry`, `EnableShortEntry`, `EnableLongExit`
 
 ## Parameters
 - `CandleType` *(DataType, default: 4-hour time frame)* – timeframe used for candle subscription and indicator calculations.
-- `Mode` *(BlauSmStochasticMode, default: Twist)* – selects the signal generation mode (Breakdown, Twist, CloudTwist).
+- `Mode` *(BlauSmStochasticModes, default: Twist)* – selects the signal generation mode (Breakdown, Twist, CloudTwist).
 - `SignalBar` *(int, default: 1)* – number of bars to shift indicator values when evaluating signals, reproducing the original `SignalBar` logic.
 - `LookbackLength` *(int, default: 5)* – bars used to compute highest and lowest values.
 - `FirstSmoothingLength` *(int, default: 20)* – length of the first smoothing stage.
 - `SecondSmoothingLength` *(int, default: 5)* – length of the second smoothing stage.
 - `ThirdSmoothingLength` *(int, default: 3)* – length of the third smoothing stage.
 - `SignalLength` *(int, default: 3)* – smoothing length of the signal line.
-- `SmoothMethod` *(BlauSmSmoothMethod, default: EMA)* – moving average family applied to all smoothing stages (SMA, EMA, SMMA, LWMA).
-- `PriceType` *(BlauSmAppliedPrice, default: Close)* – applied price used to feed the oscillator (close, open, high, low, median, typical, weighted, simple, quarter, trend-follow variants, Demark).
+- `SmoothMethod` *(BlauSmSmoothMethods, default: EMA)* – moving average family applied to all smoothing stages (SMA, EMA, SMMA, LWMA).
+- `PriceType` *(BlauSmAppliedPrices, default: Close)* – applied price used to feed the oscillator (close, open, high, low, median, typical, weighted, simple, quarter, trend-follow variants, Demark).
 - `EnableLongEntry` *(bool, default: true)* – allow opening long positions.
 - `EnableShortEntry` *(bool, default: true)* – allow opening short positions.
 - `EnableLongExit` *(bool, default: true)* – allow closing long positions.

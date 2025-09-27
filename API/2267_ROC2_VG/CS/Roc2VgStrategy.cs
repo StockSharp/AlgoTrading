@@ -20,9 +20,9 @@ public class Roc2VgStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _rocPeriod1;
-	private readonly StrategyParam<RocType> _rocType1;
+	private readonly StrategyParam<RocTypes> _rocType1;
 	private readonly StrategyParam<int> _rocPeriod2;
-	private readonly StrategyParam<RocType> _rocType2;
+	private readonly StrategyParam<RocTypes> _rocType2;
 	private readonly StrategyParam<bool> _invert;
 
 	private decimal? _prevUp;
@@ -30,9 +30,9 @@ public class Roc2VgStrategy : Strategy
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int RocPeriod1 { get => _rocPeriod1.Value; set => _rocPeriod1.Value = value; }
-	public RocType RocType1 { get => _rocType1.Value; set => _rocType1.Value = value; }
+	public RocTypes RocType1 { get => _rocType1.Value; set => _rocType1.Value = value; }
 	public int RocPeriod2 { get => _rocPeriod2.Value; set => _rocPeriod2.Value = value; }
-	public RocType RocType2 { get => _rocType2.Value; set => _rocType2.Value = value; }
+	public RocTypes RocType2 { get => _rocType2.Value; set => _rocType2.Value = value; }
 	public bool Invert { get => _invert.Value; set => _invert.Value = value; }
 
 	public Roc2VgStrategy()
@@ -41,11 +41,11 @@ public class Roc2VgStrategy : Strategy
 			.SetDisplay("Candle Type", "Candles", "General");
 		_rocPeriod1 = Param(nameof(RocPeriod1), 8).SetGreaterThanZero()
 			.SetDisplay("ROC Period 1", "Length of first ROC", "Indicator");
-		_rocType1 = Param(nameof(RocType1), RocType.Momentum)
+		_rocType1 = Param(nameof(RocType1), RocTypes.Momentum)
 			.SetDisplay("ROC Type 1", "Type of first ROC", "Indicator");
 		_rocPeriod2 = Param(nameof(RocPeriod2), 14).SetGreaterThanZero()
 			.SetDisplay("ROC Period 2", "Length of second ROC", "Indicator");
-		_rocType2 = Param(nameof(RocType2), RocType.Momentum)
+		_rocType2 = Param(nameof(RocType2), RocTypes.Momentum)
 			.SetDisplay("ROC Type 2", "Type of second ROC", "Indicator");
 		_invert = Param(nameof(Invert), false).SetDisplay("Invert", "Swap ROC lines", "General");
 	}
@@ -71,22 +71,22 @@ public class Roc2VgStrategy : Strategy
 		}
 	}
 
-	private static IIndicator CreateIndicator(RocType type, int period)
+	private static IIndicator CreateIndicator(RocTypes type, int period)
 	{
-		return type == RocType.Momentum
+		return type == RocTypes.Momentum
 			? new Momentum { Length = period }
 			: new ROC { Length = period };
 	}
 
-	private decimal Transform(RocType type, decimal value)
+	private decimal Transform(RocTypes type, decimal value)
 	{
 		return type switch
 		{
-			RocType.Momentum => value,
-			RocType.Roc => value * 100m,
-			RocType.RocP => value,
-			RocType.RocR => value + 1m,
-			RocType.RocR100 => (value + 1m) * 100m,
+			RocTypes.Momentum => value,
+			RocTypes.Roc => value * 100m,
+			RocTypes.RocP => value,
+			RocTypes.RocR => value + 1m,
+			RocTypes.RocR100 => (value + 1m) * 100m,
 			_ => value
 		};
 	}
@@ -121,7 +121,7 @@ public class Roc2VgStrategy : Strategy
 /// <summary>
 /// Types of rate of change calculation.
 /// </summary>
-public enum RocType
+public enum RocTypes
 {
 	/// <summary>Price - previous price.</summary>
 	Momentum,

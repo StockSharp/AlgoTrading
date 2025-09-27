@@ -15,9 +15,9 @@ namespace StockSharp.Samples.Strategies;
 
 public class MaCrossoverMultiTimeframeStrategy : Strategy
 {
-	private readonly StrategyParam<TradeDirectionOption> _allowedDirection;
+	private readonly StrategyParam<TradeDirectionOptions> _allowedDirection;
 	private readonly StrategyParam<bool> _closeOnCross;
-	private readonly StrategyParam<MovingAverageTypeOption> _maType;
+	private readonly StrategyParam<MovingAverageTypeOptions> _maType;
 	private readonly StrategyParam<int> _currentPeriod;
 	private readonly StrategyParam<int> _previousPeriodAdd;
 	private readonly StrategyParam<int> _currentShift;
@@ -53,7 +53,7 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 	/// <summary>
 	/// Allowed trade direction.
 	/// </summary>
-	public TradeDirectionOption AllowedDirection
+	public TradeDirectionOptions AllowedDirection
 	{
 		get => _allowedDirection.Value;
 		set => _allowedDirection.Value = value;
@@ -71,7 +71,7 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 	/// <summary>
 	/// Moving average calculation type.
 	/// </summary>
-	public MovingAverageTypeOption MaType
+	public MovingAverageTypeOptions MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -224,13 +224,13 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 	{
 		Volume = 1;
 
-		_allowedDirection = Param(nameof(AllowedDirection), TradeDirectionOption.LongAndShort)
+		_allowedDirection = Param(nameof(AllowedDirection), TradeDirectionOptions.LongAndShort)
 			.SetDisplay("Trade Direction", "Allowed direction for opening positions", "Trading");
 
 		_closeOnCross = Param(nameof(ClosePositionsOnCross), true)
 			.SetDisplay("Close on Cross", "Close existing opposite positions when moving averages cross", "Trading");
 
-		_maType = Param(nameof(MaType), MovingAverageTypeOption.Exponential)
+		_maType = Param(nameof(MaType), MovingAverageTypeOptions.Exponential)
 			.SetDisplay("MA Type", "Moving average calculation method", "Indicators");
 
 		_currentPeriod = Param(nameof(CurrentMaPeriod), 42)
@@ -647,21 +647,21 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 		return buffer.Count == shift + 1 ? buffer.Peek() : null;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypeOption type, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypeOptions type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypeOption.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageTypeOption.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageTypeOption.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageTypeOption.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageTypeOptions.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageTypeOptions.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypeOptions.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageTypeOptions.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
 
-	private bool IsLongAllowed() => AllowedDirection != TradeDirectionOption.ShortOnly;
+	private bool IsLongAllowed() => AllowedDirection != TradeDirectionOptions.ShortOnly;
 
-	private bool IsShortAllowed() => AllowedDirection != TradeDirectionOption.LongOnly;
+	private bool IsShortAllowed() => AllowedDirection != TradeDirectionOptions.LongOnly;
 
 	private void ResetPositionState()
 	{
@@ -736,14 +736,14 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 			ResetPositionState();
 	}
 
-	public enum TradeDirectionOption
+	public enum TradeDirectionOptions
 	{
 		LongOnly,
 		ShortOnly,
 		LongAndShort
 	}
 
-	public enum MovingAverageTypeOption
+	public enum MovingAverageTypeOptions
 	{
 		Simple,
 		Exponential,

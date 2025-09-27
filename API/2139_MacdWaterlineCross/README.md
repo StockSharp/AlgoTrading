@@ -15,7 +15,7 @@ This strategy goes long when the MACD signal line crosses above the zero level a
 - **SignalPeriod** – length of the signal line EMA.
 - **StopLoss** – distance to the stop loss in absolute price units.
 - **Volume** – order size used for new positions.
-- **RiskBenefitRatio** – preset ratios from 1:5 to 1:1 which define take profit distance.
+- **RiskBenefitRatios** – preset ratios from 1:5 to 1:1 which define take profit distance.
 - **CandleType** – time frame of candles used by the strategy.
 
 ## Notes

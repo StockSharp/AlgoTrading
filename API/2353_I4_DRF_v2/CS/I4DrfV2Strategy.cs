@@ -24,7 +24,7 @@ private readonly StrategyParam<bool> _buyPosOpen;
 private readonly StrategyParam<bool> _sellPosOpen;
 private readonly StrategyParam<bool> _buyPosClose;
 private readonly StrategyParam<bool> _sellPosClose;
-private readonly StrategyParam<TrendMode> _trendMode;
+private readonly StrategyParam<TrendModes> _trendMode;
 private readonly StrategyParam<int> _stopLoss;
 private readonly StrategyParam<int> _takeProfit;
 private readonly StrategyParam<DataType> _candleType;
@@ -83,7 +83,7 @@ set => _sellPosClose.Value = value;
 /// <summary>
 /// Trend mode.
 /// </summary>
-public TrendMode TrendMode
+public TrendModes TrendModes
 {
 get => _trendMode.Value;
 set => _trendMode.Value = value;
@@ -137,7 +137,7 @@ _buyPosClose = Param(nameof(BuyPosClose), true)
 _sellPosClose = Param(nameof(SellPosClose), true)
 .SetDisplay("Sell Close", "Allow closing shorts", "Trading");
 
-_trendMode = Param(nameof(TrendMode), TrendMode.Direct)
+_trendMode = Param(nameof(TrendModes), TrendModes.Direct)
 .SetDisplay("Trend Mode", "DIRECT - contrarian, NOTDIRECT - trend following", "General");
 
 _stopLoss = Param(nameof(StopLoss), 1000)
@@ -230,7 +230,7 @@ _prevColor = currentColor;
 return;
 }
 
-if (TrendMode == TrendMode.Direct)
+if (TrendModes == TrendModes.Direct)
 {
 if (_prevColor == 1 && currentColor == 0)
 {
@@ -291,7 +291,7 @@ _prevColor = currentColor;
 /// <summary>
 /// Trend mode options.
 /// </summary>
-public enum TrendMode
+public enum TrendModes
 {
 /// <summary>Contrarian trading.</summary>
 Direct,

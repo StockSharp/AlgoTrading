@@ -26,7 +26,7 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 	/// <summary>
 	/// Modes for daylight-saving adjustments.
 	/// </summary>
-	public enum DstSwitchMode
+	public enum DstSwitchModes
 	{
 		/// <summary>
 		/// Follow European daylight-saving transitions (no extra shift).
@@ -45,7 +45,7 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 	/// <summary>
 	/// Position-sizing modes.
 	/// </summary>
-	public enum RiskMode
+	public enum RiskModes
 	{
 		/// <summary>
 		/// Calculate volume from a percentage of account equity.
@@ -59,8 +59,8 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 
 	private readonly StrategyParam<TimeSpan> _startTrade;
 	private readonly StrategyParam<TimeSpan> _endTrade;
-	private readonly StrategyParam<DstSwitchMode> _switchDst;
-	private readonly StrategyParam<RiskMode> _riskMode;
+	private readonly StrategyParam<DstSwitchModes> _switchDst;
+	private readonly StrategyParam<RiskModes> _riskMode;
 	private readonly StrategyParam<decimal> _positionRisk;
 	private readonly StrategyParam<int> _tradeRange;
 	private readonly StrategyParam<decimal> _minRangePoints;
@@ -132,10 +132,10 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 		_endTrade = Param(nameof(EndTrade), TimeSpan.FromHours(22))
 		.SetDisplay("End Time", "Session end time", "Trading Hours");
 
-		_switchDst = Param(nameof(SwitchDst), DstSwitchMode.Europe)
+		_switchDst = Param(nameof(SwitchDst), DstSwitchModes.Europe)
 		.SetDisplay("DST Mode", "Daylight-saving adjustment mode", "Trading Hours");
 
-		_riskMode = Param(nameof(PositionRiskMode), RiskMode.Percent)
+		_riskMode = Param(nameof(PositionRiskMode), RiskModes.Percent)
 		.SetDisplay("Risk Mode", "Position sizing mode", "Risk Management");
 
 		_positionRisk = Param(nameof(PositionRisk), 1m)
@@ -228,7 +228,7 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 	/// <summary>
 	/// Daylight-saving adjustment mode.
 	/// </summary>
-	public DstSwitchMode SwitchDst
+	public DstSwitchModes SwitchDst
 	{
 		get => _switchDst.Value;
 		set => _switchDst.Value = value;
@@ -237,7 +237,7 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 	/// <summary>
 	/// Position-sizing mode.
 	/// </summary>
-	public RiskMode PositionRiskMode
+	public RiskModes PositionRiskMode
 	{
 		get => _riskMode.Value;
 		set => _riskMode.Value = value;
@@ -882,7 +882,7 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 
 		decimal rawVolume;
 
-		if (PositionRiskMode == RiskMode.FixedVolume)
+		if (PositionRiskMode == RiskModes.FixedVolume)
 		{
 			rawVolume = PositionRisk;
 		}
@@ -962,9 +962,9 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 		// Mirror the original DST handling by applying one-hour offsets when regimes differ.
 		return SwitchDst switch
 		{
-			DstSwitchMode.Usa when !londonDst && newYorkDst => TimeSpan.FromHours(1),
-			DstSwitchMode.Usa when londonDst && !newYorkDst => TimeSpan.FromHours(-1),
-			DstSwitchMode.None when londonDst => TimeSpan.FromHours(-1),
+			DstSwitchModes.Usa when !londonDst && newYorkDst => TimeSpan.FromHours(1),
+			DstSwitchModes.Usa when londonDst && !newYorkDst => TimeSpan.FromHours(-1),
+			DstSwitchModes.None when londonDst => TimeSpan.FromHours(-1),
 			_ => TimeSpan.Zero,
 		};
 	}

@@ -22,7 +22,7 @@ public class CaudateXPeriodCandleTmPlusStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<int> _signalBar;
-	private readonly StrategyParam<SmoothingMethod> _smoothingMethod;
+	private readonly StrategyParam<SmoothingMethods> _smoothingMethod;
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<int> _maPhase;
 	private readonly StrategyParam<bool> _openLong;
@@ -60,7 +60,7 @@ public class CaudateXPeriodCandleTmPlusStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Number of bars to delay signal evaluation", "Indicator");
 
-		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothingMethod.Jjma)
+		_smoothingMethod = Param(nameof(SmoothingMethods), SmoothingMethods.Jjma)
 			.SetDisplay("Smoothing Method", "Moving average applied to price components", "Indicator");
 
 		_maLength = Param(nameof(MaLength), 3)
@@ -128,7 +128,7 @@ public class CaudateXPeriodCandleTmPlusStrategy : Strategy
 	/// <summary>
 	/// Moving average type used to smooth price components.
 	/// </summary>
-	public SmoothingMethod SmoothingMethod
+	public SmoothingMethods SmoothingMethods
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -245,10 +245,10 @@ public class CaudateXPeriodCandleTmPlusStrategy : Strategy
 		base.OnStarted(time);
 
 		// Create separate smoothing filters for each candle component.
-		_openAverage = CreateMovingAverage(SmoothingMethod, MaLength);
-		_highAverage = CreateMovingAverage(SmoothingMethod, MaLength);
-		_lowAverage = CreateMovingAverage(SmoothingMethod, MaLength);
-		_closeAverage = CreateMovingAverage(SmoothingMethod, MaLength);
+		_openAverage = CreateMovingAverage(SmoothingMethods, MaLength);
+		_highAverage = CreateMovingAverage(SmoothingMethods, MaLength);
+		_lowAverage = CreateMovingAverage(SmoothingMethods, MaLength);
+		_closeAverage = CreateMovingAverage(SmoothingMethods, MaLength);
 
 		_highest = new Highest { Length = Period };
 		_lowest = new Lowest { Length = Period };
@@ -409,18 +409,18 @@ public class CaudateXPeriodCandleTmPlusStrategy : Strategy
 		return color;
 	}
 
-	private IIndicator CreateMovingAverage(SmoothingMethod method, int length)
+	private IIndicator CreateMovingAverage(SmoothingMethods method, int length)
 	{
 		length = Math.Max(1, length);
 
 		return method switch
 		{
-			SmoothingMethod.Sma => new SimpleMovingAverage { Length = length },
-			SmoothingMethod.Ema => new ExponentialMovingAverage { Length = length },
-			SmoothingMethod.Smma => new SmoothedMovingAverage { Length = length },
-			SmoothingMethod.Lwma => new WeightedMovingAverage { Length = length },
-			SmoothingMethod.Jjma => new JurikMovingAverage { Length = length },
-			SmoothingMethod.Ama => new KaufmanAdaptiveMovingAverage { Length = length },
+			SmoothingMethods.Sma => new SimpleMovingAverage { Length = length },
+			SmoothingMethods.Ema => new ExponentialMovingAverage { Length = length },
+			SmoothingMethods.Smma => new SmoothedMovingAverage { Length = length },
+			SmoothingMethods.Lwma => new WeightedMovingAverage { Length = length },
+			SmoothingMethods.Jjma => new JurikMovingAverage { Length = length },
+			SmoothingMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = length },
 			_ => new ExponentialMovingAverage { Length = length },
 		};
 	}
@@ -440,7 +440,7 @@ public class CaudateXPeriodCandleTmPlusStrategy : Strategy
 	/// <summary>
 	/// Supported smoothing methods for the strategy.
 	/// </summary>
-	public enum SmoothingMethod
+	public enum SmoothingMethods
 	{
 		/// <summary>
 		/// Simple moving average.

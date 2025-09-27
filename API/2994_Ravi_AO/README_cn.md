@@ -19,7 +19,7 @@
 | `TrailingStepPips` | 每次调整跟踪止损所需的额外盈利（点）。启用跟踪止损时必须大于 0。 |
 | `FastMethod` / `FastLength` | RAVI 快速均线的类型与周期。 |
 | `SlowMethod` / `SlowLength` | RAVI 慢速均线的类型与周期。 |
-| `AppliedPrice` | 两条均线所使用的价格公式（close、open、high、low、median、typical、weighted、simple、quarter、trend-follow #1/#2、Demark）。 |
+| `AppliedPrices` | 两条均线所使用的价格公式（close、open、high、low、median、typical、weighted、simple、quarter、trend-follow #1/#2、Demark）。 |
 | `AoShortPeriod` / `AoLongPeriod` | Awesome Oscillator 的快、慢周期。 |
 
 ## 交易规则
@@ -42,7 +42,7 @@
 - 信号在收盘时评估，并在同一根蜡烛的收盘价执行。原版 MT5 在下一根开盘进场，因此可能存在差异。
 - 仅使用 StockSharp 提供的均线类型，MT5 中的 JJMA、Jurik、T3 等特殊平滑方式暂不支持。
 - 原指标的绘图位移 `Shift` 只影响显示，对交易无影响，故未加入参数。
-- `AppliedPrice` 的计算公式完全按照 MetaTrader 的定义实现。
+- `AppliedPrices` 的计算公式完全按照 MetaTrader 的定义实现。
 
 ## 使用建议
 - 策略偏向趋势跟随，可配合更高周期的趋势或波动性过滤器使用。

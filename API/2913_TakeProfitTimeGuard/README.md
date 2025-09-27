@@ -17,7 +17,7 @@
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `CandleType` | `DataType` | 1-minute time-frame | Candle series used to evaluate profit and schedule logic. |
-| `TargetMode` | `ProfitTargetMode` (`Percent`/`Currency`) | `Percent` | Selects whether `TakeProfitValue` is interpreted as a percentage of account capital or as an absolute currency amount. |
+| `TargetMode` | `ProfitTargetModes` (`Percent`/`Currency`) | `Percent` | Selects whether `TakeProfitValue` is interpreted as a percentage of account capital or as an absolute currency amount. |
 | `TakeProfitValue` | `decimal` | `100` | Profit target threshold. Interpreted according to `TargetMode`. Must be greater than zero. |
 | `UseTradingWindow` | `bool` | `true` | Enables or disables the time filter. |
 | `StartTime` | `TimeSpan` | `00:00:00` | Beginning of the allowed trading window (inclusive). |

@@ -23,7 +23,7 @@ public class ExpertRsiStochasticMaStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<AppliedPriceType> _rsiPriceType;
+	private readonly StrategyParam<AppliedPriceTypes> _rsiPriceType;
 	private readonly StrategyParam<decimal> _rsiUpperLevel;
 	private readonly StrategyParam<decimal> _rsiLowerLevel;
 	private readonly StrategyParam<int> _stochKPeriod;
@@ -31,8 +31,8 @@ public class ExpertRsiStochasticMaStrategy : Strategy
 	private readonly StrategyParam<int> _stochSlowing;
 	private readonly StrategyParam<decimal> _stochUpperLevel;
 	private readonly StrategyParam<decimal> _stochLowerLevel;
-	private readonly StrategyParam<MovingAverageMethod> _maMethod;
-	private readonly StrategyParam<AppliedPriceType> _maPriceType;
+	private readonly StrategyParam<MovingAverageMethods> _maMethod;
+	private readonly StrategyParam<AppliedPriceTypes> _maPriceType;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
 	private readonly StrategyParam<decimal> _allowLossPoints;
@@ -77,7 +77,7 @@ public class ExpertRsiStochasticMaStrategy : Strategy
 	/// <summary>
 	/// Source price applied to the RSI.
 	/// </summary>
-	public AppliedPriceType RsiPriceType
+	public AppliedPriceTypes RsiPriceType
 	{
 		get => _rsiPriceType.Value;
 		set => _rsiPriceType.Value = value;
@@ -149,7 +149,7 @@ public class ExpertRsiStochasticMaStrategy : Strategy
 	/// <summary>
 	/// Type of moving average used for trend filtering.
 	/// </summary>
-	public MovingAverageMethod MaMethod
+	public MovingAverageMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -158,7 +158,7 @@ public class ExpertRsiStochasticMaStrategy : Strategy
 	/// <summary>
 	/// Applied price for the moving average.
 	/// </summary>
-	public AppliedPriceType MaPriceType
+	public AppliedPriceTypes MaPriceType
 	{
 		get => _maPriceType.Value;
 		set => _maPriceType.Value = value;
@@ -216,7 +216,7 @@ public class ExpertRsiStochasticMaStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "Number of bars for RSI", "RSI");
 
-		_rsiPriceType = Param(nameof(RsiPriceType), AppliedPriceType.Close)
+		_rsiPriceType = Param(nameof(RsiPriceType), AppliedPriceTypes.Close)
 		.SetDisplay("RSI Price", "Applied price for RSI calculation", "RSI");
 
 		_rsiUpperLevel = Param(nameof(RsiUpperLevel), 80m)
@@ -247,10 +247,10 @@ public class ExpertRsiStochasticMaStrategy : Strategy
 		.SetRange(0m, 100m)
 		.SetDisplay("Stoch Oversold", "Lower Stochastic threshold", "Stochastic");
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.Simple)
+		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Simple)
 		.SetDisplay("MA Method", "Type of moving average", "Moving Average");
 
-		_maPriceType = Param(nameof(MaPriceType), AppliedPriceType.Close)
+		_maPriceType = Param(nameof(MaPriceType), AppliedPriceTypes.Close)
 		.SetDisplay("MA Price", "Applied price for moving average", "Moving Average");
 
 		_maPeriod = Param(nameof(MaPeriod), 150)
@@ -520,29 +520,29 @@ public class ExpertRsiStochasticMaStrategy : Strategy
 		return decimals is 3 or 5 ? priceStep * 10m : priceStep;
 	}
 
-	private static IIndicator CreateMovingAverage(MovingAverageMethod method, int length)
+	private static IIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceType type)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceTypes type)
 	{
 		return type switch
 		{
-			AppliedPriceType.Close => candle.ClosePrice,
-			AppliedPriceType.Open => candle.OpenPrice,
-			AppliedPriceType.High => candle.HighPrice,
-			AppliedPriceType.Low => candle.LowPrice,
-			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
+			AppliedPriceTypes.Close => candle.ClosePrice,
+			AppliedPriceTypes.Open => candle.OpenPrice,
+			AppliedPriceTypes.High => candle.HighPrice,
+			AppliedPriceTypes.Low => candle.LowPrice,
+			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}
@@ -551,7 +551,7 @@ public class ExpertRsiStochasticMaStrategy : Strategy
 /// <summary>
 /// Applied price options matching MetaTrader style enumerations.
 /// </summary>
-public enum AppliedPriceType
+public enum AppliedPriceTypes
 {
 	Close,
 	Open,
@@ -565,7 +565,7 @@ public enum AppliedPriceType
 /// <summary>
 /// Moving average calculation methods supported by the strategy.
 /// </summary>
-public enum MovingAverageMethod
+public enum MovingAverageMethods
 {
 	Simple,
 	Exponential,

@@ -28,8 +28,8 @@ public class XrsidDeMarkerHistogramStrategy : Strategy
 	private readonly StrategyParam<bool> _closeShortOnLongSignal;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _indicatorPeriod;
-	private readonly StrategyParam<AppliedPrice> _appliedPrice;
-	private readonly StrategyParam<SmoothingMethod> _smoothingMethod;
+	private readonly StrategyParam<AppliedPrices> _appliedPrice;
+	private readonly StrategyParam<SmoothingMethods> _smoothingMethod;
 	private readonly StrategyParam<int> _smoothingLength;
 	private readonly StrategyParam<int> _smoothingPhase;
 	private readonly StrategyParam<int> _signalBar;
@@ -47,7 +47,7 @@ public class XrsidDeMarkerHistogramStrategy : Strategy
 	/// <summary>
 	/// Supported applied price types for RSI calculation.
 	/// </summary>
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		/// <summary>Use close price.</summary>
 		Close,
@@ -68,7 +68,7 @@ public class XrsidDeMarkerHistogramStrategy : Strategy
 	/// <summary>
 	/// Moving average types for smoothing the combined oscillator.
 	/// </summary>
-	public enum SmoothingMethod
+	public enum SmoothingMethods
 	{
 		/// <summary>Simple moving average.</summary>
 		Sma,
@@ -168,7 +168,7 @@ public class XrsidDeMarkerHistogramStrategy : Strategy
 	/// <summary>
 	/// Applied price mode used by RSI.
 	/// </summary>
-	public AppliedPrice AppliedPriceSelection
+	public AppliedPrices AppliedPriceSelection
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -177,7 +177,7 @@ public class XrsidDeMarkerHistogramStrategy : Strategy
 	/// <summary>
 	/// Smoothing algorithm for the combined oscillator.
 	/// </summary>
-	public SmoothingMethod SmoothingMethodSelection
+	public SmoothingMethods SmoothingMethodSelection
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -243,10 +243,10 @@ public class XrsidDeMarkerHistogramStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Indicator Period", "Look-back for RSI and DeMarker", "Indicator");
 
-		_appliedPrice = Param(nameof(AppliedPriceSelection), AppliedPrice.Close)
+		_appliedPrice = Param(nameof(AppliedPriceSelection), AppliedPrices.Close)
 		.SetDisplay("Applied Price", "Price type used for RSI calculation", "Indicator");
 
-		_smoothingMethod = Param(nameof(SmoothingMethodSelection), SmoothingMethod.Sma)
+		_smoothingMethod = Param(nameof(SmoothingMethodSelection), SmoothingMethods.Sma)
 		.SetDisplay("Smoothing Method", "Moving average applied to the combined oscillator", "Indicator");
 
 		_smoothingLength = Param(nameof(SmoothingLength), 5)
@@ -476,32 +476,32 @@ public class XrsidDeMarkerHistogramStrategy : Strategy
 		_entryPrice = price;
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrice price)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrices price)
 	{
 		return price switch
 		{
-			AppliedPrice.Close => candle.ClosePrice,
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			AppliedPrices.Close => candle.ClosePrice,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateSmoother(SmoothingMethod method, int length, int phase)
+	private static LengthIndicator<decimal> CreateSmoother(SmoothingMethods method, int length, int phase)
 	{
 		length = Math.Max(1, length);
 
 		return method switch
 		{
-			SmoothingMethod.Sma => new SimpleMovingAverage { Length = length },
-			SmoothingMethod.Ema => new ExponentialMovingAverage { Length = length },
-			SmoothingMethod.Smma => new SmoothedMovingAverage { Length = length },
-			SmoothingMethod.Lwma => new WeightedMovingAverage { Length = length },
-			SmoothingMethod.Jurik => new JurikMovingAverage { Length = length, Phase = phase },
+			SmoothingMethods.Sma => new SimpleMovingAverage { Length = length },
+			SmoothingMethods.Ema => new ExponentialMovingAverage { Length = length },
+			SmoothingMethods.Smma => new SmoothedMovingAverage { Length = length },
+			SmoothingMethods.Lwma => new WeightedMovingAverage { Length = length },
+			SmoothingMethods.Jurik => new JurikMovingAverage { Length = length, Phase = phase },
 			_ => new ExponentialMovingAverage { Length = length }
 	};
 }

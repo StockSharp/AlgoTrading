@@ -13,7 +13,7 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum TakeMode
+public enum TakeModes
 {
 	Percent,
 	Currency
@@ -24,7 +24,7 @@ public enum TakeMode
 /// </summary>
 public class GlobalTakeProfitStrategy : Strategy
 {
-	private readonly StrategyParam<TakeMode> _mode;
+	private readonly StrategyParam<TakeModes> _mode;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -34,7 +34,7 @@ public class GlobalTakeProfitStrategy : Strategy
 	/// <summary>
 	/// Take profit mode (Percent or Currency).
 	/// </summary>
-	public TakeMode Mode
+	public TakeModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -63,7 +63,7 @@ public class GlobalTakeProfitStrategy : Strategy
 	/// </summary>
 	public GlobalTakeProfitStrategy()
 	{
-		_mode = Param(nameof(Mode), TakeMode.Percent)
+		_mode = Param(nameof(Mode), TakeModes.Percent)
 			.SetDisplay("Mode", "Take profit mode", "Strategy");
 
 		_takeProfit = Param(nameof(TakeProfit), 100m)
@@ -108,7 +108,7 @@ public class GlobalTakeProfitStrategy : Strategy
 
 		if (!_targetReached)
 		{
-			if (Mode == TakeMode.Percent)
+			if (Mode == TakeModes.Percent)
 			{
 				if (_initialBalance <= 0m)
 					return;

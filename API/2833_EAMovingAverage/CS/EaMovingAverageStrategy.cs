@@ -25,23 +25,23 @@ public class EaMovingAverageStrategy : Strategy
 
 	private readonly StrategyParam<int> _buyOpenPeriod;
 	private readonly StrategyParam<int> _buyOpenShift;
-	private readonly StrategyParam<MaMethod> _buyOpenMethod;
-	private readonly StrategyParam<MaPriceType> _buyOpenPrice;
+	private readonly StrategyParam<MaMethods> _buyOpenMethod;
+	private readonly StrategyParam<MaPriceTypes> _buyOpenPrice;
 
 	private readonly StrategyParam<int> _buyClosePeriod;
 	private readonly StrategyParam<int> _buyCloseShift;
-	private readonly StrategyParam<MaMethod> _buyCloseMethod;
-	private readonly StrategyParam<MaPriceType> _buyClosePrice;
+	private readonly StrategyParam<MaMethods> _buyCloseMethod;
+	private readonly StrategyParam<MaPriceTypes> _buyClosePrice;
 
 	private readonly StrategyParam<int> _sellOpenPeriod;
 	private readonly StrategyParam<int> _sellOpenShift;
-	private readonly StrategyParam<MaMethod> _sellOpenMethod;
-	private readonly StrategyParam<MaPriceType> _sellOpenPrice;
+	private readonly StrategyParam<MaMethods> _sellOpenMethod;
+	private readonly StrategyParam<MaPriceTypes> _sellOpenPrice;
 
 	private readonly StrategyParam<int> _sellClosePeriod;
 	private readonly StrategyParam<int> _sellCloseShift;
-	private readonly StrategyParam<MaMethod> _sellCloseMethod;
-	private readonly StrategyParam<MaPriceType> _sellClosePrice;
+	private readonly StrategyParam<MaMethods> _sellCloseMethod;
+	private readonly StrategyParam<MaPriceTypes> _sellClosePrice;
 
 	private readonly StrategyParam<bool> _useBuy;
 	private readonly StrategyParam<bool> _useSell;
@@ -87,10 +87,10 @@ public class EaMovingAverageStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Buy Open MA Shift", "Shift in bars for the buy entry MA", "Buy Entry");
 
-		_buyOpenMethod = Param(nameof(BuyOpenMethod), MaMethod.Exponential)
+		_buyOpenMethod = Param(nameof(BuyOpenMethod), MaMethods.Exponential)
 			.SetDisplay("Buy Open MA Method", "Moving average method for buy entries", "Buy Entry");
 
-		_buyOpenPrice = Param(nameof(BuyOpenPrice), MaPriceType.Close)
+		_buyOpenPrice = Param(nameof(BuyOpenPrice), MaPriceTypes.Close)
 			.SetDisplay("Buy Open Price", "Price type supplied to the buy entry MA", "Buy Entry");
 
 		_buyClosePeriod = Param(nameof(BuyClosePeriod), 14)
@@ -103,10 +103,10 @@ public class EaMovingAverageStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Buy Close MA Shift", "Shift in bars for the buy exit MA", "Buy Exit");
 
-		_buyCloseMethod = Param(nameof(BuyCloseMethod), MaMethod.Exponential)
+		_buyCloseMethod = Param(nameof(BuyCloseMethod), MaMethods.Exponential)
 			.SetDisplay("Buy Close MA Method", "Moving average method for buy exits", "Buy Exit");
 
-		_buyClosePrice = Param(nameof(BuyClosePrice), MaPriceType.Close)
+		_buyClosePrice = Param(nameof(BuyClosePrice), MaPriceTypes.Close)
 			.SetDisplay("Buy Close Price", "Price type supplied to the buy exit MA", "Buy Exit");
 
 		_sellOpenPeriod = Param(nameof(SellOpenPeriod), 30)
@@ -119,10 +119,10 @@ public class EaMovingAverageStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Sell Open MA Shift", "Shift in bars for the sell entry MA", "Sell Entry");
 
-		_sellOpenMethod = Param(nameof(SellOpenMethod), MaMethod.Exponential)
+		_sellOpenMethod = Param(nameof(SellOpenMethod), MaMethods.Exponential)
 			.SetDisplay("Sell Open MA Method", "Moving average method for sell entries", "Sell Entry");
 
-		_sellOpenPrice = Param(nameof(SellOpenPrice), MaPriceType.Close)
+		_sellOpenPrice = Param(nameof(SellOpenPrice), MaPriceTypes.Close)
 			.SetDisplay("Sell Open Price", "Price type supplied to the sell entry MA", "Sell Entry");
 
 		_sellClosePeriod = Param(nameof(SellClosePeriod), 20)
@@ -135,10 +135,10 @@ public class EaMovingAverageStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Sell Close MA Shift", "Shift in bars for the sell exit MA", "Sell Exit");
 
-		_sellCloseMethod = Param(nameof(SellCloseMethod), MaMethod.Exponential)
+		_sellCloseMethod = Param(nameof(SellCloseMethod), MaMethods.Exponential)
 			.SetDisplay("Sell Close MA Method", "Moving average method for sell exits", "Sell Exit");
 
-		_sellClosePrice = Param(nameof(SellClosePrice), MaPriceType.Close)
+		_sellClosePrice = Param(nameof(SellClosePrice), MaPriceTypes.Close)
 			.SetDisplay("Sell Close Price", "Price type supplied to the sell exit MA", "Sell Exit");
 
 		_useBuy = Param(nameof(UseBuy), true)
@@ -193,7 +193,7 @@ public class EaMovingAverageStrategy : Strategy
 	/// <summary>
 	/// Moving average method for buy entries.
 	/// </summary>
-	public MaMethod BuyOpenMethod
+	public MaMethods BuyOpenMethod
 	{
 		get => _buyOpenMethod.Value;
 		set => _buyOpenMethod.Value = value;
@@ -202,7 +202,7 @@ public class EaMovingAverageStrategy : Strategy
 	/// <summary>
 	/// Price type used for the buy entry moving average.
 	/// </summary>
-	public MaPriceType BuyOpenPrice
+	public MaPriceTypes BuyOpenPrice
 	{
 		get => _buyOpenPrice.Value;
 		set => _buyOpenPrice.Value = value;
@@ -229,7 +229,7 @@ public class EaMovingAverageStrategy : Strategy
 	/// <summary>
 	/// Moving average method for buy exits.
 	/// </summary>
-	public MaMethod BuyCloseMethod
+	public MaMethods BuyCloseMethod
 	{
 		get => _buyCloseMethod.Value;
 		set => _buyCloseMethod.Value = value;
@@ -238,7 +238,7 @@ public class EaMovingAverageStrategy : Strategy
 	/// <summary>
 	/// Price type used for the buy exit moving average.
 	/// </summary>
-	public MaPriceType BuyClosePrice
+	public MaPriceTypes BuyClosePrice
 	{
 		get => _buyClosePrice.Value;
 		set => _buyClosePrice.Value = value;
@@ -265,7 +265,7 @@ public class EaMovingAverageStrategy : Strategy
 	/// <summary>
 	/// Moving average method for sell entries.
 	/// </summary>
-	public MaMethod SellOpenMethod
+	public MaMethods SellOpenMethod
 	{
 		get => _sellOpenMethod.Value;
 		set => _sellOpenMethod.Value = value;
@@ -274,7 +274,7 @@ public class EaMovingAverageStrategy : Strategy
 	/// <summary>
 	/// Price type used for the sell entry moving average.
 	/// </summary>
-	public MaPriceType SellOpenPrice
+	public MaPriceTypes SellOpenPrice
 	{
 		get => _sellOpenPrice.Value;
 		set => _sellOpenPrice.Value = value;
@@ -301,7 +301,7 @@ public class EaMovingAverageStrategy : Strategy
 	/// <summary>
 	/// Moving average method for sell exits.
 	/// </summary>
-	public MaMethod SellCloseMethod
+	public MaMethods SellCloseMethod
 	{
 		get => _sellCloseMethod.Value;
 		set => _sellCloseMethod.Value = value;
@@ -310,7 +310,7 @@ public class EaMovingAverageStrategy : Strategy
 	/// <summary>
 	/// Price type used for the sell exit moving average.
 	/// </summary>
-	public MaPriceType SellClosePrice
+	public MaPriceTypes SellClosePrice
 	{
 		get => _sellClosePrice.Value;
 		set => _sellClosePrice.Value = value;
@@ -561,29 +561,29 @@ public class EaMovingAverageStrategy : Strategy
 		return volume;
 	}
 
-	private static decimal GetPrice(ICandleMessage candle, MaPriceType priceType)
+	private static decimal GetPrice(ICandleMessage candle, MaPriceTypes priceType)
 	{
 		return priceType switch
 		{
-			MaPriceType.Close => candle.ClosePrice,
-			MaPriceType.Open => candle.OpenPrice,
-			MaPriceType.High => candle.HighPrice,
-			MaPriceType.Low => candle.LowPrice,
-			MaPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			MaPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			MaPriceType.Weighted => (candle.HighPrice + candle.LowPrice + (2m * candle.ClosePrice)) / 4m,
+			MaPriceTypes.Close => candle.ClosePrice,
+			MaPriceTypes.Open => candle.OpenPrice,
+			MaPriceTypes.High => candle.HighPrice,
+			MaPriceTypes.Low => candle.LowPrice,
+			MaPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			MaPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			MaPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + (2m * candle.ClosePrice)) / 4m,
 			_ => candle.ClosePrice
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MaMethod method, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MaMethods method, int length)
 	{
 		return method switch
 		{
-			MaMethod.Simple => new SimpleMovingAverage { Length = length },
-			MaMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			MaMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MaMethod.LinearWeighted => new WeightedMovingAverage { Length = length },
+			MaMethods.Simple => new SimpleMovingAverage { Length = length },
+			MaMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MaMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
@@ -635,7 +635,7 @@ public class EaMovingAverageStrategy : Strategy
 /// <summary>
 /// Moving average calculation methods supported by the strategy.
 /// </summary>
-public enum MaMethod
+public enum MaMethods
 {
 	Simple,
 	Exponential,
@@ -646,7 +646,7 @@ public enum MaMethod
 /// <summary>
 /// Price inputs supported by the moving average calculations.
 /// </summary>
-public enum MaPriceType
+public enum MaPriceTypes
 {
 	Close,
 	Open,

@@ -20,7 +20,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ZigZagEvgeTrofiStrategy : Strategy
 {
-	private enum PivotType
+	private enum PivotTypes
 	{
 		None,
 		High,
@@ -37,7 +37,7 @@ public class ZigZagEvgeTrofiStrategy : Strategy
 
 	private Highest _highest;
 	private Lowest _lowest;
-	private PivotType _pivotType;
+	private PivotTypes _pivotType;
 	private decimal _pivotPrice;
 	private int _barsSincePivot;
 	private decimal _priceStep;
@@ -158,7 +158,7 @@ public class ZigZagEvgeTrofiStrategy : Strategy
 
 		_highest = null;
 		_lowest = null;
-		_pivotType = PivotType.None;
+		_pivotType = PivotTypes.None;
 		_pivotPrice = 0m;
 		_barsSincePivot = int.MaxValue;
 		_priceStep = 0m;
@@ -197,35 +197,35 @@ public class ZigZagEvgeTrofiStrategy : Strategy
 			return;
 
 		// Increment the bar counter that measures freshness of the latest pivot.
-		if (_pivotType != PivotType.None && _barsSincePivot < int.MaxValue)
+		if (_pivotType != PivotTypes.None && _barsSincePivot < int.MaxValue)
 			_barsSincePivot++;
 
 		var deviationPrice = Math.Max(GetDeviationInPrice(), _priceStep);
-		var canSwitch = _pivotType == PivotType.None || _barsSincePivot >= Backstep;
+		var canSwitch = _pivotType == PivotTypes.None || _barsSincePivot >= Backstep;
 
 		// Detect a fresh swing high if price pushes above the tracked maximum.
 		if (candle.HighPrice >= highestValue && highestValue > 0m)
 		{
 			var difference = candle.HighPrice - _pivotPrice;
-			if ((_pivotType != PivotType.High && canSwitch) || (_pivotType == PivotType.High && difference >= deviationPrice))
-				SetPivot(PivotType.High, candle.HighPrice);
+			if ((_pivotType != PivotTypes.High && canSwitch) || (_pivotType == PivotTypes.High && difference >= deviationPrice))
+				SetPivot(PivotTypes.High, candle.HighPrice);
 		}
 		// Detect a fresh swing low when price dips under the tracked minimum.
 		else if (candle.LowPrice <= lowestValue && lowestValue > 0m)
 		{
 			var difference = _pivotPrice - candle.LowPrice;
-			if ((_pivotType != PivotType.Low && canSwitch) || (_pivotType == PivotType.Low && difference >= deviationPrice))
-				SetPivot(PivotType.Low, candle.LowPrice);
+			if ((_pivotType != PivotTypes.Low && canSwitch) || (_pivotType == PivotTypes.Low && difference >= deviationPrice))
+				SetPivot(PivotTypes.Low, candle.LowPrice);
 		}
 
-		if (_pivotType == PivotType.None)
+		if (_pivotType == PivotTypes.None)
 			return;
 
 		// Ensure trading conditions are satisfied (connection, data, permissions).
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var isBuySignal = _pivotType == PivotType.High ? !SignalReverse : SignalReverse;
+		var isBuySignal = _pivotType == PivotTypes.High ? !SignalReverse : SignalReverse;
 
 		// Close opposite exposure before entering in the new direction.
 		if (isBuySignal)
@@ -262,7 +262,7 @@ public class ZigZagEvgeTrofiStrategy : Strategy
 	}
 
 	// Update the stored pivot information when a new swing is confirmed.
-	private void SetPivot(PivotType type, decimal price)
+	private void SetPivot(PivotTypes type, decimal price)
 	{
 		_pivotType = type;
 		_pivotPrice = price;

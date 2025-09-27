@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TimesDirectionStrategy : Strategy
 {
-	private readonly StrategyParam<TradeMode> _trade;
+	private readonly StrategyParam<TradeModes> _trade;
 	private readonly StrategyParam<DateTimeOffset> _openTime;
 	private readonly StrategyParam<DateTimeOffset> _closeTime;
 	private readonly StrategyParam<TimeSpan> _tradeInterval;
@@ -32,7 +32,7 @@ public class TimesDirectionStrategy : Strategy
 	/// <summary>
 	/// Trading direction.
 	/// </summary>
-	public enum TradeMode
+	public enum TradeModes
 	{
 		/// <summary>Buy position.</summary>
 		Buy,
@@ -43,7 +43,7 @@ public class TimesDirectionStrategy : Strategy
 	/// <summary>
 	/// Direction to open position.
 	/// </summary>
-	public TradeMode Trade
+	public TradeModes Trade
 	{
 		get => _trade.Value;
 		set => _trade.Value = value;
@@ -108,7 +108,7 @@ public class TimesDirectionStrategy : Strategy
 	/// </summary>
 	public TimesDirectionStrategy()
 	{
-		_trade = Param(nameof(Trade), TradeMode.Sell)
+		_trade = Param(nameof(Trade), TradeModes.Sell)
 		.SetDisplay("Trade Direction", "Direction to open position", "General");
 		
 		_openTime = Param(nameof(OpenTime), DateTimeOffset.MinValue)
@@ -173,7 +173,7 @@ public class TimesDirectionStrategy : Strategy
 			if (current >= OpenTime && current < openEnd)
 			{
 				_entryPrice = candle.ClosePrice;
-				if (Trade == TradeMode.Buy)
+				if (Trade == TradeModes.Buy)
 				BuyMarket(Volume);
 				else
 				SellMarket(Volume);

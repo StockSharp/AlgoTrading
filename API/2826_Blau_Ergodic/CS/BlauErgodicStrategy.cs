@@ -19,14 +19,14 @@ namespace StockSharp.Samples.Strategies;
 public class BlauErgodicStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<BlauErgodicMode> _mode;
+	private readonly StrategyParam<BlauErgodicModes> _mode;
 	private readonly StrategyParam<int> _momentumLength;
 	private readonly StrategyParam<int> _firstSmoothingLength;
 	private readonly StrategyParam<int> _secondSmoothingLength;
 	private readonly StrategyParam<int> _thirdSmoothingLength;
 	private readonly StrategyParam<int> _signalSmoothingLength;
 	private readonly StrategyParam<int> _signalBar;
-	private readonly StrategyParam<AppliedPrice> _appliedPrice;
+	private readonly StrategyParam<AppliedPrices> _appliedPrice;
 	private readonly StrategyParam<bool> _allowBuyEntry;
 	private readonly StrategyParam<bool> _allowSellEntry;
 	private readonly StrategyParam<bool> _allowBuyExit;
@@ -60,7 +60,7 @@ public class BlauErgodicStrategy : Strategy
 	/// <summary>
 	/// Mode that defines signal detection.
 	/// </summary>
-	public BlauErgodicMode Mode
+	public BlauErgodicModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -123,7 +123,7 @@ public class BlauErgodicStrategy : Strategy
 	/// <summary>
 	/// Price source used inside the indicator.
 	/// </summary>
-	public AppliedPrice AppliedPrice
+	public AppliedPrices AppliedPrices
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -191,7 +191,7 @@ public class BlauErgodicStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 
-		_mode = Param(nameof(Mode), BlauErgodicMode.Twist)
+		_mode = Param(nameof(Mode), BlauErgodicModes.Twist)
 		.SetDisplay("Mode", "Signal interpretation mode", "Trading");
 
 		_momentumLength = Param(nameof(MomentumLength), 2)
@@ -218,7 +218,7 @@ public class BlauErgodicStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Signal Bar", "Completed bars back to evaluate", "Trading");
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPrice.Close)
+		_appliedPrice = Param(nameof(AppliedPrices), AppliedPrices.Close)
 		.SetDisplay("Applied Price", "Price source for calculations", "Indicator");
 
 		_allowBuyEntry = Param(nameof(AllowBuyEntry), true)
@@ -356,7 +356,7 @@ public class BlauErgodicStrategy : Strategy
 
 		switch (Mode)
 		{
-			case BlauErgodicMode.Breakdown:
+			case BlauErgodicModes.Breakdown:
 			{
 				if (!TryGetMainValue(currentIndex + 1, out var previousMain))
 				return;
@@ -376,7 +376,7 @@ public class BlauErgodicStrategy : Strategy
 
 				break;
 			}
-			case BlauErgodicMode.Twist:
+			case BlauErgodicModes.Twist:
 			{
 				if (!TryGetMainValue(currentIndex + 1, out var previousMain) ||
 				!TryGetMainValue(currentIndex + 2, out var olderMain))
@@ -397,7 +397,7 @@ public class BlauErgodicStrategy : Strategy
 
 				break;
 			}
-			case BlauErgodicMode.CloudTwist:
+			case BlauErgodicModes.CloudTwist:
 			{
 				if (!TryGetMainValue(currentIndex + 1, out var previousMain) ||
 				!TryGetSignalValue(currentIndex, out var currentSignal) ||
@@ -500,16 +500,16 @@ public class BlauErgodicStrategy : Strategy
 
 	private decimal GetAppliedPrice(ICandleMessage candle)
 	{
-		return AppliedPrice switch
+		return AppliedPrices switch
 		{
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
-			AppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			AppliedPrice.Quarter => (candle.HighPrice + candle.LowPrice + candle.OpenPrice + candle.ClosePrice) / 4m,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
+			AppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			AppliedPrices.Quarter => (candle.HighPrice + candle.LowPrice + candle.OpenPrice + candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
@@ -559,7 +559,7 @@ public class BlauErgodicStrategy : Strategy
 	/// <summary>
 	/// Trading modes supported by the strategy.
 	/// </summary>
-	public enum BlauErgodicMode
+	public enum BlauErgodicModes
 	{
 		Breakdown,
 		Twist,
@@ -569,7 +569,7 @@ public class BlauErgodicStrategy : Strategy
 	/// <summary>
 	/// Price types available for indicator calculation.
 	/// </summary>
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		Close,
 		Open,

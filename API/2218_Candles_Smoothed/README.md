@@ -19,7 +19,7 @@ This strategy trades based on the color of smoothed candles. For each finished c
 
 - `CandleType` – timeframe of the processed candles. Default is 1 hour.
 - `MaLength` – length of the smoothing moving average. Default is 30.
-- `MaMethod` – moving average algorithm: `Simple`, `Exponential`, `Smma`, or `Weighted`. Default is `Weighted`.
+- `MaMethods` – moving average algorithm: `Simple`, `Exponential`, `Smma`, or `Weighted`. Default is `Weighted`.
 
 ## Notes
 

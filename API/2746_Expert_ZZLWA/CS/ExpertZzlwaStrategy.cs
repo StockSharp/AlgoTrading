@@ -24,8 +24,8 @@ public class ExpertZzlwaStrategy : Strategy
 	private readonly StrategyParam<bool> _useMartingale;
 	private readonly StrategyParam<decimal> _martingaleMultiplier;
 	private readonly StrategyParam<decimal> _maximumVolume;
-	private readonly StrategyParam<StrategyMode> _mode;
-	private readonly StrategyParam<TermLevel> _termLevel;
+	private readonly StrategyParam<StrategyModes> _mode;
+	private readonly StrategyParam<TermLevels> _termLevel;
 	private readonly StrategyParam<int> _slowMaPeriod;
 	private readonly StrategyParam<int> _fastMaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
@@ -51,7 +51,7 @@ public class ExpertZzlwaStrategy : Strategy
 	/// <summary>
 	/// Operation modes reproduced from the original expert.
 	/// </summary>
-	public enum StrategyMode
+	public enum StrategyModes
 	{
 		Original,
 		ZigZagAddition,
@@ -61,7 +61,7 @@ public class ExpertZzlwaStrategy : Strategy
 	/// <summary>
 	/// ZigZag sensitivity presets available in addition mode.
 	/// </summary>
-	public enum TermLevel
+	public enum TermLevels
 	{
 		ShortTerm,
 		MediumTerm,
@@ -125,7 +125,7 @@ public class ExpertZzlwaStrategy : Strategy
 	/// <summary>
 	/// Selected trading mode.
 	/// </summary>
-	public StrategyMode Mode
+	public StrategyModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -134,7 +134,7 @@ public class ExpertZzlwaStrategy : Strategy
 	/// <summary>
 	/// ZigZag term preset for addition mode.
 	/// </summary>
-	public TermLevel ZigZagTerm
+	public TermLevels ZigZagTerm
 	{
 		get => _termLevel.Value;
 		set => _termLevel.Value = value;
@@ -195,10 +195,10 @@ public class ExpertZzlwaStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Maximum Volume", "Upper cap for order size", "Trading");
 
-		_mode = Param(nameof(Mode), StrategyMode.Original)
+		_mode = Param(nameof(Mode), StrategyModes.Original)
 		.SetDisplay("Mode", "Operating mode", "General");
 
-		_termLevel = Param(nameof(ZigZagTerm), TermLevel.LongTerm)
+		_termLevel = Param(nameof(ZigZagTerm), TermLevels.LongTerm)
 		.SetDisplay("ZigZag Term", "Sensitivity preset for ZigZag", "Indicators");
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 150)
@@ -263,17 +263,17 @@ public class ExpertZzlwaStrategy : Strategy
 
 		switch (Mode)
 		{
-			case StrategyMode.Original:
+			case StrategyModes.Original:
 				subscription.Bind(ProcessOriginalCandle).Start();
 				break;
 
-			case StrategyMode.ZigZagAddition:
+			case StrategyModes.ZigZagAddition:
 				_highest = new Highest { Length = GetZigZagDepth(ZigZagTerm) };
 				_lowest = new Lowest { Length = GetZigZagDepth(ZigZagTerm) };
 				subscription.Bind(_highest, _lowest, ProcessAdditionCandle).Start();
 				break;
 
-			case StrategyMode.MovingAverageTest:
+			case StrategyModes.MovingAverageTest:
 				_slowMa = new SmoothedMovingAverage { Length = SlowMaPeriod };
 				_fastMa = new SimpleMovingAverage { Length = FastMaPeriod };
 				subscription.Bind(_slowMa, _fastMa, ProcessMovingAverageCandle).Start();
@@ -290,11 +290,11 @@ public class ExpertZzlwaStrategy : Strategy
 
 				switch (Mode)
 				{
-					case StrategyMode.ZigZagAddition:
+					case StrategyModes.ZigZagAddition:
 						DrawIndicator(area, _highest);
 						DrawIndicator(area, _lowest);
 						break;
-					case StrategyMode.MovingAverageTest:
+					case StrategyModes.MovingAverageTest:
 						DrawIndicator(area, _slowMa);
 						DrawIndicator(area, _fastMa);
 						break;
@@ -426,12 +426,12 @@ public class ExpertZzlwaStrategy : Strategy
 			return nextVolume > MaximumVolume ? BaseVolume : nextVolume;
 		}
 
-		private int GetZigZagDepth(TermLevel level)
+		private int GetZigZagDepth(TermLevels level)
 		{
 			return level switch
 			{
-				TermLevel.ShortTerm => 12,
-				TermLevel.MediumTerm => 24,
+				TermLevels.ShortTerm => 12,
+				TermLevels.MediumTerm => 24,
 				_ => 48,
 			};
 		}

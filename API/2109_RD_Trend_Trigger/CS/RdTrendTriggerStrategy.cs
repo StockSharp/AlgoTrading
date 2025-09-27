@@ -23,7 +23,7 @@ public class RdTrendTriggerStrategy : Strategy
 	private readonly StrategyParam<decimal> _t3VolumeFactor;
 	private readonly StrategyParam<decimal> _highLevel;
 	private readonly StrategyParam<decimal> _lowLevel;
-	private readonly StrategyParam<TriggerMode> _mode;
+	private readonly StrategyParam<TriggerModes> _mode;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly Queue<decimal> _highs = new();
@@ -80,7 +80,7 @@ public class RdTrendTriggerStrategy : Strategy
 	/// <summary>
 	/// Trading mode.
 	/// </summary>
-	public TriggerMode Mode
+	public TriggerModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -121,7 +121,7 @@ public class RdTrendTriggerStrategy : Strategy
 		_lowLevel = Param(nameof(LowLevel), -50m)
 			.SetDisplay("Low Level", "Lower threshold", "Signal");
 
-		_mode = Param(nameof(Mode), TriggerMode.Twist)
+		_mode = Param(nameof(Mode), TriggerModes.Twist)
 			.SetDisplay("Mode", "Trading mode", "Signal");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -191,7 +191,7 @@ public class RdTrendTriggerStrategy : Strategy
 
 		switch (Mode)
 		{
-			case TriggerMode.Twist:
+			case TriggerModes.Twist:
 			{
 				if (_prev2.HasValue && _prev1.HasValue)
 				{
@@ -214,7 +214,7 @@ public class RdTrendTriggerStrategy : Strategy
 				break;
 			}
 
-			case TriggerMode.Disposition:
+			case TriggerModes.Disposition:
 			{
 				if (_prev1.HasValue)
 				{
@@ -279,7 +279,7 @@ public class RdTrendTriggerStrategy : Strategy
 	/// <summary>
 	/// Modes of RD Trend Trigger.
 	/// </summary>
-	public enum TriggerMode
+	public enum TriggerModes
 	{
 		/// <summary>
 		/// Trade on oscillator direction change.

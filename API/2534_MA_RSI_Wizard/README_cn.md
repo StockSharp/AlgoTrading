@@ -38,7 +38,7 @@
 | `ExpirationBars` | 同向再次开仓的冷却周期（根）。 | 4 |
 | `MaPeriod` | 移动平均线周期。 | 20 |
 | `MaShift` | 均线平移的蜡烛数量。 | 3 |
-| `MaMethod` | 均线算法（Simple、Exponential、Smoothed、LinearWeighted）。 | Simple |
+| `MaMethods` | 均线算法（Simple、Exponential、Smoothed、LinearWeighted）。 | Simple |
 | `MaAppliedPrice` | 均线使用的价格。 | Close |
 | `MaWeight` | 均线得分的权重。 | 0.8 |
 | `RsiPeriod` | RSI 周期。 | 3 |

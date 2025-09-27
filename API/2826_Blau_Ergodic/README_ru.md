@@ -41,7 +41,7 @@
 - `First/Second/ThirdSmoothingLength` – длины EMA в каскадах сглаживания импульса.
 - `SignalSmoothingLength` – длина EMA сигнальной линии.
 - `SignalBar` – номер завершённого бара для анализа (минимум `1`).
-- `AppliedPrice` – источник цены для осциллятора (close, open, median, typical, weighted и т.д.).
+- `AppliedPrices` – источник цены для осциллятора (close, open, median, typical, weighted и т.д.).
 - `AllowBuyEntry`, `AllowSellEntry`, `AllowBuyExit`, `AllowSellExit` – включение/отключение входов и выходов.
 - `StopLossPoints`, `TakeProfitPoints` – защитные расстояния в пунктах (конвертируются через `Security.PriceStep`).
 

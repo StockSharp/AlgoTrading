@@ -22,7 +22,7 @@ public class MacdWaterlineCrossExpectatorStrategy : Strategy
 	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<int> _signalPeriod;
 	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<RiskBenefitRatio> _riskBenefit;
+	private readonly StrategyParam<RiskBenefitRatios> _riskBenefit;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private bool _shouldBuy;
@@ -70,7 +70,7 @@ public class MacdWaterlineCrossExpectatorStrategy : Strategy
 	/// <summary>
 	/// Risk to reward ratio preset.
 	/// </summary>
-	public RiskBenefitRatio RiskBenefit
+	public RiskBenefitRatios RiskBenefit
 	{
 		get => _riskBenefit.Value;
 		set => _riskBenefit.Value = value;
@@ -88,7 +88,7 @@ public class MacdWaterlineCrossExpectatorStrategy : Strategy
 	/// <summary>
 	/// Available risk to reward ratios.
 	/// </summary>
-	public enum RiskBenefitRatio
+	public enum RiskBenefitRatios
 	{
 		OneFive,
 		OneFour,
@@ -110,7 +110,7 @@ public class MacdWaterlineCrossExpectatorStrategy : Strategy
 			.SetDisplay("Signal", "Signal line period", "Indicators");
 		_stopLoss = Param(nameof(StopLoss), 0.003m)
 			.SetDisplay("Stop Loss", "Stop loss distance", "Risk");
-		_riskBenefit = Param(nameof(RiskBenefit), RiskBenefitRatio.OneTwo)
+		_riskBenefit = Param(nameof(RiskBenefit), RiskBenefitRatios.OneTwo)
 			.SetDisplay("RR", "Risk benefit ratio", "Risk");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle", "Candle time frame", "General");
@@ -137,10 +137,10 @@ public class MacdWaterlineCrossExpectatorStrategy : Strategy
 
 		var multiplier = RiskBenefit switch
 		{
-			RiskBenefitRatio.OneFive => 5m,
-			RiskBenefitRatio.OneFour => 4m,
-			RiskBenefitRatio.OneThree => 3m,
-			RiskBenefitRatio.OneTwo => 2m,
+			RiskBenefitRatios.OneFive => 5m,
+			RiskBenefitRatios.OneFour => 4m,
+			RiskBenefitRatios.OneThree => 3m,
+			RiskBenefitRatios.OneTwo => 2m,
 			_ => 1m
 		};
 		_takeProfit = StopLoss * multiplier;

@@ -24,7 +24,7 @@ public class FractalMfiStrategy : Strategy
 	private readonly StrategyParam<decimal> _highLevel;
 	private readonly StrategyParam<decimal> _lowLevel;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<TrendMode> _trend;
+	private readonly StrategyParam<TrendModes> _trend;
 	private readonly StrategyParam<bool> _buyPosOpen;
 	private readonly StrategyParam<bool> _sellPosOpen;
 	private readonly StrategyParam<bool> _buyPosClose;
@@ -56,7 +56,7 @@ public class FractalMfiStrategy : Strategy
 	/// <summary>
 	/// Trading direction mode.
 	/// </summary>
-	public TrendMode Trend { get => _trend.Value; set => _trend.Value = value; }
+	public TrendModes Trend { get => _trend.Value; set => _trend.Value = value; }
 	
 	/// <summary>
 	/// Allow opening long positions.
@@ -99,7 +99,7 @@ public class FractalMfiStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 		
-		_trend = Param(nameof(Trend), TrendMode.Direct)
+		_trend = Param(nameof(Trend), TrendModes.Direct)
 		.SetDisplay("Trend Mode", "Follow or trade against the trend", "General")
 		.SetCanOptimize(true);
 		
@@ -178,7 +178,7 @@ public class FractalMfiStrategy : Strategy
 	
 	private void ProcessSignal(decimal price, decimal prev, decimal current)
 	{
-		if (Trend == TrendMode.Direct)
+		if (Trend == TrendModes.Direct)
 		{
 			if (prev > LowLevel && current <= LowLevel)
 			{
@@ -223,7 +223,7 @@ public class FractalMfiStrategy : Strategy
 	/// <summary>
 	/// Trend mode enumeration.
 	/// </summary>
-	public enum TrendMode
+	public enum TrendModes
 	{
 		/// <summary>
 		/// Trade in direction of indicator.

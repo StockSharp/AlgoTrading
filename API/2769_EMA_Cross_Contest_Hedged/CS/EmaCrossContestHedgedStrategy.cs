@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class EmaCrossContestHedgedStrategy : Strategy
 {
-	public enum TradeBarOption
+	public enum TradeBarOptions
 	{
 		Current,
 		Previous
@@ -41,7 +41,7 @@ public class EmaCrossContestHedgedStrategy : Strategy
 	private readonly StrategyParam<int> _pendingExpirationSeconds;
 	private readonly StrategyParam<int> _shortMaPeriod;
 	private readonly StrategyParam<int> _longMaPeriod;
-	private readonly StrategyParam<TradeBarOption> _tradeBar;
+	private readonly StrategyParam<TradeBarOptions> _tradeBar;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal? _emaShortLast;
@@ -172,7 +172,7 @@ public class EmaCrossContestHedgedStrategy : Strategy
 		set => _longMaPeriod.Value = value;
 	}
 
-	public TradeBarOption TradeBar
+	public TradeBarOptions TradeBar
 	{
 		get => _tradeBar.Value;
 		set => _tradeBar.Value = value;
@@ -238,7 +238,7 @@ public class EmaCrossContestHedgedStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Long EMA Period", "Slow EMA length", "Indicators");
 
-		_tradeBar = Param(nameof(TradeBar), TradeBarOption.Previous)
+		_tradeBar = Param(nameof(TradeBar), TradeBarOptions.Previous)
 			.SetDisplay("Trade Bar", "Use current or previous bar for signals", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -335,7 +335,7 @@ public class EmaCrossContestHedgedStrategy : Strategy
 		decimal? macdFilterValue = null;
 		if (UseMacdFilter)
 		{
-			macdFilterValue = TradeBar == TradeBarOption.Current ? macdCurrent : _macdLast;
+			macdFilterValue = TradeBar == TradeBarOptions.Current ? macdCurrent : _macdLast;
 			if (!macdFilterValue.HasValue)
 			{
 				UpdateHistory(emaShort, emaLong, macdCurrent);
@@ -610,7 +610,7 @@ public class EmaCrossContestHedgedStrategy : Strategy
 		decimal currentShort;
 		decimal currentLong;
 
-		if (TradeBar == TradeBarOption.Current)
+		if (TradeBar == TradeBarOptions.Current)
 		{
 			if (!_emaShortLast.HasValue || !_emaLongLast.HasValue)
 				return 0;

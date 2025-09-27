@@ -38,7 +38,7 @@ This reproduces the behaviour of the original `BuyTradeMMRecounterS` and `SellTr
 | Indicator | `SmoothingMethod` | Moving-average method used for smoothing. JurX, ParMa and Vidya fall back to an exponential average. |
 | Indicator | `SmoothingLength` | Length of the smoothing moving average. |
 | Indicator | `SmoothingPhase` | Phase parameter forwarded to smoothers that support it. |
-| Indicator | `AppliedPrice` | Source price used by the indicator (close, open, high, low, etc.). |
+| Indicator | `AppliedPrices` | Source price used by the indicator (close, open, high, low, etc.). |
 | Indicator | `RoundingDigits` | Number of decimal digits used to round the indicator output. |
 | Logic | `SignalBar` | Historical shift (in bars) used when reading the color buffer. |
 | Permissions | `EnableBuyEntries` / `EnableSellEntries` | Allow opening long/short positions. |

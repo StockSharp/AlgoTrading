@@ -33,7 +33,7 @@
 | `OrderVolume` | Объём каждой отложенной заявки. |
 | `CandleType` | Таймфрейм/тип данных для расчётов индикаторов. |
 | `HourStart`, `HourEnd` | Часы (0–24), в течение которых разрешена установка новых ордеров. `HourEnd` должен быть строго больше `HourStart`. |
-| `StopLossMode` | Способ расчёта первоначального стоп-лосса (`BollingerBands`, `MovingAverage`, `None`). |
+| `StopLossModes` | Способ расчёта первоначального стоп-лосса (`BollingerBands`, `MovingAverage`, `None`). |
 | `FirstTakeProfitPips`, `SecondTakeProfitPips`, `ThirdTakeProfitPips` | Дистанции тейк-профитов в пунктах для трёх уровней сетки. |
 | `TrailingStopPips`, `TrailingStepPips` | Размер трейлинг-стопа и дополнительный шаг для его активации (0 отключает трейлинг). |
 | `StepPips` | Расстояние между соседними уровнями сетки. |

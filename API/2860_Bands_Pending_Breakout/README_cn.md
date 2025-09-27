@@ -33,7 +33,7 @@
 | `OrderVolume` | 每张挂单的下单量，六张挂单使用相同的数量。 |
 | `CandleType` | 计算指标所使用的蜡烛/数据类型。 |
 | `HourStart`, `HourEnd` | 允许下单的小时区间（0–24）。`HourEnd` 必须大于 `HourStart`。 |
-| `StopLossMode` | 初始止损的定位方式（布林带对侧、移动平均或不设置）。 |
+| `StopLossModes` | 初始止损的定位方式（布林带对侧、移动平均或不设置）。 |
 | `FirstTakeProfitPips`, `SecondTakeProfitPips`, `ThirdTakeProfitPips` | 三层网格的止盈距离（以点计），会自动换算成价格。 |
 | `TrailingStopPips`, `TrailingStepPips` | 拖尾止损的距离与触发额外步长，为 0 时关闭拖尾。 |
 | `StepPips` | 相邻挂单之间的点距。 |

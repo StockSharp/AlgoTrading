@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class GlobalStopTimerStrategy : Strategy
 {
-	private readonly StrategyParam<StopMode> _stopMode;
+	private readonly StrategyParam<StopModes> _stopMode;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<bool> _useTradingWindow;
@@ -34,7 +34,7 @@ public class GlobalStopTimerStrategy : Strategy
 	/// <summary>
 	/// Determines how the stop levels are evaluated.
 	/// </summary>
-	public StopMode StopCalculationMode
+	public StopModes StopCalculationMode
 	{
 		get => _stopMode.Value;
 		set => _stopMode.Value = value;
@@ -117,7 +117,7 @@ public class GlobalStopTimerStrategy : Strategy
 	/// </summary>
 	public GlobalStopTimerStrategy()
 	{
-		_stopMode = Param(nameof(StopCalculationMode), StopMode.Percent)
+		_stopMode = Param(nameof(StopCalculationMode), StopModes.Percent)
 			.SetDisplay("Stop Mode", "Use percent or currency based stops", "Risk");
 
 		_stopLoss = Param(nameof(StopLoss), 20m)
@@ -198,7 +198,7 @@ public class GlobalStopTimerStrategy : Strategy
 
 			switch (StopCalculationMode)
 			{
-				case StopMode.Percent:
+				case StopModes.Percent:
 				{
 					if (_initialBalance == 0m)
 						break;
@@ -218,7 +218,7 @@ public class GlobalStopTimerStrategy : Strategy
 
 					break;
 				}
-				case StopMode.Currency:
+				case StopModes.Currency:
 				{
 					if (profit <= -StopLoss)
 					{
@@ -303,7 +303,7 @@ public class GlobalStopTimerStrategy : Strategy
 	/// <summary>
 	/// Stop calculation modes.
 	/// </summary>
-	public enum StopMode
+	public enum StopModes
 	{
 		/// <summary>
 		/// Evaluate stops using percentage change of the portfolio value.

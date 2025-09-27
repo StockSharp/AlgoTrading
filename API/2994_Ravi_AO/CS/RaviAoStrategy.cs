@@ -23,11 +23,11 @@ public class RaviAoStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _trailingStopPips;
 	private readonly StrategyParam<decimal> _trailingStepPips;
-	private readonly StrategyParam<SmoothMethod> _fastMethod;
+	private readonly StrategyParam<SmoothMethods> _fastMethod;
 	private readonly StrategyParam<int> _fastLength;
-	private readonly StrategyParam<SmoothMethod> _slowMethod;
+	private readonly StrategyParam<SmoothMethods> _slowMethod;
 	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<AppliedPrice> _appliedPrice;
+	private readonly StrategyParam<AppliedPrices> _appliedPrice;
 	private readonly StrategyParam<int> _aoShortPeriod;
 	private readonly StrategyParam<int> _aoLongPeriod;
 
@@ -67,21 +67,21 @@ public class RaviAoStrategy : Strategy
 			.SetDisplay("Trailing Step (pips)", "Minimum move before trailing update", "Risk")
 			.SetRange(0m, 1000m);
 
-		_fastMethod = Param(nameof(FastMethod), SmoothMethod.Exponential)
+		_fastMethod = Param(nameof(FastMethod), SmoothMethods.Exponential)
 			.SetDisplay("Fast Method", "Smoothing method for fast RAVI average", "RAVI");
 
 		_fastLength = Param(nameof(FastLength), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Length", "Length of the fast RAVI average", "RAVI");
 
-		_slowMethod = Param(nameof(SlowMethod), SmoothMethod.Exponential)
+		_slowMethod = Param(nameof(SlowMethod), SmoothMethods.Exponential)
 			.SetDisplay("Slow Method", "Smoothing method for slow RAVI average", "RAVI");
 
 		_slowLength = Param(nameof(SlowLength), 65)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Length of the slow RAVI average", "RAVI");
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPrice.Close)
+		_appliedPrice = Param(nameof(AppliedPrices), AppliedPrices.Close)
 			.SetDisplay("Applied Price", "Price source for RAVI", "RAVI");
 
 		_aoShortPeriod = Param(nameof(AoShortPeriod), 5)
@@ -123,7 +123,7 @@ public class RaviAoStrategy : Strategy
 		set => _trailingStepPips.Value = value;
 	}
 
-	public SmoothMethod FastMethod
+	public SmoothMethods FastMethod
 	{
 		get => _fastMethod.Value;
 		set => _fastMethod.Value = value;
@@ -135,7 +135,7 @@ public class RaviAoStrategy : Strategy
 		set => _fastLength.Value = value;
 	}
 
-	public SmoothMethod SlowMethod
+	public SmoothMethods SlowMethod
 	{
 		get => _slowMethod.Value;
 		set => _slowMethod.Value = value;
@@ -147,7 +147,7 @@ public class RaviAoStrategy : Strategy
 		set => _slowLength.Value = value;
 	}
 
-	public AppliedPrice AppliedPrice
+	public AppliedPrices AppliedPrices
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -216,7 +216,7 @@ public class RaviAoStrategy : Strategy
 		if (CheckExit(candle))
 			return;
 
-		var price = GetPrice(candle, AppliedPrice);
+		var price = GetPrice(candle, AppliedPrices);
 
 		var fastValue = _fastAverage.Process(price, candle.OpenTime, true);
 		var slowValue = _slowAverage.Process(price, candle.OpenTime, true);
@@ -389,42 +389,42 @@ public class RaviAoStrategy : Strategy
 		return pip == 0m ? 0.0001m : pip;
 	}
 
-	private static IIndicator CreateMovingAverage(SmoothMethod method, int length)
+	private static IIndicator CreateMovingAverage(SmoothMethods method, int length)
 	{
 		return method switch
 		{
-			SmoothMethod.Simple => new SimpleMovingAverage { Length = length },
-			SmoothMethod.Exponential => new EMA { Length = length },
-			SmoothMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			SmoothMethod.Weighted => new WeightedMovingAverage { Length = length },
+			SmoothMethods.Simple => new SimpleMovingAverage { Length = length },
+			SmoothMethods.Exponential => new EMA { Length = length },
+			SmoothMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			SmoothMethods.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new EMA { Length = length }
 		};
 	}
 
-	private static decimal GetPrice(ICandleMessage candle, AppliedPrice appliedPrice)
+	private static decimal GetPrice(ICandleMessage candle, AppliedPrices appliedPrice)
 	{
 		return appliedPrice switch
 		{
-			AppliedPrice.Close => candle.ClosePrice,
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.Weighted => (candle.ClosePrice * 2m + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			AppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
+			AppliedPrices.Close => candle.ClosePrice,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (candle.ClosePrice * 2m + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			AppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
 				? candle.HighPrice
 				: candle.ClosePrice < candle.OpenPrice
 					? candle.LowPrice
 					: candle.ClosePrice,
-			AppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
+			AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
 				? (candle.HighPrice + candle.ClosePrice) / 2m
 				: candle.ClosePrice < candle.OpenPrice
 					? (candle.LowPrice + candle.ClosePrice) / 2m
 					: candle.ClosePrice,
-			AppliedPrice.Demark => CalculateDemarkPrice(candle),
+			AppliedPrices.Demark => CalculateDemarkPrice(candle),
 			_ => candle.ClosePrice
 		};
 	}
@@ -443,7 +443,7 @@ public class RaviAoStrategy : Strategy
 		return ((res - candle.LowPrice) + (res - candle.HighPrice)) / 2m;
 	}
 
-	public enum SmoothMethod
+	public enum SmoothMethods
 	{
 		Simple,
 		Exponential,
@@ -451,7 +451,7 @@ public class RaviAoStrategy : Strategy
 		Weighted
 	}
 
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		Close,
 		Open,

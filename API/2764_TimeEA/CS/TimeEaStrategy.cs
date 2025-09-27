@@ -21,7 +21,7 @@ public class TimeEaStrategy : Strategy
 {
 	private readonly StrategyParam<TimeSpan> _openTime;
 	private readonly StrategyParam<TimeSpan> _closeTime;
-	private readonly StrategyParam<TimeEaPositionType> _openedType;
+	private readonly StrategyParam<TimeEaPositionTypes> _openedType;
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
@@ -55,7 +55,7 @@ public class TimeEaStrategy : Strategy
 	/// <summary>
 	/// Direction of the position opened at the scheduled time.
 	/// </summary>
-	public TimeEaPositionType OpenedType
+	public TimeEaPositionTypes OpenedType
 	{
 		get => _openedType.Value;
 		set => _openedType.Value = value;
@@ -117,7 +117,7 @@ public class TimeEaStrategy : Strategy
 		_closeTime = Param(nameof(CloseTime), TimeSpan.Zero)
 			.SetDisplay("Close Time", "Time to exit the market", "Scheduling");
 
-		_openedType = Param(nameof(OpenedType), TimeEaPositionType.Buy)
+		_openedType = Param(nameof(OpenedType), TimeEaPositionTypes.Buy)
 			.SetDisplay("Position Type", "Direction to maintain", "Trading");
 
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
@@ -202,7 +202,7 @@ public class TimeEaStrategy : Strategy
 	private void HandleOpen(ICandleMessage candle)
 	{
 		// Close opposite exposure before opening a new position.
-		if (OpenedType == TimeEaPositionType.Buy)
+		if (OpenedType == TimeEaPositionTypes.Buy)
 		{
 			if (Position < 0)
 			{
@@ -322,7 +322,7 @@ public class TimeEaStrategy : Strategy
 	/// <summary>
 	/// Supported position directions.
 	/// </summary>
-	public enum TimeEaPositionType
+	public enum TimeEaPositionTypes
 	{
 		/// <summary>
 		/// Open a long position.

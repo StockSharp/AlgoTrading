@@ -29,7 +29,7 @@
 | `EnableTrailing` | Включает трейлинг-стоп по прибыли в деньгах. |
 | `TrailingTakeProfitMoney` | Плавающая прибыль, необходимая для активации денежного трейлинга. |
 | `TrailingStopMoney` | Допустимая просадка прибыли после активации денежного трейлинга. |
-| `MartingaleMode` | Выбор режима `Martingale1` или `Martingale2`. |
+| `MartingaleModes` | Выбор режима `Martingale1` или `Martingale2`. |
 | `UseMoveToBreakeven` | Включает перенос стопа в безубыток. |
 | `MoveToBreakevenTrigger` | Количество шагов цены до активации безубытка. |
 | `BreakevenOffset` | Отступ от цены входа при установке безубытка. |

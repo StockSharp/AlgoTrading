@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Available position accounting modes to control stacking logic.
 /// </summary>
-public enum PositionAccountingMode
+public enum PositionAccountingModes
 {
 	/// <summary>
 	/// Netting mode limits total net position volume.
@@ -44,7 +44,7 @@ public class NCandlesSequenceStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStepPips;
 	private readonly StrategyParam<int> _maxPositionsPerDirection;
 	private readonly StrategyParam<decimal> _maxNetVolume;
-	private readonly StrategyParam<PositionAccountingMode> _accountingMode;
+	private readonly StrategyParam<PositionAccountingModes> _accountingMode;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private int _consecutiveDirection;
@@ -108,7 +108,7 @@ public NCandlesSequenceStrategy()
 			.SetNotNegative()
 			.SetDisplay("Max Net Volume", "Maximum aggregate position size for netting", "Risk");
 
-		_accountingMode = Param(nameof(AccountingMode), PositionAccountingMode.Netting)
+		_accountingMode = Param(nameof(AccountingMode), PositionAccountingModes.Netting)
 			.SetDisplay("Accounting Mode", "Select between netting or hedging style limits", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -181,7 +181,7 @@ public NCandlesSequenceStrategy()
 	/// <summary>
 	/// Determines whether limits are enforced by volume (netting) or entry count (hedging).
 	/// </summary>
-	public PositionAccountingMode AccountingMode
+	public PositionAccountingModes AccountingMode
 	{
 		get => _accountingMode.Value;
 		set => _accountingMode.Value = value;
@@ -296,13 +296,13 @@ public NCandlesSequenceStrategy()
 		if (Volume <= 0)
 			return;
 
-		if (AccountingMode == PositionAccountingMode.Netting && MaxNetVolume > 0)
+		if (AccountingMode == PositionAccountingModes.Netting && MaxNetVolume > 0)
 		{
 			var nextVolume = Position.Abs() + Volume;
 			if (nextVolume > MaxNetVolume)
 				return;
 		}
-		else if (AccountingMode == PositionAccountingMode.Hedging)
+		else if (AccountingMode == PositionAccountingModes.Hedging)
 		{
 			if (MaxPositionsPerDirection > 0 && _longPositionCount >= MaxPositionsPerDirection)
 				return;
@@ -316,13 +316,13 @@ public NCandlesSequenceStrategy()
 		if (Volume <= 0)
 			return;
 
-		if (AccountingMode == PositionAccountingMode.Netting && MaxNetVolume > 0)
+		if (AccountingMode == PositionAccountingModes.Netting && MaxNetVolume > 0)
 		{
 			var nextVolume = Position.Abs() + Volume;
 			if (nextVolume > MaxNetVolume)
 				return;
 		}
-		else if (AccountingMode == PositionAccountingMode.Hedging)
+		else if (AccountingMode == PositionAccountingModes.Hedging)
 		{
 			if (MaxPositionsPerDirection > 0 && _shortPositionCount >= MaxPositionsPerDirection)
 				return;

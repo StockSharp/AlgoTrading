@@ -22,7 +22,7 @@ The **MA RSI EA Strategy** reproduces the logic of the original MetaTrader exper
 - Manual reversal signals from the averaging logic close the opposite exposure because StockSharp works with net positions.
 
 ## Position Sizing
-`LotSizingMode` mirrors the `OptLot` selection from the EA:
+`LotSizingModes` mirrors the `OptLot` selection from the EA:
 - **Fixed** – always send `LotSize` volume.
 - **Balance** – convert `PercentOfBalance` of the portfolio value into volume using the candle close price.
 - **Equity** – convert `PercentOfEquity` of the current portfolio equity into volume.
@@ -47,7 +47,7 @@ The calculated volume is rounded to the nearest `Security.VolumeStep` (when avai
 | `CandleType` | Candle series used by the strategy. | `15-minute time frame` |
 
 ## Candle Price Sources
-`CandlePriceSource` replicates the MQL applied price list:
+`CandlePriceSources` replicates the MQL applied price list:
 - `Open`, `High`, `Low`, `Close`
 - `Median` = (High + Low) / 2
 - `Typical` = (High + Low + Close) / 3

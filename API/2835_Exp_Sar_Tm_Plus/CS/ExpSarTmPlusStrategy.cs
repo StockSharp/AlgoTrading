@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies;
 public class ExpSarTmPlusStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _moneyManagement;
-	private readonly StrategyParam<MoneyManagementMode> _moneyManagementMode;
+	private readonly StrategyParam<MoneyManagementModes> _moneyManagementMode;
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<int> _deviationPoints;
@@ -47,7 +47,7 @@ public class ExpSarTmPlusStrategy : Strategy
 	/// <summary>
 	/// Money management modes replicated from the original expert.
 	/// </summary>
-	public enum MoneyManagementMode
+	public enum MoneyManagementModes
 	{
 		FreeMargin,
 		Balance,
@@ -68,7 +68,7 @@ public class ExpSarTmPlusStrategy : Strategy
 	/// <summary>
 	/// Interpretation mode for the money management value.
 	/// </summary>
-	public MoneyManagementMode ManagementMode
+	public MoneyManagementModes ManagementMode
 	{
 		get => _moneyManagementMode.Value;
 		set => _moneyManagementMode.Value = value;
@@ -201,7 +201,7 @@ public class ExpSarTmPlusStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(0.05m, 1m, 0.05m);
 
-		_moneyManagementMode = Param(nameof(ManagementMode), MoneyManagementMode.Lot)
+		_moneyManagementMode = Param(nameof(ManagementMode), MoneyManagementModes.Lot)
 			.SetDisplay("Money Management Mode", "Mode used to interpret the money management value", "Risk");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)

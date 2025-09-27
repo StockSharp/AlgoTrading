@@ -24,8 +24,8 @@ public class ColorXDerivativeStrategy : Strategy
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _derivativePeriod;
-	private readonly StrategyParam<AppliedPriceOption> _appliedPrice;
-	private readonly StrategyParam<SmoothingMethodOption> _smoothingMethod;
+	private readonly StrategyParam<AppliedPriceOptions> _appliedPrice;
+	private readonly StrategyParam<SmoothingMethodOptions> _smoothingMethod;
 	private readonly StrategyParam<int> _smoothingLength;
 	private readonly StrategyParam<int> _signalShift;
 	private readonly StrategyParam<int> _stopLossTicks;
@@ -71,7 +71,7 @@ public class ColorXDerivativeStrategy : Strategy
 	/// <summary>
 	/// Price source applied before derivative smoothing.
 	/// </summary>
-	public AppliedPriceOption AppliedPrice
+	public AppliedPriceOptions AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -80,7 +80,7 @@ public class ColorXDerivativeStrategy : Strategy
 	/// <summary>
 	/// Smoothing method matching the MQL configuration.
 	/// </summary>
-	public SmoothingMethodOption SmoothingMethod
+	public SmoothingMethodOptions SmoothingMethod
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -174,10 +174,10 @@ public class ColorXDerivativeStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Derivative Period", "Shift used in the derivative calculation", "Indicator");
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceOption.Weighted)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceOptions.Weighted)
 		.SetDisplay("Applied Price", "Price source passed into the derivative", "Indicator");
 
-		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothingMethodOption.Jurik)
+		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothingMethodOptions.Jurik)
 		.SetDisplay("Smoothing Method", "Filter used on the derivative", "Indicator");
 
 		_smoothingLength = Param(nameof(SmoothingLength), 7)
@@ -302,7 +302,7 @@ public class ColorXDerivativeStrategy : Strategy
 	/// <summary>
 	/// Smoothing methods supported by the translated indicator.
 	/// </summary>
-	public enum SmoothingMethodOption
+	public enum SmoothingMethodOptions
 	{
 		/// <summary>
 		/// Simple moving average.
@@ -333,7 +333,7 @@ public class ColorXDerivativeStrategy : Strategy
 	/// <summary>
 	/// Price modes matching the MetaTrader implementation.
 	/// </summary>
-	public enum AppliedPriceOption
+	public enum AppliedPriceOptions
 	{
 		/// <summary>
 		/// Closing price.
@@ -401,13 +401,13 @@ public class ColorXDerivativeStrategy : Strategy
 		private readonly Queue<decimal> _priceBuffer = new();
 		private readonly List<int> _colors = new();
 		private IIndicator _smoothingIndicator;
-		private SmoothingMethodOption _cachedMethod;
+		private SmoothingMethodOptions _cachedMethod;
 		private int _cachedLength;
 		private decimal? _previousValue;
 
 		public int DerivativePeriod { get; set; } = 34;
-		public AppliedPriceOption AppliedPrice { get; set; } = AppliedPriceOption.Weighted;
-		public SmoothingMethodOption SmoothingMethod { get; set; } = SmoothingMethodOption.Jurik;
+		public AppliedPriceOptions AppliedPrice { get; set; } = AppliedPriceOptions.Weighted;
+		public SmoothingMethodOptions SmoothingMethod { get; set; } = SmoothingMethodOptions.Jurik;
 		public int SmoothingLength { get; set; } = 7;
 
 		public int LastColor { get; private set; } = 2;
@@ -483,15 +483,15 @@ public class ColorXDerivativeStrategy : Strategy
 			_smoothingIndicator = CreateSmoothingIndicator(_cachedMethod, _cachedLength);
 		}
 
-		private static IIndicator CreateSmoothingIndicator(SmoothingMethodOption method, int length)
+		private static IIndicator CreateSmoothingIndicator(SmoothingMethodOptions method, int length)
 		{
 			return method switch
 			{
-				SmoothingMethodOption.Sma => new SMA { Length = length },
-				SmoothingMethodOption.Ema => new EMA { Length = length },
-				SmoothingMethodOption.Smma => new SMMA { Length = length },
-				SmoothingMethodOption.Lwma => new WMA { Length = length },
-				SmoothingMethodOption.Jurik => new JurikMovingAverage { Length = length },
+				SmoothingMethodOptions.Sma => new SMA { Length = length },
+				SmoothingMethodOptions.Ema => new EMA { Length = length },
+				SmoothingMethodOptions.Smma => new SMMA { Length = length },
+				SmoothingMethodOptions.Lwma => new WMA { Length = length },
+				SmoothingMethodOptions.Jurik => new JurikMovingAverage { Length = length },
 				_ => new SMA { Length = length },
 			};
 		}
@@ -520,26 +520,26 @@ public class ColorXDerivativeStrategy : Strategy
 		{
 			return AppliedPrice switch
 			{
-				AppliedPriceOption.Close => candle.ClosePrice,
-				AppliedPriceOption.Open => candle.OpenPrice,
-				AppliedPriceOption.High => candle.HighPrice,
-				AppliedPriceOption.Low => candle.LowPrice,
-				AppliedPriceOption.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-				AppliedPriceOption.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-				AppliedPriceOption.Weighted => (candle.ClosePrice * 2m + candle.HighPrice + candle.LowPrice) / 4m,
-				AppliedPriceOption.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-				AppliedPriceOption.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-				AppliedPriceOption.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
+				AppliedPriceOptions.Close => candle.ClosePrice,
+				AppliedPriceOptions.Open => candle.OpenPrice,
+				AppliedPriceOptions.High => candle.HighPrice,
+				AppliedPriceOptions.Low => candle.LowPrice,
+				AppliedPriceOptions.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+				AppliedPriceOptions.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+				AppliedPriceOptions.Weighted => (candle.ClosePrice * 2m + candle.HighPrice + candle.LowPrice) / 4m,
+				AppliedPriceOptions.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+				AppliedPriceOptions.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+				AppliedPriceOptions.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
 					? candle.HighPrice
 					: candle.ClosePrice < candle.OpenPrice
 						? candle.LowPrice
 						: candle.ClosePrice,
-				AppliedPriceOption.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
+				AppliedPriceOptions.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
 					? (candle.HighPrice + candle.ClosePrice) / 2m
 					: candle.ClosePrice < candle.OpenPrice
 						? (candle.LowPrice + candle.ClosePrice) / 2m
 						: candle.ClosePrice,
-				AppliedPriceOption.Demark => CalculateDemarkPrice(candle),
+				AppliedPriceOptions.Demark => CalculateDemarkPrice(candle),
 				_ => candle.ClosePrice,
 			};
 		}

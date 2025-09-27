@@ -26,15 +26,15 @@
 
 ## 参数说明
 - `CandleType` *(DataType，默认 4 小时)*：用于订阅和计算的K线类型。
-- `Mode` *(BlauSmStochasticMode，默认 Twist)*：信号生成模式（Breakdown、Twist、CloudTwist）。
+- `Mode` *(BlauSmStochasticModes，默认 Twist)*：信号生成模式（Breakdown、Twist、CloudTwist）。
 - `SignalBar` *(int，默认 1)*：在评估信号时向后取值的K线数量，对应原始参数 `SignalBar`。
 - `LookbackLength` *(int，默认 5)*：计算最高价、最低价所用的回溯长度。
 - `FirstSmoothingLength` *(int，默认 20)*：第一阶段平滑周期。
 - `SecondSmoothingLength` *(int，默认 5)*：第二阶段平滑周期。
 - `ThirdSmoothingLength` *(int，默认 3)*：第三阶段平滑周期。
 - `SignalLength` *(int，默认 3)*：信号线的平滑周期。
-- `SmoothMethod` *(BlauSmSmoothMethod，默认 EMA)*：所有平滑阶段使用的均线类型（SMA、EMA、SMMA、LWMA）。
-- `PriceType` *(BlauSmAppliedPrice，默认 Close)*：振荡器使用的价格类型（收盘、开盘、最高、最低、中位、典型、加权、简单、四分位、TrendFollow 两种及 Demark）。
+- `SmoothMethod` *(BlauSmSmoothMethods，默认 EMA)*：所有平滑阶段使用的均线类型（SMA、EMA、SMMA、LWMA）。
+- `PriceType` *(BlauSmAppliedPrices，默认 Close)*：振荡器使用的价格类型（收盘、开盘、最高、最低、中位、典型、加权、简单、四分位、TrendFollow 两种及 Demark）。
 - `EnableLongEntry` *(bool，默认 true)*：允许开多。
 - `EnableShortEntry` *(bool，默认 true)*：允许开空。
 - `EnableLongExit` *(bool，默认 true)*：允许平多。

@@ -25,7 +25,7 @@ public class ExpKwanNrpStrategy : Strategy
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<int> _momentumPeriod;
 	private readonly StrategyParam<int> _smoothingLength;
-	private readonly StrategyParam<SmoothingMethodOption> _smoothingMethod;
+	private readonly StrategyParam<SmoothingMethodOptions> _smoothingMethod;
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<bool> _enableBuyEntries;
 	private readonly StrategyParam<bool> _enableSellEntries;
@@ -107,7 +107,7 @@ public class ExpKwanNrpStrategy : Strategy
 	/// <summary>
 	/// Moving average type used to smooth the KWAN ratio.
 	/// </summary>
-	public SmoothingMethodOption SmoothingMethod
+	public SmoothingMethodOptions SmoothingMethod
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -223,7 +223,7 @@ public class ExpKwanNrpStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(7, 28, 1);
 
-		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothingMethodOption.Simple)
+		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothingMethodOptions.Simple)
 			.SetDisplay("Smoothing Method", "Type of moving average", "Indicators");
 
 		_smoothingLength = Param(nameof(SmoothingLength), 3)
@@ -398,14 +398,14 @@ public class ExpKwanNrpStrategy : Strategy
 		}
 	}
 
-	private static IIndicator CreateSmoother(SmoothingMethodOption method, int length)
+	private static IIndicator CreateSmoother(SmoothingMethodOptions method, int length)
 	{
 		return method switch
 		{
-			SmoothingMethodOption.Simple => new SimpleMovingAverage { Length = length },
-			SmoothingMethodOption.Exponential => new ExponentialMovingAverage { Length = length },
-			SmoothingMethodOption.Smoothed => new SmoothedMovingAverage { Length = length },
-			SmoothingMethodOption.Weighted => new WeightedMovingAverage { Length = length },
+			SmoothingMethodOptions.Simple => new SimpleMovingAverage { Length = length },
+			SmoothingMethodOptions.Exponential => new ExponentialMovingAverage { Length = length },
+			SmoothingMethodOptions.Smoothed => new SmoothedMovingAverage { Length = length },
+			SmoothingMethodOptions.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
@@ -413,7 +413,7 @@ public class ExpKwanNrpStrategy : Strategy
 	/// <summary>
 	/// Supported moving average types for smoothing.
 	/// </summary>
-	public enum SmoothingMethodOption
+	public enum SmoothingMethodOptions
 	{
 		/// <summary>
 		/// Simple moving average.

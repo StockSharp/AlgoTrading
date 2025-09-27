@@ -26,12 +26,12 @@ public class ExpXrsiHistogramVolStrategy : Strategy
 	private readonly StrategyParam<bool> _sellPosClose;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<VolumeCalculationMode> _volumeMode;
+	private readonly StrategyParam<VolumeCalculationModes> _volumeMode;
 	private readonly StrategyParam<int> _highLevel2;
 	private readonly StrategyParam<int> _highLevel1;
 	private readonly StrategyParam<int> _lowLevel1;
 	private readonly StrategyParam<int> _lowLevel2;
-	private readonly StrategyParam<XrsiSmoothingMethod> _maMethod;
+	private readonly StrategyParam<XrsiSmoothingMethods> _maMethod;
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<int> _maPhase;
 	private readonly StrategyParam<int> _signalBar;
@@ -61,7 +61,7 @@ public class ExpXrsiHistogramVolStrategy : Strategy
 		.SetDisplay("Candle Type", "Time frame for indicator calculations", "General");
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 		.SetDisplay("RSI Period", "Length of the RSI indicator", "Indicator");
-		_volumeMode = Param(nameof(VolumeMode), VolumeCalculationMode.Tick)
+		_volumeMode = Param(nameof(VolumeMode), VolumeCalculationModes.Tick)
 		.SetDisplay("Volume Mode", "Use tick or real volume for weighting", "Indicator");
 		_highLevel2 = Param(nameof(HighLevel2), 17)
 		.SetDisplay("High Level 2", "Upper histogram multiplier for the strongest bullish state", "Indicator");
@@ -71,7 +71,7 @@ public class ExpXrsiHistogramVolStrategy : Strategy
 		.SetDisplay("Low Level 1", "Lower histogram multiplier for the moderate bearish state", "Indicator");
 		_lowLevel2 = Param(nameof(LowLevel2), -17)
 		.SetDisplay("Low Level 2", "Lower histogram multiplier for the strongest bearish state", "Indicator");
-		_maMethod = Param(nameof(MaMethod), XrsiSmoothingMethod.Sma)
+		_maMethod = Param(nameof(MaMethod), XrsiSmoothingMethods.Sma)
 		.SetDisplay("Smoothing Method", "Moving average method applied to RSI*volume", "Indicator");
 		_maLength = Param(nameof(MaLength), 12)
 		.SetDisplay("Smoothing Length", "Number of periods used for smoothing", "Indicator");
@@ -133,7 +133,7 @@ public class ExpXrsiHistogramVolStrategy : Strategy
 		set => _rsiPeriod.Value = value;
 	}
 
-	public VolumeCalculationMode VolumeMode
+	public VolumeCalculationModes VolumeMode
 	{
 		get => _volumeMode.Value;
 		set => _volumeMode.Value = value;
@@ -163,7 +163,7 @@ public class ExpXrsiHistogramVolStrategy : Strategy
 		set => _lowLevel2.Value = value;
 	}
 
-	public XrsiSmoothingMethod MaMethod
+	public XrsiSmoothingMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -392,21 +392,21 @@ public class ExpXrsiHistogramVolStrategy : Strategy
 	private decimal GetWeightedVolume(ICandleMessage candle)
 	{
 		var volume = candle.TotalVolume ?? 0m;
-		return VolumeMode == VolumeCalculationMode.Tick
+		return VolumeMode == VolumeCalculationModes.Tick
 		? (volume <= 0m ? 1m : volume)
 		: (volume > 0m ? volume : 1m);
 	}
 
-	private static IIndicator CreateSmoother(XrsiSmoothingMethod method, int length)
+	private static IIndicator CreateSmoother(XrsiSmoothingMethods method, int length)
 	{
 		var effectiveLength = Math.Max(1, length);
 		return method switch
 		{
-			XrsiSmoothingMethod.Sma => new SimpleMovingAverage { Length = effectiveLength },
-			XrsiSmoothingMethod.Ema => new ExponentialMovingAverage { Length = effectiveLength },
-			XrsiSmoothingMethod.Smma => new SmoothedMovingAverage { Length = effectiveLength },
-			XrsiSmoothingMethod.Lwma => new LinearWeightedMovingAverage { Length = effectiveLength },
-			XrsiSmoothingMethod.Jurik => new JurikMovingAverage { Length = effectiveLength },
+			XrsiSmoothingMethods.Sma => new SimpleMovingAverage { Length = effectiveLength },
+			XrsiSmoothingMethods.Ema => new ExponentialMovingAverage { Length = effectiveLength },
+			XrsiSmoothingMethods.Smma => new SmoothedMovingAverage { Length = effectiveLength },
+			XrsiSmoothingMethods.Lwma => new LinearWeightedMovingAverage { Length = effectiveLength },
+			XrsiSmoothingMethods.Jurik => new JurikMovingAverage { Length = effectiveLength },
 			_ => new SimpleMovingAverage { Length = effectiveLength },
 		};
 	}
@@ -421,13 +421,13 @@ public class ExpXrsiHistogramVolStrategy : Strategy
 		base.OnReseted();
 	}
 
-	public enum VolumeCalculationMode
+	public enum VolumeCalculationModes
 	{
 		Tick,
 		Real
 	}
 
-	public enum XrsiSmoothingMethod
+	public enum XrsiSmoothingMethods
 	{
 		Sma,
 		Ema,

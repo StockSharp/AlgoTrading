@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ExpRsiomaStrategy : Strategy
 {
-	private readonly StrategyParam<AlgMode> _mode;
+	private readonly StrategyParam<AlgModes> _mode;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<int> _signalPeriod;
 	private readonly StrategyParam<int> _highLevel;
@@ -36,7 +36,7 @@ public class ExpRsiomaStrategy : Strategy
 	private decimal _prevHist2;
 	private decimal _prevSignal2;
 
-	public AlgMode Mode { get => _mode.Value; set => _mode.Value = value; }
+	public AlgModes Mode { get => _mode.Value; set => _mode.Value = value; }
 	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
 	public int SignalPeriod { get => _signalPeriod.Value; set => _signalPeriod.Value = value; }
 	public int HighLevel { get => _highLevel.Value; set => _highLevel.Value = value; }
@@ -49,7 +49,7 @@ public class ExpRsiomaStrategy : Strategy
 
 	public ExpRsiomaStrategy()
 	{
-		_mode = Param(nameof(Mode), AlgMode.Breakdown)
+		_mode = Param(nameof(Mode), AlgModes.Breakdown)
 			.SetDisplay("Mode", "Algorithm mode", "Parameters");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -122,7 +122,7 @@ public class ExpRsiomaStrategy : Strategy
 
 		switch (Mode)
 		{
-		case AlgMode.Breakdown:
+		case AlgModes.Breakdown:
 		if (BuyPosOpen && _prevRsi <= HighLevel && rsi > HighLevel)
 		buyOpen = true;
 		if (SellPosOpen && _prevRsi >= LowLevel && rsi < LowLevel)
@@ -133,7 +133,7 @@ public class ExpRsiomaStrategy : Strategy
 		buyClose = true;
 		break;
 
-		case AlgMode.HistTwist:
+		case AlgModes.HistTwist:
 		if (BuyPosOpen && _prevHist < _prevHist2 && hist > _prevHist)
 		buyOpen = true;
 		if (SellPosOpen && _prevHist > _prevHist2 && hist < _prevHist)
@@ -144,7 +144,7 @@ public class ExpRsiomaStrategy : Strategy
 		buyClose = true;
 		break;
 
-		case AlgMode.SignalTwist:
+		case AlgModes.SignalTwist:
 		if (BuyPosOpen && _prevSignal < _prevSignal2 && signal > _prevSignal)
 		buyOpen = true;
 		if (SellPosOpen && _prevSignal > _prevSignal2 && signal < _prevSignal)
@@ -155,7 +155,7 @@ public class ExpRsiomaStrategy : Strategy
 		buyClose = true;
 		break;
 
-		case AlgMode.HistDisposition:
+		case AlgModes.HistDisposition:
 		if (BuyPosOpen && _prevHist > _prevSignal && hist <= signal)
 		buyOpen = true;
 		if (SellPosOpen && _prevHist < _prevSignal && hist >= signal)
@@ -188,7 +188,7 @@ public class ExpRsiomaStrategy : Strategy
 /// <summary>
 /// Mode of RSIOMA signal processing.
 /// </summary>
-public enum AlgMode
+public enum AlgModes
 {
 	/// <summary>
 	/// Open on level breakout.

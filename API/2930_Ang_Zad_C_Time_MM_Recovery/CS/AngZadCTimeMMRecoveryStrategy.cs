@@ -20,7 +20,7 @@ public class AngZadCTimeMMRecoveryStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _ki;
-	private readonly StrategyParam<AppliedPrice> _priceMode;
+	private readonly StrategyParam<AppliedPrices> _priceMode;
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<bool> _useTimeFilter;
 	private readonly StrategyParam<TimeSpan> _tradeStart;
@@ -66,7 +66,7 @@ public class AngZadCTimeMMRecoveryStrategy : Strategy
 	/// <summary>
 	/// Price type used by the indicator.
 	/// </summary>
-	public AppliedPrice PriceMode { get => _priceMode.Value; set => _priceMode.Value = value; }
+	public AppliedPrices PriceMode { get => _priceMode.Value; set => _priceMode.Value = value; }
 
 	/// <summary>
 	/// Bar shift used for signals.
@@ -150,7 +150,7 @@ public class AngZadCTimeMMRecoveryStrategy : Strategy
 			.SetDisplay("Ki", "Smoothing coefficient of the Ang_Zad_C indicator.", "Indicator")
 			.SetGreaterThanZero();
 
-		_priceMode = Param(nameof(PriceMode), AppliedPrice.Close)
+		_priceMode = Param(nameof(PriceMode), AppliedPrices.Close)
 			.SetDisplay("Applied Price", "Source price used by the indicator.", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -365,18 +365,18 @@ public class AngZadCTimeMMRecoveryStrategy : Strategy
 	{
 		return PriceMode switch
 		{
-			AppliedPrice.Close => candle.ClosePrice,
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-			AppliedPrice.Weighted => (candle.ClosePrice * 2m + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			AppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
-			AppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
-			AppliedPrice.Demark => CalculateDemarkPrice(candle),
+			AppliedPrices.Close => candle.ClosePrice,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+			AppliedPrices.Weighted => (candle.ClosePrice * 2m + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			AppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
+			AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
+			AppliedPrices.Demark => CalculateDemarkPrice(candle),
 			_ => candle.ClosePrice,
 		};
 	}
@@ -486,7 +486,7 @@ public class AngZadCTimeMMRecoveryStrategy : Strategy
 /// <summary>
 /// Price selection for the Ang_Zad_C indicator.
 /// </summary>
-public enum AppliedPrice
+public enum AppliedPrices
 {
 	/// <summary>
 	/// Closing price.

@@ -7,7 +7,7 @@ This strategy converts the original MQL expert advisor **Exp_VininI_Trend** into
 - **CCI Period** – length for the CCI indicator.
 - **Upper Level** – threshold that triggers buy signals.
 - **Lower Level** – threshold that triggers sell signals.
-- **Entry Mode** – `Breakdown` reacts to level crossings, `Twist` reacts to direction changes.
+- **Entry Modes** – `Breakdown` reacts to level crossings, `Twist` reacts to direction changes.
 - **Candle Type** – timeframe of candles used for calculations.
 
 ## Original

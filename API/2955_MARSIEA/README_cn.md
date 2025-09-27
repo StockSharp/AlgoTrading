@@ -22,7 +22,7 @@
 - 在 StockSharp 中使用净持仓模型，因此加码信号会自动减少或反向当前仓位，而不是建立对冲单。
 
 ## 仓位管理
-`LotSizingMode` 与 EA 中的 `OptLot` 完全对应：
+`LotSizingModes` 与 EA 中的 `OptLot` 完全对应：
 - **Fixed**：始终使用固定手数 `LotSize`。
 - **Balance**：按账户余额的 `PercentOfBalance` 百分比折算成下单量。
 - **Equity**：按当前净值的 `PercentOfEquity` 百分比折算成下单量。
@@ -47,7 +47,7 @@
 | `CandleType` | 策略使用的蜡烛类型。 | `15 分钟周期` |
 
 ## 蜡烛价格类型
-`CandlePriceSource` 与 MQL 的 Applied Price 一致：
+`CandlePriceSources` 与 MQL 的 Applied Price 一致：
 - `Open`、`High`、`Low`、`Close`
 - `Median` = (High + Low) / 2
 - `Typical` = (High + Low + Close) / 3

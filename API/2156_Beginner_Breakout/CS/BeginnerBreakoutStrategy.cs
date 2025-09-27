@@ -28,7 +28,7 @@ public class BeginnerBreakoutStrategy : Strategy
 
 	private Highest _highest = null!;
 	private Lowest _lowest = null!;
-	private TrendDirection _trend = TrendDirection.None;
+	private TrendDirections _trend = TrendDirections.None;
 
 	/// <summary>
 	/// Lookback period for highest/highest calculation.
@@ -114,7 +114,7 @@ public class BeginnerBreakoutStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_trend = TrendDirection.None;
+		_trend = TrendDirections.None;
 	}
 
 	/// <inheritdoc />
@@ -151,7 +151,7 @@ public class BeginnerBreakoutStrategy : Strategy
 		var range = (highValue - lowValue) * ShiftPercent / 100m;
 		var close = candle.ClosePrice;
 
-		if (_trend != TrendDirection.Down && close <= lowValue + range)
+		if (_trend != TrendDirections.Down && close <= lowValue + range)
 		{
 		// Close long and open short if allowed
 		if (Position > 0)
@@ -160,10 +160,10 @@ public class BeginnerBreakoutStrategy : Strategy
 		if (Position >= 0)
 		{
 		SellMarket(Volume);
-		_trend = TrendDirection.Down;
+		_trend = TrendDirections.Down;
 		}
 		}
-		else if (_trend != TrendDirection.Up && close >= highValue - range)
+		else if (_trend != TrendDirections.Up && close >= highValue - range)
 		{
 		// Close short and open long if allowed
 		if (Position < 0)
@@ -172,12 +172,12 @@ public class BeginnerBreakoutStrategy : Strategy
 		if (Position <= 0)
 		{
 		BuyMarket(Volume);
-		_trend = TrendDirection.Up;
+		_trend = TrendDirections.Up;
 		}
 		}
 	}
 
-	private enum TrendDirection
+	private enum TrendDirections
 	{
 		None,
 		Up,

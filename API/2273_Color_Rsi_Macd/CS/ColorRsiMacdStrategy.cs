@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ColorRsiMacdStrategy : Strategy
 {
-public enum AlgMode
+public enum AlgModes
 {
 Breakdown,
 MacdTwist,
@@ -33,7 +33,7 @@ private readonly StrategyParam<DataType> _candleType;
 private readonly StrategyParam<int> _fastPeriod;
 private readonly StrategyParam<int> _slowPeriod;
 private readonly StrategyParam<int> _signalPeriod;
-private readonly StrategyParam<AlgMode> _mode;
+private readonly StrategyParam<AlgModes> _mode;
 private readonly StrategyParam<bool> _buyOpen;
 private readonly StrategyParam<bool> _sellOpen;
 private readonly StrategyParam<bool> _buyClose;
@@ -84,7 +84,7 @@ set => _signalPeriod.Value = value;
 /// <summary>
 /// Trading logic mode.
 /// </summary>
-public AlgMode Mode
+public AlgModes Mode
 {
 get => _mode.Value;
 set => _mode.Value = value;
@@ -149,7 +149,7 @@ _signalPeriod = Param(nameof(SignalPeriod), 9)
 .SetDisplay("Signal Period", "Signal line period", "MACD")
 .SetCanOptimize(true);
 
-_mode = Param(nameof(Mode), AlgMode.MacdDisposition)
+_mode = Param(nameof(Mode), AlgModes.MacdDisposition)
 .SetDisplay("Mode", "Algorithm mode", "Logic");
 
 _buyOpen = Param(nameof(BuyOpen), true)
@@ -217,7 +217,7 @@ var hist = macdLine - signalLine;
 
 switch (Mode)
 {
-case AlgMode.Breakdown:
+case AlgModes.Breakdown:
 if (_histPrev is decimal prevHist)
 {
 if (prevHist > 0m && hist <= 0m)
@@ -240,7 +240,7 @@ SellMarket(Volume);
 _histPrev = hist;
 break;
 
-case AlgMode.MacdTwist:
+case AlgModes.MacdTwist:
 if (_macdPrev2 is decimal m2 && _macdPrev is decimal m1)
 {
 if (m1 < m2 && macdLine > m1)
@@ -264,7 +264,7 @@ _macdPrev2 = _macdPrev;
 _macdPrev = macdLine;
 break;
 
-case AlgMode.SignalTwist:
+case AlgModes.SignalTwist:
 if (_signalPrev2 is decimal s2 && _signalPrev is decimal s1)
 {
 if (s1 < s2 && signalLine > s1)
@@ -288,7 +288,7 @@ _signalPrev2 = _signalPrev;
 _signalPrev = signalLine;
 break;
 
-case AlgMode.MacdDisposition:
+case AlgModes.MacdDisposition:
 if (_macdPrev is decimal mp && _signalPrev is decimal sp)
 {
 if (mp > sp && macdLine <= signalLine)

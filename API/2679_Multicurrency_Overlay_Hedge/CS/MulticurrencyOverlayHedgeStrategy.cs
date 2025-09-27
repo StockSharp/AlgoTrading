@@ -451,7 +451,7 @@ public class MulticurrencyOverlayHedgeStrategy : Strategy
 			return;
 
 		var action = DetermineAction(state, firstContext, secondContext);
-		if (action == HedgeAction.None)
+		if (action == HedgeActions.None)
 			return;
 
 		var baseVolume = BaseVolume;
@@ -516,12 +516,12 @@ public class MulticurrencyOverlayHedgeStrategy : Strategy
 		return spread <= MaxSpread;
 	}
 
-	private HedgeAction DetermineAction(HedgeState state, SecurityContext first, SecurityContext second)
+	private HedgeActions DetermineAction(HedgeState state, SecurityContext first, SecurityContext second)
 	{
 		var highMain = first.GetHigh(RangeLength);
 		var lowMain = first.GetLow(RangeLength);
 		if (highMain <= lowMain)
-			return HedgeAction.None;
+			return HedgeActions.None;
 
 		decimal subHigh;
 		decimal subLow;
@@ -537,17 +537,17 @@ public class MulticurrencyOverlayHedgeStrategy : Strategy
 		}
 
 		if (subHigh <= subLow)
-			return HedgeAction.None;
+			return HedgeActions.None;
 
 		var mainCenter = (highMain + lowMain) / 2m;
 		var subCenter = (subHigh + subLow) / 2m;
 		var denominator = subHigh - subLow;
 		if (denominator == 0m)
-			return HedgeAction.None;
+			return HedgeActions.None;
 
 		var pipsRatio = (highMain - lowMain) / denominator;
 		if (pipsRatio == 0m)
-			return HedgeAction.None;
+			return HedgeActions.None;
 
 		var subCloseOffset = second.LastClose - subCenter;
 		var syntheticClose = mainCenter + subCloseOffset * pipsRatio;
@@ -557,22 +557,22 @@ public class MulticurrencyOverlayHedgeStrategy : Strategy
 
 		var hedgeRange = (first.LastClose - syntheticClose) / step;
 		if (hedgeRange < -OverlayThreshold)
-			return state.IsPositive ? HedgeAction.BuyMainSellSub : HedgeAction.BuyBoth;
+			return state.IsPositive ? HedgeActions.BuyMainSellSub : HedgeActions.BuyBoth;
 
 		if (hedgeRange > OverlayThreshold)
-			return state.IsPositive ? HedgeAction.SellMainBuySub : HedgeAction.SellBoth;
+			return state.IsPositive ? HedgeActions.SellMainBuySub : HedgeActions.SellBoth;
 
-		return HedgeAction.None;
+		return HedgeActions.None;
 	}
 
-	private (int dirFirst, int dirSecond) GetDirections(HedgeAction action)
+	private (int dirFirst, int dirSecond) GetDirections(HedgeActions action)
 	{
 		return action switch
 		{
-			HedgeAction.BuyMainSellSub => (1, -1),
-			HedgeAction.SellMainBuySub => (-1, 1),
-			HedgeAction.BuyBoth => (1, 1),
-			HedgeAction.SellBoth => (-1, -1),
+			HedgeActions.BuyMainSellSub => (1, -1),
+			HedgeActions.SellMainBuySub => (-1, 1),
+			HedgeActions.BuyBoth => (1, 1),
+			HedgeActions.SellBoth => (-1, -1),
 			_ => (0, 0)
 		};
 	}
@@ -711,7 +711,7 @@ public class MulticurrencyOverlayHedgeStrategy : Strategy
 		return atrSecond / atrFirst;
 	}
 
-	private enum HedgeAction
+	private enum HedgeActions
 	{
 		None,
 		BuyMainSellSub,

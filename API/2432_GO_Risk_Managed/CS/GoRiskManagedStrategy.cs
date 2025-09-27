@@ -23,7 +23,7 @@ public class GoRiskManagedStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _risk;
 	private readonly StrategyParam<int> _maxPositions;
-	private readonly StrategyParam<MovingAverageTypeEnum> _maType;
+	private readonly StrategyParam<MovingAverageTypes> _maType;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -54,7 +54,7 @@ public class GoRiskManagedStrategy : Strategy
 	/// <summary>
 	/// Moving average type used in calculations.
 	/// </summary>
-	public MovingAverageTypeEnum MaType
+	public MovingAverageTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -91,7 +91,7 @@ public class GoRiskManagedStrategy : Strategy
 			.SetDisplay("Max Positions", "Maximum number of positions", "General")
 			.SetGreaterThanOrEqual(1);
 
-		_maType = Param(nameof(MaType), MovingAverageTypeEnum.SMA)
+		_maType = Param(nameof(MaType), MovingAverageTypes.SMA)
 			.SetDisplay("MA Type", "Moving average type", "Indicator");
 
 		_maPeriod = Param(nameof(MaPeriod), 174)
@@ -219,22 +219,22 @@ public class GoRiskManagedStrategy : Strategy
 		return volume;
 	}
 
-	private static IIndicator CreateMovingAverage(MovingAverageTypeEnum type, int length)
+	private static IIndicator CreateMovingAverage(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypeEnum.SMA => new SimpleMovingAverage { Length = length },
-			MovingAverageTypeEnum.EMA => new ExponentialMovingAverage { Length = length },
-			MovingAverageTypeEnum.DEMA => new DoubleExponentialMovingAverage { Length = length },
-			MovingAverageTypeEnum.TEMA => new TripleExponentialMovingAverage { Length = length },
-			MovingAverageTypeEnum.WMA => new WeightedMovingAverage { Length = length },
-			MovingAverageTypeEnum.VWMA => new VolumeWeightedMovingAverage { Length = length },
+			MovingAverageTypes.SMA => new SimpleMovingAverage { Length = length },
+			MovingAverageTypes.EMA => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.DEMA => new DoubleExponentialMovingAverage { Length = length },
+			MovingAverageTypes.TEMA => new TripleExponentialMovingAverage { Length = length },
+			MovingAverageTypes.WMA => new WeightedMovingAverage { Length = length },
+			MovingAverageTypes.VWMA => new VolumeWeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
 }
 
-public enum MovingAverageTypeEnum
+public enum MovingAverageTypes
 {
 	SMA,
 	EMA,

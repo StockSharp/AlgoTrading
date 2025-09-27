@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MoneyRainStrategy : Strategy
 {
-	private enum ExitReason
+	private enum ExitReasons
 	{
 		None,
 		StopLoss,
@@ -46,7 +46,7 @@ public class MoneyRainStrategy : Strategy
 	private int _consecutiveProfits;
 	private decimal _lossesVolume;
 	private bool _exitOrderActive;
-	private ExitReason _pendingExitReason;
+	private ExitReasons _pendingExitReason;
 	private Sides? _currentSide;
 
 	/// <summary>
@@ -176,7 +176,7 @@ public class MoneyRainStrategy : Strategy
 		_consecutiveProfits = 0;
 		_lossesVolume = 0m;
 		_exitOrderActive = false;
-		_pendingExitReason = ExitReason.None;
+		_pendingExitReason = ExitReasons.None;
 		_currentSide = null;
 	}
 
@@ -292,7 +292,7 @@ public class MoneyRainStrategy : Strategy
 	return;
 
 	_exitOrderActive = true;
-	_pendingExitReason = hitStop ? ExitReason.StopLoss : ExitReason.TakeProfit;
+	_pendingExitReason = hitStop ? ExitReasons.StopLoss : ExitReasons.TakeProfit;
 
 	ClosePosition();
 
@@ -308,7 +308,7 @@ private void EnterPosition(Sides side, decimal volume, decimal referencePrice, d
 
 	_currentSide = side;
 	_exitOrderActive = false;
-	_pendingExitReason = ExitReason.None;
+	_pendingExitReason = ExitReasons.None;
 	_entryPrice = referencePrice;
 	_activeVolume = volume;
 
@@ -386,10 +386,10 @@ protected override void OnOwnTradeReceived(MyTrade trade)
 		if (Position != 0)
 		return;
 
-		UpdateTradeStats(_pendingExitReason == ExitReason.TakeProfit);
+		UpdateTradeStats(_pendingExitReason == ExitReasons.TakeProfit);
 
 		_exitOrderActive = false;
-		_pendingExitReason = ExitReason.None;
+		_pendingExitReason = ExitReasons.None;
 		_currentSide = null;
 		_entryPrice = 0m;
 		_stopPrice = 0m;

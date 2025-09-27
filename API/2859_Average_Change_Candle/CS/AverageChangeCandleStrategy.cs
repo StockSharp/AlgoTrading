@@ -22,7 +22,7 @@ public class AverageChangeCandleStrategy : Strategy
 	/// <summary>
 	/// Available smoothing methods as in the original MQL implementation.
 	/// </summary>
-	public enum SmoothMethod
+	public enum SmoothMethods
 	{
 		Sma,
 		Ema,
@@ -39,7 +39,7 @@ public class AverageChangeCandleStrategy : Strategy
 	/// <summary>
 	/// Price sources supported by the strategy.
 	/// </summary>
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		Close = 1,
 		Open = 2,
@@ -56,11 +56,11 @@ public class AverageChangeCandleStrategy : Strategy
 	}
 
 	private readonly StrategyParam<decimal> _orderVolume;
-	private readonly StrategyParam<SmoothMethod> _maMethod1;
+	private readonly StrategyParam<SmoothMethods> _maMethod1;
 	private readonly StrategyParam<int> _length1;
 	private readonly StrategyParam<int> _phase1;
-	private readonly StrategyParam<AppliedPrice> _appliedPrice;
-	private readonly StrategyParam<SmoothMethod> _maMethod2;
+	private readonly StrategyParam<AppliedPrices> _appliedPrice;
+	private readonly StrategyParam<SmoothMethods> _maMethod2;
 	private readonly StrategyParam<int> _length2;
 	private readonly StrategyParam<int> _phase2;
 	private readonly StrategyParam<decimal> _pow;
@@ -87,7 +87,7 @@ public class AverageChangeCandleStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Volume", "Order volume", "Trading");
 
-		_maMethod1 = Param(nameof(MaMethod1), SmoothMethod.Lwma)
+		_maMethod1 = Param(nameof(MaMethod1), SmoothMethods.Lwma)
 		.SetDisplay("Primary MA", "Smoothing method for the baseline", "Indicator");
 
 		_length1 = Param(nameof(Length1), 12)
@@ -97,10 +97,10 @@ public class AverageChangeCandleStrategy : Strategy
 		_phase1 = Param(nameof(Phase1), 15)
 		.SetDisplay("Primary Phase", "Phase parameter (used for Jurik variants)", "Indicator");
 
-		_appliedPrice = Param(nameof(PriceSource), AppliedPrice.Median)
+		_appliedPrice = Param(nameof(PriceSource), AppliedPrices.Median)
 		.SetDisplay("Price Source", "Applied price for baseline smoothing", "Indicator");
 
-		_maMethod2 = Param(nameof(MaMethod2), SmoothMethod.Jjma)
+		_maMethod2 = Param(nameof(MaMethod2), SmoothMethods.Jjma)
 		.SetDisplay("Signal MA", "Smoothing method for ratio candles", "Indicator");
 
 		_length2 = Param(nameof(Length2), 5)
@@ -152,7 +152,7 @@ public class AverageChangeCandleStrategy : Strategy
 	/// <summary>
 	/// Smoothing method for the primary moving average.
 	/// </summary>
-	public SmoothMethod MaMethod1
+	public SmoothMethods MaMethod1
 	{
 		get => _maMethod1.Value;
 		set => _maMethod1.Value = value;
@@ -179,7 +179,7 @@ public class AverageChangeCandleStrategy : Strategy
 	/// <summary>
 	/// Applied price used for the baseline calculation.
 	/// </summary>
-	public AppliedPrice PriceSource
+	public AppliedPrices PriceSource
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -188,7 +188,7 @@ public class AverageChangeCandleStrategy : Strategy
 	/// <summary>
 	/// Smoothing method for the signal moving average.
 	/// </summary>
-	public SmoothMethod MaMethod2
+	public SmoothMethods MaMethod2
 	{
 		get => _maMethod2.Value;
 		set => _maMethod2.Value = value;
@@ -423,30 +423,30 @@ public class AverageChangeCandleStrategy : Strategy
 		return 1;
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrice price)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrices price)
 	{
 		return price switch
 		{
-			AppliedPrice.Close => candle.ClosePrice,
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-			AppliedPrice.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.Simpl => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			AppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
+			AppliedPrices.Close => candle.ClosePrice,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+			AppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.Simpl => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			AppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
 			? candle.HighPrice
 			: candle.ClosePrice < candle.OpenPrice
 			? candle.LowPrice
 			: candle.ClosePrice,
-			AppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
+			AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
 			? (candle.HighPrice + candle.ClosePrice) / 2m
 			: candle.ClosePrice < candle.OpenPrice
 			? (candle.LowPrice + candle.ClosePrice) / 2m
 			: candle.ClosePrice,
-			AppliedPrice.Demark => CalculateDemarkPrice(candle),
+			AppliedPrices.Demark => CalculateDemarkPrice(candle),
 			_ => candle.ClosePrice,
 		};
 	}
@@ -465,18 +465,18 @@ public class AverageChangeCandleStrategy : Strategy
 		return ((sum - candle.LowPrice) + (sum - candle.HighPrice)) / 2m;
 	}
 
-	private static IIndicator CreateSmoothing(SmoothMethod method, int length, int phase)
+	private static IIndicator CreateSmoothing(SmoothMethods method, int length, int phase)
 	{
 		// Only a subset of smoothing methods is supported directly in StockSharp.
 		// Unsupported methods fall back to EMA to keep the strategy functional.
 		return method switch
 		{
-			SmoothMethod.Sma => new SimpleMovingAverage { Length = Math.Max(1, length) },
-			SmoothMethod.Ema => new ExponentialMovingAverage { Length = Math.Max(1, length) },
-			SmoothMethod.Smma => new SmoothedMovingAverage { Length = Math.Max(1, length) },
-			SmoothMethod.Lwma => new WeightedMovingAverage { Length = Math.Max(1, length) },
-			SmoothMethod.Jjma => new JurikMovingAverage { Length = Math.Max(1, length) },
-			SmoothMethod.Ama => new KaufmanAdaptiveMovingAverage { Length = Math.Max(1, length) },
+			SmoothMethods.Sma => new SimpleMovingAverage { Length = Math.Max(1, length) },
+			SmoothMethods.Ema => new ExponentialMovingAverage { Length = Math.Max(1, length) },
+			SmoothMethods.Smma => new SmoothedMovingAverage { Length = Math.Max(1, length) },
+			SmoothMethods.Lwma => new WeightedMovingAverage { Length = Math.Max(1, length) },
+			SmoothMethods.Jjma => new JurikMovingAverage { Length = Math.Max(1, length) },
+			SmoothMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = Math.Max(1, length) },
 			_ => new ExponentialMovingAverage { Length = Math.Max(1, length) },
 		};
 	}
