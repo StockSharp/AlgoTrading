@@ -11,19 +11,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-// MaOscillatorHistogramStrategy.cs
-// -----------------------------------------------------------------------------
-// Strategy based on a moving average oscillator with histogram-like turning points.
-// Converted from MQL5 Exp_MAOscillatorHist.mq5 (ID 14965).
-// -----------------------------------------------------------------------------
-
-using System;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>

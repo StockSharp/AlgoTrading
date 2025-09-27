@@ -11,19 +11,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-// Fast2CrossoverStrategy.cs
-// -----------------------------------------------------------------------------
-// Implements crossover trading based on the Fast2 indicator.
-// -----------------------------------------------------------------------------
-// Date: 28 Dec 2023
-// -----------------------------------------------------------------------------
-
-using System;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.Messages;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>

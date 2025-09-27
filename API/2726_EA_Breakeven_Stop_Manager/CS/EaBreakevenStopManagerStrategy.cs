@@ -11,23 +11,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-// -----------------------------------------------------------------------------
-// EaBreakevenStopManagerStrategy.cs
-// -----------------------------------------------------------------------------
-// Utility strategy that mirrors the MetaTrader 5 "eaBreakeven" expert.
-// • Monitors the best bid/ask stream and existing position.
-// • Moves the protective stop to breakeven plus a configurable buffer.
-// • Closes the position when price retraces to the new stop level.
-// -----------------------------------------------------------------------------
-// Date: 9 Nov 2023
-// Converted by: StockSharp strategy conversion toolkit
-// -----------------------------------------------------------------------------
-
-using System;
-
-using StockSharp.Algo;
-using StockSharp.Messages;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
