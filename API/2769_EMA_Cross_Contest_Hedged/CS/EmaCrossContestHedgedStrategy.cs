@@ -20,10 +20,10 @@ public class EmaCrossContestHedgedStrategy : Strategy
 		Previous
 	}
 
-	private const int PendingOrderCount = 4;
-	private const int MacdFastLength = 4;
-	private const int MacdSlowLength = 24;
-	private const int MacdSignalLength = 12;
+	private readonly StrategyParam<int> _pendingOrderCount;
+	private readonly StrategyParam<int> _macdFastLength;
+	private readonly StrategyParam<int> _macdSlowLength;
+	private readonly StrategyParam<int> _macdSignalLength;
 
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<int> _stopLossPips;
@@ -113,10 +113,46 @@ public class EmaCrossContestHedgedStrategy : Strategy
 		set => _useMacdFilter.Value = value;
 	}
 
+	/// <summary>
+	/// Number of pending stop orders per direction.
+	/// </summary>
+	public int PendingOrderCount
+	{
+		get => _pendingOrderCount.Value;
+		set => _pendingOrderCount.Value = value;
+	}
+
 	public int PendingExpirationSeconds
 	{
 		get => _pendingExpirationSeconds.Value;
 		set => _pendingExpirationSeconds.Value = value;
+	}
+
+	/// <summary>
+	/// Fast moving average length for the MACD filter.
+	/// </summary>
+	public int MacdFastLength
+	{
+		get => _macdFastLength.Value;
+		set => _macdFastLength.Value = value;
+	}
+
+	/// <summary>
+	/// Slow moving average length for the MACD filter.
+	/// </summary>
+	public int MacdSlowLength
+	{
+		get => _macdSlowLength.Value;
+		set => _macdSlowLength.Value = value;
+	}
+
+	/// <summary>
+	/// Signal moving average length for the MACD filter.
+	/// </summary>
+	public int MacdSignalLength
+	{
+		get => _macdSignalLength.Value;
+		set => _macdSignalLength.Value = value;
 	}
 
 	public int ShortMaPeriod
@@ -170,8 +206,24 @@ public class EmaCrossContestHedgedStrategy : Strategy
 		_useMacdFilter = Param(nameof(UseMacdFilter), false)
 			.SetDisplay("Use MACD", "Require MACD confirmation", "Filters");
 
+		_pendingOrderCount = Param(nameof(PendingOrderCount), 4)
+			.SetGreaterThanZero()
+			.SetDisplay("Pending Orders", "Pending stop orders per side", "Orders");
+
 		_pendingExpirationSeconds = Param(nameof(PendingExpirationSeconds), 65535)
 			.SetDisplay("Pending Expiration (s)", "Lifetime of hedging stop orders in seconds", "Orders");
+
+		_macdFastLength = Param(nameof(MacdFastLength), 4)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Fast Length", "Fast EMA length for MACD", "Indicators");
+
+		_macdSlowLength = Param(nameof(MacdSlowLength), 24)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Slow Length", "Slow EMA length for MACD", "Indicators");
+
+		_macdSignalLength = Param(nameof(MacdSignalLength), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Signal Length", "Signal EMA length for MACD", "Indicators");
 
 		_shortMaPeriod = Param(nameof(ShortMaPeriod), 4)
 			.SetGreaterThanZero()

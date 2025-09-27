@@ -28,7 +28,6 @@ public class EInTradePanelStrategy : Strategy
 		SellStopLimit,
 	}
 
-	private const int AtrLength = 55;
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _volume;
@@ -42,6 +41,7 @@ public class EInTradePanelStrategy : Strategy
 	private readonly StrategyParam<decimal> _atrFactor;
 	private readonly StrategyParam<int> _expirationMinutes;
 	private readonly StrategyParam<int> _minExpirationMinutes;
+	private readonly StrategyParam<int> _atrLength;
 
 	private AverageTrueRange _atr = null!;
 	private decimal? _lastAtr;
@@ -95,6 +95,10 @@ public class EInTradePanelStrategy : Strategy
 
 		_atrFactor = Param(nameof(AtrFactor), 0.15m)
 		.SetDisplay("ATR Factor", "Fraction of ATR used as spread proxy", "Risk");
+
+		_atrLength = Param(nameof(AtrLength), 55)
+			.SetDisplay("ATR Length", "Number of candles used to calculate ATR", "Risk")
+			.SetRange(1, 500);
 
 		_expirationMinutes = Param(nameof(ExpirationMinutes), 0)
 		.SetDisplay("Expiration", "Minutes before pending orders expire", "Risk");
@@ -182,6 +186,15 @@ public class EInTradePanelStrategy : Strategy
 	{
 		get => _atrFactor.Value;
 		set => _atrFactor.Value = value;
+	}
+
+	/// <summary>
+	/// Number of candles used to calculate the ATR indicator.
+	/// </summary>
+	public int AtrLength
+	{
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
 	}
 
 	/// <summary>

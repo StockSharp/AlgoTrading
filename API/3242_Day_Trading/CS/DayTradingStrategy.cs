@@ -13,7 +13,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class DayTradingStrategy : Strategy
 {
-	private const int PullbackLookback = 3;
+	private readonly StrategyParam<int> _pullbackLookback;
 
 	private readonly Queue<bool> _pullbackBelowMa20 = new();
 	private readonly Queue<bool> _pullbackAboveMa20 = new();
@@ -44,6 +44,10 @@ public class DayTradingStrategy : Strategy
 	/// </summary>
 	public DayTradingStrategy()
 	{
+
+		_pullbackLookback = Param(nameof(PullbackLookback), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("Pullback Lookback", "Candles stored for recent pullback checks", "Trend");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
@@ -146,6 +150,15 @@ public class DayTradingStrategy : Strategy
 	{
 		get => _maxPositions.Value;
 		set => _maxPositions.Value = value;
+	}
+
+	/// <summary>
+	/// Number of candles tracked for pullback evaluation.
+	/// </summary>
+	public int PullbackLookback
+	{
+		get => _pullbackLookback.Value;
+		set => _pullbackLookback.Value = value;
 	}
 
 	/// <inheritdoc />

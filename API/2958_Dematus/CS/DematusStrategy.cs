@@ -12,9 +12,6 @@ using StockSharp.Messages;
 /// </summary>
 public class DematusStrategy : Strategy
 {
-	private const decimal OversoldLevel = 0.3m;
-	private const decimal OverboughtLevel = 0.7m;
-
 	private readonly StrategyParam<decimal> _initialVolume;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _trailingStopPips;
@@ -25,6 +22,8 @@ public class DematusStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStartEquity;
 	private readonly StrategyParam<int> _demarkerLength;
 	private readonly StrategyParam<decimal> _volumeMultiplier;
+	private readonly StrategyParam<decimal> _oversoldLevel;
+	private readonly StrategyParam<decimal> _overboughtLevel;
 	private readonly StrategyParam<bool> _resetEntryPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -139,6 +138,24 @@ public class DematusStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Oversold level used for DeMarker crossovers.
+	/// </summary>
+	public decimal OversoldLevel
+	{
+		get => _oversoldLevel.Value;
+		set => _oversoldLevel.Value = value;
+	}
+
+	/// <summary>
+	/// Overbought level used for DeMarker crossovers.
+	/// </summary>
+	public decimal OverboughtLevel
+	{
+		get => _overboughtLevel.Value;
+		set => _overboughtLevel.Value = value;
+	}
+
+	/// <summary>
 	/// Reset the last entry price after exits when enabled.
 	/// </summary>
 	public bool ResetEntryPrice
@@ -202,6 +219,14 @@ public class DematusStrategy : Strategy
 		_volumeMultiplier = Param(nameof(VolumeMultiplier), 2m)
 		.SetGreaterOrEqual(1m)
 		.SetDisplay("Volume Multiplier", "Multiplier applied to the last executed volume.", "Trading");
+
+		_oversoldLevel = Param(nameof(OversoldLevel), 0.3m)
+		.SetRange(0m, 1m)
+		.SetDisplay("Oversold Level", "Oversold threshold for DeMarker crossovers.", "Signals");
+
+		_overboughtLevel = Param(nameof(OverboughtLevel), 0.7m)
+		.SetRange(0m, 1m)
+		.SetDisplay("Overbought Level", "Overbought threshold for DeMarker crossovers.", "Signals");
 
 		_resetEntryPrice = Param(nameof(ResetEntryPrice), false)
 		.SetDisplay("Reset Entry Price", "Reset the last entry price whenever an exit happens.", "Trading");

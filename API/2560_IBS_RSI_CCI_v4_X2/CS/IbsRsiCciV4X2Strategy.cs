@@ -27,6 +27,14 @@ public class IbsRsiCciV4X2Strategy : Strategy
 	private readonly StrategyParam<bool> _allowShortEntries;
 	private readonly StrategyParam<bool> _closeLongOnTrendFlip;
 	private readonly StrategyParam<bool> _closeShortOnTrendFlip;
+	private readonly StrategyParam<decimal> _koefIbs;
+	private readonly StrategyParam<decimal> _koefRsi;
+	private readonly StrategyParam<decimal> _koefCci;
+	private readonly StrategyParam<decimal> _kibs;
+	private readonly StrategyParam<decimal> _kcci;
+	private readonly StrategyParam<decimal> _krsi;
+	private readonly StrategyParam<decimal> _posit;
+
 
 	private readonly StrategyParam<DataType> _signalCandleType;
 	private readonly StrategyParam<int> _signalIbsPeriod;
@@ -110,6 +118,34 @@ public class IbsRsiCciV4X2Strategy : Strategy
 
 		_closeShortOnTrendFlip = Param(nameof(CloseShortOnTrendFlip), true)
 			.SetDisplay("Close Short Trend", "Close shorts on bullish trend", "Trading");
+
+		_koefIbs = Param(nameof(KoefIbs), 7m)
+		.SetDisplay("IBS Weight", "Weight applied to the IBS component", "Weights")
+		.SetCanOptimize(true);
+
+		_koefRsi = Param(nameof(KoefRsi), 9m)
+		.SetDisplay("RSI Weight", "Weight applied to the RSI component", "Weights")
+		.SetCanOptimize(true);
+
+		_koefCci = Param(nameof(KoefCci), 1m)
+		.SetDisplay("CCI Weight", "Weight applied to the CCI component", "Weights")
+		.SetCanOptimize(true);
+
+		_kibs = Param(nameof(Kibs), -1m)
+		.SetDisplay("IBS Direction", "Directional multiplier for the IBS input", "Weights")
+		.SetCanOptimize(true);
+
+		_kcci = Param(nameof(Kcci), -1m)
+		.SetDisplay("CCI Direction", "Directional multiplier for the CCI input", "Weights")
+		.SetCanOptimize(true);
+
+		_krsi = Param(nameof(Krsi), -1m)
+		.SetDisplay("RSI Direction", "Directional multiplier for the RSI input", "Weights")
+		.SetCanOptimize(true);
+
+		_posit = Param(nameof(Posit), -1m)
+		.SetDisplay("Output Direction", "Directional multiplier for the composite output", "Weights")
+		.SetCanOptimize(true);
 
 		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Signal TF", "Signal timeframe", "Signal");
@@ -341,6 +377,69 @@ public class IbsRsiCciV4X2Strategy : Strategy
 		set => _closeShortOnSignalCross.Value = value;
 	}
 
+	/// <summary>
+	/// Weight applied to the IBS component of the composite oscillator.
+	/// </summary>
+	public decimal KoefIbs
+	{
+		get => _koefIbs.Value;
+		set => _koefIbs.Value = value;
+	}
+
+	/// <summary>
+	/// Weight applied to the RSI component of the composite oscillator.
+	/// </summary>
+	public decimal KoefRsi
+	{
+		get => _koefRsi.Value;
+		set => _koefRsi.Value = value;
+	}
+
+	/// <summary>
+	/// Weight applied to the CCI component of the composite oscillator.
+	/// </summary>
+	public decimal KoefCci
+	{
+		get => _koefCci.Value;
+		set => _koefCci.Value = value;
+	}
+
+	/// <summary>
+	/// Directional multiplier applied to the IBS contribution.
+	/// </summary>
+	public decimal Kibs
+	{
+		get => _kibs.Value;
+		set => _kibs.Value = value;
+	}
+
+	/// <summary>
+	/// Directional multiplier applied to the CCI contribution.
+	/// </summary>
+	public decimal Kcci
+	{
+		get => _kcci.Value;
+		set => _kcci.Value = value;
+	}
+
+	/// <summary>
+	/// Directional multiplier applied to the RSI contribution.
+	/// </summary>
+	public decimal Krsi
+	{
+		get => _krsi.Value;
+		set => _krsi.Value = value;
+	}
+
+	/// <summary>
+	/// Directional multiplier applied to the final composite value.
+	/// </summary>
+	public decimal Posit
+	{
+		get => _posit.Value;
+		set => _posit.Value = value;
+	}
+
 	public int StopLossPoints
 	{
 		get => _stopLossPoints.Value;
@@ -389,7 +488,7 @@ public class IbsRsiCciV4X2Strategy : Strategy
 			TrendThreshold,
 			TrendRangePeriod,
 			TrendSmoothPeriod,
-			priceStep);
+			priceStep, KoefIbs, KoefRsi, KoefCci, Kibs, Kcci, Krsi, Posit);
 
 		_signalCalculator = new IbsRsiCciCalculator(
 			SignalIbsPeriod,
@@ -401,7 +500,7 @@ public class IbsRsiCciV4X2Strategy : Strategy
 			SignalThreshold,
 			SignalRangePeriod,
 			SignalSmoothPeriod,
-			priceStep);
+			priceStep, KoefIbs, KoefRsi, KoefCci, Kibs, Kcci, Krsi, Posit);
 
 		var trendSubscription = SubscribeCandles(TrendCandleType);
 		trendSubscription.Bind(ProcessTrend).Start();
@@ -560,13 +659,13 @@ public class IbsRsiCciV4X2Strategy : Strategy
 
 	private sealed class IbsRsiCciCalculator
 	{
-		private const decimal KoefIbs = 7m;
-		private const decimal KoefRsi = 9m;
-		private const decimal KoefCci = 1m;
-		private const decimal Kibs = -1m;
-		private const decimal Kcci = -1m;
-		private const decimal Krsi = -1m;
-		private const decimal Posit = -1m;
+		private readonly decimal _koefIbs;
+		private readonly decimal _koefRsi;
+		private readonly decimal _koefCci;
+		private readonly decimal _kibs;
+		private readonly decimal _kcci;
+		private readonly decimal _krsi;
+		private readonly decimal _posit;
 
 		private readonly int _ibsPeriod;
 		private readonly AppliedPriceType _rsiPrice;
@@ -593,13 +692,28 @@ public class IbsRsiCciV4X2Strategy : Strategy
 			decimal threshold,
 			int rangePeriod,
 			int smoothPeriod,
-			decimal priceStep)
+			decimal priceStep,
+			decimal koefIbs,
+			decimal koefRsi,
+			decimal koefCci,
+			decimal kibs,
+			decimal kcci,
+			decimal krsi,
+			decimal posit)
 		{
 			_ibsPeriod = ibsPeriod;
 			_rsiPrice = rsiPrice;
 			_cciPrice = cciPrice;
 			_threshold = threshold;
 			_priceStep = priceStep;
+			_koefIbs = koefIbs;
+			_koefRsi = koefRsi;
+			_koefCci = koefCci;
+			_kibs = kibs;
+			_kcci = kcci;
+			_krsi = krsi;
+			_posit = posit;
+
 
 			_ibsMa = CreateMovingAverage(ibsType, ibsPeriod);
 			_rsi = new RelativeStrengthIndex { Length = rsiPeriod };
@@ -639,12 +753,12 @@ public class IbsRsiCciV4X2Strategy : Strategy
 			var cci = cciValue.Value;
 
 			var sum = 0m;
-			sum += Kibs * (ibs - 0.5m) * 100m * KoefIbs;
-			sum += Kcci * cci * KoefCci;
-			sum += Krsi * (rsi - 50m) * KoefRsi;
+			sum += _kibs * (ibs - 0.5m) * 100m * _koefIbs;
+			sum += _kcci * cci * _koefCci;
+			sum += _krsi * (rsi - 50m) * _koefRsi;
 			sum /= 3m;
 
-			var target = Posit * sum;
+			var target = _posit * sum;
 			var up = _previousUp ?? target;
 			var diff = target - up;
 

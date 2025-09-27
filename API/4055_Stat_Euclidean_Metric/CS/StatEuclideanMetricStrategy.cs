@@ -15,8 +15,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class StatEuclideanMetricStrategy : Strategy
 {
-	private const int FeatureCount = 5;
-	private const int RecordLength = 6;
+	private readonly StrategyParam<int> _featureCount;
+	private readonly StrategyParam<int> _recordLength;
 
 	private readonly StrategyParam<bool> _trainingMode;
 	private readonly StrategyParam<decimal> _buyThreshold;
@@ -44,7 +44,7 @@ public class StatEuclideanMetricStrategy : Strategy
 	private SimpleMovingAverage _ma233 = null!;
 
 	private readonly List<decimal> _macdHistory = new();
-	private readonly decimal[] _featureVector = new decimal[FeatureCount];
+	private decimal[] _featureVector = Array.Empty<decimal>();
 
 	private decimal[][] _buyDataset = Array.Empty<decimal[]>();
 	private decimal[][] _sellDataset = Array.Empty<decimal[]>();
@@ -187,6 +187,24 @@ public class StatEuclideanMetricStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Number of features stored in each dataset vector.
+	/// </summary>
+	public int FeatureCount
+	{
+		get => _featureCount.Value;
+		set => _featureCount.Value = value;
+	}
+
+	/// <summary>
+	/// Total length of the stored dataset records including the label.
+	/// </summary>
+	public int RecordLength
+	{
+		get => _recordLength.Value;
+		set => _recordLength.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type used for indicator calculations.
 	/// </summary>
 	public DataType CandleType
@@ -265,6 +283,14 @@ public class StatEuclideanMetricStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(5, 20, 1);
 
+		_featureCount = Param(nameof(FeatureCount), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Feature Count", "Number of classifier features stored per record", "Classifier");
+
+		_recordLength = Param(nameof(RecordLength), 6)
+			.SetGreaterThanZero()
+			.SetDisplay("Record Length", "Dataset values per record including label", "Classifier");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculations", "General");
 	}
@@ -280,6 +306,7 @@ public class StatEuclideanMetricStrategy : Strategy
 	{
 		base.OnReseted();
 		_macdHistory.Clear();
+		_featureVector = new decimal[Math.Max(1, FeatureCount)];
 	}
 
 	/// <inheritdoc />
@@ -391,11 +418,20 @@ public class StatEuclideanMetricStrategy : Strategy
 		if (ma144 == 0m || ma233 == 0m || ma89 == 0m || ma55 == 0m)
 			return;
 
-		_featureVector[0] = ma89 / ma144;
-		_featureVector[1] = ma144 / ma233;
-		_featureVector[2] = ma21 / ma89;
-		_featureVector[3] = ma55 / ma89;
-		_featureVector[4] = ma2 / ma55;
+		if (_featureVector.Length != FeatureCount)
+			_featureVector = new decimal[Math.Max(1, FeatureCount)];
+
+		var featureValues = new[]
+		{
+			ma89 / ma144,
+			ma144 / ma233,
+			ma21 / ma89,
+			ma55 / ma89,
+			ma2 / ma55
+		};
+
+		for (var i = 0; i < _featureVector.Length; i++)
+			_featureVector[i] = i < featureValues.Length ? featureValues[i] : 0m;
 
 		if (sellSetup)
 			ProcessClassifierSignal(_sellDataset, SellThreshold, InverseSellThreshold, true);
@@ -488,11 +524,16 @@ public class StatEuclideanMetricStrategy : Strategy
 
 		foreach (var record in dataset)
 		{
-			if (record.Length < RecordLength)
+			if (RecordLength < 2 || record.Length < RecordLength)
+				continue;
+
+			var labelIndex = Math.Min(record.Length - 1, RecordLength - 1);
+			var featureLimit = Math.Min(FeatureCount, labelIndex);
+			if (featureLimit <= 0)
 				continue;
 
 			var distance = 0d;
-			for (var i = 0; i < FeatureCount; i++)
+			for (var i = 0; i < featureLimit; i++)
 			{
 				var diff = (double)(record[i] - vector[i]);
 				distance += diff * diff;
@@ -512,7 +553,7 @@ public class StatEuclideanMetricStrategy : Strategy
 					}
 
 					_nearestDistances[i] = distance;
-					_nearestLabels[i] = record[FeatureCount];
+					_nearestLabels[i] = record[labelIndex];
 					if (actualNeighbours < neighbourLimit)
 						actualNeighbours++;
 					inserted = true;
@@ -523,7 +564,7 @@ public class StatEuclideanMetricStrategy : Strategy
 			if (!inserted && actualNeighbours < neighbourLimit)
 			{
 				_nearestDistances[actualNeighbours] = distance;
-				_nearestLabels[actualNeighbours] = record[FeatureCount];
+				_nearestLabels[actualNeighbours] = record[labelIndex];
 				actualNeighbours++;
 			}
 		}
@@ -572,10 +613,17 @@ public class StatEuclideanMetricStrategy : Strategy
 			using var stream = File.Open(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
 			using var reader = new BinaryReader(stream);
 
-			while (stream.Position + sizeof(double) * RecordLength <= stream.Length)
+			var recordLength = RecordLength;
+			if (recordLength <= 0)
 			{
-				var values = new decimal[RecordLength];
-				for (var i = 0; i < RecordLength; i++)
+				LogInfo($"{name} dataset ignored because record length parameter is not positive.");
+				return Array.Empty<decimal[]>();
+			}
+
+			while (stream.Position + sizeof(double) * recordLength <= stream.Length)
+			{
+				var values = new decimal[recordLength];
+				for (var i = 0; i < recordLength; i++)
 				{
 					values[i] = (decimal)reader.ReadDouble();
 				}

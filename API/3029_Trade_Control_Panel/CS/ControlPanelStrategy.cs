@@ -13,13 +13,13 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ControlPanelStrategy : Strategy
 {
-	private const int MaxVolumePresets = 9;
 
 	private readonly StrategyParam<string> _volumeList;
 	private readonly StrategyParam<decimal> _currentVolumeParam;
 	private readonly StrategyParam<decimal> _breakEvenSteps;
 	private readonly StrategyParam<decimal> _stopLossSteps;
 	private readonly StrategyParam<decimal> _takeProfitSteps;
+	private readonly StrategyParam<int> _maxVolumePresets;
 
 	private readonly HashSet<int> _selectedIndexes = new();
 	private decimal[] _volumeOptions = Array.Empty<decimal>();
@@ -45,6 +45,10 @@ public class ControlPanelStrategy : Strategy
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 0m)
 			.SetDisplay("Take-profit Steps", "Initial take-profit distance expressed in price steps", "Risk");
+
+		_maxVolumePresets = Param(nameof(MaxVolumePresets), 9)
+			.SetRange(1, 20)
+			.SetDisplay("Max Volume Presets", "Maximum number of presets parsed from the list", "Trading");
 
 		UpdateVolumeOptions();
 	}
@@ -96,6 +100,22 @@ public class ControlPanelStrategy : Strategy
 	{
 		get => _takeProfitSteps.Value;
 		set => _takeProfitSteps.Value = Math.Max(0m, value);
+	}
+
+	/// <summary>
+	/// Maximum number of volume presets parsed from the list.
+	/// </summary>
+	public int MaxVolumePresets
+	{
+		get => _maxVolumePresets.Value;
+		set
+		{
+			var sanitized = Math.Max(1, value);
+			if (_maxVolumePresets.Value == sanitized)
+				return;
+			_maxVolumePresets.Value = sanitized;
+			UpdateVolumeOptions();
+		}
 	}
 
 	/// <summary>
@@ -338,17 +358,17 @@ public class ControlPanelStrategy : Strategy
 		CurrentVolume = sum;
 	}
 
-	private static decimal[] ParseVolumeList(string value)
+	private decimal[] ParseVolumeList(string value)
 	{
 		if (value.IsEmptyOrWhiteSpace())
 			return Array.Empty<decimal>();
 
 		var parts = value.Split(';');
-		var result = new List<decimal>(Math.Min(parts.Length, MaxVolumePresets));
+		var result = new List<decimal>(Math.Min(parts.Length, _maxVolumePresets.Value));
 
 		foreach (var part in parts)
 		{
-			if (result.Count >= MaxVolumePresets)
+			if (result.Count >= _maxVolumePresets.Value)
 				break;
 
 			var trimmed = part.Trim();

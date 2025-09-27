@@ -14,7 +14,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BillyExpertStrategy : Strategy
 {
-	private const decimal VolumeTolerance = 0.0000001m;
+	private readonly StrategyParam<decimal> _volumeTolerance;
 
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<int> _stopLossPips;
@@ -54,6 +54,15 @@ public class BillyExpertStrategy : Strategy
 	private bool _slowHasPrevious;
 
 	private decimal _pipSize;
+
+	/// <summary>
+	/// Volume tolerance used to compare accumulated volumes.
+	/// </summary>
+	public decimal VolumeTolerance
+	{
+		get => _volumeTolerance.Value;
+		set => _volumeTolerance.Value = value;
+	}
 
 	/// <summary>
 	/// Trade volume used for each entry.
@@ -123,6 +132,10 @@ public class BillyExpertStrategy : Strategy
 	/// </summary>
 	public BillyExpertStrategy()
 	{
+		_volumeTolerance = Param(nameof(VolumeTolerance), 0.0000001m)
+			.SetGreaterThan(0m)
+			.SetDisplay("Volume Tolerance", "Tolerance for comparing volume sums", "Risk");
+
 		_tradeVolume = Param(nameof(TradeVolume), 0.01m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trade Volume", "Order size for each entry", "General");

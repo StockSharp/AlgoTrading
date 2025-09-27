@@ -13,9 +13,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class Dvd10050CentStrategy : Strategy
 {
-	private const int M1HistoryLength = 64;
-	private const int M30HistoryLength = 16;
-	private const int H1HistoryLength = 16;
 
 	private readonly StrategyParam<bool> _accountIsMini;
 	private readonly StrategyParam<bool> _useMoneyManagement;
@@ -31,6 +28,9 @@ public class Dvd10050CentStrategy : Strategy
 	private readonly StrategyParam<decimal> _lowLevel2Pips;
 	private readonly StrategyParam<decimal> _marginCutoff;
 	private readonly StrategyParam<int> _orderExpiryMinutes;
+	private readonly StrategyParam<int> _m1HistoryLength;
+	private readonly StrategyParam<int> _m30HistoryLength;
+	private readonly StrategyParam<int> _h1HistoryLength;
 
 	private SimpleMovingAverage _h1Fast = null!;
 	private SimpleMovingAverage _h1Slow = null!;
@@ -136,6 +136,18 @@ public class Dvd10050CentStrategy : Strategy
 		.SetDisplay("Order Expiry (minutes)", "Lifetime of pending limit orders", "Orders")
 		.SetRange(1, 240)
 		.SetCanOptimize(true);
+
+		_m1HistoryLength = Param(nameof(M1HistoryLength), 64)
+			.SetDisplay("M1 History Length", "Number of M1 candles retained for analysis", "History")
+			.SetRange(1, 500);
+
+		_m30HistoryLength = Param(nameof(M30HistoryLength), 16)
+			.SetDisplay("M30 History Length", "Number of M30 candles retained for analysis", "History")
+			.SetRange(1, 200);
+
+		_h1HistoryLength = Param(nameof(H1HistoryLength), 16)
+			.SetDisplay("H1 History Length", "Number of H1 candles retained for analysis", "History")
+			.SetRange(1, 200);
 	}
 
 	/// <summary>
@@ -262,6 +274,33 @@ public class Dvd10050CentStrategy : Strategy
 	{
 		get => _orderExpiryMinutes.Value;
 		set => _orderExpiryMinutes.Value = value;
+	}
+
+	/// <summary>
+	/// Number of one-minute candles retained for intraday analysis.
+	/// </summary>
+	public int M1HistoryLength
+	{
+		get => _m1HistoryLength.Value;
+		set => _m1HistoryLength.Value = value;
+	}
+
+	/// <summary>
+	/// Number of thirty-minute candles retained for intraday analysis.
+	/// </summary>
+	public int M30HistoryLength
+	{
+		get => _m30HistoryLength.Value;
+		set => _m30HistoryLength.Value = value;
+	}
+
+	/// <summary>
+	/// Number of hourly candles retained for intraday analysis.
+	/// </summary>
+	public int H1HistoryLength
+	{
+		get => _h1HistoryLength.Value;
+		set => _h1HistoryLength.Value = value;
 	}
 
 	/// <inheritdoc />

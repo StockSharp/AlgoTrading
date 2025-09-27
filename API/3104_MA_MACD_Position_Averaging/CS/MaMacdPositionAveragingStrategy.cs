@@ -14,8 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MaMacdPositionAveragingStrategy : Strategy
 {
-	private const int BufferCapacity = 512;
-
 	private sealed class PositionLeg
 	{
 		public bool IsLong;
@@ -46,6 +44,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 	private readonly StrategyParam<AppliedPriceType> _macdAppliedPrice;
 	private readonly StrategyParam<decimal> _macdRatio;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _bufferCapacity;
 
 	private LengthIndicator<decimal> _ma = null!;
 	private MovingAverageConvergenceDivergence _macd = null!;
@@ -233,6 +232,15 @@ public class MaMacdPositionAveragingStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Maximum amount of indicator history retained for internal buffers.
+	/// </summary>
+	public int BufferCapacity
+	{
+		get => _bufferCapacity.Value;
+		set => _bufferCapacity.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the strategy.
 	/// </summary>
 	public MaMacdPositionAveragingStrategy()
@@ -318,6 +326,10 @@ public class MaMacdPositionAveragingStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetCanOptimize(true)
 			.SetDisplay("MACD Ratio", "Required MACD main/signal ratio", "Signals");
+
+		_bufferCapacity = Param(nameof(BufferCapacity), 512)
+			.SetGreaterThanZero()
+			.SetDisplay("Buffer Capacity", "Maximum history size for internal buffers", "Advanced");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for calculations", "General");
@@ -711,7 +723,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 		_legs.Clear();
 	}
 
-	private static void PushValue<T>(List<T> buffer, T value)
+	private void PushValue<T>(List<T> buffer, T value)
 	{
 		buffer.Add(value);
 

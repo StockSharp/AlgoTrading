@@ -15,8 +15,8 @@ using StockSharp.Messages;
 /// </summary>
 public class ComFractiStrategy : Strategy
 {
-	private const int HistoryCapacity = 256;
-	private const decimal DefaultPsarMax = 0.2m;
+	private readonly StrategyParam<int> _historyCapacity;
+	private readonly StrategyParam<decimal> _psarMax;
 
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _stopLossPoints;
@@ -82,10 +82,10 @@ public class ComFractiStrategy : Strategy
 	private decimal? _shortStopPrice;
 	private decimal? _shortTakePrice;
 
-	private readonly decimal[] _highHistory = new decimal[HistoryCapacity];
-	private readonly decimal[] _lowHistory = new decimal[HistoryCapacity];
-	private readonly decimal[] _closeHistory = new decimal[HistoryCapacity];
-	private readonly decimal[] _openHistory = new decimal[HistoryCapacity];
+	private decimal[] _highHistory;
+	private decimal[] _lowHistory;
+	private decimal[] _closeHistory;
+	private decimal[] _openHistory;
 	private int _historyCount;
 
 	/// <summary>
@@ -122,6 +122,10 @@ public class ComFractiStrategy : Strategy
 
 		_minimumVolume = Param(nameof(MinimumVolume), 0.1m)
 		.SetDisplay("Minimum Volume", "Lower bound for calculated volume", "Volume");
+
+		_historyCapacity = Param(nameof(HistoryCapacity), 256)
+		.SetGreaterThanZero()
+		.SetDisplay("History Capacity", "Number of bars cached for indicator emulation", "Advanced");
 
 		_useFractals = Param(nameof(UseFractals), true)
 		.SetDisplay("Use Fractals", "Enable fractal confirmation", "Signals");
@@ -189,6 +193,10 @@ public class ComFractiStrategy : Strategy
 		_psarStep = Param(nameof(PsarStep), 0.02m)
 		.SetDisplay("PSAR Step", "Parabolic SAR acceleration step", "Filters");
 
+		_psarMax = Param(nameof(PsarMax), 0.2m)
+		.SetGreaterThanZero()
+		.SetDisplay("PSAR Max", "Maximum acceleration factor applied by the Parabolic SAR filter", "Filters");
+
 		_channelLookback = Param(nameof(ChannelLookback), 45)
 		.SetDisplay("Channel Bars", "Bars used for channel calculation", "Filters");
 
@@ -219,7 +227,20 @@ public class ComFractiStrategy : Strategy
 		_filterType = Param(nameof(FilterType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Filter Candles", "Timeframe for MA/PSAR filters", "Data");
 
+		InitializeHistoryBuffers(HistoryCapacity);
+
 		Volume = _baseVolume.Value;
+	}
+
+	private void InitializeHistoryBuffers(int capacity)
+	{
+		capacity = Math.Max(1, capacity);
+
+		_highHistory = new decimal[capacity];
+		_lowHistory = new decimal[capacity];
+		_closeHistory = new decimal[capacity];
+		_openHistory = new decimal[capacity];
+		_historyCount = 0;
 	}
 
 	/// <summary>
@@ -313,6 +334,19 @@ public class ComFractiStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Number of bars cached for indicator emulation.
+	/// </summary>
+	public int HistoryCapacity
+	{
+		get => _historyCapacity.Value;
+		set
+		{
+			_historyCapacity.Value = value;
+			InitializeHistoryBuffers(value);
+		}
+	}
+
+	/// <summary>
 	/// Main candle type processed by the strategy.
 	/// </summary>
 	public DataType CandleType
@@ -399,6 +433,8 @@ public class ComFractiStrategy : Strategy
 	{
 		base.OnStarted(time);
 
+		InitializeHistoryBuffers(HistoryCapacity);
+
 		Volume = BaseVolume;
 
 		_stochasticBuy.Length = Math.Max(1, StochasticPeriodBuy);
@@ -415,7 +451,7 @@ public class ComFractiStrategy : Strategy
 		_psarFilter = new ParabolicSar
 		{
 			Acceleration = PsarStep,
-			AccelerationMax = DefaultPsarMax
+			AccelerationMax = PsarMax
 		};
 
 		var mainSubscription = SubscribeCandles(CandleType);
@@ -1015,6 +1051,7 @@ public class ComFractiStrategy : Strategy
 	private int StochasticLevelSell => _stochasticLevelSell.Value;
 	private int MaPeriod => _maPeriod.Value;
 	private decimal PsarStep => _psarStep.Value;
+	private decimal PsarMax => _psarMax.Value;
 	private int ChannelLookback => _channelLookback.Value;
 	private decimal ChannelK => _channelK.Value;
 	private decimal PerceptronV1 => _perceptronV1.Value;

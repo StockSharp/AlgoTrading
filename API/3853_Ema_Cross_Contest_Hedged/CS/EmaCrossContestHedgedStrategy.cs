@@ -12,10 +12,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class EmaCrossContestHedgedStrategy : Strategy
 {
-	private const int MacdFastLength = 4;
-	private const int MacdSlowLength = 24;
-	private const int MacdSignalLength = 12;
-	private const int PendingOrderCount = 4;
 
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<int> _takeProfitPips;
@@ -27,8 +23,12 @@ public class EmaCrossContestHedgedStrategy : Strategy
 	private readonly StrategyParam<int> _pendingExpirationSeconds;
 	private readonly StrategyParam<int> _shortEmaLength;
 	private readonly StrategyParam<int> _longEmaLength;
+	private readonly StrategyParam<int> _macdFastLength;
+	private readonly StrategyParam<int> _macdSlowLength;
+	private readonly StrategyParam<int> _macdSignalLength;
 	private readonly StrategyParam<int> _signalBarShift;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _pendingOrderCount;
 
 	private decimal? _shortEmaCurrent;
 	private decimal? _shortEmaPrevious;
@@ -115,11 +115,43 @@ public class EmaCrossContestHedgedStrategy : Strategy
 		get => _longEmaLength.Value;
 		set => _longEmaLength.Value = value;
 	}
+	/// <summary>
+	/// Fast MACD EMA length.
+	/// </summary>
+	public int MacdFastLength
+	{
+		get => _macdFastLength.Value;
+		set => _macdFastLength.Value = value;
+	}
+	/// <summary>
+	/// Slow MACD EMA length.
+	/// </summary>
+	public int MacdSlowLength
+	{
+		get => _macdSlowLength.Value;
+		set => _macdSlowLength.Value = value;
+	}
+	/// <summary>
+	/// MACD signal line smoothing length.
+	/// </summary>
+	public int MacdSignalLength
+	{
+		get => _macdSignalLength.Value;
+		set => _macdSignalLength.Value = value;
+	}
 
 	public int SignalBarShift
 	{
 		get => _signalBarShift.Value;
 		set => _signalBarShift.Value = value;
+	}
+	/// <summary>
+	/// Number of layered pending hedge orders per side.
+	/// </summary>
+	public int PendingOrderCount
+	{
+		get => _pendingOrderCount.Value;
+		set => _pendingOrderCount.Value = value;
 	}
 
 	public DataType CandleType
@@ -154,10 +186,22 @@ public class EmaCrossContestHedgedStrategy : Strategy
 
 		_pendingExpirationSeconds = Param(nameof(PendingExpirationSeconds), 7200)
 		.SetDisplay("Expiration (s)", "Pending order lifetime in seconds", "Orders");
+		_pendingOrderCount = Param(nameof(PendingOrderCount), 4)
+			.SetDisplay("Pending Orders", "Number of layered pending hedges per side", "Orders")
+			.SetGreaterThanZero();
 
 		_shortEmaLength = Param(nameof(ShortEmaLength), 4)
 		.SetGreaterThanZero()
 		.SetDisplay("Short EMA", "Fast EMA length", "Indicators");
+		_macdFastLength = Param(nameof(MacdFastLength), 4)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Fast", "Fast EMA length used inside MACD", "Indicators");
+		_macdSlowLength = Param(nameof(MacdSlowLength), 24)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Slow", "Slow EMA length used inside MACD", "Indicators");
+		_macdSignalLength = Param(nameof(MacdSignalLength), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Signal", "Signal line smoothing length", "Indicators");
 
 		_longEmaLength = Param(nameof(LongEmaLength), 24)
 		.SetGreaterThanZero()

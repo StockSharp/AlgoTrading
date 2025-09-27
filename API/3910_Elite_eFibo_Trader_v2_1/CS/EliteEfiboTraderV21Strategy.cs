@@ -13,15 +13,15 @@ using StockSharp.Messages;
 /// </summary>
 public class EliteEfiboTraderV21Strategy : Strategy
 {
-	private const int LevelCount = 14;
+private readonly StrategyParam<int> _levelCount;
 
-	private readonly StrategyParam<bool> _openBuy;
+private readonly StrategyParam<bool> _openBuy;
 	private readonly StrategyParam<bool> _openSell;
 	private readonly StrategyParam<bool> _tradeAgainAfterProfit;
 	private readonly StrategyParam<int> _levelDistancePips;
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<decimal> _moneyTakeProfit;
-	private readonly StrategyParam<decimal>[] _levelVolumeParams;
+private readonly StrategyParam<decimal>[] _levelVolumeParams;
 
 	private readonly List<LevelState> _levels = new();
 	private readonly Dictionary<Order, LevelState> _entryOrderMap = new();
@@ -35,9 +35,13 @@ public class EliteEfiboTraderV21Strategy : Strategy
 	/// <summary>
 	/// Initializes a new instance of the <see cref="EliteEfiboTraderV21Strategy"/> class.
 	/// </summary>
-	public EliteEfiboTraderV21Strategy()
-	{
-		_openBuy = Param(nameof(OpenBuy), false)
+public EliteEfiboTraderV21Strategy()
+{
+_levelCount = Param(nameof(LevelCount), 14)
+.SetRange(1, 14)
+.SetDisplay("Level Count", "Number of Fibonacci ladder levels to manage.", "Execution");
+
+_openBuy = Param(nameof(OpenBuy), false)
 			.SetDisplay("Open Buy", "Allow the strategy to build long Fibonacci ladders.", "Execution");
 
 		_openSell = Param(nameof(OpenSell), true)
@@ -58,17 +62,17 @@ public class EliteEfiboTraderV21Strategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Money Take Profit", "Cash target that closes the entire basket.", "Risk");
 
-		var defaults = new decimal[] { 1m, 1m, 2m, 3m, 5m, 8m, 13m, 21m, 34m, 55m, 89m, 144m, 233m, 377m };
-		_levelVolumeParams = new StrategyParam<decimal>[LevelCount];
+var defaults = new decimal[] { 1m, 1m, 2m, 3m, 5m, 8m, 13m, 21m, 34m, 55m, 89m, 144m, 233m, 377m };
+_levelVolumeParams = new StrategyParam<decimal>[defaults.Length];
 
-		for (var i = 0; i < LevelCount; i++)
-		{
-			var index = i + 1;
-			_levelVolumeParams[i] = Param($"Level{index}Volume", defaults[i])
-				.SetNotNegative()
-				.SetDisplay($"Level {index} Volume", $"Volume multiplier used for Fibonacci level {index}.", "Position Sizing");
-		}
-	}
+for (var i = 0; i < _levelVolumeParams.Length; i++)
+{
+var index = i + 1;
+_levelVolumeParams[i] = Param($"Level{index}Volume", defaults[i])
+.SetNotNegative()
+.SetDisplay($"Level {index} Volume", $"Volume multiplier used for Fibonacci level {index}.", "Position Sizing");
+}
+}
 
 	/// <summary>
 	/// Enable the buy ladder.
@@ -115,14 +119,23 @@ public class EliteEfiboTraderV21Strategy : Strategy
 		set => _stopLossPips.Value = value;
 	}
 
-	/// <summary>
-	/// Cash profit target for the active basket.
-	/// </summary>
-	public decimal MoneyTakeProfit
-	{
-		get => _moneyTakeProfit.Value;
-		set => _moneyTakeProfit.Value = value;
-	}
+        /// <summary>
+        /// Cash profit target for the active basket.
+        /// </summary>
+        public decimal MoneyTakeProfit
+        {
+                get => _moneyTakeProfit.Value;
+                set => _moneyTakeProfit.Value = value;
+        }
+
+        /// <summary>
+        /// Number of Fibonacci ladder levels to trade.
+        /// </summary>
+        public int LevelCount
+        {
+                get => _levelCount.Value;
+                set => _levelCount.Value = value;
+        }
 
 	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
@@ -289,7 +302,8 @@ public class EliteEfiboTraderV21Strategy : Strategy
 		var distance = LevelDistancePips * _pipSize;
 		var stopOffset = StopLossPips * _pipSize;
 
-		for (var i = 0; i < LevelCount; i++)
+var activeLevels = Math.Min(LevelCount, _levelVolumeParams.Length);
+for (var i = 0; i < activeLevels; i++)
 		{
 			var volume = _levelVolumeParams[i].Value;
 			if (volume <= 0m)
@@ -607,4 +621,3 @@ public class EliteEfiboTraderV21Strategy : Strategy
 		public decimal? EntryPrice { get; set; }
 		public decimal? StopPrice { get; set; }
 	}
-}

@@ -14,10 +14,9 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class RangeFollowerStrategy : Strategy
 {
-	private const int DefaultAtrPeriod = 20;
-
 	private readonly StrategyParam<int> _triggerPercent;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _dailyAtrPeriod;
 
 	private Subscription _dailySubscription;
 	private Subscription _intradaySubscription;
@@ -56,6 +55,10 @@ public class RangeFollowerStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for monitoring daily resets", "General");
+
+		_dailyAtrPeriod = Param(nameof(DailyAtrPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Daily ATR Period", "Period used for the daily ATR calculation", "Parameters");
 	}
 
 	/// <summary>
@@ -75,6 +78,12 @@ public class RangeFollowerStrategy : Strategy
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
+	}
+
+	public int DailyAtrPeriod
+	{
+		get => _dailyAtrPeriod.Value;
+		set => _dailyAtrPeriod.Value = value;
 	}
 
 	/// <inheritdoc />
@@ -117,7 +126,7 @@ public class RangeFollowerStrategy : Strategy
 
 		_dailyAtrIndicator = new AverageTrueRange
 		{
-			Length = DefaultAtrPeriod
+			Length = DailyAtrPeriod
 		};
 
 		_dailySubscription = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());

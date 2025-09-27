@@ -14,8 +14,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ITradeStrategy : Strategy
 {
-	private const int ProfitResetAfterWins = 1;
-	private const int HistoryLimit = 200;
+	private readonly StrategyParam<int> _profitResetAfterWins;
+	private readonly StrategyParam<int> _historyLimit;
 
 	private readonly StrategyParam<decimal> _initialVolume;
 	private readonly StrategyParam<decimal> _martingaleMultiplier;
@@ -57,6 +57,14 @@ public class ITradeStrategy : Strategy
 
 		_baseTradeCount = Param(nameof(BaseTradeCount), 7)
 			.SetDisplay("Base Trade Count", "Number of trades considered part of the initial batch.", "Profit Control")
+			.SetGreaterThanZero();
+
+		_profitResetAfterWins = Param(nameof(ProfitResetAfterWins), 1)
+			.SetDisplay("Profit Reset Wins", "Number of consecutive winning cycles before profit counters reset.", "Profit Control")
+			.SetGreaterThanOrEqualZero();
+
+		_historyLimit = Param(nameof(HistoryLimit), 200)
+			.SetDisplay("History Limit", "Maximum number of closed profit samples retained.", "Profit Control")
 			.SetGreaterThanZero();
 
 		_controlInterval = Param(nameof(ControlInterval), TimeSpan.FromSeconds(1))
@@ -116,6 +124,24 @@ public class ITradeStrategy : Strategy
 	{
 		get => _controlInterval.Value;
 		set => _controlInterval.Value = value;
+	}
+
+	/// <summary>
+	/// Number of consecutive profitable cycles before the profit history resets.
+	/// </summary>
+	public int ProfitResetAfterWins
+	{
+		get => _profitResetAfterWins.Value;
+		set => _profitResetAfterWins.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum number of closed profit samples preserved for averaging.
+	/// </summary>
+	public int HistoryLimit
+	{
+		get => _historyLimit.Value;
+		set => _historyLimit.Value = value;
 	}
 
 	/// <summary>

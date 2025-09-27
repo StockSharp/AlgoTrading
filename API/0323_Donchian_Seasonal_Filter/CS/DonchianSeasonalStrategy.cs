@@ -21,6 +21,7 @@ public class DonchianSeasonalStrategy : Strategy
 	private readonly StrategyParam<int> _donchianPeriod;
 	private readonly StrategyParam<decimal> _seasonalThreshold;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _seasonalDataCount;
 	
 	private DonchianChannels _donchian;
 	private bool _isLongPosition;
@@ -29,8 +30,7 @@ public class DonchianSeasonalStrategy : Strategy
 	// Seasonal data storage
 	private readonly SynchronizedDictionary<Month, decimal> _monthlyReturns = [];
 	
-	// Simulated 5 years of data
-	private const int _seasonalDataCount = 5;
+	// Simulated seasonal data count
 
 	// Current values
 	private decimal _upperBand;
@@ -57,6 +57,15 @@ public class DonchianSeasonalStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Number of years used for seasonal analysis.
+	/// </summary>
+	public int SeasonalDataCount
+	{
+		get => _seasonalDataCount.Value;
+		set => _seasonalDataCount.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type to use for the strategy.
 	/// </summary>
 	public DataType CandleType
@@ -79,6 +88,12 @@ public class DonchianSeasonalStrategy : Strategy
 			.SetDisplay("Seasonal Threshold", "Seasonal strength threshold for entry", "Seasonal")
 			.SetCanOptimize(true)
 			.SetOptimize(0.2m, 1.0m, 0.1m);
+
+		_seasonalDataCount = Param(nameof(SeasonalDataCount), 5)
+			.SetDisplay("Seasonal Years", "Years of seasonal data", "Seasonal")
+			.SetGreaterThanZero()
+			.SetCanOptimize(true)
+			.SetOptimize(1, 10, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -228,7 +243,7 @@ public class DonchianSeasonalStrategy : Strategy
 		// Log seasonal information at the beginning of each month
 		if (time.Day == 1)
 		{
-			LogInfo($"Monthly Seasonal Data: {currentMonth} has historical strength of {_seasonalStrength:F2} over {_seasonalDataCount} years");
+			LogInfo($"Monthly Seasonal Data: {currentMonth} has historical strength of {_seasonalStrength:F2} over {SeasonalDataCount} years");
 		}
 	}
 	

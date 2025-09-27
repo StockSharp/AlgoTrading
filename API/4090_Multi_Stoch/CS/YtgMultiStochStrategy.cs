@@ -30,8 +30,8 @@ public class YtgMultiStochStrategy : Strategy
 
 	private readonly List<SymbolContext> _contexts = new();
 
-	private const decimal OversoldLevel = 20m;
-	private const decimal OverboughtLevel = 80m;
+	private readonly StrategyParam<decimal> _oversoldLevel;
+	private readonly StrategyParam<decimal> _overboughtLevel;
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="YtgMultiStochStrategy"/>.
@@ -73,6 +73,14 @@ public class YtgMultiStochStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 10m)
 			.SetRange(0m, 1000m)
 			.SetDisplay("Take Profit (pips)", "Take-profit distance expressed in pips", "Risk Management");
+
+		_oversoldLevel = Param(nameof(OversoldLevel), 20m)
+			.SetRange(0m, 100m)
+			.SetDisplay("Oversold Level", "Stochastic threshold that enables long trades", "Signals");
+
+		_overboughtLevel = Param(nameof(OverboughtLevel), 80m)
+			.SetRange(0m, 100m)
+			.SetDisplay("Overbought Level", "Stochastic threshold that enables short trades", "Signals");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to calculate signals", "General");
@@ -175,6 +183,24 @@ public class YtgMultiStochStrategy : Strategy
 	{
 		get => _takeProfitPips.Value;
 		set => _takeProfitPips.Value = value;
+	}
+
+	/// <summary>
+	/// Stochastic oversold threshold used to trigger long entries.
+	/// </summary>
+	public decimal OversoldLevel
+	{
+		get => _oversoldLevel.Value;
+		set => _oversoldLevel.Value = value;
+	}
+
+	/// <summary>
+	/// Stochastic overbought threshold used to trigger short entries.
+	/// </summary>
+	public decimal OverboughtLevel
+	{
+		get => _overboughtLevel.Value;
+		set => _overboughtLevel.Value = value;
 	}
 
 	/// <summary>

@@ -12,10 +12,6 @@ using StockSharp.Messages;
 /// </summary>
 public class HeadAndShouldersStrategy : Strategy
 {
-	private const int FractalWindow = 5;
-	private const int FractalWing = 2;
-	private const int MaxStoredFractals = 20;
-
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<int> _fastMaLength;
@@ -30,14 +26,17 @@ public class HeadAndShouldersStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossSteps;
 	private readonly StrategyParam<decimal> _takeProfitSteps;
 	private readonly StrategyParam<decimal> _trailingStopSteps;
+	private readonly StrategyParam<int> _fractalWindow;
+	private readonly StrategyParam<int> _fractalWing;
+	private readonly StrategyParam<int> _maxStoredFractals;
 
 	private SimpleMovingAverage _fastMa = null!;
 	private SimpleMovingAverage _slowMa = null!;
 	private Momentum _momentum = null!;
 	private MovingAverageConvergenceDivergence _macd = null!;
 
-	private readonly decimal[] _highBuffer = new decimal[FractalWindow];
-	private readonly decimal[] _lowBuffer = new decimal[FractalWindow];
+	private decimal[] _highBuffer = Array.Empty<decimal>();
+	private decimal[] _lowBuffer = Array.Empty<decimal>();
 	private int _bufferFillCount;
 	private int _finishedCandles;
 
@@ -107,6 +106,18 @@ public class HeadAndShouldersStrategy : Strategy
 		_trailingStopSteps = Param(nameof(TrailingStopSteps), 0m)
 		.SetDisplay("Trailing Stop (steps)", "Trailing stop size in price steps. Zero disables trailing.", "Risk")
 		.SetCanOptimize(true);
+
+		_fractalWindow = Param(nameof(FractalWindow), 5)
+		.SetGreaterOrEqual(3)
+		.SetDisplay("Fractal Window", "Total length of the fractal detection window.", "Pattern");
+
+		_fractalWing = Param(nameof(FractalWing), 2)
+		.SetGreaterOrEqual(1)
+		.SetDisplay("Fractal Wing", "Number of candles on each side of the potential fractal.", "Pattern");
+
+		_maxStoredFractals = Param(nameof(MaxStoredFractals), 20)
+		.SetGreaterOrEqual(3)
+		.SetDisplay("Stored Fractals", "Maximum number of historical fractals to retain.", "Pattern");
 	}
 
 	/// <summary>Primary candle type.</summary>
@@ -207,6 +218,24 @@ public class HeadAndShouldersStrategy : Strategy
 		set => _trailingStopSteps.Value = value;
 	}
 
+	public int FractalWindow
+	{
+		get => _fractalWindow.Value;
+		set => _fractalWindow.Value = value;
+	}
+
+	public int FractalWing
+	{
+		get => _fractalWing.Value;
+		set => _fractalWing.Value = value;
+	}
+
+	public int MaxStoredFractals
+	{
+		get => _maxStoredFractals.Value;
+		set => _maxStoredFractals.Value = value;
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
@@ -223,6 +252,9 @@ public class HeadAndShouldersStrategy : Strategy
 			Slow = MacdSlowLength,
 			Signal = MacdSignalLength
 		};
+
+		if (FractalWing >= FractalWindow)
+			throw new InvalidOperationException("Fractal wing must be less than the fractal window.");
 
 		ResetState();
 
@@ -511,6 +543,8 @@ public class HeadAndShouldersStrategy : Strategy
 
 	private void ResetState()
 	{
+		_highBuffer = new decimal[FractalWindow];
+		_lowBuffer = new decimal[FractalWindow];
 		_bufferFillCount = 0;
 		_finishedCandles = 0;
 		_highFractals.Clear();
@@ -523,8 +557,6 @@ public class HeadAndShouldersStrategy : Strategy
 		_bullishHeadIndex = -1;
 		_activeShortNeckline = 0m;
 		_activeLongNeckline = 0m;
-		Array.Clear(_highBuffer, 0, _highBuffer.Length);
-		Array.Clear(_lowBuffer, 0, _lowBuffer.Length);
 	}
 
 	private readonly struct FractalPoint

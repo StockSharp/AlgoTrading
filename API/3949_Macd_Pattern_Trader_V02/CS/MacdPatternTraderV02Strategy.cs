@@ -17,9 +17,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MacdPatternTraderV02Strategy : Strategy
 {
-	private const decimal ProfitThresholdPoints = 5m;
-	private const int MaxHistory = 1024;
-
+	private readonly StrategyParam<decimal> _profitThresholdPoints;
+	private readonly StrategyParam<int> _maxHistory;
 	private readonly StrategyParam<int> _stopLossBars;
 	private readonly StrategyParam<int> _takeProfitBars;
 	private readonly StrategyParam<int> _offsetPoints;
@@ -97,6 +96,15 @@ public class MacdPatternTraderV02Strategy : Strategy
 	{
 		get => _offsetPoints.Value;
 		set => _offsetPoints.Value = value;
+	}
+
+	/// <summary>
+	/// Minimal profit in points required before partial exits are considered.
+	/// </summary>
+	public decimal ProfitThresholdPoints
+	{
+		get => _profitThresholdPoints.Value;
+		set => _profitThresholdPoints.Value = value;
 	}
 
 	/// <summary>
@@ -190,6 +198,15 @@ public class MacdPatternTraderV02Strategy : Strategy
 	}
 
 	/// <summary>
+	/// Maximum number of finished candles stored in the sliding history window.
+	/// </summary>
+	public int MaxHistory
+	{
+		get => _maxHistory.Value;
+		set => _maxHistory.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="MacdPatternTraderV02Strategy"/> class.
 	/// </summary>
 	public MacdPatternTraderV02Strategy()
@@ -205,6 +222,10 @@ public class MacdPatternTraderV02Strategy : Strategy
 		_offsetPoints = Param(nameof(OffsetPoints), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Offset Points", "Additional protective offset in points", "Risk");
+
+		_profitThresholdPoints = Param(nameof(ProfitThresholdPoints), 5m)
+			.SetGreaterThanZero()
+			.SetDisplay("Profit Threshold Points", "Minimal profit in points before partial exits", "Risk");
 
 		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 5)
 			.SetGreaterThanZero()
@@ -242,6 +263,10 @@ public class MacdPatternTraderV02Strategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used for indicators", "General");
+
+		_maxHistory = Param(nameof(MaxHistory), 1024)
+			.SetGreaterThanZero()
+			.SetDisplay("History Limit", "Maximum candles stored for pattern recognition", "General");
 	}
 
 	/// <inheritdoc />

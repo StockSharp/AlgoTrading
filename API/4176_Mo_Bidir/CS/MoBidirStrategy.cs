@@ -30,14 +30,13 @@ public class MoBidirStrategy : Strategy
 		}
 	}
 
-	private const decimal VolumeTolerance = 0.00000001m;
-
 	private readonly List<HedgeLeg> _legs = new();
 
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _volumeTolerance;
 
 	private decimal _pointSize;
 
@@ -60,6 +59,10 @@ public class MoBidirStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to detect completed bars.", "Data");
+
+		_volumeTolerance = Param(nameof(VolumeTolerance), 0.00000001m)
+			.SetGreaterThanZero()
+			.SetDisplay("Volume Tolerance", "Precision threshold used to consider hedge legs filled.", "Execution");
 	}
 
 	/// <summary>
@@ -96,6 +99,15 @@ public class MoBidirStrategy : Strategy
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Precision threshold applied when checking whether a hedge leg is fully filled.
+	/// </summary>
+	public decimal VolumeTolerance
+	{
+		get => _volumeTolerance.Value;
+		set => _volumeTolerance.Value = value;
 	}
 
 	/// <inheritdoc />

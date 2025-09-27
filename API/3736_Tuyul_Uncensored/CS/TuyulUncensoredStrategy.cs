@@ -14,8 +14,6 @@ using StockSharp.Messages;
 /// </summary>
 public class TuyulUncensoredStrategy : Strategy
 {
-private const decimal FibLevel = 0.57m;
-
 private readonly StrategyParam<decimal> _volume;
 private readonly StrategyParam<decimal> _takeProfitMultiplier;
 private readonly StrategyParam<int> _zigZagDepth;
@@ -30,6 +28,7 @@ private readonly StrategyParam<bool> _allowWednesday;
 private readonly StrategyParam<bool> _allowThursday;
 private readonly StrategyParam<bool> _allowFriday;
 private readonly StrategyParam<DataType> _candleType;
+private readonly StrategyParam<decimal> _fibLevel;
 
 private readonly List<(DateTimeOffset Time, decimal Price)> _pivots = new();
 
@@ -107,6 +106,10 @@ _allowFriday = Param(nameof(AllowFriday), true)
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles used for analysis", "General");
+
+_fibLevel = Param(nameof(FibLevel), 0.57m)
+.SetDisplay("Fibonacci Level", "Retracement level used to position pending orders", "Trading")
+.SetRange(0m, 1m);
 }
 
 /// <summary>
@@ -233,6 +236,15 @@ public DataType CandleType
 {
 get => _candleType.Value;
 set => _candleType.Value = value;
+}
+
+/// <summary>
+/// Fibonacci retracement level used to place pending orders.
+/// </summary>
+public decimal FibLevel
+{
+get => _fibLevel.Value;
+set => _fibLevel.Value = value;
 }
 
 /// <inheritdoc />

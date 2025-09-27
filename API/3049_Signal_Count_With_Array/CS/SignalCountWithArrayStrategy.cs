@@ -14,8 +14,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SignalCountWithArrayStrategy : Strategy
 {
-	private const decimal PositiveEmptyValue = 2147483647m;
-	private const decimal NegativeEmptyValue = -2147483646m;
+	private readonly StrategyParam<decimal> _positiveEmptyValue;
+	private readonly StrategyParam<decimal> _negativeEmptyValue;
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _channelPeriod;
@@ -57,6 +57,12 @@ public class SignalCountWithArrayStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Gap Count", "Number of offsets evaluated", "Indicator");
 
+		_positiveEmptyValue = Param(nameof(PositiveEmptyValue), 2147483647m)
+			.SetDisplay("Positive Empty Value", "Placeholder for missing positive signals", "Diagnostics");
+
+		_negativeEmptyValue = Param(nameof(NegativeEmptyValue), -2147483646m)
+			.SetDisplay("Negative Empty Value", "Placeholder for missing negative signals", "Diagnostics");
+
 		_logOnEachCandle = Param(nameof(LogOnEachCandle), false)
 			.SetDisplay("Log On Each Candle", "Write diagnostics after every candle", "Diagnostics");
 	}
@@ -89,6 +95,18 @@ public class SignalCountWithArrayStrategy : Strategy
 	{
 		get => _gapCount.Value;
 		set => _gapCount.Value = value;
+	}
+
+	public decimal PositiveEmptyValue
+	{
+		get => _positiveEmptyValue.Value;
+		set => _positiveEmptyValue.Value = value;
+	}
+
+	public decimal NegativeEmptyValue
+	{
+		get => _negativeEmptyValue.Value;
+		set => _negativeEmptyValue.Value = value;
 	}
 
 	public bool LogOnEachCandle

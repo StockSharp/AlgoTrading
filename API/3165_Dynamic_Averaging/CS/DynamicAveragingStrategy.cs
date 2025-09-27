@@ -15,9 +15,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class DynamicAveragingStrategy : Strategy
 {
-	private const decimal OversoldLevel = 25m;
-	private const decimal OverboughtLevel = 75m;
-
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<decimal> _profitTarget;
 	private readonly StrategyParam<int> _slidingWindowDays;
@@ -26,6 +23,8 @@ public class DynamicAveragingStrategy : Strategy
 	private readonly StrategyParam<int> _stochasticSlowPeriod;
 	private readonly StrategyParam<int> _stdDevPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _oversoldLevel;
+	private readonly StrategyParam<decimal> _overboughtLevel;
 
 	private StochasticOscillator _stochastic = null!;
 	private StandardDeviation _stdDev = null!;
@@ -109,6 +108,24 @@ public class DynamicAveragingStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Stochastic oversold level triggering long entries.
+	/// </summary>
+	public decimal OversoldLevel
+	{
+		get => _oversoldLevel.Value;
+		set => _oversoldLevel.Value = value;
+	}
+
+	/// <summary>
+	/// Stochastic overbought level triggering short entries.
+	/// </summary>
+	public decimal OverboughtLevel
+	{
+		get => _overboughtLevel.Value;
+		set => _overboughtLevel.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type used for calculations.
 	/// </summary>
 	public DataType CandleType
@@ -149,6 +166,12 @@ public class DynamicAveragingStrategy : Strategy
 		_stdDevPeriod = Param(nameof(StdDevPeriod), 20)
 		.SetDisplay("StdDev Length", "Lookback for the standard deviation filter", "Indicators")
 		.SetGreaterThanZero();
+
+		_oversoldLevel = Param(nameof(OversoldLevel), 25m)
+		.SetDisplay("Oversold Level", "%K threshold for long entries", "Indicators");
+
+		_overboughtLevel = Param(nameof(OverboughtLevel), 75m)
+		.SetDisplay("Overbought Level", "%K threshold for short entries", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Source candles for indicator calculations", "Market Data");

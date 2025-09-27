@@ -11,8 +11,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BinomialOptionPricingModelStrategy : Strategy
 {
-	private const int _daysInYear = 252;
-	private const int _stepNum = 2;
+	private readonly StrategyParam<int> _daysInYear;
+	private readonly StrategyParam<int> _stepNum;
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _strikePrice;
@@ -78,6 +78,16 @@ public class BinomialOptionPricingModelStrategy : Strategy
 	public int TimeframeMinutes { get => _timeframeMinutes.Value; set => _timeframeMinutes.Value = value; }
 
 	/// <summary>
+	/// Trading days per year used in calculations.
+	/// </summary>
+	public int DaysInYear { get => _daysInYear.Value; set => _daysInYear.Value = value; }
+
+	/// <summary>
+	/// Number of steps in the binomial tree.
+	/// </summary>
+	public int StepNum { get => _stepNum.Value; set => _stepNum.Value = value; }
+
+	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public BinomialOptionPricingModelStrategy()
@@ -111,6 +121,14 @@ public class BinomialOptionPricingModelStrategy : Strategy
 
 		_timeframeMinutes = Param(nameof(TimeframeMinutes), 1440)
 			.SetDisplay("Timeframe Minutes", "Timeframe in minutes", "Expiry");
+
+		_daysInYear = Param(nameof(DaysInYear), 252)
+			.SetGreaterThanZero()
+			.SetDisplay("Days In Year", "Trading days per year", "Model");
+
+		_stepNum = Param(nameof(StepNum), 2)
+			.SetGreaterThanZero()
+			.SetDisplay("Steps", "Steps in binomial tree", "Model");
 	}
 
 	/// <inheritdoc />
@@ -118,7 +136,7 @@ public class BinomialOptionPricingModelStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_stdDev = new StandardDeviation { Length = _daysInYear };
+		_stdDev = new StandardDeviation { Length = DaysInYear };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -150,9 +168,9 @@ public class BinomialOptionPricingModelStrategy : Strategy
 
 		var expiry = (HoursToExpiry + MinutesToExpiry / 60m) / 24m + DaysToExpiry;
 		var time = 60m * 24m * expiry / TimeframeMinutes;
-		var T = time / _daysInYear;
+		var T = time / DaysInYear;
 
-		var deltaT = T / _stepNum;
+		var deltaT = T / StepNum;
 		var up = (decimal)Math.Exp((double)(sigma * (decimal)Math.Sqrt((double)deltaT)));
 		var down = 1m / up;
 

@@ -13,9 +13,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class XPeriodCandleSystemTmPlusStrategy : Strategy
 {
-	private const int MaxColorHistory = 16;
-
-	private readonly int[] _colorHistory = new int[MaxColorHistory];
+	private int[] _colorHistory = Array.Empty<int>();
 	private int _historyCount;
 
 	private ExponentialMovingAverage _openMa = null!;
@@ -40,6 +38,7 @@ public class XPeriodCandleSystemTmPlusStrategy : Strategy
 	private readonly StrategyParam<decimal> _bandsDeviation;
 	private readonly StrategyParam<AppliedPrice> _appliedPrice;
 	private readonly StrategyParam<int> _signalBar;
+	private readonly StrategyParam<int> _maxColorHistory;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _deviation;
@@ -122,6 +121,12 @@ public class XPeriodCandleSystemTmPlusStrategy : Strategy
 		set => _signalBar.Value = value;
 	}
 
+	public int MaxColorHistory
+	{
+		get => _maxColorHistory.Value;
+		set => _maxColorHistory.Value = Math.Max(2, value);
+	}
+
 	public decimal StopLoss
 	{
 		get => _stopLoss.Value;
@@ -189,6 +194,10 @@ public class XPeriodCandleSystemTmPlusStrategy : Strategy
 		_appliedPrice = Param(nameof(AppliedPriceMode), AppliedPrice.Close)
 		.SetDisplay("Applied Price", "Price source for the band calculation", "Indicators");
 
+		_maxColorHistory = Param(nameof(MaxColorHistory), 16)
+		.SetRange(4, 200)
+		.SetDisplay("Color History", "Number of recent colors stored for signals", "Trading");
+
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetRange(1, MaxColorHistory - 2)
 		.SetDisplay("Signal Bar", "Index of the candle used for signals", "Trading");
@@ -215,8 +224,7 @@ public class XPeriodCandleSystemTmPlusStrategy : Strategy
 	{
 		base.OnReseted();
 
-		Array.Clear(_colorHistory, 0, _colorHistory.Length);
-		_historyCount = 0;
+		ResetColorHistory();
 		_longEntryTime = null;
 		_shortEntryTime = null;
 	}
@@ -225,6 +233,7 @@ public class XPeriodCandleSystemTmPlusStrategy : Strategy
 	{
 		base.OnStarted(time);
 
+		ResetColorHistory();
 		Volume = OrderVolume;
 
 		_openMa = new ExponentialMovingAverage { Length = Period };
@@ -367,14 +376,42 @@ public class XPeriodCandleSystemTmPlusStrategy : Strategy
 		return isBullish ? 1 : 3;
 	}
 
+	private void EnsureColorHistoryCapacity()
+	{
+		var required = Math.Max(MaxColorHistory, SignalBar + 6);
+		if (required < 2)
+		required = 2;
+
+		if (_colorHistory.Length == required)
+		return;
+
+		var newHistory = new int[required];
+		var copy = Math.Min(_historyCount, required);
+
+		if (_colorHistory.Length > 0 && copy > 0)
+		Array.Copy(_colorHistory, 0, newHistory, 0, copy);
+
+		_colorHistory = newHistory;
+		_historyCount = Math.Min(_historyCount, required);
+	}
+
+	private void ResetColorHistory()
+	{
+		EnsureColorHistoryCapacity();
+		Array.Clear(_colorHistory, 0, _colorHistory.Length);
+		_historyCount = 0;
+	}
+
 	private void AddColor(int color)
 	{
-		for (var i = MaxColorHistory - 1; i > 0; i--)
+		EnsureColorHistoryCapacity();
+
+		for (var i = _colorHistory.Length - 1; i > 0; i--)
 		_colorHistory[i] = _colorHistory[i - 1];
 
 		_colorHistory[0] = color;
 
-		if (_historyCount < MaxColorHistory)
+		if (_historyCount < _colorHistory.Length)
 		_historyCount++;
 	}
 

@@ -13,11 +13,10 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MacdPatternTraderV01Strategy : Strategy
 {
-	private const int HistoryLimit = 1000;
-
 	private readonly StrategyParam<int> _stopLossBars;
 	private readonly StrategyParam<int> _takeProfitBars;
 	private readonly StrategyParam<int> _offsetPoints;
+	private readonly StrategyParam<int> _historyLimit;
 	private readonly StrategyParam<int> _macdFastPeriod;
 	private readonly StrategyParam<int> _macdSlowPeriod;
 	private readonly StrategyParam<int> _macdSignalPeriod;
@@ -71,6 +70,11 @@ public class MacdPatternTraderV01Strategy : Strategy
 	/// Offset in points added to the calculated stop level.
 	/// </summary>
 	public int OffsetPoints { get => _offsetPoints.Value; set => _offsetPoints.Value = value; }
+
+	/// <summary>
+	/// Number of historical candles stored for swing detection.
+	/// </summary>
+	public int HistoryLimit { get => _historyLimit.Value; set => _historyLimit.Value = value; }
 
 	/// <summary>
 	/// Fast EMA period for the MACD indicator.
@@ -150,6 +154,10 @@ public class MacdPatternTraderV01Strategy : Strategy
 		_offsetPoints = Param(nameof(OffsetPoints), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Offset", "Additional points added to the stop-loss", "Risk");
+
+		_historyLimit = Param(nameof(HistoryLimit), 1000)
+		.SetGreaterThanZero()
+		.SetDisplay("History Limit", "Number of recent candles stored for swing detection", "Risk");
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 5)
 		.SetGreaterThanZero()

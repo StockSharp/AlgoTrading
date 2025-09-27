@@ -14,8 +14,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class FibonacciSwingTradingBotStrategy : Strategy
 {
-	private const int SwingLength = 50;
-
+	private readonly StrategyParam<int> _swingLength;
 	private readonly StrategyParam<decimal> _fiboLevel1;
 	private readonly StrategyParam<decimal> _fiboLevel2;
 	private readonly StrategyParam<decimal> _riskRewardRatio;
@@ -62,6 +61,15 @@ public class FibonacciSwingTradingBotStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Donchian channel length.
+	/// </summary>
+	public int SwingLength
+	{
+		get => _swingLength.Value;
+		set => _swingLength.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type for analysis.
 	/// </summary>
 	public DataType CandleType
@@ -75,6 +83,12 @@ public class FibonacciSwingTradingBotStrategy : Strategy
 	/// </summary>
 	public FibonacciSwingTradingBotStrategy()
 	{
+		_swingLength = Param(nameof(SwingLength), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("Swing Length", "Donchian lookback length", "Parameters")
+			.SetCanOptimize(true)
+			.SetOptimize(10, 100, 5);
+
 		_fiboLevel1 = Param(nameof(FiboLevel1), 0.618m)
 			.SetDisplay("Fibonacci Level 1", "First retracement level", "Parameters")
 			.SetCanOptimize(true)

@@ -27,10 +27,11 @@ public class FatPanelVisualBuilderStrategy : Strategy
 		Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, true) }
 	};
 
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<string> _configuration;
-	private readonly StrategyParam<decimal> _stopLossPoints;
-	private readonly StrategyParam<decimal> _takeProfitPoints;
+private readonly StrategyParam<DataType> _candleType;
+private readonly StrategyParam<string> _defaultConfiguration;
+private readonly StrategyParam<string> _configuration;
+private readonly StrategyParam<decimal> _stopLossPoints;
+private readonly StrategyParam<decimal> _takeProfitPoints;
 
 	private Dictionary<FatPanelSignalDefinition, SignalContext> _signalContexts = new();
 	private List<FatPanelRuleContext> _ruleContexts = new();
@@ -48,6 +49,15 @@ public class FatPanelVisualBuilderStrategy : Strategy
 	}
 
 	/// <summary>
+	/// JSON configuration string applied when user input is empty.
+	/// </summary>
+	public string DefaultConfiguration
+	{
+		get => _defaultConfiguration.Value;
+		set => _defaultConfiguration.Value = value;
+	}
+	
+	/// <summary>
 	/// JSON configuration string describing rules, conditions and actions.
 	/// </summary>
 	public string Configuration
@@ -55,7 +65,6 @@ public class FatPanelVisualBuilderStrategy : Strategy
 		get => _configuration.Value;
 		set => _configuration.Value = value;
 	}
-
 
 	/// <summary>
 	/// Stop loss distance expressed in price steps.
@@ -82,11 +91,13 @@ public class FatPanelVisualBuilderStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series", "General");
-
+	
+		_defaultConfiguration = Param(nameof(DefaultConfiguration), CreateDefaultConfiguration())
+			.SetDisplay("Default Configuration", "Template used when configuration is empty", "Logic");
+	
 		_configuration = Param(nameof(Configuration), DefaultConfiguration)
 			.SetDisplay("Configuration", "JSON definition of rules", "Logic");
-
-
+	
 		_stopLossPoints = Param(nameof(StopLossPoints), 0m)
 			.SetDisplay("Stop Loss (pts)", "Stop loss distance in points", "Protection");
 
@@ -790,38 +801,41 @@ public class FatPanelVisualBuilderStrategy : Strategy
 		ShortOnly
 	}
 
-	private const string DefaultConfiguration = """
+	private static string CreateDefaultConfiguration()
+	{
+		return """
 {
   "rules": [
-	{
-	  "name": "EMA crosses above SMA",
-	  "all": [
-		{
-		  "type": "comparison",
-		  "operator": "CrossAbove",
-		  "left": { "type": "MovingAverage", "period": 20, "method": "Exponential", "price": "Close" },
-		  "right": { "type": "MovingAverage", "period": 50, "method": "Simple", "price": "Close" }
-		},
-		{ "type": "dayOfWeek", "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"] },
-		{ "type": "time", "start": "09:00", "end": "17:00" },
-		{ "type": "position", "required": "FlatOrShort" }
-	  ],
-	  "action": { "type": "Buy" }
-	},
-	{
-	  "name": "EMA crosses below SMA",
-	  "all": [
-		{
-		  "type": "comparison",
-		  "operator": "CrossBelow",
-		  "left": { "type": "MovingAverage", "period": 20, "method": "Exponential", "price": "Close" },
-		  "right": { "type": "MovingAverage", "period": 50, "method": "Simple", "price": "Close" }
-		},
-		{ "type": "position", "required": "LongOnly" }
-	  ],
-	  "action": { "type": "Close" }
-	}
+        {
+          "name": "EMA crosses above SMA",
+          "all": [
+                {
+                  "type": "comparison",
+                  "operator": "CrossAbove",
+                  "left": { "type": "MovingAverage", "period": 20, "method": "Exponential", "price": "Close" },
+                  "right": { "type": "MovingAverage", "period": 50, "method": "Simple", "price": "Close" }
+                },
+                { "type": "dayOfWeek", "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"] },
+                { "type": "time", "start": "09:00", "end": "17:00" },
+                { "type": "position", "required": "FlatOrShort" }
+          ],
+          "action": { "type": "Buy" }
+        },
+        {
+          "name": "EMA crosses below SMA",
+          "all": [
+                {
+                  "type": "comparison",
+                  "operator": "CrossBelow",
+                  "left": { "type": "MovingAverage", "period": 20, "method": "Exponential", "price": "Close" },
+                  "right": { "type": "MovingAverage", "period": 50, "method": "Simple", "price": "Close" }
+                },
+                { "type": "position", "required": "LongOnly" }
+          ],
+          "action": { "type": "Close" }
+        }
   ]
 }
 """;
+	}
 }

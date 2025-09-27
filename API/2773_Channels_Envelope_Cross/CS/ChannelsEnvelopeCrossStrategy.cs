@@ -15,9 +15,9 @@ using StockSharp.Messages;
 /// </summary>
 public class ChannelsEnvelopeCrossStrategy : Strategy
 {
-	private const decimal Envelope003 = 0.3m / 100m;
-	private const decimal Envelope007 = 0.7m / 100m;
-	private const decimal Envelope010 = 1.0m / 100m;
+	private readonly StrategyParam<decimal> _envelope003;
+	private readonly StrategyParam<decimal> _envelope007;
+	private readonly StrategyParam<decimal> _envelope010;
 
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<bool> _useTradeHours;
@@ -160,6 +160,33 @@ public class ChannelsEnvelopeCrossStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Percentage width for the 0.3% envelope band.
+	/// </summary>
+	public decimal Envelope003
+	{
+		get => _envelope003.Value;
+		set => _envelope003.Value = value;
+	}
+
+	/// <summary>
+	/// Percentage width for the 0.7% envelope band.
+	/// </summary>
+	public decimal Envelope007
+	{
+		get => _envelope007.Value;
+		set => _envelope007.Value = value;
+	}
+
+	/// <summary>
+	/// Percentage width for the 1.0% envelope band.
+	/// </summary>
+	public decimal Envelope010
+	{
+		get => _envelope010.Value;
+		set => _envelope010.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of <see cref="ChannelsEnvelopeCrossStrategy"/>.
 	/// </summary>
 	public ChannelsEnvelopeCrossStrategy()
@@ -197,6 +224,18 @@ public class ChannelsEnvelopeCrossStrategy : Strategy
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 1)
 		.SetDisplay("Trailing Step (pips)", "Minimum increment for trailing stop", "Risk");
+
+		_envelope003 = Param(nameof(Envelope003), 0.3m / 100m)
+			.SetGreaterThan(0m)
+			.SetDisplay("Envelope 0.3%", "Width of the 0.3% envelope", "Indicators");
+
+		_envelope007 = Param(nameof(Envelope007), 0.7m / 100m)
+			.SetGreaterThan(0m)
+			.SetDisplay("Envelope 0.7%", "Width of the 0.7% envelope", "Indicators");
+
+		_envelope010 = Param(nameof(Envelope010), 1.0m / 100m)
+			.SetGreaterThan(0m)
+			.SetDisplay("Envelope 1.0%", "Width of the 1.0% envelope", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame used for calculations", "General");

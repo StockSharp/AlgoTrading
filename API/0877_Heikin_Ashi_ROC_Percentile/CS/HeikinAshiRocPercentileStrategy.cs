@@ -14,7 +14,9 @@ using StockSharp.Messages;
 /// </summary>
 public class HeikinAshiRocPercentileStrategy : Strategy
 {
-	private readonly StrategyParam<int> _rocLength;
+private readonly StrategyParam<int> _rocLength;
+private readonly StrategyParam<int> _rocHighLength;
+private readonly StrategyParam<int> _percentileLength;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<DateTimeOffset> _startDate;
@@ -34,13 +36,22 @@ public class HeikinAshiRocPercentileStrategy : Strategy
 	private decimal _prevLowerKill;
 	private bool _isFirst = true;
 
-	private const int RocHighLength = 50;
-	private const int PercentileLength = 10;
-
-	public HeikinAshiRocPercentileStrategy()
-	{
+public HeikinAshiRocPercentileStrategy()
+{
 		_rocLength = Param(nameof(RocLength), 100)
-		.SetDisplay("ROC Length", "Lookback period for SMA and ROC", "Parameters");
+			.SetDisplay("ROC Length", "Lookback period for SMA and ROC", "Parameters");
+
+		_rocHighLength = Param(nameof(RocHighLength), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("ROC High Length", "Lookback for ROC extremes", "Parameters")
+			.SetCanOptimize(true)
+			.SetOptimize(20, 100, 5);
+
+		_percentileLength = Param(nameof(PercentileLength), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Percentile Length", "Bars for percentile calculation", "Parameters")
+			.SetCanOptimize(true)
+			.SetOptimize(5, 30, 1);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 		.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
@@ -53,6 +64,8 @@ public class HeikinAshiRocPercentileStrategy : Strategy
 	}
 
 	public int RocLength { get => _rocLength.Value; set => _rocLength.Value = value; }
+	public int RocHighLength { get => _rocHighLength.Value; set => _rocHighLength.Value = value; }
+	public int PercentileLength { get => _percentileLength.Value; set => _percentileLength.Value = value; }
 	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public DateTimeOffset StartDate { get => _startDate.Value; set => _startDate.Value = value; }

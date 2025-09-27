@@ -14,9 +14,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class PendingTreadStrategy : Strategy
 {
-	private const int OrdersPerSide = 10;
 	private static readonly TimeSpan SubmissionThrottle = TimeSpan.FromSeconds(5);
-	private const string CommentPrefix = "PendingTread";
 
 	/// <summary>
 	/// Order direction used for a pending grid.
@@ -45,6 +43,8 @@ public class PendingTreadStrategy : Strategy
 	private readonly StrategyParam<decimal> _minimumEquity;
 	private readonly StrategyParam<bool> _enableEquityGuard;
 	private readonly StrategyParam<decimal> _maxLossPercent;
+	private readonly StrategyParam<int> _ordersPerSide;
+	private readonly StrategyParam<string> _commentPrefix;
 
 	private decimal _pointSize;
 	private decimal _pipDistance;
@@ -160,6 +160,24 @@ public class PendingTreadStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Maximum number of pending orders maintained on each side of the market.
+	/// </summary>
+	public int OrdersPerSide
+	{
+		get => _ordersPerSide.Value;
+		set => _ordersPerSide.Value = value;
+	}
+
+	/// <summary>
+	/// Prefix used when tagging orders created by the strategy.
+	/// </summary>
+	public string CommentPrefix
+	{
+		get => _commentPrefix.Value;
+		set => _commentPrefix.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="PendingTreadStrategy"/> class.
 	/// </summary>
 	public PendingTreadStrategy()
@@ -201,6 +219,13 @@ public class PendingTreadStrategy : Strategy
 		_maxLossPercent = Param(nameof(MaxLossPercent), 20m)
 		.SetNotNegative()
 		.SetDisplay("Max Loss Percent", "Drawdown percentage that triggers the equity guard.", "Protection");
+
+		_ordersPerSide = Param(nameof(OrdersPerSide), 10)
+		.SetGreaterThanZero()
+		.SetDisplay("Orders Per Side", "Maximum number of pending orders maintained on each side", "Orders");
+
+		_commentPrefix = Param(nameof(CommentPrefix), "PendingTread")
+		.SetDisplay("Comment Prefix", "Text added to order comments for identification", "Orders");
 	}
 
 	/// <inheritdoc />
@@ -500,7 +525,7 @@ public class PendingTreadStrategy : Strategy
 		return $"{BuildCommentPrefix(aboveMarket)}|{direction}";
 	}
 
-	private static string BuildCommentPrefix(bool aboveMarket)
+	private string BuildCommentPrefix(bool aboveMarket)
 	{
 		return $"{CommentPrefix}|{(aboveMarket ? "Above" : "Below")}";
 	}

@@ -14,7 +14,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class VrOverturnStrategy : Strategy
 {
-	private const decimal VolumeEpsilon = 1e-6m;
+	private readonly StrategyParam<decimal> _volumeEpsilon;
 
 	private enum InitialDirection
 	{
@@ -67,31 +67,44 @@ public class VrOverturnStrategy : Strategy
 	/// </summary>
 	public VrOverturnStrategy()
 	{
+		_volumeEpsilon = Param(nameof(VolumeEpsilon), 1e-6m)
+			.SetGreaterThan(0m)
+			.SetDisplay("Volume Epsilon", "Minimum volume threshold to treat position as flat", "Risk");
+
 		_initialDirection = Param(nameof(FirstPositionDirection), InitialDirection.Buy)
-		.SetDisplay("Initial Direction", "Direction of the very first trade", "Trading");
+			.SetDisplay("Initial Direction", "Direction of the very first trade", "Trading");
 
 		_tradeMode = Param(nameof(Mode), TradeMode.Martingale)
-		.SetDisplay("Trading Mode", "Choose martingale or anti-martingale sizing", "Trading");
+			.SetDisplay("Trading Mode", "Choose martingale or anti-martingale sizing", "Trading");
 
 		_baseVolume = Param(nameof(BaseVolume), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Base Volume", "Initial order size", "Risk")
-		.SetCanOptimize(true);
+			.SetGreaterThanZero()
+			.SetDisplay("Base Volume", "Initial order size", "Risk")
+			.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 30)
-		.SetGreaterThanZero()
-		.SetDisplay("Stop Loss (pips)", "Distance to stop loss in pips", "Risk")
-		.SetCanOptimize(true);
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss (pips)", "Distance to stop loss in pips", "Risk")
+			.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 90)
-		.SetGreaterThanZero()
-		.SetDisplay("Take Profit (pips)", "Distance to take profit in pips", "Risk")
-		.SetCanOptimize(true);
+			.SetGreaterThanZero()
+			.SetDisplay("Take Profit (pips)", "Distance to take profit in pips", "Risk")
+			.SetCanOptimize(true);
 
 		_lotMultiplier = Param(nameof(LotMultiplier), 1.6m)
-		.SetGreaterThanZero()
-		.SetDisplay("Lot Multiplier", "Multiplier applied after losses or wins", "Risk")
-		.SetCanOptimize(true);
+			.SetGreaterThanZero()
+			.SetDisplay("Lot Multiplier", "Multiplier applied after losses or wins", "Risk")
+			.SetCanOptimize(true);
+	}
+
+	/// <summary>
+	/// Volume tolerance used to consider a position fully closed.
+	/// </summary>
+	public decimal VolumeEpsilon
+	{
+		get => _volumeEpsilon.Value;
+		set => _volumeEpsilon.Value = value;
 	}
 
 	/// <summary>

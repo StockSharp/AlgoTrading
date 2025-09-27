@@ -33,13 +33,17 @@ public class RsiRftlStrategy : Strategy
 	private decimal? _longTrailingStop;
 	private decimal? _shortTrailingStop;
 
-	private const int MaxHistoryLength = 600;
+	private readonly StrategyParam<int> _maxHistoryLength;
 
 	/// <summary>
 	/// Initializes a new instance of the strategy.
 	/// </summary>
 	public RsiRftlStrategy()
 	{
+		_maxHistoryLength = Param(nameof(MaxHistoryLength), 600)
+			.SetGreaterThanZero()
+			.SetDisplay("Max History Length", "Maximum stored RSI/RFTL samples", "Indicator");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used for calculations", "General");
 
@@ -132,6 +136,15 @@ public class RsiRftlStrategy : Strategy
 	{
 		get => _trailingStepPips.Value;
 		set => _trailingStepPips.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum stored samples for historical calculations.
+	/// </summary>
+	public int MaxHistoryLength
+	{
+		get => _maxHistoryLength.Value;
+		set => _maxHistoryLength.Value = value;
 	}
 
 	/// <inheritdoc />

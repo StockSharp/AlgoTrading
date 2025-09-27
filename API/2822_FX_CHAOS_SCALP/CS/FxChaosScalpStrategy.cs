@@ -60,6 +60,19 @@ public class FxChaosScalpStrategy : Strategy
 		set => _dailyCandleType.Value = value;
 	}
 
+	public int ZigZagWindowSize
+	{
+		get => _zigZagWindowSize.Value;
+		set
+		{
+			var sanitized = Math.Max(3, value);
+			if ((sanitized & 1) == 0)
+				sanitized += 1;
+
+			_zigZagWindowSize.Value = sanitized;
+		}
+	}
+
 	public FxChaosScalpStrategy()
 	{
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
@@ -78,8 +91,12 @@ public class FxChaosScalpStrategy : Strategy
 		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Daily Candle", "Higher timeframe for ZigZag filter", "General");
 
-		_hourlyTracker = new FractalZigZagTracker();
-		_dailyTracker = new FractalZigZagTracker();
+		_zigZagWindowSize = Param(nameof(ZigZagWindowSize), 5)
+			.SetRange(3, 20)
+			.SetDisplay("ZigZag Window", "Candle count for ZigZag detection", "Indicators");
+
+		_hourlyTracker = new FractalZigZagTracker(ZigZagWindowSize);
+		_dailyTracker = new FractalZigZagTracker(ZigZagWindowSize);
 	}
 
 	/// <inheritdoc />
@@ -98,8 +115,8 @@ public class FxChaosScalpStrategy : Strategy
 		base.OnReseted();
 
 		Volume = OrderVolume;
-		_hourlyTracker.Reset();
-		_dailyTracker.Reset();
+		_hourlyTracker = new FractalZigZagTracker(ZigZagWindowSize);
+		_dailyTracker = new FractalZigZagTracker(ZigZagWindowSize);
 		_previousHigh = 0m;
 		_previousLow = 0m;
 		_hasPrevious = false;
@@ -302,17 +319,29 @@ public class FxChaosScalpStrategy : Strategy
 
 	private sealed class FractalZigZagTracker
 	{
-		private const int WindowSize = 5;
-		private readonly CandleInfo[] _window = new CandleInfo[WindowSize];
+		private readonly int _windowSize;
+		private readonly CandleInfo[] _window;
 		private int _count;
 		private decimal? _lastValue;
 		private int _direction;
+
+		public FractalZigZagTracker(int windowSize)
+		{
+			if (windowSize < 3)
+				windowSize = 3;
+
+			if ((windowSize & 1) == 0)
+				windowSize += 1;
+
+			_windowSize = windowSize;
+			_window = new CandleInfo[_windowSize];
+		}
 
 		public decimal? LastValue => _lastValue;
 
 		public void Reset()
 		{
-			Array.Clear(_window);
+			Array.Clear(_window, 0, _window.Length);
 			_count = 0;
 			_lastValue = null;
 			_direction = 0;
@@ -320,20 +349,20 @@ public class FxChaosScalpStrategy : Strategy
 
 		public decimal? Update(ICandleMessage candle)
 		{
-			if (_count < WindowSize)
+			if (_count < _windowSize)
 			{
 				_window[_count++] = new CandleInfo(candle.HighPrice, candle.LowPrice);
-				if (_count < WindowSize)
+				if (_count < _windowSize)
 					return _lastValue;
 
 				Evaluate();
 				return _lastValue;
 			}
 
-			for (var i = 0; i < WindowSize - 1; i++)
+			for (var i = 0; i < _windowSize - 1; i++)
 				_window[i] = _window[i + 1];
 
-			_window[WindowSize - 1] = new CandleInfo(candle.HighPrice, candle.LowPrice);
+			_window[_windowSize - 1] = new CandleInfo(candle.HighPrice, candle.LowPrice);
 
 			Evaluate();
 			return _lastValue;
@@ -341,28 +370,53 @@ public class FxChaosScalpStrategy : Strategy
 
 		private void Evaluate()
 		{
-			if (_count < WindowSize)
+			if (_count < _windowSize)
 				return;
 
-			var c0 = _window[0];
-			var c1 = _window[1];
-			var c2 = _window[2];
-			var c3 = _window[3];
-			var c4 = _window[4];
+			var centerIndex = _windowSize / 2;
+			var center = _window[centerIndex];
 
-			var isUp = c2.High > c1.High && c2.High > c0.High && c2.High >= c3.High && c2.High >= c4.High;
-			var isDown = c2.Low < c1.Low && c2.Low < c0.Low && c2.Low <= c3.Low && c2.Low <= c4.Low;
+			var isUp = true;
+			var isDown = true;
+
+			for (var i = 0; i < _windowSize; i++)
+			{
+				if (i == centerIndex)
+					continue;
+
+				var candle = _window[i];
+
+				if (i < centerIndex)
+				{
+					if (center.High <= candle.High)
+						isUp = false;
+
+					if (center.Low >= candle.Low)
+						isDown = false;
+				}
+				else
+				{
+					if (center.High < candle.High)
+						isUp = false;
+
+					if (center.Low > candle.Low)
+						isDown = false;
+				}
+
+				if (!isUp && !isDown)
+					break;
+			}
 
 			if (isUp)
 			{
 				if (_direction == 1)
 				{
-					if (_lastValue == null || c2.High > _lastValue.Value)
-						_lastValue = c2.High;
+					if (_lastValue == null || center.High > _lastValue.Value)
+						_lastValue = center.High;
 				}
 				else
 				{
-					_lastValue = c2.High;
+					_lastValue = center.High;
 					_direction = 1;
 				}
 			}
@@ -370,12 +424,12 @@ public class FxChaosScalpStrategy : Strategy
 			{
 				if (_direction == -1)
 				{
-					if (_lastValue == null || c2.Low < _lastValue.Value)
-						_lastValue = c2.Low;
+					if (_lastValue == null || center.Low < _lastValue.Value)
+						_lastValue = center.Low;
 				}
 				else
 				{
-					_lastValue = c2.Low;
+					_lastValue = center.Low;
 					_direction = -1;
 				}
 			}

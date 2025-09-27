@@ -151,6 +151,7 @@ public class BuildYourGridStrategy : Strategy
 	private readonly StrategyParam<decimal> _maxMultiplierLot;
 	private readonly StrategyParam<int> _maxOrders;
 	private readonly StrategyParam<decimal> _maxSpread;
+	private readonly StrategyParam<decimal> _volumeTolerance;
 
 	private readonly List<PositionEntry> _buyEntries = new();
 	private readonly List<PositionEntry> _sellEntries = new();
@@ -167,8 +168,6 @@ public class BuildYourGridStrategy : Strategy
 	private decimal _lastSellVolume;
 	private decimal _lastBuyPrice;
 	private decimal _lastSellPrice;
-
-	private const decimal VolumeTolerance = 0.0000001m;
 
 	/// <summary>
 	/// Initializes default parameters mirroring the MetaTrader expert advisor inputs.
@@ -255,6 +254,9 @@ public class BuildYourGridStrategy : Strategy
 		_maxSpread = Param(nameof(MaxSpread), 0m)
 		.SetNotNegative()
 		.SetDisplay("Max Spread", "Maximum accepted bid/ask spread in pips (0 = ignore).", "Filters");
+		_volumeTolerance = Param(nameof(VolumeTolerance), 0.0000001m)
+			.SetGreaterThanZero()
+			.SetDisplay("Volume Tolerance", "Minimum difference to consider volumes equal when balancing hedge trades.", "Orders");
 	}
 
 	/// <summary>
@@ -435,6 +437,12 @@ public class BuildYourGridStrategy : Strategy
 	{
 		get => _maxSpread.Value;
 		set => _maxSpread.Value = value;
+	}
+
+	public decimal VolumeTolerance
+	{
+		get => _volumeTolerance.Value;
+		set => _volumeTolerance.Value = value;
 	}
 
 	/// <inheritdoc />

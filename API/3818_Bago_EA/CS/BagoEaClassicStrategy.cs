@@ -15,8 +15,6 @@ using StockSharp.Messages;
 /// </summary>
 public class BagoEaClassicStrategy : Strategy
 {
-	private const int HistoryLimit = 300;
-	private const decimal FiftyLevel = 50m;
 
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<decimal> _stopLossPips;
@@ -41,6 +39,8 @@ public class BagoEaClassicStrategy : Strategy
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<AppliedPriceType> _rsiAppliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _historyLimit;
+	private readonly StrategyParam<decimal> _fiftyLevel;
 
 	private LengthIndicator<decimal> _fastMa = null!;
 	private LengthIndicator<decimal> _slowMa = null!;
@@ -166,6 +166,12 @@ public class BagoEaClassicStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Working timeframe", "General");
+		_historyLimit = Param(nameof(HistoryLimit), 300)
+			.SetDisplay("History Limit", "Maximum number of cached indicator values", "General")
+			.SetGreaterThanZero();
+		_fiftyLevel = Param(nameof(FiftyLevel), 50m)
+			.SetDisplay("RSI Middle", "Neutral RSI level separating long and short signals", "Indicators")
+			.SetNotNegative();
 	}
 
 /// <summary>
@@ -374,6 +380,22 @@ public DataType CandleType
 	get => _candleType.Value;
 	set => _candleType.Value = value;
 }
+	/// <summary>
+	/// Maximum number of cached history items used by the strategy.
+	/// </summary>
+	public int HistoryLimit
+	{
+		get => _historyLimit.Value;
+		set => _historyLimit.Value = value;
+	}
+	/// <summary>
+	/// RSI neutral level separating bullish and bearish regimes.
+	/// </summary>
+	public decimal FiftyLevel
+	{
+		get => _fiftyLevel.Value;
+		set => _fiftyLevel.Value = value;
+	}
 
 /// <inheritdoc />
 public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()

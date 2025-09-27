@@ -15,8 +15,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ExpSkyscraperFixColorAmlStrategy : Strategy
 {
-	private const int SkyscraperAtrPeriod = 15;
-	private const int MaxHistory = 512;
+	private readonly StrategyParam<int> _skyscraperAtrPeriod;
+	private readonly StrategyParam<int> _maxHistory;
 
 	private readonly StrategyParam<DataType> _skyscraperCandleType;
 	private readonly StrategyParam<bool> _skyscraperEnableLongEntry;
@@ -57,6 +57,16 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 	/// </summary>
 	public ExpSkyscraperFixColorAmlStrategy()
 	{
+		_skyscraperAtrPeriod = Param(nameof(SkyscraperAtrPeriod), 15)
+			.SetGreaterThanZero()
+			.SetDisplay("Skyscraper ATR Period", "ATR period used for Skyscraper calculations", "Skyscraper")
+			.SetCanOptimize(true)
+			.SetOptimize(5, 40, 1);
+
+		_maxHistory = Param(nameof(MaxHistory), 512)
+			.SetGreaterThanZero()
+			.SetDisplay("Max History", "Maximum number of historical candles stored", "General");
+
 	_skyscraperCandleType = Param(nameof(SkyscraperCandleType), TimeSpan.FromHours(4).TimeFrame())
 	.SetDisplay("Skyscraper Timeframe", "Timeframe used for the Skyscraper Fix module", "Skyscraper");
 
@@ -203,6 +213,15 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 	{
 	get => _skyscraperLength.Value;
 	set => _skyscraperLength.Value = value;
+	}
+
+	/// <summary>
+	/// ATR period used for Skyscraper historical smoothing.
+	/// </summary>
+	public int SkyscraperAtrPeriod
+	{
+	get => _skyscraperAtrPeriod.Value;
+	set => _skyscraperAtrPeriod.Value = value;
 	}
 
 	/// <summary>
@@ -365,6 +384,15 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 	{
 	get => _colorAmlTakeProfit.Value;
 	set => _colorAmlTakeProfit.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum number of historical candles stored for pattern analysis.
+	/// </summary>
+	public int MaxHistory
+	{
+	get => _maxHistory.Value;
+	set => _maxHistory.Value = value;
 	}
 
 	/// <inheritdoc />

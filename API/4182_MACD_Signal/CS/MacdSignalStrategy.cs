@@ -13,8 +13,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MacdSignalStrategy : Strategy
 {
-	private const int MinimumTakeProfitPoints = 10;
-
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<int> _trailingStopPoints;
@@ -24,6 +22,7 @@ public class MacdSignalStrategy : Strategy
 	private readonly StrategyParam<decimal> _thresholdMultiplier;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _minimumTakeProfitPoints;
 
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 	private AverageTrueRange _atr = null!;
@@ -115,13 +114,22 @@ public class MacdSignalStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Minimal allowed take-profit distance in price steps.
+	/// </summary>
+	public int MinimumTakeProfitPoints
+	{
+		get => _minimumTakeProfitPoints.Value;
+		set => _minimumTakeProfitPoints.Value = value;
+	}
+
+
 	/// Initializes a new instance of the <see cref="MacdSignalStrategy"/> class.
 	/// </summary>
 	public MacdSignalStrategy()
 	{
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 10)
 			.SetNotNegative()
-			.SetDisplay("Take Profit (points)", "Distance for the fixed take-profit target in price steps.", "Risk")
+			.SetDisplay("Take Profit (points)", "Distance for the fixed take-profit target in price steps.", "Risk");
 			.SetCanOptimize(true);
 
 		_tradeVolume = Param(nameof(TradeVolume), 10m)
@@ -160,6 +168,10 @@ public class MacdSignalStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for MACD and ATR calculations.", "General");
+
+		_minimumTakeProfitPoints = Param(nameof(MinimumTakeProfitPoints), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Min Take Profit (points)", "Smallest allowed take-profit distance applied for safety checks.", "Risk");
 	}
 
 	/// <inheritdoc />

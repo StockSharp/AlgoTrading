@@ -20,16 +20,16 @@ public class SelfLearningExpertsStrategy : Strategy
 	private readonly StrategyParam<bool> _replaceStops;
 	private readonly StrategyParam<int> _trailing;
 	private readonly StrategyParam<DataType> _candleType;
-	
+	private readonly StrategyParam<int> _maxPatternSizeLimit;
+	private readonly StrategyParam<int> _maxPatternCount;
+
 	private int _pattern;
 	private int _historyCount;
 	private decimal? _stopLoss;
 	private decimal? _takeProfit;
 	
-	private const int MaxPatternSize = 12;
-	private const int MaxPatternCount = 1 << MaxPatternSize;
-	private readonly decimal[] _upPower = new decimal[MaxPatternCount];
-	private readonly decimal[] _downPower = new decimal[MaxPatternCount];
+	private decimal[] _upPower;
+	private decimal[] _downPower;
 	
 	/// <summary>
 	/// Probability threshold required for trading.
@@ -75,8 +75,25 @@ public class SelfLearningExpertsStrategy : Strategy
 		get => _trailing.Value;
 		set => _trailing.Value = value;
 	}
-	
-	
+
+	/// <summary>
+	/// Maximum size of binary pattern history.
+	/// </summary>
+	public int MaxPatternSizeLimit
+	{
+		get => _maxPatternSizeLimit.Value;
+		set => _maxPatternSizeLimit.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum number of stored pattern statistics.
+	/// </summary>
+	public int MaxPatternCount
+	{
+		get => _maxPatternCount.Value;
+		set => _maxPatternCount.Value = value;
+	}
+
 	/// <summary>
 	/// Candle type used for analysis.
 	/// </summary>
@@ -105,10 +122,17 @@ public class SelfLearningExpertsStrategy : Strategy
 		
 		_trailing = Param(nameof(Trailing), 0)
 		.SetDisplay("Trailing", "Trailing distance in steps", "Risk");
-		
-		
+
+		_maxPatternSizeLimit = Param(nameof(MaxPatternSizeLimit), 12)
+		.SetDisplay("Max Pattern Size", "Maximum allowed pattern length", "Pattern");
+
+		_maxPatternCount = Param(nameof(MaxPatternCount), 1 << 12)
+		.SetDisplay("Max Pattern Count", "Maximum number of stored patterns", "Pattern");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		EnsurePatternStorage();
 	}
 	
 	/// <inheritdoc />
@@ -125,17 +149,19 @@ public class SelfLearningExpertsStrategy : Strategy
 		_historyCount = 0;
 		_stopLoss = null;
 		_takeProfit = null;
-		Array.Clear(_upPower);
-		Array.Clear(_downPower);
+
+		EnsurePatternStorage();
 	}
 	
 	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);
-		
+
+		EnsurePatternStorage();
+
 		var subscription = SubscribeCandles(CandleType);
-		
+
 		subscription
 		.Bind(ProcessCandle)
 		.Start();
@@ -203,6 +229,28 @@ public class SelfLearningExpertsStrategy : Strategy
 		}
 	}
 	
+	private void EnsurePatternStorage()
+	{
+		if (PatternSize > MaxPatternSizeLimit)
+			throw new InvalidOperationException("PatternSize exceeds MaxPatternSizeLimit.");
+
+		var requiredCount = MaxPatternCount;
+		var minimumCount = 1 << PatternSize;
+		if (requiredCount < minimumCount)
+			throw new InvalidOperationException("MaxPatternCount must be at least 2^PatternSize.");
+
+		if (_upPower is null || _upPower.Length != requiredCount)
+		{
+			_upPower = new decimal[requiredCount];
+			_downPower = new decimal[requiredCount];
+		}
+		else
+		{
+			Array.Clear(_upPower);
+			Array.Clear(_downPower);
+		}
+	}
+
 	private void UpdateStops(ICandleMessage candle)
 	{
 		if (Position == 0 || Trailing <= 0 || Security?.PriceStep == null)

@@ -10,13 +10,12 @@ namespace StockSharp.Samples.Strategies;
 
 public class FreemanStrategy : Strategy
 {
-	private const int FilterRsiPeriod = 14;
-
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<DataType> _filterCandleType;
 	private readonly StrategyParam<int> _firstMaPeriod;
 	private readonly StrategyParam<int> _secondMaPeriod;
 	private readonly StrategyParam<int> _filterMaPeriod;
+	private readonly StrategyParam<int> _filterRsiPeriod;
 	private readonly StrategyParam<MovingAverageTypeEnum> _maType;
 	private readonly StrategyParam<int> _rsiFirstPeriod;
 	private readonly StrategyParam<int> _rsiSecondPeriod;
@@ -108,6 +107,15 @@ public class FreemanStrategy : Strategy
 	{
 		get => _filterMaPeriod.Value;
 		set => _filterMaPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Period of the RSI filter applied on the higher timeframe.
+	/// </summary>
+	public int FilterRsiPeriod
+	{
+		get => _filterRsiPeriod.Value;
+		set => _filterRsiPeriod.Value = value;
 	}
 
 	/// <summary>
@@ -318,6 +326,10 @@ public class FreemanStrategy : Strategy
 		_filterMaPeriod = Param(nameof(FilterMaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Filter MA Period", "Period of the higher timeframe moving average", "Indicators");
+
+		_filterRsiPeriod = Param(nameof(FilterRsiPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("Filter RSI Period", "Period of the higher timeframe RSI filter", "Indicators");
 
 		_maType = Param(nameof(MaType), MovingAverageTypeEnum.Simple)
 			.SetDisplay("MA Type", "Type of moving averages", "Indicators");

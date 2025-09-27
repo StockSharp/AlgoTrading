@@ -15,7 +15,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class DeltaSma1YearHighLowStrategy : Strategy
 {
-	private const int LookbackBars = 365;
+	private readonly StrategyParam<int> _lookbackBars;
 
 	private readonly StrategyParam<int> _deltaSmaLength;
 	private readonly StrategyParam<DataType> _candleType;
@@ -38,6 +38,15 @@ public class DeltaSma1YearHighLowStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Lookback bars for yearly high/low calculations.
+	/// </summary>
+	public int LookbackBars
+	{
+		get => _lookbackBars.Value;
+		set => _lookbackBars.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type for strategy calculation.
 	/// </summary>
 	public DataType CandleType
@@ -56,6 +65,10 @@ public class DeltaSma1YearHighLowStrategy : Strategy
 			.SetDisplay("Delta SMA Length", "Period for delta SMA", "Parameters")
 			.SetCanOptimize(true)
 			.SetOptimize(5, 30, 5);
+
+		_lookbackBars = Param(nameof(LookbackBars), 365)
+			.SetGreaterThanZero()
+			.SetDisplay("Lookback Bars", "Bars for yearly high/low", "Parameters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Parameters");

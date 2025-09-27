@@ -12,14 +12,13 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BitexOneMarketMakerStrategy : Strategy
 {
-	private const decimal PriceToleranceRatio = 0.0005m;
-	private const decimal VolumeTolerance = 0.0000001m;
-
 	private readonly StrategyParam<decimal> _maxVolumePerLevel;
 	private readonly StrategyParam<decimal> _shiftCoefficient;
 	private readonly StrategyParam<int> _levelCount;
 	private readonly StrategyParam<LeadPriceSource> _priceSource;
 	private readonly StrategyParam<Security> _leadSecurityParam;
+	private readonly StrategyParam<decimal> _priceToleranceRatio;
+	private readonly StrategyParam<decimal> _volumeTolerance;
 
 	private Order[] _buyOrders = Array.Empty<Order>();
 	private Order[] _sellOrders = Array.Empty<Order>();
@@ -82,6 +81,24 @@ public class BitexOneMarketMakerStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Maximum allowed deviation between desired and actual price as a fraction of price step.
+	/// </summary>
+	public decimal PriceToleranceRatio
+	{
+		get => _priceToleranceRatio.Value;
+		set => _priceToleranceRatio.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum volume difference treated as negligible when comparing order sizes.
+	/// </summary>
+	public decimal VolumeTolerance
+	{
+		get => _volumeTolerance.Value;
+		set => _volumeTolerance.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of <see cref="BitexOneMarketMakerStrategy"/>.
 	/// </summary>
 	public BitexOneMarketMakerStrategy()
@@ -107,6 +124,14 @@ public class BitexOneMarketMakerStrategy : Strategy
 
 		_leadSecurityParam = Param<Security>(nameof(LeadSecurity))
 		.SetDisplay("Lead Security", "Instrument that supplies mark or index prices when needed.", "General");
+
+		_priceToleranceRatio = Param(nameof(PriceToleranceRatio), 0.0005m)
+		.SetGreaterThanZero()
+		.SetDisplay("Price Tolerance", "Allowed deviation ratio when matching resting quotes.", "Orders");
+
+		_volumeTolerance = Param(nameof(VolumeTolerance), 0.0000001m)
+		.SetGreaterThanZero()
+		.SetDisplay("Volume Tolerance", "Minimum difference ignored when comparing order volumes.", "Orders");
 	}
 
 	/// <inheritdoc />
