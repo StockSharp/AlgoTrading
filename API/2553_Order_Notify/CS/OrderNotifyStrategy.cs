@@ -1,10 +1,19 @@
 using System;
+using System.Linq;
+using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
+using StockSharp.Messages;
+
 using System.Net;
 using System.Net.Mail;
 using System.Text;
-
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 
 namespace StockSharp.Samples.Strategies;
 
