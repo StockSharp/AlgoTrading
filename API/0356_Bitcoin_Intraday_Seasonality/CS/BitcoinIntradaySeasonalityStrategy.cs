@@ -1,8 +1,12 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
+using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -142,4 +146,3 @@ public class BitcoinIntradaySeasonalityStrategy : Strategy
 
 	private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
 }
-
