@@ -15,7 +15,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class StairsStrategy : Strategy
 {
-	private const decimal VolumeEpsilon = 1e-6m;
+	private readonly StrategyParam<decimal> _volumeEpsilon;
 
 	private readonly StrategyParam<int> _channelSteps;
 	private readonly StrategyParam<int> _profitSteps;
@@ -81,6 +81,15 @@ public class StairsStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Minimum volume threshold that treats values as zero when closing orders.
+	/// </summary>
+	public decimal VolumeEpsilon
+	{
+	get => _volumeEpsilon.Value;
+	set => _volumeEpsilon.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type used for trade management.
 	/// </summary>
 	public DataType CandleType
@@ -112,6 +121,10 @@ public class StairsStrategy : Strategy
 	_baseVolume = Param(nameof(BaseVolume), 0.1m)
 	.SetGreaterThanZero()
 	.SetDisplay("Base Volume", "Initial volume submitted to the grid", "Position Sizing");
+
+	_volumeEpsilon = Param(nameof(VolumeEpsilon), 1e-6m)
+	.SetGreaterThanZero()
+	.SetDisplay("Volume Epsilon", "Volumes below this threshold are treated as zero", "Position Sizing");
 
 	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 	.SetDisplay("Candle Type", "Primary timeframe used to supervise the grid", "General");

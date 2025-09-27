@@ -14,9 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class Hans123TraderStrategy : Strategy
 {
-	private const int RangeLength = 80;
-	private const decimal BreakoutOffsetPoints = 5m;
-
 	private readonly StrategyParam<int> _beginSession1;
 	private readonly StrategyParam<int> _endSession1;
 	private readonly StrategyParam<int> _beginSession2;
@@ -24,6 +21,8 @@ public class Hans123TraderStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStopPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _initialStopLossPoints;
+	private readonly StrategyParam<int> _rangeLength;
+	private readonly StrategyParam<decimal> _breakoutOffsetPoints;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private Highest _highest = null!;
@@ -118,45 +117,73 @@ public class Hans123TraderStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Number of candles analysed when computing the breakout range.
+	/// </summary>
+	public int RangeLength
+	{
+		get => _rangeLength.Value;
+		set => _rangeLength.Value = value;
+	}
+
+	/// <summary>
+	/// Distance in points between the range extremes and the breakout stop orders.
+	/// </summary>
+	public decimal BreakoutOffsetPoints
+	{
+		get => _breakoutOffsetPoints.Value;
+		set => _breakoutOffsetPoints.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="Hans123TraderStrategy"/> class.
 	/// </summary>
 	public Hans123TraderStrategy()
 	{
+		_rangeLength = Param(nameof(RangeLength), 80)
+			.SetDisplay("Range Length", "Number of candles used to compute the breakout range", "Breakout")
+			.SetGreaterThanZero()
+			.SetCanOptimize(true);
+
+		_breakoutOffsetPoints = Param(nameof(BreakoutOffsetPoints), 5m)
+			.SetDisplay("Breakout Offset", "Distance in points added above/below the range for stop orders", "Breakout")
+			.SetNotNegative()
+			.SetCanOptimize(true);
+
 		_beginSession1 = Param(nameof(BeginSession1), 6)
-		.SetDisplay("Begin Session 1", "First monitoring window start hour", "Time")
-		.SetCanOptimize(true);
+			.SetDisplay("Begin Session 1", "First monitoring window start hour", "Time")
+			.SetCanOptimize(true);
 
 		_endSession1 = Param(nameof(EndSession1), 10)
-		.SetDisplay("End Session 1", "Hour when first breakout orders are armed", "Time")
-		.SetCanOptimize(true);
+			.SetDisplay("End Session 1", "Hour when first breakout orders are armed", "Time")
+			.SetCanOptimize(true);
 
 		_beginSession2 = Param(nameof(BeginSession2), 10)
-		.SetDisplay("Begin Session 2", "Second monitoring window start hour", "Time")
-		.SetCanOptimize(true);
+			.SetDisplay("Begin Session 2", "Second monitoring window start hour", "Time")
+			.SetCanOptimize(true);
 
 		_endSession2 = Param(nameof(EndSession2), 14)
-		.SetDisplay("End Session 2", "Hour when second breakout orders are armed", "Time")
-		.SetCanOptimize(true);
+			.SetDisplay("End Session 2", "Hour when second breakout orders are armed", "Time")
+			.SetCanOptimize(true);
 
 		_trailingStopPoints = Param(nameof(TrailingStop), 0m)
-		.SetDisplay("Trailing Stop", "Trailing stop distance in points", "Risk")
-		.SetCanOptimize(true);
+			.SetDisplay("Trailing Stop", "Trailing stop distance in points", "Risk")
+			.SetCanOptimize(true);
 
 		_takeProfitPoints = Param(nameof(TakeProfit), 0m)
-		.SetDisplay("Take Profit", "Take-profit distance in points", "Risk")
-		.SetCanOptimize(true);
+			.SetDisplay("Take Profit", "Take-profit distance in points", "Risk")
+			.SetCanOptimize(true);
 
 		_initialStopLossPoints = Param(nameof(InitialStopLoss), 40m)
-		.SetDisplay("Initial Stop Loss", "Initial stop-loss distance in points", "Risk")
-		.SetCanOptimize(true);
+			.SetDisplay("Initial Stop Loss", "Initial stop-loss distance in points", "Risk")
+			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-		.SetDisplay("Candle Type", "Candle series for range detection", "Data");
+			.SetDisplay("Candle Type", "Candle series for range detection", "Data");
 
 		Volume = 1m;
 	}
 
-	/// <inheritdoc />
+/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];

@@ -22,7 +22,7 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 		60m, 80m, 100m, 120m, 140m, 160m, 180m, 200m, 220m, 240m, 260m
 	};
 
-	private const decimal TrailingBuffer = 5m;
+	private readonly StrategyParam<decimal> _trailingBuffer;
 
 	private readonly StrategyParam<int> _numBars;
 	private readonly StrategyParam<int> _maPeriod;
@@ -109,6 +109,11 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 		.SetCanOptimize(true);
 
 
+		_trailingBuffer = Param(nameof(TrailingBuffer), 5m)
+			.SetNotNegative()
+			.SetDisplay("Trailing Buffer", "Pip buffer subtracted from trailing thresholds", "Risk")
+			.SetCanOptimize(true);
+
 		ResetInternalState();
 	}
 
@@ -155,6 +160,15 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 	{
 		get => _daysBackForLow.Value;
 		set => _daysBackForLow.Value = value;
+	}
+
+	/// <summary>
+	/// Additional pip buffer applied when trailing stop-loss orders.
+	/// </summary>
+	public decimal TrailingBuffer
+	{
+		get => _trailingBuffer.Value;
+		set => _trailingBuffer.Value = value;
 	}
 
 
