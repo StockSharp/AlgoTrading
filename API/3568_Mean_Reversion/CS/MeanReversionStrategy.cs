@@ -17,9 +17,9 @@ using StockSharp.Messages;
 /// </summary>
 public class MeanReversionStrategy : Strategy
 {
-	private const int MacdFastLength = 12;
-	private const int MacdSlowLength = 26;
-	private const int MacdSignalLength = 9;
+	private readonly StrategyParam<int> _macdFastLength;
+	private readonly StrategyParam<int> _macdSlowLength;
+	private readonly StrategyParam<int> _macdSignalLength;
 
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<DataType> _candleType;
@@ -90,6 +90,21 @@ public class MeanReversionStrategy : Strategy
 		_momentumLength = Param(nameof(MomentumLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Period", "Period of the momentum indicator on the higher timeframe.", "Signal")
+		.SetCanOptimize(true);
+
+		_macdFastLength = Param(nameof(MacdFastLength), 12)
+		.SetGreaterThanZero()
+		.SetDisplay("MACD Fast Length", "Length of the fast EMA used by the MACD filter.", "Signal")
+		.SetCanOptimize(true);
+
+		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
+		.SetGreaterThanZero()
+		.SetDisplay("MACD Slow Length", "Length of the slow EMA used by the MACD filter.", "Signal")
+		.SetCanOptimize(true);
+
+		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
+		.SetGreaterThanZero()
+		.SetDisplay("MACD Signal Length", "Signal smoothing period for the MACD filter.", "Signal")
 		.SetCanOptimize(true);
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
@@ -186,6 +201,33 @@ public class MeanReversionStrategy : Strategy
 	{
 		get => _momentumLength.Value;
 		set => _momentumLength.Value = value;
+	}
+
+	/// <summary>
+	/// Number of fast EMA periods used by the MACD component.
+	/// </summary>
+	public int MacdFastLength
+	{
+		get => _macdFastLength.Value;
+		set => _macdFastLength.Value = value;
+	}
+
+	/// <summary>
+	/// Number of slow EMA periods used by the MACD component.
+	/// </summary>
+	public int MacdSlowLength
+	{
+		get => _macdSlowLength.Value;
+		set => _macdSlowLength.Value = value;
+	}
+
+	/// <summary>
+	/// Number of periods used by the MACD signal line.
+	/// </summary>
+	public int MacdSignalLength
+	{
+		get => _macdSignalLength.Value;
+		set => _macdSignalLength.Value = value;
 	}
 
 	/// <summary>

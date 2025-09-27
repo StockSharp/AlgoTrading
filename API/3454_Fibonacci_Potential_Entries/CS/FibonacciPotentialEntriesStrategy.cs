@@ -13,7 +13,7 @@ using StockSharp.Messages;
 /// </summary>
 public class FibonacciPotentialEntriesStrategy : Strategy
 {
-	private const decimal FirstTradeRiskPercent = 0.7m;
+	private readonly StrategyParam<decimal> _firstTradeRiskPercent;
 
 	private readonly StrategyParam<decimal> _p50Level;
 	private readonly StrategyParam<decimal> _p61Level;
@@ -52,6 +52,15 @@ public class FibonacciPotentialEntriesStrategy : Strategy
 	{
 		Bull = 1,
 		Bear = 2,
+	}
+
+	/// <summary>
+	/// Portion of the total risk allocated to the first trade.
+	/// </summary>
+	public decimal FirstTradeRiskPercent
+	{
+		get => _firstTradeRiskPercent.Value;
+		set => _firstTradeRiskPercent.Value = value;
 	}
 
 	/// <summary>
@@ -113,6 +122,10 @@ public class FibonacciPotentialEntriesStrategy : Strategy
 	/// </summary>
 	public FibonacciPotentialEntriesStrategy()
 	{
+		_firstTradeRiskPercent = Param(nameof(FirstTradeRiskPercent), 0.7m)
+			.SetDisplay("First Trade Risk Percent", "Minimum risk portion allocated to the first entry.", "Risk")
+			.SetGreaterOrEqualThanZero();
+
 		_p50Level = Param(nameof(P50Level), 1.08261m)
 			.SetDisplay("50% Level", "Price level corresponding to the 50% Fibonacci retracement.", "Levels");
 

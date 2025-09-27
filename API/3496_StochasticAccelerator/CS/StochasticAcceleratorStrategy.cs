@@ -17,7 +17,7 @@ using StockSharp.Messages;
 /// </summary>
 public class StochasticAcceleratorStrategy : Strategy
 {
-	private const decimal Epsilon = 0.000001m; // Same tolerance used by the original expert to avoid equality issues.
+	private readonly StrategyParam<decimal> _epsilon;
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _tradeVolume;
@@ -56,6 +56,10 @@ public class StochasticAcceleratorStrategy : Strategy
 	/// </summary>
 	public StochasticAcceleratorStrategy()
 	{
+		_epsilon = Param(nameof(Epsilon), 0.000001m)
+			.SetGreaterThanZero()
+			.SetDisplay("Epsilon", "Tolerance applied when comparing oscillator values.", "General");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series processed by the strategy.", "General");
 
@@ -142,6 +146,15 @@ public class StochasticAcceleratorStrategy : Strategy
 		_pipSize = 0m;
 		_previousAccelerator = null;
 		_previousAwesome = null;
+	}
+
+	/// <summary>
+	/// Tolerance applied when comparing oscillator values.
+	/// </summary>
+	public decimal Epsilon
+	{
+		get => _epsilon.Value;
+		set => _epsilon.Value = value;
 	}
 
 	/// <summary>

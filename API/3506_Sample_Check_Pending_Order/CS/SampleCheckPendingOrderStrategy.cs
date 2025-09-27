@@ -14,7 +14,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SampleCheckPendingOrderStrategy : Strategy
 {
-	private const decimal VolumeTolerance = 0.0000001m;
+	private readonly StrategyParam<decimal> _volumeTolerance;
 
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<int> _stopLossPoints;
@@ -39,6 +39,10 @@ public class SampleCheckPendingOrderStrategy : Strategy
 	/// </summary>
 	public SampleCheckPendingOrderStrategy()
 	{
+		_volumeTolerance = Param(nameof(VolumeTolerance), 0.0000001m)
+			.SetGreaterOrEqualThanZero()
+			.SetDisplay("Volume tolerance", "Allowed difference when validating portfolio volume and margin.", "Risk");
+
 		_orderVolume = Param(nameof(OrderVolume), 0.01m)
 		.SetGreaterThanZero()
 		.SetDisplay("Order volume", "Lot size submitted with each pending stop order", "Trading");
@@ -58,6 +62,15 @@ public class SampleCheckPendingOrderStrategy : Strategy
 		_accountLeverage = Param(nameof(AccountLeverage), 100m)
 		.SetGreaterThanZero()
 		.SetDisplay("Account leverage", "Estimated leverage used to approximate margin requirements", "Risk");
+	}
+
+	/// <summary>
+	/// Allowed difference when comparing volumes and margin requirements.
+	/// </summary>
+	public decimal VolumeTolerance
+	{
+		get => _volumeTolerance.Value;
+		set => _volumeTolerance.Value = value;
 	}
 
 	/// <summary>

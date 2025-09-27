@@ -10,7 +10,7 @@ using StockSharp.Messages;
 
 public class CciMacdScalperStrategy : Strategy
 {
-	private const int CooldownBars = 5;
+	private readonly StrategyParam<int> _cooldownBars;
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _riskPercent;
@@ -47,6 +47,10 @@ public class CciMacdScalperStrategy : Strategy
 
 	public CciMacdScalperStrategy()
 	{
+		_cooldownBars = Param(nameof(CooldownBars), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Cooldown bars", "Number of completed candles required before reopening trades.", "General");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle type", "Timeframe processed by the strategy.", "General");
 
@@ -82,6 +86,15 @@ public class CciMacdScalperStrategy : Strategy
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 100m)
 		.SetNotNegative()
 		.SetDisplay("Trailing points", "Distance in points used when trailing a protective stop.", "Risk");
+	}
+
+	/// <summary>
+	/// Number of completed candles required before a new entry can be opened.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
 	}
 
 	public DataType CandleType
