@@ -13,7 +13,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class Autonomous5MinuteRobotStrategy : Strategy
 {
-	private const int Lookback = 6;
+	private readonly StrategyParam<int> _lookback;
 
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<int> _volumeLength;
@@ -33,6 +33,11 @@ public class Autonomous5MinuteRobotStrategy : Strategy
 	/// Volume lookback length (unused).
 	/// </summary>
 	public int VolumeLength { get => _volumeLength.Value; set => _volumeLength.Value = value; }
+
+	/// <summary>
+	/// Bars used for previous close comparison.
+	/// </summary>
+	public int Lookback { get => _lookback.Value; set => _lookback.Value = value; }
 
 	/// <summary>
 	/// Stop loss percentage from entry price.
@@ -65,6 +70,12 @@ public class Autonomous5MinuteRobotStrategy : Strategy
 			.SetDisplay("Volume Length", "Volume lookback length", "Parameters")
 			.SetCanOptimize(true)
 			.SetOptimize(5, 20, 1);
+
+		_lookback = Param(nameof(Lookback), 6)
+			.SetGreaterThanZero()
+			.SetDisplay("Lookback", "Bars used for previous close", "Parameters")
+			.SetCanOptimize(true)
+			.SetOptimize(3, 12, 1);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 3m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")

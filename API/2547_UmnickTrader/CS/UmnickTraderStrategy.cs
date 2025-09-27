@@ -13,7 +13,7 @@ using StockSharp.Messages;
 public class UmnickTraderStrategy : Strategy
 {
 	// Number of trade results stored for adaptive calculations.
-	private const int BufferLength = 8;
+	private readonly StrategyParam<int> _bufferLength;
 
 	private readonly StrategyParam<decimal> _stopBase;
 	private readonly StrategyParam<decimal> _tradeVolume;
@@ -21,8 +21,8 @@ public class UmnickTraderStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	// Adaptive buffers storing profit and loss distances observed recently.
-	private readonly decimal[] _profitBuffer = new decimal[BufferLength];
-	private readonly decimal[] _lossBuffer = new decimal[BufferLength];
+	private decimal[] _profitBuffer = Array.Empty<decimal>();
+	private decimal[] _lossBuffer = Array.Empty<decimal>();
 
 	// Rolling state for signal detection and risk metrics.
 	private decimal _lastAveragePrice;
@@ -39,6 +39,22 @@ public class UmnickTraderStrategy : Strategy
 	private bool _positionActive;
 	private bool _isLongPosition;
 	private bool _positionJustClosed;
+
+	/// <summary>
+	/// Number of trade results stored for adaptive calculations.
+	/// </summary>
+	public int BufferLength
+	{
+		get => _bufferLength.Value;
+		set
+		{
+			if (_bufferLength.Value == value)
+				return;
+
+			_bufferLength.Value = value;
+			ResizeBuffers();
+		}
+	}
 
 	public decimal StopBase
 	{
@@ -66,6 +82,14 @@ public class UmnickTraderStrategy : Strategy
 
 	public UmnickTraderStrategy()
 	{
+		_bufferLength = Param(nameof(BufferLength), 8)
+		.SetGreaterThanZero()
+		.SetDisplay("Buffer Length", "Number of trade results stored for adaptive calculations.", "Parameters")
+		.SetCanOptimize(true)
+		.SetOptimize(4, 32, 1);
+
+		ResizeBuffers();
+
 		_stopBase = Param(nameof(StopBase), 0.017m)
 			.SetDisplay("Base Stop Distance", "Minimum average price move required to trigger evaluation.", "Parameters")
 			.SetCanOptimize(true)
@@ -83,6 +107,15 @@ public class UmnickTraderStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Source candle series.", "General");
+	}
+
+	private void ResizeBuffers()
+	{
+		var length = BufferLength;
+
+		_profitBuffer = new decimal[length];
+		_lossBuffer = new decimal[length];
+		_currentIndex = 0;
 	}
 
 	/// <inheritdoc />
@@ -109,17 +142,15 @@ public class UmnickTraderStrategy : Strategy
 		_isLongPosition = false;
 		_positionJustClosed = false;
 
-		for (var i = 0; i < BufferLength; i++)
-		{
-			_profitBuffer[i] = 0m;
-			_lossBuffer[i] = 0m;
-		}
+		Array.Clear(_profitBuffer, 0, _profitBuffer.Length);
+		Array.Clear(_lossBuffer, 0, _lossBuffer.Length);
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);
+		ResizeBuffers();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -158,7 +189,12 @@ public class UmnickTraderStrategy : Strategy
 
 		decimal sumProfit = 0m;
 		decimal sumLoss = 0m;
-		for (var i = 0; i < BufferLength; i++)
+		var bufferLength = _profitBuffer.Length;
+
+		if (bufferLength == 0)
+			return;
+
+		for (var i = 0; i < bufferLength; i++)
 		{
 			sumProfit += _profitBuffer[i];
 			sumLoss += _lossBuffer[i];
@@ -166,10 +202,10 @@ public class UmnickTraderStrategy : Strategy
 
 		// Recalculate adaptive take-profit and stop-loss distances.
 		if (sumProfit > StopBase / 2m)
-			limitDistance = sumProfit / BufferLength;
+			limitDistance = sumProfit / bufferLength;
 
 		if (sumLoss > StopBase / 2m)
-			stopDistance = sumLoss / BufferLength;
+			stopDistance = sumLoss / bufferLength;
 
 		if (_positionJustClosed)
 		{
@@ -189,7 +225,7 @@ public class UmnickTraderStrategy : Strategy
 			}
 
 			_currentIndex++;
-			if (_currentIndex >= BufferLength)
+			if (_currentIndex >= bufferLength)
 				_currentIndex = 0;
 		}
 

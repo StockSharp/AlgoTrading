@@ -12,7 +12,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class RollbackSystemStrategy : Strategy
 {
-	private const int HistorySize = 25;
 
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<decimal> _stopLossPips;
@@ -21,9 +20,10 @@ public class RollbackSystemStrategy : Strategy
 	private readonly StrategyParam<decimal> _channelOpenClosePips;
 	private readonly StrategyParam<decimal> _channelRollbackPips;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _historySize;
 
-	private readonly decimal[] _openHistory = new decimal[HistorySize];
-	private readonly decimal[] _closeHistory = new decimal[HistorySize];
+	private decimal[] _openHistory = Array.Empty<decimal>();
+	private decimal[] _closeHistory = Array.Empty<decimal>();
 	private int _historyCount;
 	private int _historyStart;
 
@@ -40,32 +40,38 @@ public class RollbackSystemStrategy : Strategy
 	/// </summary>
 	public RollbackSystemStrategy()
 	{
-	_tradeVolume = Param(nameof(TradeVolume), 0.1m)
-		.SetDisplay("Volume", "Trade volume in lots", "Trading")
-		.SetGreaterThanZero();
+		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
+			.SetDisplay("Volume", "Trade volume in lots", "Trading")
+			.SetGreaterThanZero();
 
-	_stopLossPips = Param(nameof(StopLossPips), 50m)
-		.SetDisplay("Stop Loss (pips)", "Protective stop distance", "Risk")
-		.SetNotNegative();
+		_stopLossPips = Param(nameof(StopLossPips), 50m)
+			.SetDisplay("Stop Loss (pips)", "Protective stop distance", "Risk")
+			.SetNotNegative();
 
-	_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
-		.SetDisplay("Take Profit (pips)", "Profit target distance", "Risk")
-		.SetNotNegative();
+		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
+			.SetDisplay("Take Profit (pips)", "Profit target distance", "Risk")
+			.SetNotNegative();
 
-	_rollbackPips = Param(nameof(RollbackPips), 20m)
-		.SetDisplay("Rollback", "Minimum pullback size", "Signals")
-		.SetNotNegative();
+		_rollbackPips = Param(nameof(RollbackPips), 20m)
+			.SetDisplay("Rollback", "Minimum pullback size", "Signals")
+			.SetNotNegative();
 
-	_channelOpenClosePips = Param(nameof(ChannelOpenClosePips), 18m)
-		.SetDisplay("Channel Open-Close", "Required day change", "Signals")
-		.SetNotNegative();
+		_channelOpenClosePips = Param(nameof(ChannelOpenClosePips), 18m)
+			.SetDisplay("Channel Open-Close", "Required day change", "Signals")
+			.SetNotNegative();
 
-	_channelRollbackPips = Param(nameof(ChannelRollbackPips), 3m)
-		.SetDisplay("Channel Rollback", "Rollback tolerance", "Signals")
-		.SetNotNegative();
+		_channelRollbackPips = Param(nameof(ChannelRollbackPips), 3m)
+			.SetDisplay("Channel Rollback", "Rollback tolerance", "Signals")
+			.SetNotNegative();
 
-	_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-		.SetDisplay("Candle Type", "Working timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+			.SetDisplay("Candle Type", "Working timeframe", "General");
+
+		_historySize = Param(nameof(HistorySize), 25)
+			.SetRange(5, 200)
+			.SetDisplay("History Size", "Number of daily bars stored for signals", "Signals");
+
+		ResetHistoryBuffers();
 	}
 
 	/// <summary>
@@ -131,6 +137,21 @@ public class RollbackSystemStrategy : Strategy
 	set => _candleType.Value = value;
 	}
 
+	/// <summary>
+	/// Number of historical bars retained for signal calculation.
+	/// </summary>
+	public int HistorySize
+	{
+		get => _historySize.Value;
+		set
+		{
+			if (_historySize.Value == value)
+				return;
+			_historySize.Value = value;
+			ResetHistoryBuffers();
+		}
+	}
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
@@ -142,10 +163,7 @@ public class RollbackSystemStrategy : Strategy
 	{
 	base.OnReseted();
 
-	Array.Clear(_openHistory, 0, _openHistory.Length);
-	Array.Clear(_closeHistory, 0, _closeHistory.Length);
-	_historyCount = 0;
-	_historyStart = 0;
+	ResetHistoryBuffers();
 	_stopPrice = null;
 	_takeProfitPrice = null;
 	_entryPrice = 0m;
@@ -195,8 +213,12 @@ public class RollbackSystemStrategy : Strategy
 	if (Position != 0)
 	return;
 
-	if (_historyCount < HistorySize || !_highest.IsFormed || !_lowest.IsFormed)
-	return;
+		var capacity = _openHistory.Length;
+
+		if (_historyCount < capacity || capacity == 0 || !_highest.IsFormed || !_lowest.IsFormed)
+		{
+			return;
+		}
 
 	if (!IsTradingWindow(candle.CloseTime))
 	return;
@@ -334,44 +356,67 @@ public class RollbackSystemStrategy : Strategy
 	return false;
 	}
 
+	private void ResetHistoryBuffers()
+	{
+		var capacity = Math.Max(1, _historySize.Value);
+		if (_openHistory.Length != capacity)
+		{
+			_openHistory = new decimal[capacity];
+			_closeHistory = new decimal[capacity];
+		}
+		else
+		{
+			Array.Clear(_openHistory, 0, capacity);
+			Array.Clear(_closeHistory, 0, capacity);
+		}
+
+		_historyCount = 0;
+		_historyStart = 0;
+	}
+
 	private void ResetProtection()
 	{
 	_stopPrice = null;
 	_takeProfitPrice = null;
 	_entryPrice = 0m;
 	}
-
 	private void AddToHistory(decimal open, decimal close)
 	{
-	var index = (_historyStart + _historyCount) % HistorySize;
-	_openHistory[index] = open;
-	_closeHistory[index] = close;
+		var capacity = _openHistory.Length;
+		if (capacity == 0)
+		{
+			return;
+		}
 
-	if (_historyCount < HistorySize)
-	{
-	_historyCount++;
-	}
-	else
-	{
-	_historyStart = (_historyStart + 1) % HistorySize;
-	}
+		var index = (_historyStart + _historyCount) % capacity;
+		_openHistory[index] = open;
+		_closeHistory[index] = close;
+
+		if (_historyCount < capacity)
+		{
+			_historyCount++;
+		}
+		else
+		{
+			_historyStart = (_historyStart + 1) % capacity;
+		}
 	}
 
 	private bool TryGetHistoryValues(out decimal open24, out decimal lastClose)
 	{
-	if (_historyCount < HistorySize)
-	{
-	open24 = 0m;
-	lastClose = 0m;
-	return false;
-	}
+		var capacity = _openHistory.Length;
+		if (_historyCount < capacity || capacity == 0)
+		{
+			open24 = 0m;
+			lastClose = 0m;
+			return false;
+		}
 
-	open24 = _openHistory[_historyStart];
-	var lastIndex = (_historyStart + _historyCount - 1) % HistorySize;
-	lastClose = _closeHistory[lastIndex];
-	return true;
+		open24 = _openHistory[_historyStart];
+		var lastIndex = (_historyStart + _historyCount - 1) % capacity;
+		lastClose = _closeHistory[lastIndex];
+		return true;
 	}
-
 	private static bool IsTradingWindow(DateTimeOffset time)
 	{
 	// Execute logic only at the start of a new trading day around midnight, except Monday and Friday.

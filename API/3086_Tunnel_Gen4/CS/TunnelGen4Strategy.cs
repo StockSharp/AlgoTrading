@@ -15,7 +15,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TunnelGen4Strategy : Strategy
 {
-	private const decimal VolumeTolerance = 0.0000001m;
+	private readonly StrategyParam<decimal> _volumeTolerance;
 
 	private readonly StrategyParam<decimal> _startVolume;
 	private readonly StrategyParam<decimal> _stepPips;
@@ -64,10 +64,23 @@ public class TunnelGen4Strategy : Strategy
 	}
 
 	/// <summary>
+	/// Maximum allowed difference when comparing exposure volumes.
+	/// </summary>
+	public decimal VolumeTolerance
+	{
+		get => _volumeTolerance.Value;
+		set => _volumeTolerance.Value = value;
+	}
+
+	/// <summary>
 	/// Initialize strategy parameters.
 	/// </summary>
 	public TunnelGen4Strategy()
 	{
+		_volumeTolerance = Param(nameof(VolumeTolerance), 0.0000001m)
+			.SetNotNegative()
+			.SetDisplay("Volume Tolerance", "Tolerance when comparing exposure volumes", "Trading");
+
 		_startVolume = Param(nameof(StartVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Start Volume", "Initial hedge volume", "Trading")

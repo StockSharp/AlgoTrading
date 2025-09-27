@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MacdSampleStrategy : Strategy
 {
-	private const int MinimumHistoryCandles = 100;
 
 	private readonly StrategyParam<int> _fastEmaPeriod;
 	private readonly StrategyParam<int> _slowEmaPeriod;
@@ -24,6 +23,7 @@ public class MacdSampleStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _trailingStopPoints;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _minimumHistoryCandles;
 
 	private decimal _pointSize;
 	private decimal? _prevMacd;
@@ -113,6 +113,14 @@ public class MacdSampleStrategy : Strategy
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
+	/// <summary>
+	/// Number of finished candles required before the strategy begins trading.
+	/// </summary>
+	public int MinimumHistoryCandles
+	{
+		get => _minimumHistoryCandles.Value;
+		set => _minimumHistoryCandles.Value = value;
+	}
 
 	/// <summary>
 	/// Initialize default parameters for the MACD Sample strategy.
@@ -163,6 +171,9 @@ public class MacdSampleStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Candle type used for analysis", "General");
+		_minimumHistoryCandles = Param(nameof(MinimumHistoryCandles), 100)
+			.SetDisplay("Warm-up candles", "Number of finished candles required before trading starts", "General")
+			.SetGreaterThanZero();
 	}
 
 	/// <inheritdoc />

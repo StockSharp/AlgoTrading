@@ -14,7 +14,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class FxNodeSafeTunnelStrategy : Strategy
 {
-	private const decimal AtrMultiplier = 10m;
+	private readonly StrategyParam<decimal> _atrMultiplier;
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<TrendPreference> _trendPreference;
@@ -138,6 +138,10 @@ public class FxNodeSafeTunnelStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "Average True Range lookback", "Indicators");
+
+		_atrMultiplier = Param(nameof(AtrMultiplier), 10m)
+		.SetGreaterThanZero()
+		.SetDisplay("ATR Multiplier", "Multiplier applied to ATR distance filters", "Indicators");
 
 		_zigZagDepth = Param(nameof(ZigZagDepth), 5)
 		.SetGreaterThanZero()
@@ -325,6 +329,15 @@ public class FxNodeSafeTunnelStrategy : Strategy
 	{
 		get => _atrPeriod.Value;
 		set => _atrPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Multiplier applied to ATR-derived distance filters.
+	/// </summary>
+	public decimal AtrMultiplier
+	{
+		get => _atrMultiplier.Value;
+		set => _atrMultiplier.Value = value;
 	}
 
 	/// <summary>

@@ -21,7 +21,6 @@ public class EarlyBirdRangeBreakoutStrategy : Strategy
 		ShortOnly = 2,
 	}
 
-	private const int VolatilityWindowLength = 16;
 
 	private readonly StrategyParam<bool> _enableAutoTrading;
 	private readonly StrategyParam<bool> _enableHedging;
@@ -41,6 +40,7 @@ public class EarlyBirdRangeBreakoutStrategy : Strategy
 	private readonly StrategyParam<int> _winterTimeStartDay;
 	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _volatilityWindowLength;
 
 	private RelativeStrengthIndex _rsi = null!;
 
@@ -148,6 +148,9 @@ public class EarlyBirdRangeBreakoutStrategy : Strategy
 		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(15)))
 		.SetDisplay("Candle Type", "Primary timeframe for calculations", "Data")
 		.SetCanOptimize(false);
+		_volatilityWindowLength = Param(nameof(VolatilityWindowLength), 16)
+			.SetGreaterThanZero()
+			.SetDisplay("Volatility Window", "Number of bars used to average volatility for trailing decisions", "Risk");
 	}
 
 	/// <summary>
@@ -317,6 +320,36 @@ public class EarlyBirdRangeBreakoutStrategy : Strategy
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
+	}
+	/// <summary>
+	/// Number of bars used to average recent volatility for trailing calculations.
+	/// </summary>
+	public int VolatilityWindowLength
+	{
+		get => _volatilityWindowLength.Value;
+		set
+		{
+			if (_volatilityWindowLength.Value == value)
+				return;
+
+			_volatilityWindowLength.Value = value;
+			TrimVolatilityWindow();
+		}
+	}
+
+	private void TrimVolatilityWindow()
+	{
+		var limit = _volatilityWindowLength.Value;
+		if (limit <= 0)
+		{
+			limit = 1;
+			_volatilityWindowLength.Value = limit;
+		}
+
+		while (_volatilityWindow.Count > limit)
+		{
+			_volatilitySum -= _volatilityWindow.Dequeue();
+		}
 	}
 
 	/// <inheritdoc />

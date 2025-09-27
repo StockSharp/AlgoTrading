@@ -14,7 +14,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class NeuroNirvamanStrategy : Strategy
 {
-	private const decimal LaguerreGamma = 0.764m;
+	private readonly StrategyParam<decimal> _laguerreGamma;
 
 	private readonly StrategyParam<int> _risk1;
 	private readonly StrategyParam<int> _laguerre1Period;
@@ -41,12 +41,13 @@ public class NeuroNirvamanStrategy : Strategy
 
 	private readonly StrategyParam<int> _pass;
 	private readonly StrategyParam<decimal> _volume;
+	private readonly StrategyParam<int> _silverTrendWindow;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly LaguerrePlusDiState _laguerre1State = new(LaguerreGamma);
-	private readonly LaguerrePlusDiState _laguerre2State = new(LaguerreGamma);
-	private readonly LaguerrePlusDiState _laguerre3State = new(LaguerreGamma);
-	private readonly LaguerrePlusDiState _laguerre4State = new(LaguerreGamma);
+	private LaguerrePlusDiState _laguerre1State = null!;
+	private LaguerrePlusDiState _laguerre2State = null!;
+	private LaguerrePlusDiState _laguerre3State = null!;
+	private LaguerrePlusDiState _laguerre4State = null!;
 
 	private AverageDirectionalIndex _laguerre1Indicator = null!;
 	private AverageDirectionalIndex _laguerre2Indicator = null!;
@@ -67,6 +68,14 @@ public class NeuroNirvamanStrategy : Strategy
 		_volume = Param(nameof(TradeVolume), 0.1m)
 		.SetDisplay("Trade Volume", "Order volume in lots", "Trading")
 		.SetGreaterThanZero();
+
+		_silverTrendWindow = Param(nameof(SilverTrendWindow), 9)
+			.SetGreaterThanZero()
+			.SetDisplay("SilverTrend Window", "Lookback period for SilverTrend filter", "Indicators");
+
+		_laguerreGamma = Param(nameof(LaguerreGamma), 0.764m)
+			.SetRange(0m, 1m)
+			.SetDisplay("Laguerre Gamma", "Smoothing factor for Laguerre filters", "Indicators");
 
 		_risk1 = Param(nameof(Risk1), 3)
 		.SetDisplay("SilverTrend Risk #1", "Risk parameter for the first SilverTrend filter", "Indicators")
@@ -145,6 +154,17 @@ public class NeuroNirvamanStrategy : Strategy
 		_pass = Param(nameof(Pass), 3)
 		.SetDisplay("Pass", "Determines which perceptrons participate in the decision", "Logic")
 		.SetNotNegative();
+		RecreateLaguerreStates();
+		RecreateSilverTrendStates();
+	}
+
+	/// <summary>
+	/// Smoothing factor applied within Laguerre filters.
+	/// </summary>
+	public decimal LaguerreGamma
+	{
+		get => _laguerreGamma.Value;
+		set => _laguerreGamma.Value = value;
 	}
 
 	public DataType CandleType
@@ -157,6 +177,15 @@ public class NeuroNirvamanStrategy : Strategy
 	{
 		get => _volume.Value;
 		set => _volume.Value = value;
+	}
+
+	/// <summary>
+	/// Sliding window length used by the SilverTrend filter.
+	/// </summary>
+	public int SilverTrendWindow
+	{
+		get => _silverTrendWindow.Value;
+		set => _silverTrendWindow.Value = value;
 	}
 
 	public int Risk1
@@ -291,6 +320,20 @@ public class NeuroNirvamanStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
+	private void RecreateSilverTrendStates()
+	{
+		_silverTrend1State = new SilverTrendState(Risk1, SilverTrendWindow);
+		_silverTrend2State = new SilverTrendState(Risk2, SilverTrendWindow);
+	}
+
+	private void RecreateLaguerreStates()
+	{
+		_laguerre1State = new LaguerrePlusDiState(LaguerreGamma);
+		_laguerre2State = new LaguerrePlusDiState(LaguerreGamma);
+		_laguerre3State = new LaguerrePlusDiState(LaguerreGamma);
+		_laguerre4State = new LaguerrePlusDiState(LaguerreGamma);
+	}
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
@@ -299,13 +342,8 @@ public class NeuroNirvamanStrategy : Strategy
 		_takeProfitPrice = null;
 		_stopLossPrice = null;
 
-		_laguerre1State.Reset();
-		_laguerre2State.Reset();
-		_laguerre3State.Reset();
-		_laguerre4State.Reset();
-
-		_silverTrend1State?.Reset();
-		_silverTrend2State?.Reset();
+		RecreateLaguerreStates();
+		RecreateSilverTrendStates();
 	}
 
 	/// <inheritdoc />
@@ -321,8 +359,7 @@ public class NeuroNirvamanStrategy : Strategy
 		_laguerre3Indicator = new AverageDirectionalIndex { Length = Laguerre3Period };
 		_laguerre4Indicator = new AverageDirectionalIndex { Length = Laguerre4Period };
 
-		_silverTrend1State = new SilverTrendState(Risk1);
-		_silverTrend2State = new SilverTrendState(Risk2);
+		RecreateSilverTrendStates();
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -599,16 +636,17 @@ public class NeuroNirvamanStrategy : Strategy
 
 	private sealed class SilverTrendState
 	{
-		private const int Ssp = 9;
+		private readonly int _windowSize;
 
 		private readonly List<decimal> _highs = new();
 		private readonly List<decimal> _lows = new();
 		private readonly List<decimal> _closes = new();
 		private bool _uptrend;
 
-		public SilverTrendState(int risk)
+		public SilverTrendState(int risk, int windowSize)
 		{
 			Risk = risk;
+			_windowSize = Math.Max(1, windowSize);
 		}
 
 		public int Risk { get; set; }
@@ -619,25 +657,25 @@ public class NeuroNirvamanStrategy : Strategy
 			_lows.Insert(0, low);
 			_closes.Insert(0, close);
 
-			if (_highs.Count > Ssp + 1)
+			if (_highs.Count > _windowSize + 1)
 			{
 				_highs.RemoveAt(_highs.Count - 1);
 				_lows.RemoveAt(_lows.Count - 1);
 				_closes.RemoveAt(_closes.Count - 1);
 			}
 
-			if (_highs.Count < Ssp + 1)
+			if (_highs.Count < _windowSize + 1)
 			return 0;
 
 			decimal avgRange = 0m;
-			for (var i = 0; i <= Ssp; i++)
+			for (var i = 0; i <= _windowSize; i++)
 			avgRange += Math.Abs(_highs[i] - _lows[i]);
 
-			var range = avgRange / (Ssp + 1);
+			var range = avgRange / (_windowSize + 1);
 
 			var ssMax = _lows[0];
 			var ssMin = _closes[0];
-			for (var i = 0; i <= Ssp - 1; i++)
+			for (var i = 0; i < _windowSize; i++)
 			{
 				var highValue = _highs[i];
 				if (ssMax < highValue)

@@ -29,6 +29,9 @@ public class InputResizerStrategy : Strategy
 	private readonly StrategyParam<int> _wsSizeBox;
 	private readonly StrategyParam<int> _wsMinimizeBox;
 	private readonly StrategyParam<int> _wsMaximizeBox;
+	private readonly StrategyParam<int> _showWindowMaximizeCommand;
+	private readonly StrategyParam<uint> _setWindowPosNoZOrderFlag;
+	private readonly StrategyParam<uint> _setWindowPosNoActivateFlag;
 
 	private readonly Dictionary<string, Rect> _sizes = new();
 	private CancellationTokenSource _cts;
@@ -103,6 +106,21 @@ public class InputResizerStrategy : Strategy
 	public int WsMaximizeBox { get => _wsMaximizeBox.Value; set => _wsMaximizeBox.Value = value; }
 
 	/// <summary>
+	/// WinAPI command for maximizing window.
+	/// </summary>
+	public int ShowWindowMaximizeCommand { get => _showWindowMaximizeCommand.Value; set => _showWindowMaximizeCommand.Value = value; }
+
+	/// <summary>
+	/// WinAPI flag to keep Z-order on SetWindowPos.
+	/// </summary>
+	public uint SetWindowPosNoZOrderFlag { get => _setWindowPosNoZOrderFlag.Value; set => _setWindowPosNoZOrderFlag.Value = value; }
+
+	/// <summary>
+	/// WinAPI flag to avoid activation on SetWindowPos.
+	/// </summary>
+	public uint SetWindowPosNoActivateFlag { get => _setWindowPosNoActivateFlag.Value; set => _setWindowPosNoActivateFlag.Value = value; }
+
+	/// <summary>
 	/// Initializes a new instance of <see cref="InputResizerStrategy"/>.
 	/// </summary>
 	public InputResizerStrategy()
@@ -139,7 +157,14 @@ public class InputResizerStrategy : Strategy
 
 		_wsMaximizeBox = Param(nameof(WsMaximizeBox), 0x00010000)
 			.SetDisplay("WS MAXIMIZEBOX", "Maximize button flag", "WinAPI");
-}
+
+		_showWindowMaximizeCommand = Param(nameof(ShowWindowMaximizeCommand), 3)
+		.SetDisplay("ShowWindow Maximize", "Command value for window maximization", "WinAPI");
+		_setWindowPosNoZOrderFlag = Param(nameof(SetWindowPosNoZOrderFlag), 0x0004u)
+		.SetDisplay("SWP No ZOrder", "Flag to keep window Z-order", "WinAPI");
+		_setWindowPosNoActivateFlag = Param(nameof(SetWindowPosNoActivateFlag), 0x0010u)
+		.SetDisplay("SWP No Activate", "Flag to prevent activation", "WinAPI");
+	}
 
 	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
@@ -196,14 +221,14 @@ public class InputResizerStrategy : Strategy
 
 		if (RememberSize && _sizes.TryGetValue(key, out var rect))
 		{
-			SetWindowPos(wnd, IntPtr.Zero, rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top, SWP_NOZORDER | SWP_NOACTIVATE);
+			SetWindowPos(wnd, IntPtr.Zero, rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top, SetWindowPosNoZOrderFlag | SetWindowPosNoActivateFlag);
 		}
 		else
 		{
 			if (InitMaximized)
-				ShowWindow(wnd, SW_MAXIMIZE);
+				ShowWindow(wnd, ShowWindowMaximizeCommand);
 			else if (InitCustom)
-				SetWindowPos(wnd, IntPtr.Zero, InitX, InitY, InitWidth, InitHeight, SWP_NOZORDER | SWP_NOACTIVATE);
+				SetWindowPos(wnd, IntPtr.Zero, InitX, InitY, InitWidth, InitHeight, SetWindowPosNoZOrderFlag | SetWindowPosNoActivateFlag);
 		}
 
 		if (RememberSize)
@@ -214,10 +239,6 @@ public class InputResizerStrategy : Strategy
 	}
 
 	#region WinAPI
-
-	private const int SW_MAXIMIZE = 3;
-	private const uint SWP_NOZORDER = 0x0004;
-	private const uint SWP_NOACTIVATE = 0x0010;
 
 	[DllImport("user32.dll")]
 	private static extern IntPtr GetForegroundWindow();

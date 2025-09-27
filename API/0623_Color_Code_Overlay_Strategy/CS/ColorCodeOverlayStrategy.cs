@@ -32,7 +32,7 @@ public class ColorCodeOverlayStrategy : Strategy
 	private decimal? _prevColorClose;
 	private bool _prevBullish;
 
-	private const decimal ThresholdPercent = 1m;
+	private readonly StrategyParam<decimal> _thresholdPercent;
 
 	/// <summary>
 	/// Trade type.
@@ -65,6 +65,11 @@ public class ColorCodeOverlayStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <summary>
+	/// Minimum percent change to confirm a color switch.
+	/// </summary>
+	public decimal ThresholdPercent { get => _thresholdPercent.Value; set => _thresholdPercent.Value = value; }
+
+	/// <summary>
 	/// Initializes a new instance of the strategy.
 	/// </summary>
 	public ColorCodeOverlayStrategy()
@@ -79,6 +84,10 @@ public class ColorCodeOverlayStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 40)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Take profit distance", "Risk");
+
+		_thresholdPercent = Param(nameof(ThresholdPercent), 1m)
+			.SetGreaterThanZero()
+			.SetDisplay("Threshold %", "Percent change to confirm color switch", "General");
 
 		_startTime = Param(nameof(StartTime), new TimeSpan(9, 0, 0))
 			.SetDisplay("Start Time", "Trading start", "General");

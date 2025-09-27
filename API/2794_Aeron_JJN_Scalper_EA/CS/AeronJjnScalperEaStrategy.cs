@@ -13,8 +13,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class AeronJjnScalperEaStrategy : Strategy
 {
-	private const int AtrLength = 8;
-	private const int HistoryDepth = 120;
+	private readonly StrategyParam<int> _atrLength;
+	private readonly StrategyParam<int> _historyDepth;
 
 	private readonly StrategyParam<decimal> _trailingStopPips;
 	private readonly StrategyParam<decimal> _trailingStepPips;
@@ -103,6 +103,24 @@ public class AeronJjnScalperEaStrategy : Strategy
 	}
 
 	/// <summary>
+	/// ATR indicator period used to evaluate volatility.
+	/// </summary>
+	public int AtrLength
+	{
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum number of stored candle snapshots for pattern checks.
+	/// </summary>
+	public int HistoryDepth
+	{
+		get => _historyDepth.Value;
+		set => _historyDepth.Value = value;
+	}
+
+	/// <summary>
 	/// Create strategy instance.
 	/// </summary>
 	public AeronJjnScalperEaStrategy()
@@ -124,6 +142,14 @@ public class AeronJjnScalperEaStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type");
+
+		_atrLength = Param(nameof(AtrLength), 8)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Length", "ATR indicator period", "Indicators");
+
+		_historyDepth = Param(nameof(HistoryDepth), 120)
+			.SetGreaterThanZero()
+			.SetDisplay("History Depth", "Number of candles stored for patterns", "Indicators");
 
 		Volume = 0.1m;
 	}

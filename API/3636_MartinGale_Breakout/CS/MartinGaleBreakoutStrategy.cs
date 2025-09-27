@@ -12,7 +12,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MartinGaleBreakoutStrategy : Strategy
 {
-	private const int RequiredHistory = 11;
+	private readonly StrategyParam<int> _requiredHistory;
 
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _balancePercentageAvailable;
@@ -35,6 +35,10 @@ public class MartinGaleBreakoutStrategy : Strategy
 	/// </summary>
 	public MartinGaleBreakoutStrategy()
 	{
+		_requiredHistory = Param(nameof(RequiredHistory), 11)
+			.SetDisplay("Required History", "Number of finished candles kept for breakout evaluation", "General")
+			.SetGreaterThanZero();
+
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50)
 			.SetDisplay("Take Profit Points", "Base take-profit distance in price points", "Risk")
 			.SetGreaterThanZero();
@@ -129,6 +133,15 @@ public class MartinGaleBreakoutStrategy : Strategy
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Gets or sets the number of finished candles stored for breakout evaluation.
+	/// </summary>
+	public int RequiredHistory
+	{
+		get => _requiredHistory.Value;
+		set => _requiredHistory.Value = value;
 	}
 
 	/// <inheritdoc />

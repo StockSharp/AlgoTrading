@@ -36,6 +36,7 @@ public class BreakOut15Strategy : Strategy
 	private readonly StrategyParam<MovingAverageMethod> _slowMethod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _slowShift;
+	private readonly StrategyParam<int> _signalBarShift;
 	private readonly StrategyParam<AppliedPrice> _slowPriceType;
 	private readonly StrategyParam<decimal> _breakoutLevelPips;
 	private readonly StrategyParam<bool> _useTimeLimit;
@@ -60,7 +61,6 @@ public class BreakOut15Strategy : Strategy
 	private decimal? _longEntryPrice;
 	private decimal? _shortEntryPrice;
 
-	private const int SignalBarShift = 1;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="BreakOut15Strategy"/> class.
@@ -137,6 +137,9 @@ public class BreakOut15Strategy : Strategy
 
 		_slowShift = Param(nameof(SlowShift), 0)
 			.SetDisplay("Slow MA Shift", "Bar shift applied to the slow average", "Indicators");
+		_signalBarShift = Param(nameof(SignalBarShift), 1)
+			.SetDisplay("Signal Bar Shift", "Offset applied when evaluating breakout signals", "Indicators")
+			.SetNotNegative();
 
 		_slowPriceType = Param(nameof(SlowPriceType), AppliedPrice.Close)
 			.SetDisplay("Slow MA Price", "Applied price for the slow average", "Indicators");
@@ -363,6 +366,14 @@ public class BreakOut15Strategy : Strategy
 	{
 		get => _slowShift.Value;
 		set => _slowShift.Value = Math.Max(0, value);
+	}
+	/// <summary>
+	/// Additional bar shift applied when reading indicator values.
+	/// </summary>
+	public int SignalBarShift
+	{
+		get => _signalBarShift.Value;
+		set => _signalBarShift.Value = value;
 	}
 
 	/// <summary>

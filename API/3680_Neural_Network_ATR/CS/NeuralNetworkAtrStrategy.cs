@@ -16,10 +16,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class NeuralNetworkAtrStrategy : Strategy
 {
-	private const int InputSize = 5;
-	private const decimal MinimumLearningRate = 0.0001m;
-	private const decimal FeatureClamp = 1m;
-
 	private readonly StrategyParam<decimal> _maxRiskPerTrade;
 	private readonly StrategyParam<decimal> _dailyLossLimit;
 	private readonly StrategyParam<decimal> _totalLossLimit;
@@ -33,6 +29,9 @@ public class NeuralNetworkAtrStrategy : Strategy
 	private readonly StrategyParam<decimal> _maxSpreadPoints;
 	private readonly StrategyParam<decimal> _riskRewardRatio;
 	private readonly StrategyParam<int> _fallbackStopLossPoints;
+	private readonly StrategyParam<int> _inputSize;
+	private readonly StrategyParam<decimal> _minimumLearningRate;
+	private readonly StrategyParam<decimal> _featureClamp;
 
 	private decimal _accountEquityAtStart;
 	private decimal _dailyEquityAtStart;
@@ -173,6 +172,33 @@ public class NeuralNetworkAtrStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Number of input features processed by the neural layer.
+	/// </summary>
+	public int InputSize
+	{
+		get => _inputSize.Value;
+		set => _inputSize.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum learning rate applied when adapting the network weights.
+	/// </summary>
+	public decimal MinimumLearningRate
+	{
+		get => _minimumLearningRate.Value;
+		set => _minimumLearningRate.Value = value;
+	}
+
+	/// <summary>
+	/// Absolute value used to clamp normalized features.
+	/// </summary>
+	public decimal FeatureClamp
+	{
+		get => _featureClamp.Value;
+		set => _featureClamp.Value = value;
+	}
+
+	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public NeuralNetworkAtrStrategy()
@@ -249,6 +275,20 @@ public class NeuralNetworkAtrStrategy : Strategy
 		.SetDisplay("Fallback Stop", "Stop distance when ATR is not formed", "Risk Management")
 		.SetCanOptimize(true)
 		.SetOptimize(30, 100, 10);
+
+		_inputSize = Param(nameof(InputSize), 5)
+		.SetGreaterThanZero()
+		.SetDisplay("Input Size", "Number of features processed by the neural layer", "Neural Network")
+		.SetCanOptimize(true)
+		.SetOptimize(3, 9, 2);
+
+		_minimumLearningRate = Param(nameof(MinimumLearningRate), 0.0001m)
+		.SetGreaterThanZero()
+		.SetDisplay("Min Learning Rate", "Lower bound applied when adapting learning rate", "Neural Network");
+
+		_featureClamp = Param(nameof(FeatureClamp), 1m)
+		.SetGreaterThanZero()
+		.SetDisplay("Feature Clamp", "Absolute value used to clamp normalized features", "Neural Network");
 	}
 
 	/// <inheritdoc />

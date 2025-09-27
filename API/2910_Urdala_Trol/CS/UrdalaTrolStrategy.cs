@@ -12,8 +12,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class UrdalaTrolStrategy : Strategy
 {
-	private const decimal VolumeTolerance = 0.0000001m;
-
 	private readonly StrategyParam<decimal> _baseVolume;
 	private readonly StrategyParam<int> _minLotsMultiplier;
 	private readonly StrategyParam<decimal> _stopLossPips;
@@ -21,6 +19,7 @@ public class UrdalaTrolStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStepPips;
 	private readonly StrategyParam<decimal> _gridStepPips;
 	private readonly StrategyParam<decimal> _minNearestPips;
+	private readonly StrategyParam<decimal> _volumeTolerance;
 
 	private readonly List<PositionItem> _longPositions = new();
 	private readonly List<PositionItem> _shortPositions = new();
@@ -102,6 +101,15 @@ public class UrdalaTrolStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Tolerance used when comparing order volumes.
+	/// </summary>
+	public decimal VolumeTolerance
+	{
+		get => _volumeTolerance.Value;
+		set => _volumeTolerance.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes the strategy parameters.
 	/// </summary>
 	public UrdalaTrolStrategy()
@@ -128,6 +136,10 @@ public class UrdalaTrolStrategy : Strategy
 
 		_minNearestPips = Param(nameof(MinNearestPips), 3m)
 			.SetDisplay("Min Nearest (pips)", "Minimal distance to existing trades after a stop", "Trading");
+
+		_volumeTolerance = Param(nameof(VolumeTolerance), 0.0000001m)
+			.SetGreaterThanZero()
+			.SetDisplay("Volume Tolerance", "Tolerance when comparing order volumes", "Trading");
 	}
 
 	/// <inheritdoc />

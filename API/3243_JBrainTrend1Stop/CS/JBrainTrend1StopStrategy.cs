@@ -15,10 +15,10 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class JBrainTrend1StopStrategy : Strategy
 {
-	private const decimal RangeDivisor = 2.3m;
-	private const decimal RangeMultiplier = 1.5m;
-	private const decimal UpperThreshold = 53m;
-	private const decimal LowerThreshold = 47m;
+	private readonly StrategyParam<decimal> _rangeDivisor;
+	private readonly StrategyParam<decimal> _rangeMultiplier;
+	private readonly StrategyParam<decimal> _upperThreshold;
+	private readonly StrategyParam<decimal> _lowerThreshold;
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _atrPeriod;
@@ -102,10 +102,44 @@ public class JBrainTrend1StopStrategy : Strategy
 	public bool SellClose { get => _sellClose.Value; set => _sellClose.Value = value; }
 
 	/// <summary>
+	/// Divisor applied to ATR when calculating the trailing range.
+	/// </summary>
+	public decimal RangeDivisor { get => _rangeDivisor.Value; set => _rangeDivisor.Value = value; }
+
+	/// <summary>
+	/// Multiplier applied to the calculated trailing range.
+	/// </summary>
+	public decimal RangeMultiplier { get => _rangeMultiplier.Value; set => _rangeMultiplier.Value = value; }
+
+	/// <summary>
+	/// Upper threshold of the BrainTrend oscillator.
+	/// </summary>
+	public decimal UpperThreshold { get => _upperThreshold.Value; set => _upperThreshold.Value = value; }
+
+	/// <summary>
+	/// Lower threshold of the BrainTrend oscillator.
+	/// </summary>
+	public decimal LowerThreshold { get => _lowerThreshold.Value; set => _lowerThreshold.Value = value; }
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="JBrainTrend1StopStrategy"/> class.
 	/// </summary>
 	public JBrainTrend1StopStrategy()
 	{
+		_rangeDivisor = Param(nameof(RangeDivisor), 2.3m)
+			.SetGreaterThanZero()
+			.SetDisplay("Range Divisor", "Divisor applied to ATR when calculating the trail range", "Indicator");
+
+		_rangeMultiplier = Param(nameof(RangeMultiplier), 1.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("Range Multiplier", "Multiplier applied to the calculated range", "Indicator");
+
+		_upperThreshold = Param(nameof(UpperThreshold), 53m)
+			.SetDisplay("Upper Threshold", "BrainTrend oscillator upper threshold", "Indicator");
+
+		_lowerThreshold = Param(nameof(LowerThreshold), 47m)
+			.SetDisplay("Lower Threshold", "BrainTrend oscillator lower threshold", "Indicator");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for indicator calculations", "General");
 

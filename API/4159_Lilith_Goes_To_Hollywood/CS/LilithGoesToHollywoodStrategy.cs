@@ -14,8 +14,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class LilithGoesToHollywoodStrategy : Strategy
 {
-	private const decimal SarAcceleration = 0.02m;
-	private const decimal SarMaxAcceleration = 0.2m;
+	private readonly StrategyParam<decimal> _sarAcceleration;
+	private readonly StrategyParam<decimal> _sarMaxAcceleration;
 
 	private readonly StrategyParam<bool> _automated;
 	private readonly StrategyParam<decimal> _priceUp;
@@ -45,6 +45,14 @@ public class LilithGoesToHollywoodStrategy : Strategy
 
 	public LilithGoesToHollywoodStrategy()
 	{
+		_sarAcceleration = Param(nameof(SarAcceleration), 0.02m)
+			.SetGreaterThanZero()
+			.SetDisplay("SAR Acceleration", "Base acceleration used by the Parabolic SAR trigger.", "Indicators");
+
+		_sarMaxAcceleration = Param(nameof(SarMaxAcceleration), 0.2m)
+			.SetGreaterThanZero()
+			.SetDisplay("SAR Max Acceleration", "Maximum acceleration used by the Parabolic SAR trigger.", "Indicators");
+
 		_automated = Param(nameof(Automated), true)
 			.SetDisplay("Automated mode", "When enabled the strategy reacts to the Parabolic SAR signal and opens market positions.", "General");
 
@@ -144,6 +152,24 @@ public class LilithGoesToHollywoodStrategy : Strategy
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Acceleration factor applied to the Parabolic SAR indicator.
+	/// </summary>
+	public decimal SarAcceleration
+	{
+		get => _sarAcceleration.Value;
+		set => _sarAcceleration.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum acceleration factor used by the Parabolic SAR indicator.
+	/// </summary>
+	public decimal SarMaxAcceleration
+	{
+		get => _sarMaxAcceleration.Value;
+		set => _sarMaxAcceleration.Value = value;
 	}
 
 	/// <inheritdoc />

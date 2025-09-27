@@ -15,7 +15,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class AussieSurferLtdStrategy : Strategy
 {
-	private const decimal Tolerance = 1e-6m;
+	private readonly StrategyParam<decimal> _tolerance;
 
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<int> _stopLossPips;
@@ -44,6 +44,15 @@ public class AussieSurferLtdStrategy : Strategy
 	private decimal? _longTakeProfit;
 	private decimal? _shortStopPrice;
 	private decimal? _shortTakeProfit;
+
+	/// <summary>
+	/// Price tolerance applied when comparing indicator values.
+	/// </summary>
+	public decimal Tolerance
+	{
+		get => _tolerance.Value;
+		set => _tolerance.Value = value;
+	}
 
 	/// <summary>
 	/// Trading volume expressed in lots or contracts.
@@ -122,6 +131,10 @@ public class AussieSurferLtdStrategy : Strategy
 	/// </summary>
 	public AussieSurferLtdStrategy()
 	{
+		_tolerance = Param(nameof(Tolerance), 1e-6m)
+			.SetGreaterOrEqualThanZero()
+			.SetDisplay("Tolerance", "Price tolerance applied when comparing indicator levels.", "Risk");
+
 		_orderVolume = Param(nameof(OrderVolume), 0.30m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Base trade size in lots or contracts", "Trading")

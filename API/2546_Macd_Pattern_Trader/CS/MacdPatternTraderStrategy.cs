@@ -16,9 +16,10 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MacdPatternTraderStrategy : Strategy
 {
-	private const decimal MinPartialVolume = 0.01m;
-	private const decimal ProfitThreshold = 5m;
-	private const int HistoryLimit = 1024;
+	private readonly StrategyParam<decimal> _minPartialVolume;
+	private readonly StrategyParam<decimal> _profitThreshold;
+	private readonly StrategyParam<int> _historyLimit;
+
 
 	private readonly StrategyParam<bool> _pattern1Enabled;
 	private readonly StrategyParam<int> _pattern1StopLossBars;
@@ -160,6 +161,21 @@ public class MacdPatternTraderStrategy : Strategy
 	/// </summary>
 	public MacdPatternTraderStrategy()
 	{
+		_minPartialVolume = Param(nameof(MinPartialVolume), 0.01m)
+		.SetGreaterThanZero()
+		.SetDisplay("Min Partial Volume", "Minimum volume executed during partial exits", "Money Management")
+		.SetCanOptimize(true);
+
+		_profitThreshold = Param(nameof(ProfitThreshold), 5m)
+		.SetGreaterThanZero()
+		.SetDisplay("Profit Threshold", "Profit threshold required before partial profit taking", "Money Management")
+		.SetCanOptimize(true);
+
+		_historyLimit = Param(nameof(HistoryLimit), 1024)
+		.SetGreaterThanZero()
+		.SetDisplay("History Limit", "Maximum number of recent candles stored for pattern analysis", "General")
+		.SetCanOptimize(true);
+
 		_pattern1Enabled = Param(nameof(Pattern1Enabled), true)
 			.SetDisplay("Pattern 1 Enabled", "Enable MACD pattern 1", "Pattern 1");
 		_pattern1StopLossBars = Param(nameof(Pattern1StopLossBars), 22)
@@ -343,6 +359,33 @@ public class MacdPatternTraderStrategy : Strategy
 			.SetDisplay("Use Martingale", "Double volume after losses", "Trading");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Base candle type", "Trading");
+	}
+
+	/// <summary>
+	/// Minimum volume executed during partial exits.
+	/// </summary>
+	public decimal MinPartialVolume
+	{
+		get => _minPartialVolume.Value;
+		set => _minPartialVolume.Value = value;
+	}
+
+	/// <summary>
+	/// Profit threshold required before partial profit taking.
+	/// </summary>
+	public decimal ProfitThreshold
+	{
+		get => _profitThreshold.Value;
+		set => _profitThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum number of recent candles stored for pattern analysis.
+	/// </summary>
+	public int HistoryLimit
+	{
+		get => _historyLimit.Value;
+		set => _historyLimit.Value = value;
 	}
 
 	/// <summary>

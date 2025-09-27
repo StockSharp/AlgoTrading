@@ -14,7 +14,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MacdAndSarStrategy : Strategy
 {
-	private const decimal VolumeTolerance = 0.0000001m;
+	private readonly StrategyParam<decimal> _volumeTolerance;
 
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<int> _maxPositions;
@@ -33,6 +33,15 @@ public class MacdAndSarStrategy : Strategy
 
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 	private ParabolicSar _parabolicSar = null!;
+
+	/// <summary>
+	/// Tolerance used when comparing cumulative position volumes.
+	/// </summary>
+	public decimal VolumeTolerance
+	{
+		get => _volumeTolerance.Value;
+		set => _volumeTolerance.Value = value;
+	}
 
 	/// <summary>
 	/// Volume per individual trade.
@@ -167,6 +176,10 @@ public class MacdAndSarStrategy : Strategy
 	/// </summary>
 	public MacdAndSarStrategy()
 	{
+		_volumeTolerance = Param(nameof(VolumeTolerance), 0.0000001m)
+			.SetGreaterThan(0m)
+			.SetDisplay("Volume Tolerance", "Tolerance when stacking positions", "Risk");
+
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Volume per trade", "Trading");

@@ -13,7 +13,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TheEnchantressStrategy : Strategy
 {
-	private const int PatternLength = 7;
+	private readonly StrategyParam<int> _patternLength;
 
 	private readonly StrategyParam<decimal> _lotSize;
 	private readonly StrategyParam<bool> _useRiskMoneyManagement;
@@ -36,6 +36,11 @@ public class TheEnchantressStrategy : Strategy
 	/// </summary>
 	public TheEnchantressStrategy()
 	{
+		_patternLength = Param(nameof(PatternLength), 7)
+			.SetGreaterThanZero()
+			.SetDisplay("Pattern Length")
+			.SetCanOptimize(true);
+
 		_lotSize = Param(nameof(LotSize), 0.01m)
 			.SetNotNegative()
 			.SetDisplay("Lot Size")
@@ -71,6 +76,15 @@ public class TheEnchantressStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type");
+	}
+
+	/// <summary>
+	/// Number of candles considered when building pattern signatures.
+	/// </summary>
+	public int PatternLength
+	{
+		get => _patternLength.Value;
+		set => _patternLength.Value = value;
 	}
 
 	/// <summary>

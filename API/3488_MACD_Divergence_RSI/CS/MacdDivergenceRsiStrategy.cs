@@ -46,13 +46,17 @@ public class MacdDivergenceRsiStrategy : Strategy
 	private decimal _pipSize;
 	private decimal _macdThreshold;
 
-	private const int MaxHistory = 600;
+	private readonly StrategyParam<int> _maxHistory;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="MacdDivergenceRsiStrategy"/> class.
 	/// </summary>
 	public MacdDivergenceRsiStrategy()
 	{
+		_maxHistory = Param(nameof(MaxHistory), 600)
+			.SetGreaterThanZero()
+			.SetDisplay("Max History", "Maximum number of candles retained for divergence checks.", "General");
+
 		_lowerRsiPeriod = Param(nameof(LowerRsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Lower RSI Period", "Period for the oversold RSI filter (shifted by one bar).", "Signals")
@@ -127,6 +131,15 @@ public class MacdDivergenceRsiStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used for all indicator calculations.", "General");
+	}
+
+	/// <summary>
+	/// Maximum number of candles stored for divergence detection.
+	/// </summary>
+	public int MaxHistory
+	{
+		get => _maxHistory.Value;
+		set => _maxHistory.Value = value;
 	}
 
 	/// <summary>

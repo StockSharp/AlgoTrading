@@ -16,8 +16,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ExpertIchimokuStrategy : Strategy
 {
-	private const int HistoryCapacity = 64;
-
 	private readonly StrategyParam<int> _tenkanPeriod;
 	private readonly StrategyParam<int> _kijunPeriod;
 	private readonly StrategyParam<int> _senkouSpanBPeriod;
@@ -28,6 +26,7 @@ public class ExpertIchimokuStrategy : Strategy
 	private readonly StrategyParam<int> _maxPositions;
 	private readonly StrategyParam<bool> _useMartingale;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _historyCapacity;
 
 	private Ichimoku _ichimoku;
 
@@ -128,6 +127,15 @@ public class ExpertIchimokuStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Maximum number of historical values retained for Ichimoku components.
+	/// </summary>
+	public int HistoryCapacity
+	{
+		get => _historyCapacity.Value;
+		set => _historyCapacity.Value = Math.Max(1, value);
+	}
+
+	/// <summary>
 	/// Candle type used for calculations.
 	/// </summary>
 	public DataType CandleType
@@ -184,6 +192,10 @@ public class ExpertIchimokuStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for calculations", "General");
+
+		_historyCapacity = Param(nameof(HistoryCapacity), 64)
+			.SetGreaterThanZero()
+			.SetDisplay("History Capacity", "Maximum stored Ichimoku history size", "General");
 	}
 
 	/// <inheritdoc />
@@ -477,10 +489,11 @@ public class ExpertIchimokuStrategy : Strategy
 		_takeProfitPrice = null;
 	}
 
-	private static void AddToHistory(List<decimal> history, decimal value)
+	private void AddToHistory(List<decimal> history, decimal value)
 	{
 		history.Add(value);
-		if (history.Count > HistoryCapacity)
+		var capacity = HistoryCapacity;
+		if (history.Count > capacity)
 			history.RemoveAt(0);
 	}
 

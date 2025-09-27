@@ -25,9 +25,14 @@ public class ExpSinewave2X2Strategy : Strategy
 	private readonly StrategyParam<bool> _enableBuyCloseLower;
 	private readonly StrategyParam<bool> _enableSellCloseLower;
 	private readonly StrategyParam<decimal> _stopLossPoints;
-	private readonly StrategyParam<decimal> _takeProfitPoints;
-	private readonly StrategyParam<DataType> _higherCandleType;
-	private readonly StrategyParam<DataType> _lowerCandleType;
+private readonly StrategyParam<decimal> _takeProfitPoints;
+private readonly StrategyParam<DataType> _higherCandleType;
+private readonly StrategyParam<DataType> _lowerCandleType;
+private readonly StrategyParam<int> _sinewaveBufferLength;
+private readonly StrategyParam<int> _sinewaveMinFormed;
+private readonly StrategyParam<int> _cycleBufferLength;
+private readonly StrategyParam<int> _cycleMedianLength;
+private readonly StrategyParam<int> _cycleMinFormed;
 
 	private Sinewave2Indicator _higherIndicator = null!;
 	private Sinewave2Indicator _lowerIndicator = null!;
@@ -94,6 +99,26 @@ public class ExpSinewave2X2Strategy : Strategy
 
 		_lowerCandleType = Param(nameof(LowerCandleType), TimeSpan.FromMinutes(30).TimeFrame())
 		.SetDisplay("Lower TF", "Candle type for the lower timeframe entries", "General");
+
+		_sinewaveBufferLength = Param(nameof(SinewaveBufferLength), 100)
+		.SetGreaterThanZero()
+		.SetDisplay("Sinewave Buffer", "Rolling buffer length for Sinewave2", "Indicator");
+
+		_sinewaveMinFormed = Param(nameof(SinewaveMinFormed), 7)
+		.SetGreaterThanZero()
+		.SetDisplay("Sinewave Min Bars", "Bars required before Sinewave2 is formed", "Indicator");
+
+		_cycleBufferLength = Param(nameof(CycleBufferLength), 7)
+		.SetGreaterThanZero()
+		.SetDisplay("Cycle Buffer", "Internal buffer length for cycle period", "Indicator");
+
+		_cycleMedianLength = Param(nameof(CycleMedianLength), 5)
+		.SetGreaterThanZero()
+		.SetDisplay("Cycle Median", "Median filter length for cycle period", "Indicator");
+
+		_cycleMinFormed = Param(nameof(CycleMinFormed), 21)
+		.SetGreaterThanZero()
+		.SetDisplay("Cycle Min Bars", "Bars required before cycle period is formed", "Indicator");
 	}
 
 	/// <summary>
@@ -222,6 +247,51 @@ public class ExpSinewave2X2Strategy : Strategy
 		set => _lowerCandleType.Value = value;
 	}
 
+	/// <summary>
+	/// Rolling buffer length used by the Sinewave2 indicator.
+	/// </summary>
+	public int SinewaveBufferLength
+	{
+		get => _sinewaveBufferLength.Value;
+		set => _sinewaveBufferLength.Value = value;
+	}
+
+	/// <summary>
+	/// Number of samples required before the Sinewave2 indicator becomes formed.
+	/// </summary>
+	public int SinewaveMinFormed
+	{
+		get => _sinewaveMinFormed.Value;
+		set => _sinewaveMinFormed.Value = value;
+	}
+
+	/// <summary>
+	/// Buffer length for the internal cycle period calculation.
+	/// </summary>
+	public int CycleBufferLength
+	{
+		get => _cycleBufferLength.Value;
+		set => _cycleBufferLength.Value = value;
+	}
+
+	/// <summary>
+	/// Median filter length for cycle period smoothing.
+	/// </summary>
+	public int CycleMedianLength
+	{
+		get => _cycleMedianLength.Value;
+		set => _cycleMedianLength.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum number of bars required for the cycle period indicator.
+	/// </summary>
+	public int CycleMinFormed
+	{
+		get => _cycleMinFormed.Value;
+		set => _cycleMinFormed.Value = value;
+	}
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
@@ -244,8 +314,8 @@ public class ExpSinewave2X2Strategy : Strategy
 		_lowerValues.Clear();
 		ResetRisk();
 
-		_higherIndicator = new Sinewave2Indicator { Alpha = AlphaHigh };
-		_lowerIndicator = new Sinewave2Indicator { Alpha = AlphaLow };
+		_higherIndicator = CreateIndicator(AlphaHigh);
+		_lowerIndicator = CreateIndicator(AlphaLow);
 
 		// Subscribe to the higher timeframe candle stream and bind the indicator pipeline.
 		var higherSubscription = SubscribeCandles(HigherCandleType);
@@ -263,6 +333,19 @@ public class ExpSinewave2X2Strategy : Strategy
 			.Bind(_lowerIndicator, ProcessLowerCandle)
 			.Start();
 		}
+	}
+
+	private Sinewave2Indicator CreateIndicator(decimal alpha)
+	{
+		return new Sinewave2Indicator
+		{
+			Alpha = alpha,
+			BufferLength = SinewaveBufferLength,
+			MinFormed = SinewaveMinFormed,
+			CycleBufferLength = CycleBufferLength,
+			CycleMedianLength = CycleMedianLength,
+			CycleMinFormed = CycleMinFormed
+		};
 	}
 
 	private void ProcessHigherCandle(ICandleMessage candle, decimal sine, decimal lead)
@@ -444,14 +527,14 @@ public class ExpSinewave2X2Strategy : Strategy
 /// </summary>
 public sealed class Sinewave2Indicator : BaseIndicator<decimal>
 {
-	private const int BufferLength = 100;
-	private const int MinFormed = 7;
+	private int _bufferLength = 100;
+	private int _minFormed = 7;
 
 	private readonly CyclePeriodIndicator _cyclePeriod = new();
 
-	private readonly double[] _price = new double[BufferLength];
-	private readonly double[] _smooth = new double[BufferLength];
-	private readonly double[] _cycle = new double[BufferLength];
+	private double[] _price = new double[100];
+	private double[] _smooth = new double[100];
+	private double[] _cycle = new double[100];
 
 	private int _index;
 	private int _totalBars;
@@ -468,6 +551,65 @@ public sealed class Sinewave2Indicator : BaseIndicator<decimal>
 	/// Alpha parameter controlling smoothing speed.
 	/// </summary>
 	public decimal Alpha { get; set; } = 0.07m;
+
+	/// <summary>
+	/// Length of the rolling buffers used by the indicator.
+	/// </summary>
+	public int BufferLength
+	{
+		get => _bufferLength;
+		set
+		{
+			var length = Math.Max(4, value);
+			if (_bufferLength == length)
+			return;
+
+			_bufferLength = length;
+			_price = new double[_bufferLength];
+			_smooth = new double[_bufferLength];
+			_cycle = new double[_bufferLength];
+			_index = 0;
+			_totalBars = 0;
+			_lastLead = 0.0;
+			_alphaCache = double.NaN;
+		}
+	}
+
+	/// <summary>
+	/// Minimum number of bars required before the indicator is considered formed.
+	/// </summary>
+	public int MinFormed
+	{
+		get => _minFormed;
+		set => _minFormed = Math.Max(1, value);
+	}
+
+	/// <summary>
+	/// Buffer length for the internal cycle period indicator.
+	/// </summary>
+	public int CycleBufferLength
+	{
+		get => _cyclePeriod.BufferLength;
+		set => _cyclePeriod.BufferLength = value;
+	}
+
+	/// <summary>
+	/// Median filter length for the cycle period indicator.
+	/// </summary>
+	public int CycleMedianLength
+	{
+		get => _cyclePeriod.MedianLength;
+		set => _cyclePeriod.MedianLength = value;
+	}
+
+	/// <summary>
+	/// Minimum bars required before the cycle period indicator is formed.
+	/// </summary>
+	public int CycleMinFormed
+	{
+		get => _cyclePeriod.MinFormed;
+		set => _cyclePeriod.MinFormed = value;
+	}
 
 	/// <inheritdoc />
 	protected override IIndicatorValue OnProcess(IIndicatorValue input)
@@ -486,14 +628,14 @@ public sealed class Sinewave2Indicator : BaseIndicator<decimal>
 
 		_index--;
 		if (_index < 0)
-		_index = BufferLength - 1;
+		_index = _bufferLength - 1;
 
 		var price = ((double)candle.HighPrice + (double)candle.LowPrice) / 2.0;
 		_price[_index] = price;
 
-		var idx1 = (_index + 1) % BufferLength;
-		var idx2 = (_index + 2) % BufferLength;
-		var idx3 = (_index + 3) % BufferLength;
+		var idx1 = (_index + 1) % _bufferLength;
+		var idx2 = (_index + 2) % _bufferLength;
+		var idx3 = (_index + 3) % _bufferLength;
 
 		_smooth[_index] = (_price[_index] + 2.0 * _price[idx1] + 2.0 * _price[idx2] + _price[idx3]) / 6.0;
 
@@ -503,7 +645,7 @@ public sealed class Sinewave2Indicator : BaseIndicator<decimal>
 		_cycle[_index] = (_price[_index] - 2.0 * _price[idx1] + _price[idx2]) / 4.0;
 
 		_totalBars++;
-		var samples = Math.Min(_totalBars, BufferLength);
+		var samples = Math.Min(_totalBars, _bufferLength);
 
 		var dcPeriod = (int)Math.Floor(periodValue.ToDecimal());
 		dcPeriod = Math.Max(1, Math.Min(dcPeriod, samples));
@@ -513,7 +655,7 @@ public sealed class Sinewave2Indicator : BaseIndicator<decimal>
 
 		for (var i = 0; i < dcPeriod; i++)
 		{
-			var idx = (_index + i) % BufferLength;
+			var idx = (_index + i) % _bufferLength;
 			var arg = _deg2Rad * 360.0 * i / dcPeriod;
 			real += Math.Sin(arg) * _cycle[idx];
 			imag += Math.Cos(arg) * _cycle[idx];
@@ -609,17 +751,17 @@ public sealed class Sinewave2Value : ComplexIndicatorValue
 /// </summary>
 public sealed class CyclePeriodIndicator : BaseIndicator<decimal>
 {
-	private const int BufferLength = 7;
-	private const int MedianLength = 5;
-	private const int MinFormed = MedianLength + 16;
+	private int _bufferLength = 7;
+	private int _medianLength = 5;
+	private int _minFormed = 21;
 
-	private readonly double[] _price = new double[BufferLength];
-	private readonly double[] _smooth = new double[BufferLength];
-	private readonly double[] _cycle = new double[BufferLength];
-	private readonly double[] _q1 = new double[BufferLength];
-	private readonly double[] _i1 = new double[BufferLength];
-	private readonly double[] _deltaPhase = new double[MedianLength];
-	private readonly double[] _medianBuffer = new double[MedianLength];
+	private double[] _price = new double[7];
+	private double[] _smooth = new double[7];
+	private double[] _cycle = new double[7];
+	private double[] _q1 = new double[7];
+	private double[] _i1 = new double[7];
+	private double[] _deltaPhase = new double[5];
+	private double[] _medianBuffer = new double[5];
 
 	private int _index1;
 	private int _index2;
@@ -641,6 +783,49 @@ public sealed class CyclePeriodIndicator : BaseIndicator<decimal>
 	/// </summary>
 	public decimal Alpha { get; set; } = 0.07m;
 
+	/// <summary>
+	/// Buffer length used to store intermediate price calculations.
+	/// </summary>
+	public int BufferLength
+	{
+		get => _bufferLength;
+		set
+		{
+			var length = Math.Max(7, value);
+			if (_bufferLength == length)
+			return;
+
+			_bufferLength = length;
+			ReallocateBuffers();
+		}
+	}
+
+	/// <summary>
+	/// Length of the median filter applied to the phase difference.
+	/// </summary>
+	public int MedianLength
+	{
+		get => _medianLength;
+		set
+		{
+			var length = Math.Max(1, value);
+			if (_medianLength == length)
+			return;
+
+			_medianLength = length;
+			ReallocateBuffers();
+		}
+	}
+
+	/// <summary>
+	/// Minimum bar count required before the indicator becomes formed.
+	/// </summary>
+	public int MinFormed
+	{
+		get => _minFormed;
+		set => _minFormed = Math.Max(1, value);
+	}
+
 	/// <inheritdoc />
 	protected override IIndicatorValue OnProcess(IIndicatorValue input)
 	{
@@ -651,18 +836,18 @@ public sealed class CyclePeriodIndicator : BaseIndicator<decimal>
 
 		_index1--;
 		if (_index1 < 0)
-		_index1 = BufferLength - 1;
+		_index1 = _bufferLength - 1;
 
 		_index2--;
 		if (_index2 < 0)
-		_index2 = MedianLength - 1;
+		_index2 = _medianLength - 1;
 
 		var bar0 = _index1;
-		var bar1 = (bar0 + 1) % BufferLength;
-		var bar2 = (bar0 + 2) % BufferLength;
-		var bar3 = (bar0 + 3) % BufferLength;
-		var bar4 = (bar0 + 4) % BufferLength;
-		var bar6 = (bar0 + 6) % BufferLength;
+		var bar1 = (bar0 + 1) % _bufferLength;
+		var bar2 = (bar0 + 2) % _bufferLength;
+		var bar3 = (bar0 + 3) % _bufferLength;
+		var bar4 = (bar0 + 4) % _bufferLength;
+		var bar6 = (bar0 + 6) % _bufferLength;
 
 		var price = ((double)candle.HighPrice + (double)candle.LowPrice) / 2.0;
 		_price[bar0] = price;
@@ -688,9 +873,9 @@ public sealed class CyclePeriodIndicator : BaseIndicator<decimal>
 		var clamped = Math.Max(0.1, Math.Min(1.1, _deltaPhase[_index2]));
 		_deltaPhase[_index2] = clamped;
 
-		Array.Copy(_deltaPhase, _medianBuffer, MedianLength);
+		Array.Copy(_deltaPhase, _medianBuffer, _medianLength);
 		Array.Sort(_medianBuffer);
-		var median = _medianBuffer[MedianLength / 2];
+		var median = _medianBuffer[_medianLength / 2];
 		var dc = Math.Abs(median) < double.Epsilon ? 15.0 : 6.28318 / median + 0.5;
 
 		_instPeriod = 0.67 * _instPeriod + 0.33 * dc;
@@ -707,6 +892,11 @@ public sealed class CyclePeriodIndicator : BaseIndicator<decimal>
 	{
 		base.Reset();
 
+		ResetState();
+	}
+
+	private void ResetState()
+	{
 		Array.Clear(_price, 0, _price.Length);
 		Array.Clear(_smooth, 0, _smooth.Length);
 		Array.Clear(_cycle, 0, _cycle.Length);
@@ -720,6 +910,19 @@ public sealed class CyclePeriodIndicator : BaseIndicator<decimal>
 		_alphaCache = double.NaN;
 		_instPeriod = 1.0;
 		_cyclePeriod = 1.0;
+	}
+
+	private void ReallocateBuffers()
+	{
+		_price = new double[_bufferLength];
+		_smooth = new double[_bufferLength];
+		_cycle = new double[_bufferLength];
+		_q1 = new double[_bufferLength];
+		_i1 = new double[_bufferLength];
+		_deltaPhase = new double[_medianLength];
+		_medianBuffer = new double[_medianLength];
+
+		ResetState();
 	}
 
 	private void UpdateCoefficients()

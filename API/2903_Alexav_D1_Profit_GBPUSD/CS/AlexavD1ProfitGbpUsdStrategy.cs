@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class AlexavD1ProfitGbpUsdStrategy : Strategy
 {
-	private const int OrdersPerSignal = 4;
 	private static readonly decimal[] TargetSteps = { 1m, 1.5m, 2m, 2.5m };
 
 	private readonly StrategyParam<decimal> _orderVolume;
@@ -27,6 +26,7 @@ public class AlexavD1ProfitGbpUsdStrategy : Strategy
 	private readonly StrategyParam<int> _macdSignalPeriod;
 	private readonly StrategyParam<decimal> _macdDiffBuy;
 	private readonly StrategyParam<decimal> _macdDiffSell;
+	private readonly StrategyParam<int> _ordersPerSignal;
 	private readonly StrategyParam<decimal> _rsiUpperLimit;
 	private readonly StrategyParam<decimal> _rsiUpperLevel;
 	private readonly StrategyParam<decimal> _rsiLowerLevel;
@@ -96,6 +96,10 @@ public class AlexavD1ProfitGbpUsdStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Diff Sell", "Minimum MACD acceleration for sells", "Filters");
 
+		_ordersPerSignal = Param(nameof(OrdersPerSignal), 4)
+		.SetGreaterThanZero()
+		.SetDisplay("Orders Per Signal", "Number of scaling orders per entry", "Trading");
+
 		_rsiUpperLimit = Param(nameof(RsiUpperLimit), 80m)
 		.SetDisplay("RSI Upper Limit", "Maximum RSI allowed for longs", "Filters");
 
@@ -146,6 +150,12 @@ public class AlexavD1ProfitGbpUsdStrategy : Strategy
 	{
 		get => _takeMultiplier.Value;
 		set => _takeMultiplier.Value = value;
+	}
+
+	public int OrdersPerSignal
+	{
+		get => _ordersPerSignal.Value;
+		set => _ordersPerSignal.Value = value;
 	}
 
 	public int MacdFastPeriod

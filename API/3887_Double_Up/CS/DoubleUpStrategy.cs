@@ -12,7 +12,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class DoubleUpStrategy : Strategy
 {
-private const decimal MacdScale = 1_000_000m;
+private readonly StrategyParam<decimal> _macdScale;
 
 private readonly StrategyParam<int> _cciPeriod;
 private readonly StrategyParam<decimal> _threshold;
@@ -61,6 +61,15 @@ public decimal Threshold
 {
 get => _threshold.Value;
 set => _threshold.Value = value;
+}
+
+/// <summary>
+/// Scaling factor applied to the MACD indicator output.
+/// </summary>
+public decimal MacdScale
+{
+get => _macdScale.Value;
+set => _macdScale.Value = value;
 }
 
 /// <summary>
@@ -137,6 +146,7 @@ set => _candleType.Value = value;
 
 public DoubleUpStrategy()
 {
+_macdScale = Param(nameof(MacdScale), 1_000_000m).SetDisplay("MACD Scale").SetCanOptimize(true);
 _cciPeriod = Param(nameof(CciPeriod), 8).SetDisplay("CCI Period").SetCanOptimize(true);
 _threshold = Param(nameof(Threshold), 230m).SetDisplay("Threshold").SetCanOptimize(true);
 _macdFastPeriod = Param(nameof(MacdFastPeriod), 13).SetDisplay("MACD Fast").SetCanOptimize(true);

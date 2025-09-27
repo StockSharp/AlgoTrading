@@ -36,6 +36,8 @@ private readonly StrategyParam<decimal> _maxSpreadPoints;
 private readonly StrategyParam<decimal> _stopLossPoints;
 private readonly StrategyParam<decimal> _takeProfitPoints;
 private readonly StrategyParam<decimal> _profitTargetPerLot;
+private readonly StrategyParam<int> _trendAnchorIndex;
+private readonly StrategyParam<int> _maxStoredPivots;
 
 private SimpleMovingAverage _fastMa;
 private SimpleMovingAverage _slowMa;
@@ -52,9 +54,6 @@ private decimal? _bestBid;
 private decimal? _bestAsk;
 private bool _hasBestBid;
 private bool _hasBestAsk;
-
-private const int TrendAnchorIndex = 3;
-private const int MaxStoredPivots = 10;
 
 /// <summary>
 /// Initializes a new instance of the <see cref="FXFSafeTrendScalpV1Strategy"/> class.
@@ -107,6 +106,14 @@ _takeProfitPoints = Param(nameof(TakeProfitPoints), 500m)
 _profitTargetPerLot = Param(nameof(ProfitTargetPerLot), 50m)
 .SetGreaterThanOrEqual(0m)
 .SetDisplay("Profit Target per Lot", "Floating profit required to close positions", "Risk");
+
+_trendAnchorIndex = Param(nameof(TrendAnchorIndex), 3)
+.SetGreaterOrEqual(1)
+.SetDisplay("Trend Anchor Index", "Older pivot index used to build the trendline", "ZigZag");
+
+_maxStoredPivots = Param(nameof(MaxStoredPivots), 10)
+.SetGreaterOrEqual(4)
+.SetDisplay("Stored Pivots", "Maximum number of ZigZag pivots kept for analysis", "ZigZag");
 }
 
 /// <summary>
@@ -217,6 +224,18 @@ get => _profitTargetPerLot.Value;
 set => _profitTargetPerLot.Value = value;
 }
 
+public int TrendAnchorIndex
+{
+get => _trendAnchorIndex.Value;
+set => _trendAnchorIndex.Value = value;
+}
+
+public int MaxStoredPivots
+{
+get => _maxStoredPivots.Value;
+set => _maxStoredPivots.Value = value;
+}
+
 /// <inheritdoc />
 protected override void OnReseted()
 {
@@ -249,6 +268,9 @@ _fastMa = new SimpleMovingAverage { Length = FastMaLength };
 _slowMa = new SimpleMovingAverage { Length = SlowMaLength };
 _searchDirection = 1;
 _barIndex = -1;
+
+if (MaxStoredPivots <= TrendAnchorIndex)
+throw new InvalidOperationException("Stored pivots must exceed the trend anchor index.");
 
 var subscription = SubscribeCandles(CandleType);
 subscription

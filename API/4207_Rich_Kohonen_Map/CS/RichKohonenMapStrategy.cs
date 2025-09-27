@@ -13,26 +13,26 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class RichKohonenMapStrategy : Strategy
 {
-	private const int VectorSize = 7;
-	private const int MapBase = 10000;
-	private const int HoldBase = 25000;
-	private const int HistoryLength = 7;
+private readonly StrategyParam<int> _vectorSize;
+private readonly StrategyParam<int> _mapBase;
+private readonly StrategyParam<int> _holdBase;
+private readonly StrategyParam<int> _historyLength;
 
-	private readonly StrategyParam<int> _minPips;
-	private readonly StrategyParam<int> _maxPips;
-	private readonly StrategyParam<int> _takeProfit;
-	private readonly StrategyParam<int> _stopLoss;
-	private readonly StrategyParam<decimal> _lots;
-	private readonly StrategyParam<string> _mapPath;
-	private readonly StrategyParam<string> _eaName;
-	private readonly StrategyParam<DataType> _candleType;
+private readonly StrategyParam<int> _minPips;
+private readonly StrategyParam<int> _maxPips;
+private readonly StrategyParam<int> _takeProfit;
+private readonly StrategyParam<int> _stopLoss;
+private readonly StrategyParam<decimal> _lots;
+private readonly StrategyParam<string> _mapPath;
+private readonly StrategyParam<string> _eaName;
+private readonly StrategyParam<DataType> _candleType;
 
-	private readonly List<ICandleMessage> _candles = new();
-	private readonly double[,] _mapBuy = new double[MapBase, VectorSize];
-	private readonly double[,] _mapSell = new double[MapBase, VectorSize];
-	private readonly double[,] _mapHold = new double[HoldBase, VectorSize];
-	private readonly double[] _currentVector = new double[VectorSize];
-	private readonly double[] _previousVector = new double[VectorSize];
+private readonly List<ICandleMessage> _candles = new();
+private double[,] _mapBuy = null!;
+private double[,] _mapSell = null!;
+private double[,] _mapHold = null!;
+private double[] _currentVector = null!;
+private double[] _previousVector = null!;
 
 	private int _buyCount;
 	private int _sellCount;
@@ -45,14 +45,50 @@ public class RichKohonenMapStrategy : Strategy
 		Hold,
 	}
 
-	/// <summary>
-	/// Minimum pip distance to register a buy training example.
-	/// </summary>
-	public int MinPips
-	{
-		get => _minPips.Value;
-		set => _minPips.Value = value;
-	}
+/// <summary>
+/// Number of values stored in each training vector.
+/// </summary>
+public int VectorSize
+{
+get => _vectorSize.Value;
+set => _vectorSize.Value = value;
+}
+
+/// <summary>
+/// Maximum number of samples stored in the buy/sell maps.
+/// </summary>
+public int MapBase
+{
+get => _mapBase.Value;
+set => _mapBase.Value = value;
+}
+
+/// <summary>
+/// Maximum number of samples stored in the hold map.
+/// </summary>
+public int HoldBase
+{
+get => _holdBase.Value;
+set => _holdBase.Value = value;
+}
+
+/// <summary>
+/// Number of candles forming the feature vector.
+/// </summary>
+public int HistoryLength
+{
+get => _historyLength.Value;
+set => _historyLength.Value = value;
+}
+
+/// <summary>
+/// Minimum pip distance to register a buy training example.
+/// </summary>
+public int MinPips
+{
+get => _minPips.Value;
+set => _minPips.Value = value;
+}
 
 	/// <summary>
 	/// Maximum pip distance to register a buy or sell training example.
@@ -117,16 +153,34 @@ public class RichKohonenMapStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes strategy parameters.
-	/// </summary>
+/// <summary>
+/// Initializes strategy parameters.
+/// </summary>
 	public RichKohonenMapStrategy()
 	{
+		_vectorSize = Param(nameof(VectorSize), 7)
+.SetGreaterOrEqual(7)
+.SetDisplay("Vector Size", "Number of values stored in each training vector", "Training")
+.SetCanOptimize(true);
+
+		_mapBase = Param(nameof(MapBase), 10000)
+	                .SetGreaterThanZero()
+	                .SetDisplay("Map Capacity", "Maximum number of samples stored in the buy/sell maps", "Training");
+
+		_holdBase = Param(nameof(HoldBase), 25000)
+	                .SetGreaterThanZero()
+	                .SetDisplay("Hold Capacity", "Maximum number of samples stored in the hold map", "Training");
+
+		_historyLength = Param(nameof(HistoryLength), 7)
+.SetGreaterOrEqual(7)
+.SetDisplay("History Length", "Number of candles forming the feature vector", "Training")
+.SetCanOptimize(true);
+
 		_minPips = Param(nameof(MinPips), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("Min Pips", "Minimum pip distance for buy samples", "Training")
-			.SetCanOptimize(true)
-			.SetOptimize(1, 50, 1);
+	                .SetGreaterThanZero()
+	                .SetDisplay("Min Pips", "Minimum pip distance for buy samples", "Training")
+	                .SetCanOptimize(true)
+	                .SetOptimize(1, 50, 1);
 
 		_maxPips = Param(nameof(MaxPips), 43)
 			.SetGreaterThanZero()
@@ -295,38 +349,38 @@ public class RichKohonenMapStrategy : Strategy
 		}
 	}
 
-	private static void AddVector(double[,] map, ref int count, int capacity, double[] vector)
+	private void AddVector(double[,] map, ref int count, int capacity, double[] vector)
 	{
-		if (count >= capacity)
-			return;
+	        if (count >= capacity)
+	                return;
 
-		for (var i = 0; i < VectorSize; i++)
-			map[count, i] = vector[i];
+	        for (var i = 0; i < VectorSize; i++)
+	                map[count, i] = vector[i];
 
-		count++;
+	        count++;
 	}
 
-	private static double FindBestMatchingUnit(double[,] map, int count, double[] vector)
+	private double FindBestMatchingUnit(double[,] map, int count, double[] vector)
 	{
-		var best = double.MaxValue;
+	        var best = double.MaxValue;
 
-		for (var i = 0; i < count; i++)
-		{
-			var distance = 0d;
+	        for (var i = 0; i < count; i++)
+	        {
+	                var distance = 0d;
 
-			for (var v = 0; v < VectorSize; v++)
-			{
-				var diff = map[i, v] * 10000d - vector[v] * 10000d;
-				distance += diff * diff;
-			}
+	                for (var v = 0; v < VectorSize; v++)
+	                {
+	                        var diff = map[i, v] * 10000d - vector[v] * 10000d;
+	                        distance += diff * diff;
+	                }
 
-			distance = Math.Sqrt(distance);
+	                distance = Math.Sqrt(distance);
 
-			if (distance < best)
-				best = distance;
-		}
+	                if (distance < best)
+	                        best = distance;
+	        }
 
-		return best;
+	        return best;
 	}
 
 	private void UpdateFeatureVectors()
@@ -397,9 +451,12 @@ public class RichKohonenMapStrategy : Strategy
 
 	private void ResetMaps()
 	{
-		Array.Clear(_mapBuy, 0, _mapBuy.Length);
-		Array.Clear(_mapSell, 0, _mapSell.Length);
-		Array.Clear(_mapHold, 0, _mapHold.Length);
+	        AllocateBuffers();
+	        Array.Clear(_mapBuy, 0, _mapBuy.Length);
+	        Array.Clear(_mapSell, 0, _mapSell.Length);
+	        Array.Clear(_mapHold, 0, _mapHold.Length);
+	        Array.Clear(_currentVector, 0, _currentVector.Length);
+	        Array.Clear(_previousVector, 0, _previousVector.Length);
 		_buyCount = 0;
 		_sellCount = 0;
 		_holdCount = 0;
@@ -407,114 +464,136 @@ public class RichKohonenMapStrategy : Strategy
 
 	private void LoadKohonenMap()
 	{
-		var path = GetMapFullPath();
+	        var path = GetMapFullPath();
 
-		if (path.IsEmptyOrWhiteSpace() || !File.Exists(path))
-			return;
+	        if (path.IsEmptyOrWhiteSpace() || !File.Exists(path))
+	                return;
 
-		try
-		{
-			using var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-			using var reader = new BinaryReader(stream);
+	        try
+	        {
+	                using var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+	                using var reader = new BinaryReader(stream);
 
-			ReadMap(reader, _mapBuy, MapBase);
-			ReadMap(reader, _mapSell, MapBase);
-			ReadMap(reader, _mapHold, HoldBase);
-		}
-		catch (Exception ex)
-		{
-			LogError($"Failed to load Kohonen map: {ex.Message}");
-		}
-		finally
-		{
-			_buyCount = CountFilledRows(_mapBuy, MapBase);
-			_sellCount = CountFilledRows(_mapSell, MapBase);
-			_holdCount = CountFilledRows(_mapHold, HoldBase);
-		}
+	                ReadMap(reader, _mapBuy, MapBase);
+	                ReadMap(reader, _mapSell, MapBase);
+	                ReadMap(reader, _mapHold, HoldBase);
+	        }
+	        catch (Exception ex)
+	        {
+	                LogError($"Failed to load Kohonen map: {ex.Message}");
+	        }
+	        finally
+	        {
+	                _buyCount = CountFilledRows(_mapBuy, MapBase);
+	                _sellCount = CountFilledRows(_mapSell, MapBase);
+	                _holdCount = CountFilledRows(_mapHold, HoldBase);
+	        }
 	}
 
 	private void SaveKohonenMap()
 	{
-		var path = GetMapFullPath();
+	        var path = GetMapFullPath();
 
-		if (path.IsEmptyOrWhiteSpace())
-			return;
+	        if (path.IsEmptyOrWhiteSpace())
+	                return;
 
-		try
-		{
-			var directory = Path.GetDirectoryName(path);
-			if (!directory.IsEmpty())
-				Directory.CreateDirectory(directory);
+	        try
+	        {
+	                var directory = Path.GetDirectoryName(path);
+	                if (!directory.IsEmpty())
+	                        Directory.CreateDirectory(directory);
 
-			using var stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.None);
-			using var writer = new BinaryWriter(stream);
+	                using var stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.None);
+	                using var writer = new BinaryWriter(stream);
 
-			WriteMap(writer, _mapBuy, MapBase);
-			WriteMap(writer, _mapSell, MapBase);
-			WriteMap(writer, _mapHold, HoldBase);
-		}
-		catch (Exception ex)
-		{
-			LogError($"Failed to save Kohonen map: {ex.Message}");
-		}
+	                WriteMap(writer, _mapBuy, MapBase);
+	                WriteMap(writer, _mapSell, MapBase);
+	                WriteMap(writer, _mapHold, HoldBase);
+	        }
+	        catch (Exception ex)
+	        {
+	                LogError($"Failed to save Kohonen map: {ex.Message}");
+	        }
 	}
 
 	private string GetMapFullPath()
 	{
-		if (MapPath.IsEmptyOrWhiteSpace())
-			return Path.Combine(Environment.CurrentDirectory, "rl.bin");
+	        if (MapPath.IsEmptyOrWhiteSpace())
+	                return Path.Combine(Environment.CurrentDirectory, "rl.bin");
 
-		return Path.IsPathRooted(MapPath)
-			? MapPath
-			: Path.Combine(Environment.CurrentDirectory, MapPath);
+	        return Path.IsPathRooted(MapPath)
+	                ? MapPath
+	                : Path.Combine(Environment.CurrentDirectory, MapPath);
 	}
 
-	private static void ReadMap(BinaryReader reader, double[,] map, int rows)
+	private void ReadMap(BinaryReader reader, double[,] map, int rows)
 	{
-		for (var i = 0; i < rows; i++)
-		{
-			for (var v = 0; v < VectorSize; v++)
-			{
-				if (reader.BaseStream.Position >= reader.BaseStream.Length)
-					return;
+	        for (var i = 0; i < rows; i++)
+	        {
+	                for (var v = 0; v < VectorSize; v++)
+	                {
+	                        if (reader.BaseStream.Position >= reader.BaseStream.Length)
+	                                return;
 
-				map[i, v] = reader.ReadDouble();
-			}
-		}
+	                        map[i, v] = reader.ReadDouble();
+	                }
+	        }
 	}
 
-	private static void WriteMap(BinaryWriter writer, double[,] map, int rows)
+	private void WriteMap(BinaryWriter writer, double[,] map, int rows)
 	{
-		for (var i = 0; i < rows; i++)
-		{
-			for (var v = 0; v < VectorSize; v++)
-				writer.Write(map[i, v]);
-		}
+	        for (var i = 0; i < rows; i++)
+	        {
+	                for (var v = 0; v < VectorSize; v++)
+	                        writer.Write(map[i, v]);
+	        }
 	}
 
-	private static int CountFilledRows(double[,] map, int rows)
+	private int CountFilledRows(double[,] map, int rows)
 	{
-		var count = 0;
+	        var count = 0;
 
-		for (var i = 0; i < rows; i++)
-		{
-			var empty = true;
+	        for (var i = 0; i < rows; i++)
+	        {
+	                var empty = true;
 
-			for (var v = 0; v < VectorSize; v++)
-			{
-				if (map[i, v] != 0d)
-				{
-					empty = false;
-					break;
-				}
-			}
+	                for (var v = 0; v < VectorSize; v++)
+	                {
+	                        if (map[i, v] != 0d)
+	                        {
+	                                empty = false;
+	                                break;
+	                        }
+	                }
 
-			if (empty)
-				break;
+	                if (empty)
+	                        break;
 
-			count++;
-		}
+	                count++;
+	        }
 
-		return count;
+	        return count;
+	}
+
+	private void AllocateBuffers()
+	{
+	        var vectorSize = VectorSize;
+	        var mapCapacity = MapBase;
+	        var holdCapacity = HoldBase;
+
+	        if (_mapBuy == null || _mapBuy.GetLength(0) != mapCapacity || _mapBuy.GetLength(1) != vectorSize)
+	                _mapBuy = new double[mapCapacity, vectorSize];
+
+	        if (_mapSell == null || _mapSell.GetLength(0) != mapCapacity || _mapSell.GetLength(1) != vectorSize)
+	                _mapSell = new double[mapCapacity, vectorSize];
+
+	        if (_mapHold == null || _mapHold.GetLength(0) != holdCapacity || _mapHold.GetLength(1) != vectorSize)
+	                _mapHold = new double[holdCapacity, vectorSize];
+
+	        if (_currentVector == null || _currentVector.Length != vectorSize)
+	                _currentVector = new double[vectorSize];
+
+	        if (_previousVector == null || _previousVector.Length != vectorSize)
+	                _previousVector = new double[vectorSize];
 	}
 }

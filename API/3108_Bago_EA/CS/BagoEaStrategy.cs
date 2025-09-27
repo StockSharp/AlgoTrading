@@ -15,9 +15,6 @@ using StockSharp.Messages;
 /// </summary>
 public class BagoEaStrategy : Strategy
 {
-	private const int HistoryLimit = 300;
-	private const decimal FiftyLevel = 50m;
-
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _stopLossToFiboPips;
@@ -41,6 +38,8 @@ public class BagoEaStrategy : Strategy
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<AppliedPriceType> _rsiAppliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _historyLimit;
+	private readonly StrategyParam<decimal> _fiftyLevel;
 
 	private LengthIndicator<decimal> _fastMa = null!;
 	private LengthIndicator<decimal> _slowMa = null!;
@@ -164,8 +163,15 @@ public class BagoEaStrategy : Strategy
 		_rsiAppliedPrice = Param(nameof(RsiAppliedPrice), AppliedPriceType.Close)
 		.SetDisplay("RSI Price", "Applied price for RSI", "Indicator");
 
+		_fiftyLevel = Param(nameof(FiftyLevel), 50m)
+		.SetDisplay("RSI Mid Level", "Neutral RSI threshold", "Indicator");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Working timeframe", "General");
+
+		_historyLimit = Param(nameof(HistoryLimit), 300)
+		.SetGreaterThanZero()
+		.SetDisplay("History Limit", "Maximum stored bars for signal validation", "Advanced");
 	}
 
 /// <summary>
@@ -367,12 +373,30 @@ public AppliedPriceType RsiAppliedPrice
 }
 
 /// <summary>
+/// Neutral RSI threshold defining the bullish/bearish boundary.
+/// </summary>
+public decimal FiftyLevel
+{
+	get => _fiftyLevel.Value;
+	set => _fiftyLevel.Value = value;
+}
+
+/// <summary>
 /// Candle data type used for calculations.
 /// </summary>
 public DataType CandleType
 {
 	get => _candleType.Value;
 	set => _candleType.Value = value;
+}
+
+/// <summary>
+/// Maximum number of historical bars cached for indicator comparisons.
+/// </summary>
+public int HistoryLimit
+{
+	get => _historyLimit.Value;
+	set => _historyLimit.Value = value;
 }
 
 /// <inheritdoc />

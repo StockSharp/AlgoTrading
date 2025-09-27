@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BollTradeBollingerReversionStrategy : Strategy
 {
-	private const decimal MaxVolume = 500m;
 
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
@@ -23,6 +22,7 @@ public class BollTradeBollingerReversionStrategy : Strategy
 	private readonly StrategyParam<decimal> _lots;
 	private readonly StrategyParam<bool> _lotIncrease;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _maxVolume;
 
 	private decimal _lotBaseline;
 	private decimal _pipSize;
@@ -102,6 +102,14 @@ public class BollTradeBollingerReversionStrategy : Strategy
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
+	/// <summary>
+	/// Maximum volume allowed when scaling trades.
+	/// </summary>
+	public decimal MaxVolume
+	{
+		get => _maxVolume.Value;
+		set => _maxVolume.Value = value;
+	}
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="BollTradeBollingerReversionStrategy"/> class.
@@ -142,6 +150,9 @@ public class BollTradeBollingerReversionStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for signals.", "General");
+		_maxVolume = Param(nameof(MaxVolume), 500m)
+			.SetDisplay("Max Volume", "Upper cap applied after balance-based scaling.", "Money Management")
+			.SetGreaterThanZero();
 	}
 
 	/// <inheritdoc />

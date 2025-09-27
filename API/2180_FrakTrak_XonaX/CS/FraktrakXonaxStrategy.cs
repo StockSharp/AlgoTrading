@@ -13,7 +13,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class FraktrakXonaxStrategy : Strategy
 {
-	private const int FractalOffset = 15;
+	private readonly StrategyParam<int> _fractalOffset;
 
 	private readonly StrategyParam<int> _takeProfit;
 	private readonly StrategyParam<int> _trailingStop;
@@ -68,10 +68,23 @@ public class FraktrakXonaxStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Distance offset added to fractal breakout levels.
+	/// </summary>
+	public int FractalOffset
+	{
+		get => _fractalOffset.Value;
+		set => _fractalOffset.Value = value;
+	}
+
+	/// <summary>
 	/// Initialize <see cref="FraktrakXonaxStrategy"/>.
 	/// </summary>
 	public FraktrakXonaxStrategy()
 	{
+
+		_fractalOffset = Param(nameof(FractalOffset), 15)
+			.SetGreaterThanOrEqualToZero()
+			.SetDisplay("Fractal Offset", "Price steps added beyond fractal", "Signals");
 
 		_takeProfit = Param(nameof(TakeProfit), 1000)
 			.SetGreaterThanZero()

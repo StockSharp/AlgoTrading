@@ -18,6 +18,8 @@ public class BrainTrend2AbsolutelyNoLagLwmaMmrecStrategy : Strategy
 	private readonly StrategyParam<bool> _brainSellOpen;
 	private readonly StrategyParam<bool> _brainSellClose;
 	private readonly StrategyParam<bool> _brainBuyClose;
+	private readonly StrategyParam<decimal> _brainDartp;
+	private readonly StrategyParam<decimal> _brainCecf;
 
 	private readonly StrategyParam<DataType> _absCandleType;
 	private readonly StrategyParam<int> _absLength;
@@ -71,6 +73,16 @@ public class BrainTrend2AbsolutelyNoLagLwmaMmrecStrategy : Strategy
 	/// Allow BrainTrend2 signals to close long positions.
 	/// </summary>
 	public bool BrainEnableBuyClose { get => _brainBuyClose.Value; set => _brainBuyClose.Value = value; }
+
+	/// <summary>
+	/// ATR divisor used when calculating BrainTrend2 channel width.
+	/// </summary>
+	public decimal BrainTrendDartp { get => _brainDartp.Value; set => _brainDartp.Value = value; }
+
+	/// <summary>
+	/// ATR multiplier applied to BrainTrend2 envelopes.
+	/// </summary>
+	public decimal BrainTrendCecf { get => _brainCecf.Value; set => _brainCecf.Value = value; }
 
 	/// <summary>
 	/// Candle type used for the AbsolutelyNoLagLWMA block.
@@ -142,6 +154,14 @@ public class BrainTrend2AbsolutelyNoLagLwmaMmrecStrategy : Strategy
 		_brainBuyClose = Param(nameof(BrainEnableBuyClose), true)
 		.SetDisplay("Brain Close Buys", "Allow BrainTrend2 to close longs", "BrainTrend2");
 
+		_brainDartp = Param(nameof(BrainTrendDartp), 7m)
+		.SetGreaterThanZero()
+		.SetDisplay("Brain Dartp", "ATR divisor used in BrainTrend2", "BrainTrend2");
+
+		_brainCecf = Param(nameof(BrainTrendCecf), 0.7m)
+		.SetGreaterThanZero()
+		.SetDisplay("Brain Cecf", "ATR multiplier used in BrainTrend2", "BrainTrend2");
+
 		_absCandleType = Param(nameof(AbsCandleType), TimeSpan.FromHours(6).TimeFrame())
 		.SetDisplay("Abs Candle", "Timeframe for AbsolutelyNoLagLWMA", "AbsolutelyNoLag");
 		_absLength = Param(nameof(AbsLength), 7)
@@ -196,7 +216,11 @@ public class BrainTrend2AbsolutelyNoLagLwmaMmrecStrategy : Strategy
 
 		Volume = OrderVolume;
 
-		_brainCalculator = new BrainTrendCalculator(BrainAtrPeriod);
+		_brainCalculator = new BrainTrendCalculator(BrainAtrPeriod)
+		{
+			Dartp = BrainTrendDartp,
+			Cecf = BrainTrendCecf
+		};
 		_absCalculator = new AbsolutelyNoLagCalculator(AbsLength, AbsPriceMode);
 
 		_brainColors.Clear();
@@ -230,6 +254,9 @@ public class BrainTrend2AbsolutelyNoLagLwmaMmrecStrategy : Strategy
 		{
 			_brainCalculator.UpdatePeriod(BrainAtrPeriod);
 		}
+
+		_brainCalculator.Dartp = BrainTrendDartp;
+		_brainCalculator.Cecf = BrainTrendCecf;
 
 		var color = _brainCalculator.Process(candle);
 		_brainColors.Add(color);
@@ -360,8 +387,8 @@ public class BrainTrend2AbsolutelyNoLagLwmaMmrecStrategy : Strategy
 
 	private sealed class BrainTrendCalculator
 	{
-		private const decimal Dartp = 7m;
-		private const decimal Cecf = 0.7m;
+		private decimal _dartp = 7m;
+		private decimal _cecf = 0.7m;
 
 		private decimal[] _values;
 		private int _index;
@@ -379,6 +406,18 @@ public class BrainTrend2AbsolutelyNoLagLwmaMmrecStrategy : Strategy
 		}
 
 		public int Period { get; private set; }
+
+		public decimal Dartp
+		{
+			get => _dartp;
+			set => _dartp = value <= 0m ? 0.0000001m : value;
+		}
+
+		public decimal Cecf
+		{
+			get => _cecf;
+			set => _cecf = value <= 0m ? 0.0000001m : value;
+		}
 
 		public void UpdatePeriod(int period)
 		{
@@ -448,7 +487,7 @@ public class BrainTrend2AbsolutelyNoLagLwmaMmrecStrategy : Strategy
 				_hasEmaxtra = true;
 			}
 
-			var widcha = Cecf * atr;
+			var widcha = _cecf * atr;
 
 			if (_river && low < _emaxtra - widcha)
 			{
@@ -495,7 +534,7 @@ public class BrainTrend2AbsolutelyNoLagLwmaMmrecStrategy : Strategy
 				idx = Period - 1;
 			}
 
-			return Period > 0 ? 2m * atr / (Dartp * (Dartp + 1m)) : 0m;
+			return Period > 0 ? 2m * atr / (_dartp * (_dartp + 1m)) : 0m;
 		}
 
 		private void AdvanceIndex()

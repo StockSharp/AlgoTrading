@@ -13,7 +13,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BollTradeStrategy : Strategy
 {
-	private const decimal MaxVolume = 500m;
+	private readonly StrategyParam<decimal> _maxVolume;
 
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
@@ -81,6 +81,10 @@ public class BollTradeStrategy : Strategy
 
 	public BollTradeStrategy()
 	{
+		_maxVolume = Param(nameof(MaxVolume), 500m)
+			.SetGreaterThanZero()
+			.SetDisplay("Max Volume", "Upper bound for scaled volume", "Money Management");
+
 		_takeProfit = Param(nameof(TakeProfit), 3m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Distance to take profit expressed in pip units.", "Orders")

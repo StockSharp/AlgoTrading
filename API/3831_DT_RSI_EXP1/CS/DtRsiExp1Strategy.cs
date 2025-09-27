@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class DtRsiExp1Strategy : Strategy
 {
-	private const int MaxHistory = 503;
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<DataType> _trendCandleType;
@@ -22,7 +21,8 @@ public class DtRsiExp1Strategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _trailingStopPoints;
 
-	private readonly decimal[] _rsiHistory = new decimal[MaxHistory];
+	private readonly StrategyParam<int> _maxHistory;
+	private decimal[] _rsiHistory = Array.Empty<decimal>();
 	private int _historyCount;
 
 	private decimal? _trendFilterValue;
@@ -57,6 +57,9 @@ public class DtRsiExp1Strategy : Strategy
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 0m)
 			.SetDisplay("Trailing stop", "Trailing distance in price steps (0 disables)", "Risk");
+		_maxHistory = Param(nameof(MaxHistory), 503)
+			.SetDisplay("RSI history", "Maximum number of stored RSI values", "Parameters")
+			.SetRange(4, 2000);
 	}
 
 	/// <summary>
@@ -112,6 +115,14 @@ public class DtRsiExp1Strategy : Strategy
 		get => _trailingStopPoints.Value;
 		set => _trailingStopPoints.Value = value;
 	}
+	/// <summary>
+	/// Maximum number of RSI values stored for pattern detection.
+	/// </summary>
+	public int MaxHistory
+	{
+		get => _maxHistory.Value;
+		set => _maxHistory.Value = value;
+	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -124,7 +135,11 @@ public class DtRsiExp1Strategy : Strategy
 	{
 		base.OnReseted();
 
-		Array.Clear(_rsiHistory, 0, _rsiHistory.Length);
+		var capacity = MaxHistory;
+		if (_rsiHistory.Length != capacity)
+			_rsiHistory = new decimal[capacity];
+		else
+			Array.Clear(_rsiHistory, 0, _rsiHistory.Length);
 		_historyCount = 0;
 		_trendFilterValue = null;
 		_previousClose = null;

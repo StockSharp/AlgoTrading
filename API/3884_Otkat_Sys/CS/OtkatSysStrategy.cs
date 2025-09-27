@@ -13,7 +13,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class OtkatSysStrategy : Strategy
 {
-	private const decimal LongExtraTakeProfit = 3m;
+	private readonly StrategyParam<decimal> _longExtraTakeProfit;
 
 	private readonly StrategyParam<DataType> _entryCandleType;
 	private readonly StrategyParam<DataType> _dailyCandleType;
@@ -56,6 +56,15 @@ public class OtkatSysStrategy : Strategy
 	{
 		get => _takeProfit.Value;
 		set => _takeProfit.Value = value;
+	}
+
+	/// <summary>
+	/// Extra take profit points added to long positions.
+	/// </summary>
+	public decimal LongExtraTakeProfit
+	{
+		get => _longExtraTakeProfit.Value;
+		set => _longExtraTakeProfit.Value = value;
 	}
 
 	/// <summary>
@@ -113,6 +122,12 @@ public class OtkatSysStrategy : Strategy
 
 		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Daily Candles", "Session statistics timeframe", "General");
+
+		_longExtraTakeProfit = Param(nameof(LongExtraTakeProfit), 3m)
+		.SetGreaterThanOrEqualTo(0m)
+		.SetDisplay("Long Bonus Take Profit", "Additional points added to long take profit", "Risk")
+		.SetCanOptimize(true)
+		.SetOptimize(0m, 10m, 0.5m);
 
 		_takeProfit = Param(nameof(TakeProfit), 5m)
 			.SetGreaterThanZero()

@@ -14,8 +14,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class NeuroNirvamanMq4Strategy : Strategy
 {
-	private const decimal LaguerreGamma = 0.764m;
-	private const decimal SilverTrendKmax = 50.6m;
+	private readonly StrategyParam<decimal> _laguerreGamma;
+	private readonly StrategyParam<decimal> _silverTrendKmax;
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _tradeVolume;
@@ -50,10 +50,10 @@ public class NeuroNirvamanMq4Strategy : Strategy
 	private AverageDirectionalIndex _laguerre3Indicator = null!;
 	private AverageDirectionalIndex _laguerre4Indicator = null!;
 
-	private readonly LaguerrePlusDiState _laguerre1State = new(LaguerreGamma);
-	private readonly LaguerrePlusDiState _laguerre2State = new(LaguerreGamma);
-	private readonly LaguerrePlusDiState _laguerre3State = new(LaguerreGamma);
-	private readonly LaguerrePlusDiState _laguerre4State = new(LaguerreGamma);
+	private LaguerrePlusDiState _laguerre1State = null!;
+	private LaguerrePlusDiState _laguerre2State = null!;
+	private LaguerrePlusDiState _laguerre3State = null!;
+	private LaguerrePlusDiState _laguerre4State = null!;
 
 	private SilverTrendState _silverTrend1State = null!;
 	private SilverTrendState _silverTrend2State = null!;
@@ -72,6 +72,14 @@ public class NeuroNirvamanMq4Strategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetDisplay("Trade Volume", "Order volume expressed in lots", "Trading")
 			.SetGreaterThanZero();
+
+		_laguerreGamma = Param(nameof(LaguerreGamma), 0.764m)
+			.SetRange(0m, 1m)
+			.SetDisplay("Laguerre Gamma", "Smoothing factor applied inside the Laguerre filters", "Laguerre");
+
+		_silverTrendKmax = Param(nameof(SilverTrendKmax), 50.6m)
+			.SetGreaterThanZero()
+			.SetDisplay("SilverTrend Kmax", "Sensitivity factor used by the SilverTrend indicator", "SilverTrend");
 
 		_silverTrend1Length = Param(nameof(SilverTrend1Length), 7)
 			.SetDisplay("SilverTrend Length #1", "Lookback for the first SilverTrend filter", "SilverTrend #1")
@@ -161,6 +169,18 @@ public class NeuroNirvamanMq4Strategy : Strategy
 	{
 		get => _tradeVolume.Value;
 		set => _tradeVolume.Value = value;
+	}
+
+	public decimal LaguerreGamma
+	{
+		get => _laguerreGamma.Value;
+		set => _laguerreGamma.Value = value;
+	}
+
+	public decimal SilverTrendKmax
+	{
+		get => _silverTrendKmax.Value;
+		set => _silverTrendKmax.Value = value;
 	}
 
 	public int SilverTrend1Length
@@ -301,10 +321,10 @@ public class NeuroNirvamanMq4Strategy : Strategy
 		base.OnReseted();
 
 		ResetTargets();
-		_laguerre1State.Reset();
-		_laguerre2State.Reset();
-		_laguerre3State.Reset();
-		_laguerre4State.Reset();
+		_laguerre1State?.Reset();
+		_laguerre2State?.Reset();
+		_laguerre3State?.Reset();
+		_laguerre4State?.Reset();
 		_silverTrend1State?.Reset();
 		_silverTrend2State?.Reset();
 	}
@@ -317,6 +337,12 @@ public class NeuroNirvamanMq4Strategy : Strategy
 		// Synchronize the base volume property with the parameter used by the expert.
 		Volume = TradeVolume;
 
+		var gamma = LaguerreGamma;
+		_laguerre1State = new LaguerrePlusDiState(gamma);
+		_laguerre2State = new LaguerrePlusDiState(gamma);
+		_laguerre3State = new LaguerrePlusDiState(gamma);
+		_laguerre4State = new LaguerrePlusDiState(gamma);
+
 		// Prepare ADX indicators that will supply +DI values to the Laguerre filters.
 		_laguerre1Indicator = new AverageDirectionalIndex { Length = Laguerre1Period };
 		_laguerre2Indicator = new AverageDirectionalIndex { Length = Laguerre2Period };
@@ -324,8 +350,9 @@ public class NeuroNirvamanMq4Strategy : Strategy
 		_laguerre4Indicator = new AverageDirectionalIndex { Length = Laguerre4Period };
 
 		// Initialize SilverTrend states that emulate the Sv2 indicator used in the original EA.
-		_silverTrend1State = new SilverTrendState(SilverTrend1Length, SilverTrendKmax);
-		_silverTrend2State = new SilverTrendState(SilverTrend2Length, SilverTrendKmax);
+		var silverTrendKmax = SilverTrendKmax;
+		_silverTrend1State = new SilverTrendState(SilverTrend1Length, silverTrendKmax);
+		_silverTrend2State = new SilverTrendState(SilverTrend2Length, silverTrendKmax);
 
 		var subscription = SubscribeCandles(CandleType);
 

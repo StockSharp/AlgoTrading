@@ -14,15 +14,15 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class PsarMultiTimeframeStrategy : Strategy
 {
-	private const decimal SarAcceleration = 0.06m;
-	private const decimal SarAccelerationMax = 0.1m;
-	private const decimal MaximumSarSpreadPoints = 19m;
-
+			
 	private readonly StrategyParam<DataType> _baseCandleType;
 	private readonly StrategyParam<DataType> _fastSarCandleType;
 	private readonly StrategyParam<DataType> _mediumSarCandleType;
 	private readonly StrategyParam<DataType> _slowSarCandleType;
 	private readonly StrategyParam<bool> _enableParabolicFilter;
+	private readonly StrategyParam<decimal> _sarAcceleration;
+	private readonly StrategyParam<decimal> _sarAccelerationMax;
+	private readonly StrategyParam<decimal> _maximumSarSpreadPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<bool> _useMoneyManagement;
@@ -72,6 +72,18 @@ public class PsarMultiTimeframeStrategy : Strategy
 
 		_enableParabolicFilter = Param(nameof(EnableParabolicFilter), true)
 		.SetDisplay("Enable Multi-timeframe Filter", "Disables trading when set to false", "Signals");
+
+		_sarAcceleration = Param(nameof(SarAcceleration), 0.06m)
+			.SetRange(0m, 1m)
+			.SetDisplay("SAR Acceleration", "Initial acceleration value for Parabolic SAR", "Indicators");
+
+		_sarAccelerationMax = Param(nameof(SarAccelerationMax), 0.1m)
+			.SetRange(0m, 1m)
+			.SetDisplay("SAR Acceleration Max", "Maximum acceleration allowed for Parabolic SAR", "Indicators");
+
+		_maximumSarSpreadPoints = Param(nameof(MaximumSarSpreadPoints), 19m)
+			.SetRange(0m, 1000m)
+			.SetDisplay("Max SAR Spread (points)", "Maximum difference between SAR values to accept a trade", "Indicators");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 999m)
 		.SetDisplay("Take Profit (points)", "Distance to the target expressed in minimum price increments", "Risk");
@@ -132,6 +144,33 @@ public class PsarMultiTimeframeStrategy : Strategy
 	{
 		get => _enableParabolicFilter.Value;
 		set => _enableParabolicFilter.Value = value;
+	}
+
+	/// <summary>
+	/// Initial acceleration value applied to Parabolic SAR calculations.
+	/// </summary>
+	public decimal SarAcceleration
+	{
+		get => _sarAcceleration.Value;
+		set => _sarAcceleration.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum acceleration value permitted for Parabolic SAR calculations.
+	/// </summary>
+	public decimal SarAccelerationMax
+	{
+		get => _sarAccelerationMax.Value;
+		set => _sarAccelerationMax.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum spread between Parabolic SAR values allowed before skipping signals.
+	/// </summary>
+	public decimal MaximumSarSpreadPoints
+	{
+		get => _maximumSarSpreadPoints.Value;
+		set => _maximumSarSpreadPoints.Value = value;
 	}
 
 	/// <summary>
@@ -582,7 +621,7 @@ public class PsarMultiTimeframeStrategy : Strategy
 		return Orders.Any(o => o.State.IsActive());
 	}
 
-	private static ParabolicSar CreateParabolicSar()
+	private ParabolicSar CreateParabolicSar()
 	{
 		return new ParabolicSar
 		{

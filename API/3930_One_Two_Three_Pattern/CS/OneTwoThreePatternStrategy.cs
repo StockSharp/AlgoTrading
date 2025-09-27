@@ -19,8 +19,9 @@ public class OneTwoThreePatternStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _volumeParam;
 	private readonly StrategyParam<decimal> _trailingStopPips;
-	private readonly StrategyParam<decimal> _trendRatio;
-	private readonly StrategyParam<DataType> _candleType;
+        private readonly StrategyParam<decimal> _trendRatio;
+        private readonly StrategyParam<decimal> _macdEpsilon;
+        private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _macdFast;
 	private readonly StrategyParam<int> _macdSlow;
 	private readonly StrategyParam<int> _macdSignal;
@@ -36,11 +37,9 @@ public class OneTwoThreePatternStrategy : Strategy
 	private decimal? _shortStop;
 	private decimal? _shortTakeProfit;
 	private decimal? _shortEntryPrice;
-	private decimal _pipSize;
+        private decimal _pipSize;
 
-	private const decimal MacdEpsilon = 0.001m;
-
-	/// <summary>
+        /// <summary>
 	/// Take profit distance expressed in MetaTrader points.
 	/// </summary>
 	public decimal TakeProfitPips
@@ -70,11 +69,17 @@ public class OneTwoThreePatternStrategy : Strategy
 	/// <summary>
 	/// Minimum ratio between the previous and current trend lengths.
 	/// </summary>
-	public decimal TrendRatio
-	{
-		get => _trendRatio.Value;
-		set => _trendRatio.Value = value;
-	}
+        public decimal TrendRatio
+        {
+                get => _trendRatio.Value;
+                set => _trendRatio.Value = value;
+        }
+
+        public decimal MacdEpsilon
+        {
+                get => _macdEpsilon.Value;
+                set => _macdEpsilon.Value = value;
+        }
 
 	/// <summary>
 	/// Candle type used for pattern detection.
@@ -141,11 +146,15 @@ public class OneTwoThreePatternStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(10m, 60m, 5m);
 
-		_trendRatio = Param(nameof(TrendRatio), 4m)
-			.SetGreaterThanZero()
-			.SetDisplay("Trend Ratio", "Required ratio between previous and current trend lengths.", "Filters")
-			.SetCanOptimize(true)
-			.SetOptimize(2m, 6m, 0.5m);
+                _trendRatio = Param(nameof(TrendRatio), 4m)
+                        .SetGreaterThanZero()
+                        .SetDisplay("Trend Ratio", "Required ratio between previous and current trend lengths.", "Filters")
+                        .SetCanOptimize(true)
+                        .SetOptimize(2m, 6m, 0.5m);
+
+                _macdEpsilon = Param(nameof(MacdEpsilon), 0.001m)
+                        .SetGreaterThanZero()
+                        .SetDisplay("MACD Epsilon", "Small offset used to avoid division by zero in ratio checks.", "Filters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay(LocalizedStrings.CandleTypeKey, "Candle series for pattern recognition.", "Data");

@@ -34,7 +34,6 @@ public enum MarginMode
 
 public class ExpSslNrtrTmPlusStrategy : Strategy
 {
-	private const int _maxHistory = 1024;
 
 	// Store only a limited number of indicator states for signal comparisons.
 	private readonly StrategyParam<decimal> _moneyManagement;
@@ -53,6 +52,7 @@ public class ExpSslNrtrTmPlusStrategy : Strategy
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<int> _phase;
 	private readonly StrategyParam<int> _signalBar;
+	private readonly StrategyParam<int> _historyCapacity;
 
 	private ISslSmoother _highSmoother = null!;
 	private ISslSmoother _lowSmoother = null!;
@@ -164,6 +164,15 @@ public class ExpSslNrtrTmPlusStrategy : Strategy
 		get => _signalBar.Value;
 		set => _signalBar.Value = value;
 	}
+	/// <summary>
+	/// Maximum number of historical states tracked for signals.
+	/// </summary>
+
+	public int HistoryCapacity
+	{
+		get => _historyCapacity.Value;
+		set => _historyCapacity.Value = value;
+	}
 
 	public ExpSslNrtrTmPlusStrategy()
 	{
@@ -221,6 +230,9 @@ public class ExpSslNrtrTmPlusStrategy : Strategy
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Number of closed bars to look back for signals", "Indicator");
+		_historyCapacity = Param(nameof(HistoryCapacity), 1024)
+			.SetRange(10, 5000)
+			.SetDisplay("History Capacity", "Maximum number of stored signal states", "Signals");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -560,7 +572,7 @@ public class ExpSslNrtrTmPlusStrategy : Strategy
 		_colorHistory.Add(color);
 		_timeHistory.Add(time);
 
-		if (_colorHistory.Count > _maxHistory)
+		if (_colorHistory.Count > HistoryCapacity)
 		{
 			_colorHistory.RemoveAt(0);
 			_timeHistory.RemoveAt(0);

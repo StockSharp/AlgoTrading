@@ -53,16 +53,15 @@ public enum CloseAgentOperationMode
 /// </summary>
 public class CloseAgentStrategy : Strategy
 {
-	private const int RsiLength = 13;
-	private const int BollingerLength = 21;
-	private const decimal RsiOverbought = 70m;
-	private const decimal RsiOversold = 30m;
-
 	private readonly StrategyParam<CloseAgentMode> _closeMode;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<CloseAgentOperationMode> _operationMode;
 	private readonly StrategyParam<decimal> _closeAllTarget;
 	private readonly StrategyParam<bool> _enableAlerts;
+	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<int> _bollingerLength;
+	private readonly StrategyParam<decimal> _rsiOverbought;
+	private readonly StrategyParam<decimal> _rsiOversold;
 
 	private RelativeStrengthIndex _rsi;
 	private BollingerBands _bands;
@@ -117,6 +116,42 @@ public class CloseAgentStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Length of the RSI indicator.
+	/// </summary>
+	public int RsiLength
+	{
+		get => _rsiLength.Value;
+		set => _rsiLength.Value = value;
+	}
+
+	/// <summary>
+	/// Length of the Bollinger Bands indicator.
+	/// </summary>
+	public int BollingerLength
+	{
+		get => _bollingerLength.Value;
+		set => _bollingerLength.Value = value;
+	}
+
+	/// <summary>
+	/// RSI threshold that marks overbought conditions.
+	/// </summary>
+	public decimal RsiOverbought
+	{
+		get => _rsiOverbought.Value;
+		set => _rsiOverbought.Value = value;
+	}
+
+	/// <summary>
+	/// RSI threshold that marks oversold conditions.
+	/// </summary>
+	public decimal RsiOversold
+	{
+		get => _rsiOversold.Value;
+		set => _rsiOversold.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes parameters with defaults inspired by the original MQL script.
 	/// </summary>
 	public CloseAgentStrategy()
@@ -136,6 +171,22 @@ public class CloseAgentStrategy : Strategy
 
 		_enableAlerts = Param(nameof(EnableAlerts), true)
 		.SetDisplay("Enable Alerts", "Log a message whenever a position is closed", "Notifications");
+
+		_rsiLength = Param(nameof(RsiLength), 13)
+		.SetGreaterThanZero()
+		.SetDisplay("RSI Length", "Lookback period for the RSI indicator", "Indicators");
+
+		_bollingerLength = Param(nameof(BollingerLength), 21)
+		.SetGreaterThanZero()
+		.SetDisplay("Bollinger Length", "Lookback period for Bollinger Bands", "Indicators");
+
+		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
+		.SetRange(0m, 100m)
+		.SetDisplay("RSI Overbought", "Threshold that triggers closing longs when exceeded", "Signals");
+
+		_rsiOversold = Param(nameof(RsiOversold), 30m)
+		.SetRange(0m, 100m)
+		.SetDisplay("RSI Oversold", "Threshold that triggers closing shorts when crossed", "Signals");
 	}
 
 	/// <inheritdoc />

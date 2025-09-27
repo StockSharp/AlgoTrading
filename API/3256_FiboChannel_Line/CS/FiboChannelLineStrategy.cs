@@ -15,7 +15,7 @@ using StockSharp.Messages;
 /// </summary>
 public class FiboChannelLineStrategy : Strategy
 {
-private const int MomentumSampleSize = 3;
+private readonly StrategyParam<int> _momentumSampleSize;
 
 private readonly StrategyParam<DataType> _candleType;
 private readonly StrategyParam<int> _fastMaPeriod;
@@ -64,6 +64,10 @@ _momentumPeriod = Param(nameof(MomentumPeriod), 14)
 .SetDisplay("Momentum Period", "Number of bars for the momentum oscillator.", "Momentum")
 .SetCanOptimize(true)
 .SetOptimize(5, 30, 1);
+
+_momentumSampleSize = Param(nameof(MomentumSampleSize), 3)
+.SetGreaterThanZero()
+.SetDisplay("Momentum Samples", "Number of recent momentum readings stored.", "Momentum");
 
 _momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 .SetGreaterThanZero()
@@ -156,6 +160,15 @@ public decimal MomentumThreshold
 {
 get => _momentumThreshold.Value;
 set => _momentumThreshold.Value = value;
+}
+
+/// <summary>
+/// Number of recent momentum values kept for confirmation.
+/// </summary>
+public int MomentumSampleSize
+{
+get => _momentumSampleSize.Value;
+set => _momentumSampleSize.Value = value;
 }
 
 /// <summary>

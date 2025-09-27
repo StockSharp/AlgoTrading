@@ -12,10 +12,10 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SilverTrendV3Strategy : Strategy
 {
-	private const int SilverTrendLookback = 350;
-	private const int SilverTrendWindow = 9;
-	private const int DefaultRisk = 3;
-	private const int JtpoDefaultLength = 14;
+	private readonly StrategyParam<int> _silverTrendLookback;
+	private readonly StrategyParam<int> _silverTrendWindow;
+	private readonly StrategyParam<int> _defaultRisk;
+	private readonly StrategyParam<int> _jtpoLength;
 
 	private readonly StrategyParam<decimal> _trailingStopPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
@@ -38,6 +38,42 @@ public class SilverTrendV3Strategy : Strategy
 	private decimal? _longEntryPrice;
 	private decimal? _shortEntryPrice;
 
+
+	/// <summary>
+	/// Number of candles used for SilverTrend calculations.
+	/// </summary>
+	public int SilverTrendLookback
+	{
+		get => _silverTrendLookback.Value;
+		set => _silverTrendLookback.Value = value;
+	}
+
+	/// <summary>
+	/// Window size used to compute SilverTrend extrema.
+	/// </summary>
+	public int SilverTrendWindow
+	{
+		get => _silverTrendWindow.Value;
+		set => _silverTrendWindow.Value = value;
+	}
+
+	/// <summary>
+	/// Risk coefficient applied in SilverTrend formulas.
+	/// </summary>
+	public int DefaultRisk
+	{
+		get => _defaultRisk.Value;
+		set => _defaultRisk.Value = value;
+	}
+
+	/// <summary>
+	/// Length parameter used in the J_TPO filter.
+	/// </summary>
+	public int JtpoDefaultLength
+	{
+		get => _jtpoLength.Value;
+		set => _jtpoLength.Value = value;
+	}
 
 	/// <summary>
 	/// Trailing stop distance expressed in points.
@@ -89,6 +125,30 @@ public class SilverTrendV3Strategy : Strategy
 	/// </summary>
 	public SilverTrendV3Strategy()
 	{
+
+		_silverTrendLookback = Param(nameof(SilverTrendLookback), 350)
+		.SetGreaterThanZero()
+		.SetDisplay("SilverTrend Lookback", "Number of candles for SilverTrend calculations", "SilverTrend")
+		.SetCanOptimize(true)
+		.SetOptimize(100, 600, 50);
+
+		_silverTrendWindow = Param(nameof(SilverTrendWindow), 9)
+		.SetGreaterThanZero()
+		.SetDisplay("SilverTrend Window", "Sliding window size for extrema", "SilverTrend")
+		.SetCanOptimize(true)
+		.SetOptimize(3, 21, 2);
+
+		_defaultRisk = Param(nameof(DefaultRisk), 3)
+		.SetGreaterThanOrEqualTo(0)
+		.SetDisplay("Risk Coefficient", "Risk coefficient used in SilverTrend", "SilverTrend")
+		.SetCanOptimize(true)
+		.SetOptimize(0, 10, 1);
+
+		_jtpoLength = Param(nameof(JtpoDefaultLength), 14)
+		.SetGreaterThanZero()
+		.SetDisplay("J TPO Length", "Lookback for J_TPO filter", "SilverTrend")
+		.SetCanOptimize(true)
+		.SetOptimize(5, 40, 1);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 0m)
 		.SetGreaterThanOrEqual(0m)

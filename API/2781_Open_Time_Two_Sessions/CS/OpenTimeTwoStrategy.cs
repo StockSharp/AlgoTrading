@@ -13,7 +13,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class OpenTimeTwoStrategy : Strategy
 {
-	private const int SecondsInDay = 24 * 60 * 60;
+	private readonly StrategyParam<int> _secondsInDay;
 
 	private readonly StrategyParam<bool> _useClosingWindowOne;
 	private readonly StrategyParam<TimeSpan> _closeWindowOneStart;
@@ -190,6 +190,15 @@ public class OpenTimeTwoStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Total number of seconds considered a full trading day.
+	/// </summary>
+	public int SecondsInDay
+	{
+		get => _secondsInDay.Value;
+		set => _secondsInDay.Value = value;
+	}
+
+	/// <summary>
 	/// Trade direction for interval one (true for buy, false for sell).
 	/// </summary>
 	public bool IntervalOneBuy
@@ -325,6 +334,10 @@ public class OpenTimeTwoStrategy : Strategy
 		_duration = Param(nameof(Duration), TimeSpan.FromSeconds(30))
 			.SetDisplay("Window Duration", "Extra duration added to opening/closing windows", "Opening")
 			.SetRange(TimeSpan.Zero, TimeSpan.FromHours(1));
+
+		_secondsInDay = Param(nameof(SecondsInDay), 24 * 60 * 60)
+			.SetGreaterThanZero()
+			.SetDisplay("Seconds In Day", "Total number of seconds in a trading day", "Opening");
 
 		_intervalOneBuy = Param(nameof(IntervalOneBuy), true)
 			.SetDisplay("Direction #1", "Trade direction for interval #1 (Buy=true)", "Opening")

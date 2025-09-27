@@ -15,10 +15,11 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MacdPatternTraderStrategy : Strategy
 {
-	private const int MacdHistoryLength = 3;
-	private const int CandleHistoryLimit = 1000;
-	private const decimal MinPartialVolume = 0.01m;
-	private const decimal ProfitThreshold = 5m;
+	private readonly StrategyParam<int> _macdHistoryLength;
+	private readonly StrategyParam<int> _candleHistoryLimit;
+	private readonly StrategyParam<decimal> _minPartialVolume;
+	private readonly StrategyParam<decimal> _profitThreshold;
+
 
 	private readonly StrategyParam<bool> _pattern1Enabled;
 	private readonly StrategyParam<int> _pattern1StopLossBars;
@@ -171,6 +172,42 @@ public class MacdPatternTraderStrategy : Strategy
 	private decimal? _longTake;
 	private decimal? _shortStop;
 	private decimal? _shortTake;
+
+	/// <summary>
+	/// Number of MACD values retained for pattern evaluation.
+	/// </summary>
+	public int MacdHistoryLength
+	{
+		get => _macdHistoryLength.Value;
+		set => _macdHistoryLength.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum number of candles stored for pattern detection.
+	/// </summary>
+	public int CandleHistoryLimit
+	{
+		get => _candleHistoryLimit.Value;
+		set => _candleHistoryLimit.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum volume traded during partial exits.
+	/// </summary>
+	public decimal MinPartialVolume
+	{
+		get => _minPartialVolume.Value;
+		set => _minPartialVolume.Value = value;
+	}
+
+	/// <summary>
+	/// Profit threshold required before partial profit taking.
+	/// </summary>
+	public decimal ProfitThreshold
+	{
+		get => _profitThreshold.Value;
+		set => _profitThreshold.Value = value;
+	}
 
 	/// <summary>
 	/// Enable or disable pattern #1.
@@ -789,6 +826,26 @@ public class MacdPatternTraderStrategy : Strategy
 	/// </summary>
 	public MacdPatternTraderStrategy()
 	{
+		_macdHistoryLength = Param(nameof(MacdHistoryLength), 3)
+		.SetGreaterThanZero()
+		.SetDisplay("MACD History Length", "Number of MACD values retained for pattern evaluation", "General")
+		.SetCanOptimize(true);
+
+		_candleHistoryLimit = Param(nameof(CandleHistoryLimit), 1000)
+		.SetGreaterThanZero()
+		.SetDisplay("Candle History Limit", "Maximum number of candles stored for pattern detection", "General")
+		.SetCanOptimize(true);
+
+		_minPartialVolume = Param(nameof(MinPartialVolume), 0.01m)
+		.SetGreaterThanZero()
+		.SetDisplay("Min Partial Volume", "Minimum volume traded during partial exits", "Money Management")
+		.SetCanOptimize(true);
+
+		_profitThreshold = Param(nameof(ProfitThreshold), 5m)
+		.SetGreaterThanZero()
+		.SetDisplay("Profit Threshold", "Profit threshold required before partial profit taking", "Money Management")
+		.SetCanOptimize(true);
+
 		_pattern1Enabled = Param(nameof(Pattern1Enabled), true)
 			.SetDisplay("Pattern 1", "Enable first MACD pattern", "Patterns");
 		_pattern1StopLossBars = Param(nameof(Pattern1StopLossBars), 22)

@@ -15,9 +15,9 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class HerculesStrategy : Strategy
 {
-	private const int StopShift = 4;
+private readonly StrategyParam<int> _stopShift;
 
-	private readonly StrategyParam<decimal> _orderVolume;
+private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<bool> _useMoneyManagement;
 	private readonly StrategyParam<decimal> _riskPercent;
 	private readonly StrategyParam<int> _triggerPips;
@@ -69,16 +69,26 @@ public class HerculesStrategy : Strategy
 	private decimal _secondTargetVolume;
 	private bool _firstTargetActive;
 	private bool _secondTargetActive;
-	private decimal _entryPrice;
+private decimal _entryPrice;
 
-	/// <summary>
-	/// Initializes default parameters that mirror the original advisor.
-	/// </summary>
-	public HerculesStrategy()
-	{
-		_orderVolume = Param(nameof(OrderVolume), 0.01m)
-		.SetDisplay("Order Volume", "Volume for each market order", "Trading")
-		.SetCanOptimize(true);
+public int StopShift
+{
+get => _stopShift.Value;
+set => _stopShift.Value = value;
+}
+
+        /// <summary>
+        /// Initializes default parameters that mirror the original advisor.
+        /// </summary>
+public HerculesStrategy()
+{
+_stopShift = Param(nameof(StopShift), 4)
+.SetRange(1, 10)
+.SetDisplay("Stop Shift", "Number of candles used to reference prior highs and lows.", "Risk");
+
+_orderVolume = Param(nameof(OrderVolume), 0.01m)
+.SetDisplay("Order Volume", "Volume for each market order", "Trading")
+.SetCanOptimize(true);
 
 		_useMoneyManagement = Param(nameof(UseMoneyManagement), true)
 		.SetDisplay("Money Management", "Recalculate volume from portfolio balance", "Trading")

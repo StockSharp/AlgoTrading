@@ -12,7 +12,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MaBreakStrategy : Strategy
 {
-	private const decimal DefaultStep = 0.0001m;
+	private readonly StrategyParam<decimal> _priceStepFallback;
 
 	private readonly StrategyParam<int> _fastMa1Period;
 	private readonly StrategyParam<int> _slowMa1Period;
@@ -55,6 +55,10 @@ public class MaBreakStrategy : Strategy
 	/// </summary>
 	public MaBreakStrategy()
 	{
+		_priceStepFallback = Param(nameof(PriceStepFallback), 0.0001m)
+			.SetGreaterThanZero()
+			.SetDisplay("Price Step Fallback", "Price increment used when the instrument does not specify one.", "General");
+
 		_fastMa1Period = Param(nameof(FastMa1Period), 20)
 			.SetDisplay("Fast MA 1", "Fast moving average period used for the first trend filter", "Filters")
 			.SetCanOptimize(true)
@@ -149,6 +153,15 @@ public class MaBreakStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series used by the strategy", "General");
+	}
+
+	/// <summary>
+	/// Price step used when the security does not expose one.
+	/// </summary>
+	public decimal PriceStepFallback
+	{
+		get => _priceStepFallback.Value;
+		set => _priceStepFallback.Value = value;
 	}
 
 	/// <summary>
@@ -337,9 +350,9 @@ public class MaBreakStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_priceStep = Security?.PriceStep ?? DefaultStep;
+		_priceStep = Security?.PriceStep ?? PriceStepFallback;
 		if (_priceStep <= 0m)
-			_priceStep = DefaultStep;
+			_priceStep = PriceStepFallback;
 
 		_fastMa1 = new ExponentialMovingAverage { Length = FastMa1Period };
 		_slowMa1 = new ExponentialMovingAverage { Length = SlowMa1Period };

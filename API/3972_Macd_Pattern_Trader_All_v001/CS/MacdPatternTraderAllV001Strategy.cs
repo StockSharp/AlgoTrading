@@ -15,11 +15,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MacdPatternTraderAllV001Strategy : Strategy
 {
-	private const int MacdHistoryLength = 3;
-	private const int CandleHistoryLimit = 1000;
-	private const decimal MinPartialVolume = 0.01m;
-	private const decimal ProfitThreshold = 5m;
-
 	private readonly StrategyParam<bool> _pattern1Enabled;
 	private readonly StrategyParam<int> _pattern1StopLossBars;
 	private readonly StrategyParam<int> _pattern1TakeProfitBars;
@@ -95,6 +90,10 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 	private readonly StrategyParam<TimeSpan> _stopTime;
 	private readonly StrategyParam<bool> _useMartingale;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _macdHistoryLength;
+	private readonly StrategyParam<int> _candleHistoryLimit;
+	private readonly StrategyParam<decimal> _minPartialVolume;
+	private readonly StrategyParam<decimal> _profitThreshold;
 
 	private MovingAverageConvergenceDivergenceSignal _macd1 = null!;
 	private MovingAverageConvergenceDivergenceSignal _macd2 = null!;
@@ -783,6 +782,42 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
+	/// <summary>
+	/// Number of MACD values cached per pattern for hook detection.
+	/// </summary>
+	public int MacdHistoryLength
+	{
+		get => _macdHistoryLength.Value;
+		set => _macdHistoryLength.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum number of finished candles stored for trailing calculations.
+	/// </summary>
+	public int CandleHistoryLimit
+	{
+		get => _candleHistoryLimit.Value;
+		set => _candleHistoryLimit.Value = value;
+	}
+
+	/// <summary>
+	/// Minimal volume allowed when performing partial exits.
+	/// </summary>
+	public decimal MinPartialVolume
+	{
+		get => _minPartialVolume.Value;
+		set => _minPartialVolume.Value = value;
+	}
+
+	/// <summary>
+	/// Minimal floating profit required before partial exits can trigger.
+	/// </summary>
+	public decimal ProfitThreshold
+	{
+		get => _profitThreshold.Value;
+		set => _profitThreshold.Value = value;
+	}
+
 
 	/// <summary>
 	/// Constructor.
@@ -971,6 +1006,21 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 			.SetDisplay("Martingale", "Enable martingale volume adjustment", "Risk");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for analysis", "General");
+		_macdHistoryLength = Param(nameof(MacdHistoryLength), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD History", "Number of MACD values cached per pattern", "General");
+
+		_candleHistoryLimit = Param(nameof(CandleHistoryLimit), 1000)
+			.SetGreaterThanZero()
+			.SetDisplay("Candle History", "Maximum stored candles for trailing logic", "General");
+
+		_minPartialVolume = Param(nameof(MinPartialVolume), 0.01m)
+			.SetGreaterThanZero()
+			.SetDisplay("Min Partial Volume", "Lowest allowed volume for partial exits", "General");
+
+		_profitThreshold = Param(nameof(ProfitThreshold), 5m)
+			.SetGreaterThanZero()
+			.SetDisplay("Profit Threshold", "Minimal floating profit before partial exits", "General");
 	}
 
 	/// <inheritdoc />

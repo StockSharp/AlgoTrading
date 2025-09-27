@@ -17,6 +17,10 @@ public class DdeExampleStrategy : Strategy
 	// Indicator parameters
 	private readonly StrategyParam<int> _emaLength;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<string> _windowName;
+	private readonly StrategyParam<int> _checkItemMessage;
+	private readonly StrategyParam<int> _addItemMessage;
+	private readonly StrategyParam<int> _setItemMessage;
 	
 	/// <summary>
 	/// EMA calculation period.
@@ -35,6 +39,42 @@ public class DdeExampleStrategy : Strategy
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
+
+	/// <summary>
+	/// Target window name for DDE communication.
+	/// </summary>
+	public string WindowName
+	{
+		get => _windowName.Value;
+		set => _windowName.Value = value;
+	}
+
+	/// <summary>
+	/// Windows message code for checking item existence.
+	/// </summary>
+	public int CheckItemMessage
+	{
+		get => _checkItemMessage.Value;
+		set => _checkItemMessage.Value = value;
+	}
+
+	/// <summary>
+	/// Windows message code for adding new items.
+	/// </summary>
+	public int AddItemMessage
+	{
+		get => _addItemMessage.Value;
+		set => _addItemMessage.Value = value;
+	}
+
+	/// <summary>
+	/// Windows message code for setting item value.
+	/// </summary>
+	public int SetItemMessage
+	{
+		get => _setItemMessage.Value;
+		set => _setItemMessage.Value = value;
+	}
 	
 	/// <summary>
 	/// Initializes parameters.
@@ -49,6 +89,14 @@ public class DdeExampleStrategy : Strategy
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles for processing", "General");
+		_windowName = Param(nameof(WindowName), "MT4.DDE.2")
+		.SetDisplay("Window Name", "Target DDE window name", "DDE");
+		_checkItemMessage = Param(nameof(CheckItemMessage), 0x0401)
+		.SetDisplay("WM_CHECKITEM", "Message for item check", "DDE");
+		_addItemMessage = Param(nameof(AddItemMessage), 0x0402)
+		.SetDisplay("WM_ADDITEM", "Message for adding item", "DDE");
+		_setItemMessage = Param(nameof(SetItemMessage), 0x0403)
+		.SetDisplay("WM_SETITEM", "Message for updating item", "DDE");
 	}
 	
 	/// <inheritdoc />
@@ -114,17 +162,13 @@ public class DdeExampleStrategy : Strategy
 	[DllImport("kernel32.dll")]
 	private static extern ushort GlobalDeleteAtom(ushort nAtom);
 	
-	private const string WndName = "MT4.DDE.2";
-	private const int WM_CHECKITEM = 0x0401;
-	private const int WM_ADDITEM = 0x0402;
-	private const int WM_SETITEM = 0x0403;
 	
 	private bool CheckItem(string topic, string item)
 	{
-		var hWnd = FindWindowW(null, WndName);
+		var hWnd = FindWindowW(null, WindowName);
 		if (hWnd == IntPtr.Zero)
 		{
-			LogError($"Cannot find {WndName} window.");
+			LogError($"Cannot find {WindowName} window.");
 			return false;
 		}
 		
@@ -135,17 +179,17 @@ public class DdeExampleStrategy : Strategy
 			return false;
 		}
 		
-		var ret = SendMessageW(hWnd, WM_CHECKITEM, (IntPtr)atom, IntPtr.Zero);
+		var ret = SendMessageW(hWnd, CheckItemMessage, (IntPtr)atom, IntPtr.Zero);
 		GlobalDeleteAtom(atom);
 		return HIWORD(ret) != 0;
 	}
 	
 	private bool AddItem(string topic, string item)
 	{
-		var hWnd = FindWindowW(null, WndName);
+		var hWnd = FindWindowW(null, WindowName);
 		if (hWnd == IntPtr.Zero)
 		{
-			LogError($"Cannot find {WndName} window.");
+			LogError($"Cannot find {WindowName} window.");
 			return false;
 		}
 		
@@ -156,17 +200,17 @@ public class DdeExampleStrategy : Strategy
 			return false;
 		}
 		
-		var ret = SendMessageW(hWnd, WM_ADDITEM, (IntPtr)atom, IntPtr.Zero);
+		var ret = SendMessageW(hWnd, AddItemMessage, (IntPtr)atom, IntPtr.Zero);
 		GlobalDeleteAtom(atom);
 		return HIWORD(ret) != 0;
 	}
 	
 	private bool SetItem(string topic, string item, string value)
 	{
-		var hWnd = FindWindowW(null, WndName);
+		var hWnd = FindWindowW(null, WindowName);
 		if (hWnd == IntPtr.Zero)
 		{
-			LogError($"Cannot find {WndName} window.");
+			LogError($"Cannot find {WindowName} window.");
 			return false;
 		}
 		
@@ -185,7 +229,7 @@ public class DdeExampleStrategy : Strategy
 			return false;
 		}
 		
-		var ret = SendMessageW(hWnd, WM_SETITEM, (IntPtr)itemAtom, (IntPtr)valueAtom);
+		var ret = SendMessageW(hWnd, SetItemMessage, (IntPtr)itemAtom, (IntPtr)valueAtom);
 		GlobalDeleteAtom(valueAtom);
 		GlobalDeleteAtom(itemAtom);
 		return HIWORD(ret) != 0;

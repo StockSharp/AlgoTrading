@@ -13,9 +13,9 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BullishDivergenceShortTermLongTradeFinderStrategy : Strategy
 {
-	private const int PivotRight = 5;
-	private const int MinRange = 5;
-	private const int MaxRange = 50;
+	private readonly StrategyParam<int> _pivotRight;
+	private readonly StrategyParam<int> _minRange;
+	private readonly StrategyParam<int> _maxRange;
 
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<decimal> _sellWhenRsi;
@@ -118,6 +118,33 @@ public class BullishDivergenceShortTermLongTradeFinderStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Pivot right bars count.
+	/// </summary>
+	public int PivotRight
+	{
+		get => _pivotRight.Value;
+		set => _pivotRight.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum bars between pivots.
+	/// </summary>
+	public int MinRange
+	{
+		get => _minRange.Value;
+		set => _minRange.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum bars between pivots.
+	/// </summary>
+	public int MaxRange
+	{
+		get => _maxRange.Value;
+		set => _maxRange.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type.
 	/// </summary>
 	public DataType CandleType
@@ -158,6 +185,18 @@ public class BullishDivergenceShortTermLongTradeFinderStrategy : Strategy
 
 		_pivotLeft = Param(nameof(PivotLeft), 25)
 			.SetDisplay("Pivot Left", "Bars to the left for pivot", "Indicators");
+
+		_pivotRight = Param(nameof(PivotRight), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Pivot Right", "Bars to the right for pivot", "Indicators");
+
+		_minRange = Param(nameof(MinRange), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Min Range", "Minimum bars between pivots", "Indicators");
+
+		_maxRange = Param(nameof(MaxRange), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("Max Range", "Maximum bars between pivots", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");

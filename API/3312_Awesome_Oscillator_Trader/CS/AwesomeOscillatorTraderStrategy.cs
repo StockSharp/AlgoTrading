@@ -15,9 +15,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class AwesomeOscillatorTraderStrategy : Strategy
 {
-	private const int AoNormalizationPeriod = 100;
-	private const int RequiredAoHistory = 5;
-
 	private readonly StrategyParam<bool> _closeOnReversal;
 	private readonly StrategyParam<ProfitCloseMode> _profitFilter;
 	private readonly StrategyParam<int> _bollingerPeriod;
@@ -40,6 +37,8 @@ public class AwesomeOscillatorTraderStrategy : Strategy
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<int> _maxOpenOrders;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _aoNormalizationPeriod;
+	private readonly StrategyParam<int> _requiredAoHistory;
 
 	private BollingerBands _bollinger = null!;
 	private StochasticOscillator _stochastic = null!;
@@ -47,8 +46,8 @@ public class AwesomeOscillatorTraderStrategy : Strategy
 	private AverageTrueRange _averageTrueRange = null!;
 	private Highest _aoMaxAbs = null!;
 
-	private readonly decimal[] _recentUp = new decimal[RequiredAoHistory];
-	private readonly decimal[] _recentDown = new decimal[RequiredAoHistory];
+	private decimal[] _recentUp = Array.Empty<decimal>();
+	private decimal[] _recentDown = Array.Empty<decimal>();
 
 	private decimal? _previousAo;
 	private decimal? _previousStochK;
@@ -85,6 +84,18 @@ public class AwesomeOscillatorTraderStrategy : Strategy
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
+	}
+
+	public int AoNormalizationPeriod
+	{
+		get => _aoNormalizationPeriod.Value;
+		set => _aoNormalizationPeriod.Value = value;
+	}
+
+	public int RequiredAoHistory
+	{
+		get => _requiredAoHistory.Value;
+		set => _requiredAoHistory.Value = value;
 	}
 
 	/// <summary>
@@ -168,6 +179,14 @@ public class AwesomeOscillatorTraderStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used by the strategy", "General");
+
+		_aoNormalizationPeriod = Param(nameof(AoNormalizationPeriod), 100)
+			.SetGreaterOrEqual(1)
+			.SetDisplay("AO Normalization Period", "Period for normalizing AO strength", "Awesome Oscillator");
+
+		_requiredAoHistory = Param(nameof(RequiredAoHistory), 5)
+			.SetGreaterOrEqual(5)
+			.SetDisplay("AO History", "Number of past AO samples to keep", "Awesome Oscillator");
 	}
 
 	/// <inheritdoc />
@@ -187,8 +206,8 @@ public class AwesomeOscillatorTraderStrategy : Strategy
 	_averageTrueRange = null!;
 	_aoMaxAbs = null!;
 
-	Array.Clear(_recentUp);
-	Array.Clear(_recentDown);
+	_recentUp = new decimal[RequiredAoHistory];
+	_recentDown = new decimal[RequiredAoHistory];
 
 	_previousAo = null;
 	_previousStochK = null;

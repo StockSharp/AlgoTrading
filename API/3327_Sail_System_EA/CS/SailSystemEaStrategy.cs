@@ -14,8 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SailSystemEaStrategy : Strategy
 {
-	private const decimal VolumeTolerance = 0.0000001m;
-
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<bool> _useVirtualLevels;
 	private readonly StrategyParam<decimal> _stopLossPips;
@@ -45,6 +43,7 @@ public class SailSystemEaStrategy : Strategy
 	private readonly StrategyParam<bool> _countAverageSpread;
 	private readonly StrategyParam<int> _spreadAveragingPeriod;
 	private readonly StrategyParam<bool> _closeOnHighSpread;
+	private readonly StrategyParam<decimal> _volumeTolerance;
 
 	private readonly Dictionary<Order, PendingOrderInfo> _pendingOrders = new();
 
@@ -204,6 +203,10 @@ public class SailSystemEaStrategy : Strategy
 
 		_closeOnHighSpread = Param(nameof(CloseOnHighSpread), false)
 		.SetDisplay("Close On High Spread", "Flatten positions when the spread filter is violated", "Filters");
+
+		_volumeTolerance = Param(nameof(VolumeTolerance), 0.0000001m)
+		.SetGreaterOrEqual(0m)
+		.SetDisplay("Volume Tolerance", "Tolerance used when comparing remaining order volumes", "Execution");
 	}
 
 	/// <summary>
@@ -294,6 +297,12 @@ public class SailSystemEaStrategy : Strategy
 	{
 		get => _spreadAveragingPeriod.Value;
 		set => _spreadAveragingPeriod.Value = value;
+	}
+
+	public decimal VolumeTolerance
+	{
+		get => _volumeTolerance.Value;
+		set => _volumeTolerance.Value = value;
 	}
 
 	/// <inheritdoc />

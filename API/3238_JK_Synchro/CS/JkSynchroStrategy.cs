@@ -15,7 +15,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class JkSynchroStrategy : Strategy
 {
-	private const decimal VolumeTolerance = 1e-8m;
+	private readonly StrategyParam<decimal> _volumeTolerance;
 
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<int> _maxPositions;
@@ -52,6 +52,15 @@ public class JkSynchroStrategy : Strategy
 	{
 		get => _orderVolume.Value;
 		set => _orderVolume.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum absolute position size treated as non-zero.
+	/// </summary>
+	public decimal VolumeTolerance
+	{
+		get => _volumeTolerance.Value;
+		set => _volumeTolerance.Value = value;
 	}
 
 	/// <summary>
@@ -149,6 +158,10 @@ public class JkSynchroStrategy : Strategy
 	/// </summary>
 	public JkSynchroStrategy()
 	{
+	_volumeTolerance = Param(nameof(VolumeTolerance), 1e-8m)
+	.SetGreaterThanOrEqualZero()
+	.SetDisplay("Volume Tolerance", "Threshold below which positions are considered flat", "Risk");
+
 	_orderVolume = Param(nameof(OrderVolume), 0.1m)
 	.SetGreaterThanZero()
 	.SetDisplay("Order Volume", "Volume placed with every market order", "Trading")

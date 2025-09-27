@@ -13,7 +13,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class EliteEFiboTraderStrategy : Strategy
 {
-	private const int LevelsCount = 14;
+	private readonly StrategyParam<int> _levelsCount;
 
 	private readonly StrategyParam<bool> _openBuy;
 	private readonly StrategyParam<bool> _openSell;
@@ -220,6 +220,10 @@ public class EliteEFiboTraderStrategy : Strategy
 	/// </summary>
 	public EliteEFiboTraderStrategy()
 	{
+		_levelsCount = Param(nameof(LevelsCount), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("Levels Count", "Number of Fibonacci levels", "Grid");
+
 		_openBuy = Param(nameof(OpenBuy), false)
 		.SetDisplay("Open Buy", "Enable Fibonacci grid in the long direction", "General");
 

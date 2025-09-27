@@ -13,7 +13,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class NightFlatTradeStrategy : Strategy
 {
-	private const int RangeLength = 3;
+	private readonly StrategyParam<int> _rangeLength;
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _takeProfitPips;
@@ -73,6 +73,15 @@ public class NightFlatTradeStrategy : Strategy
 		set => _openHour.Value = value;
 	}
 
+	/// <summary>
+	/// Number of candles used to form the overnight range.
+	/// </summary>
+	public int RangeLength
+	{
+		get => _rangeLength.Value;
+		set => _rangeLength.Value = value;
+	}
+
 	public NightFlatTradeStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -102,6 +111,10 @@ public class NightFlatTradeStrategy : Strategy
 			.SetRange(0, 23)
 			.SetDisplay("Open Hour", "Hour (exchange time) when entries become active", "Schedule");
 	}
+
+		_rangeLength = Param(nameof(RangeLength), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("Range Length", "Number of candles composing the range", "Setup");
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{

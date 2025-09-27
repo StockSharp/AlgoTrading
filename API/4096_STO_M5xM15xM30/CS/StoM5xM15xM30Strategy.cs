@@ -13,8 +13,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class StoM5xM15xM30Strategy : Strategy
 {
-	private const int SignalPeriod = 3;
-	private const int SlowingPeriod = 3;
+	private readonly StrategyParam<int> _signalPeriod;
+	private readonly StrategyParam<int> _slowingPeriod;
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<DataType> _middleCandleType;
@@ -65,6 +65,14 @@ public class StoM5xM15xM30Strategy : Strategy
 
 		_slowCandleType = Param(nameof(SlowCandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Slow Timeframe", "Third timeframe that validates the trend", "General");
+
+		_signalPeriod = Param(nameof(SignalPeriod), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Period", "Length of the %D smoothing average", "Indicators");
+
+		_slowingPeriod = Param(nameof(SlowingPeriod), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("Slowing Period", "Length of the %K smoothing average", "Indicators");
 
 		_fastKPeriod = Param(nameof(FastKPeriod), 5)
 			.SetGreaterThanZero()
@@ -124,6 +132,24 @@ public class StoM5xM15xM30Strategy : Strategy
 	{
 		get => _slowCandleType.Value;
 		set => _slowCandleType.Value = value;
+	}
+
+	/// <summary>
+	/// Length of the %D smoothing average.
+	/// </summary>
+	public int SignalPeriod
+	{
+		get => _signalPeriod.Value;
+		set => _signalPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Length of the %K smoothing average.
+	/// </summary>
+	public int SlowingPeriod
+	{
+		get => _slowingPeriod.Value;
+		set => _slowingPeriod.Value = value;
 	}
 
 	/// <summary>
@@ -483,7 +509,7 @@ public class StoM5xM15xM30Strategy : Strategy
 		_previousClose = candle.ClosePrice;
 	}
 
-	private static StochasticOscillator CreateStochastic(int kLength)
+	private StochasticOscillator CreateStochastic(int kLength)
 	{
 		// Configure the oscillator with matching smoothing constants from the MT4 script.
 		return new StochasticOscillator

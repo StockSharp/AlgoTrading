@@ -11,7 +11,6 @@ using StockSharp.Messages;
 
 public class TrailingStopFrCnSarStrategy : Strategy
 {
-	private const int HistoryDepth = 512;
 
 	private readonly StrategyParam<int> _mode;
 	private readonly StrategyParam<DataType> _candleType;
@@ -28,6 +27,7 @@ public class TrailingStopFrCnSarStrategy : Strategy
 	private readonly StrategyParam<decimal> _parabolicMax;
 	private readonly StrategyParam<bool> _logSummary;
 	private readonly StrategyParam<decimal> _tradeVolume;
+	private readonly StrategyParam<int> _historyDepth;
 
 	private ParabolicSar _parabolicSar = default!;
 
@@ -99,6 +99,9 @@ public class TrailingStopFrCnSarStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade volume", "Default volume used by helper methods when flattening positions.", "Trading");
+		_historyDepth = Param(nameof(HistoryDepth), 512)
+			.SetGreaterThanZero()
+			.SetDisplay("History Depth", "Number of candles retained for fractal calculations", "Trailing");
 	}
 
 	public TrailingStopMode Mode
@@ -190,7 +193,37 @@ public class TrailingStopFrCnSarStrategy : Strategy
 		get => _tradeVolume.Value;
 		set => _tradeVolume.Value = value;
 	}
+	/// <summary>
+	/// Number of candles retained for fractal-based trailing analysis.
+	/// </summary>
+	public int HistoryDepth
+	{
+		get => _historyDepth.Value;
+		set
+		{
+			if (_historyDepth.Value == value)
+				return;
 
+			_historyDepth.Value = value;
+			TrimHistoryBuffer();
+		}
+	}
+
+
+	private void TrimHistoryBuffer()
+	{
+		var limit = _historyDepth.Value;
+		if (limit <= 0)
+		{
+			limit = 1;
+			_historyDepth.Value = limit;
+		}
+
+		while (_history.Count > limit)
+		{
+			_history.Dequeue();
+		}
+	}
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
 
