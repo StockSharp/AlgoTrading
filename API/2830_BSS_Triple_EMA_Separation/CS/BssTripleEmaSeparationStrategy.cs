@@ -19,7 +19,7 @@ public enum MaMethod
 public class BssTripleEmaSeparationStrategy : Strategy
 {
 	// Small epsilon used to compare decimal volumes without floating point noise.
-	private const decimal VolumeTolerance = 1e-8m;
+	private readonly StrategyParam<decimal> _volumeTolerance;
 
 	// User configurable parameters.
 	private readonly StrategyParam<decimal> _orderVolume;
@@ -41,6 +41,15 @@ public class BssTripleEmaSeparationStrategy : Strategy
 
 	// Timestamp of the last position entry used to enforce the pause between trades.
 	private DateTimeOffset? _lastEntryTime;
+
+	/// <summary>
+	/// Tolerance used when comparing accumulated volume values.
+	/// </summary>
+	public decimal VolumeTolerance
+	{
+		get => _volumeTolerance.Value;
+		set => _volumeTolerance.Value = value;
+	}
 
 	public decimal OrderVolume
 	{
@@ -110,6 +119,10 @@ public class BssTripleEmaSeparationStrategy : Strategy
 
 	public BssTripleEmaSeparationStrategy()
 	{
+		_volumeTolerance = Param(nameof(VolumeTolerance), 1e-8m)
+			.SetGreaterThan(0m)
+			.SetDisplay("Volume Tolerance", "Tolerance when comparing volume values", "Risk");
+
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Volume used for each entry order", "Trading");

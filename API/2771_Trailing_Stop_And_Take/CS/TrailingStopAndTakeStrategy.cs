@@ -19,7 +19,7 @@ public enum TrailingPositionType
 /// </summary>
 public class TrailingStopAndTakeStrategy : Strategy
 {
-	private const decimal Epsilon = 0.0000001m;
+	private readonly StrategyParam<decimal> _epsilon;
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<TrailingPositionType> _positionType;
@@ -75,6 +75,10 @@ public class TrailingStopAndTakeStrategy : Strategy
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 10m)
 			.SetRange(0m, 1000m)
 			.SetDisplay("Trailing Step", "Minimum movement required before adjusting targets", "Risk");
+
+		_epsilon = Param(nameof(Epsilon), 0.0000001m)
+			.SetGreaterThan(0m)
+			.SetDisplay("Trailing Epsilon", "Minimum trailing step size", "Risk");
 
 		_allowTrailingLoss = Param(nameof(AllowTrailingLoss), false)
 			.SetDisplay("Trail In Loss", "Allow trailing while position is not yet profitable", "Risk");
@@ -151,6 +155,15 @@ public class TrailingStopAndTakeStrategy : Strategy
 		get => _trailingStepPoints.Value;
 		set => _trailingStepPoints.Value = value;
 	}
+	/// <summary>
+	/// Minimum trailing step size used as a floor.
+	/// </summary>
+	public decimal Epsilon
+	{
+		get => _epsilon.Value;
+		set => _epsilon.Value = value;
+	}
+
 
 	/// <summary>
 	/// Enables trailing adjustments while the position remains in the loss zone.
