@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TimeBasedRangeBreakoutStrategy : Strategy
 {
-	private const int LastOpenHour = 23;
 
 	private readonly StrategyParam<int> _checkHour;
 	private readonly StrategyParam<int> _checkMinute;
@@ -25,6 +24,7 @@ public class TimeBasedRangeBreakoutStrategy : Strategy
 	private readonly StrategyParam<int> _closeMode;
 	private readonly StrategyParam<int> _tradesPerDay;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _lastOpenHour;
 
 	private readonly Queue<decimal> _rangeHistory = new();
 	private readonly Queue<decimal> _closeDiffHistory = new();
@@ -131,6 +131,14 @@ public class TimeBasedRangeBreakoutStrategy : Strategy
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
+	/// <summary>
+	/// Last hour of the day when breakout orders are allowed to remain open.
+	/// </summary>
+	public int LastOpenHour
+	{
+		get => _lastOpenHour.Value;
+		set => _lastOpenHour.Value = value;
+	}
 
 	/// <summary>
 	/// Initializes strategy parameters.
@@ -185,6 +193,9 @@ public class TimeBasedRangeBreakoutStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Primary candle series used by the strategy", "Data");
+		_lastOpenHour = Param(nameof(LastOpenHour), 23)
+			.SetDisplay("Last Open Hour", "Hour after which new trades are not opened", "Schedule")
+			.SetRange(0, 23);
 	}
 
 	/// <inheritdoc />

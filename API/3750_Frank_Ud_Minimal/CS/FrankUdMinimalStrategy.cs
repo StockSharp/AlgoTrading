@@ -14,12 +14,11 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class FrankUdMinimalStrategy : Strategy
 {
-	private const decimal ExtraTakeProfitPips = 25m;
-
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _reEntryPips;
 	private readonly StrategyParam<decimal> _initialVolume;
 	private readonly StrategyParam<decimal> _minimumFreeMarginRatio;
+	private readonly StrategyParam<decimal> _extraTakeProfitPips;
 
 	private readonly List<PositionEntry> _longEntries = new();
 	private readonly List<PositionEntry> _shortEntries = new();
@@ -53,7 +52,11 @@ public class FrankUdMinimalStrategy : Strategy
 		_minimumFreeMarginRatio = Param(nameof(MinimumFreeMarginRatio), 0.5m)
 		.SetDisplay("Free margin ratio", "Free margin must stay above Balance × Ratio before adding orders.", "Risk")
 		.SetGreaterThanZero();
-	}
+
+		_extraTakeProfitPips = Param(nameof(ExtraTakeProfitPips), 25m)
+		.SetDisplay("Buffer profit (pips)", "Additional pip distance applied when calculating buffered targets.", "Risk")
+		.SetNotNegative();
+}
 
 	/// <summary>
 	/// Profit threshold expressed in pips.
@@ -86,9 +89,18 @@ public class FrankUdMinimalStrategy : Strategy
 	/// Minimal free margin ratio required to send new orders.
 	/// </summary>
 	public decimal MinimumFreeMarginRatio
-	{
+{
 		get => _minimumFreeMarginRatio.Value;
 		set => _minimumFreeMarginRatio.Value = value;
+}
+
+	/// <summary>
+	/// Additional pip buffer added to the take-profit distance.
+	/// </summary>
+	public decimal ExtraTakeProfitPips
+	{
+		get => _extraTakeProfitPips.Value;
+		set => _extraTakeProfitPips.Value = value;
 	}
 
 	/// <inheritdoc />
