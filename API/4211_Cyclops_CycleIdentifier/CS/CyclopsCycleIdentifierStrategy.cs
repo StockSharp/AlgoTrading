@@ -15,10 +15,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class CyclopsCycleIdentifierStrategy : Strategy
 {
-	private const int AverageRangeLength = 250;
-	private const int MinBarsBetweenSignals = 1;
-
 	private readonly StrategyParam<int> _priceActionFilter;
+	private readonly StrategyParam<int> _averageRangeLength;
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<int> _majorCycleStrength;
 	private readonly StrategyParam<bool> _useCycleFilter;
@@ -39,6 +37,7 @@ public class CyclopsCycleIdentifierStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _minBarsBetweenSignals;
 
 	private readonly CycleIdentifierState _cycleState = new();
 
@@ -81,6 +80,10 @@ public class CyclopsCycleIdentifierStrategy : Strategy
 		_priceActionFilter = Param(nameof(PriceActionFilter), 1)
 		.SetRange(1, 100)
 		.SetDisplay("Price Filter", "Smoothed moving average length applied to close price", "Indicator");
+
+		_averageRangeLength = Param(nameof(AverageRangeLength), 250)
+		.SetRange(1, 1000)
+		.SetDisplay("Average Range Length", "Number of candles used to compute the average range", "Indicator");
 
 		_length = Param(nameof(Length), 3)
 		.SetRange(1, 50)
@@ -155,6 +158,10 @@ public class CyclopsCycleIdentifierStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe that feeds the strategy", "General");
+
+		_minBarsBetweenSignals = Param(nameof(MinBarsBetweenSignals), 1)
+		.SetRange(0, 50)
+		.SetDisplay("Min Bars Between Signals", "Minimum spacing between generated signals", "Indicator");
 	}
 
 
@@ -165,6 +172,15 @@ public class CyclopsCycleIdentifierStrategy : Strategy
 	{
 		get => _priceActionFilter.Value;
 		set => _priceActionFilter.Value = value;
+	}
+
+	/// <summary>
+	/// Number of candles used to compute the average price range.
+	/// </summary>
+	public int AverageRangeLength
+	{
+		get => _averageRangeLength.Value;
+		set => _averageRangeLength.Value = value;
 	}
 
 	/// <summary>
@@ -336,6 +352,15 @@ public class CyclopsCycleIdentifierStrategy : Strategy
 	{
 		get => _stopLossPips.Value;
 		set => _stopLossPips.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum number of bars required between consecutive signals.
+	/// </summary>
+	public int MinBarsBetweenSignals
+	{
+		get => _minBarsBetweenSignals.Value;
+		set => _minBarsBetweenSignals.Value = value;
 	}
 
 	/// <summary>
