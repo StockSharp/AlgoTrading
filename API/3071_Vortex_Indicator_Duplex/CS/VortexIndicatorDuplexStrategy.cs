@@ -45,13 +45,17 @@ public class VortexIndicatorDuplexStrategy : Strategy
 	private decimal? _longTakeProfitPrice;
 	private decimal? _shortTakeProfitPrice;
 
-	private const int MaxHistoryLength = 512;
+	private readonly StrategyParam<int> _maxHistoryLength;
 
 	/// <summary>
 	/// Initializes parameters for the duplex Vortex strategy.
 	/// </summary>
 	public VortexIndicatorDuplexStrategy()
 	{
+		_maxHistoryLength = Param(nameof(MaxHistoryLength), 512)
+			.SetGreaterThanZero()
+			.SetDisplay("Max History Length", "Maximum stored Vortex samples per direction.", "General");
+
 		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Long Candle Type", "Timeframe used for long-side Vortex calculations.", "General");
 
@@ -242,6 +246,16 @@ public class VortexIndicatorDuplexStrategy : Strategy
 		get => _tradeVolume.Value;
 		set => _tradeVolume.Value = value;
 	}
+
+	/// <summary>
+	/// Maximum number of stored Vortex samples per signal stream.
+	/// </summary>
+	public int MaxHistoryLength
+	{
+		get => _maxHistoryLength.Value;
+		set => _maxHistoryLength.Value = value;
+	}
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{

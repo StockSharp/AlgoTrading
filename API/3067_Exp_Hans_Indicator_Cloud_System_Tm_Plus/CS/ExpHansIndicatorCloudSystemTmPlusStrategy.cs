@@ -12,7 +12,7 @@ using StockSharp.Messages;
 /// </summary>
 public class ExpHansIndicatorCloudSystemTmPlusStrategy : Strategy
 {
-	private const int MaxHistory = 1024;
+	private readonly StrategyParam<int> _maxHistory;
 
 	private static readonly TimeSpan Session1Start = TimeSpan.FromHours(4);
 	private static readonly TimeSpan Session1End = TimeSpan.FromHours(8);
@@ -199,10 +199,23 @@ public class ExpHansIndicatorCloudSystemTmPlusStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Maximum number of Hans color samples preserved for decision making.
+	/// </summary>
+	public int MaxHistory
+	{
+		get => _maxHistory.Value;
+		set => _maxHistory.Value = value;
+	}
+
+	/// <summary>
 	/// Initialize the strategy parameters with defaults matching the MQL5 inputs.
 	/// </summary>
 	public ExpHansIndicatorCloudSystemTmPlusStrategy()
 	{
+		_maxHistory = Param(nameof(MaxHistory), 1024)
+			.SetGreaterThanZero()
+			.SetDisplay("Max History", "Maximum number of Hans color entries stored", "Indicator");
+
 		_moneyManagement = Param(nameof(MoneyManagement), 0.1m)
 		.SetDisplay("Money Management", "Portion of the base volume traded per entry", "Risk");
 
