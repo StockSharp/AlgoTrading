@@ -14,8 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class GetLastNthClosedTradeStrategy : Strategy
 {
-	private const int MaxStoredTrades = 100;
-
 	private sealed class TradeDetail
 	{
 		public required string Symbol { get; init; }
@@ -62,6 +60,7 @@ public class GetLastNthClosedTradeStrategy : Strategy
 	private readonly StrategyParam<string> _strategyIdFilter;
 	private readonly StrategyParam<bool> _enableSecurityFilter;
 	private readonly StrategyParam<int> _tradeIndex;
+	private readonly StrategyParam<int> _maxStoredTrades;
 
 	private readonly List<ClosedTradeInfo> _closedTrades = new();
 	private PositionRecord _openRecord;
@@ -105,6 +104,15 @@ public class GetLastNthClosedTradeStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Gets or sets the maximum number of closed trades retained for reporting.
+	/// </summary>
+	public int MaxStoredTrades
+	{
+		get => _maxStoredTrades.Value;
+		set => _maxStoredTrades.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="GetLastNthClosedTradeStrategy"/> class.
 	/// </summary>
 	public GetLastNthClosedTradeStrategy()
@@ -121,6 +129,10 @@ public class GetLastNthClosedTradeStrategy : Strategy
 		_tradeIndex = Param(nameof(TradeIndex), 0)
 		.SetDisplay("Trade Index", "Zero-based index of the closed trade snapshot", "General")
 		.SetCanOptimize(true);
+
+		_maxStoredTrades = Param(nameof(MaxStoredTrades), 100)
+		.SetDisplay("Max Stored Trades", "Maximum number of closed trades kept in memory", "General")
+		.SetGreaterThanZero();
 	}
 
 	/// <inheritdoc />

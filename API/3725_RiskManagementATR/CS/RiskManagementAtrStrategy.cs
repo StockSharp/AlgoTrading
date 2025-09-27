@@ -10,15 +10,14 @@ using StockSharp.Messages;
 
 public class RiskManagementAtrStrategy : Strategy
 {
-	private const int FastMaPeriod = 10;
-	private const int SlowMaPeriod = 20;
-
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<decimal> _riskPercentage;
 	private readonly StrategyParam<bool> _useAtrStopLoss;
 	private readonly StrategyParam<int> _fixedStopLossPoints;
+	private readonly StrategyParam<int> _fastMaPeriod;
+	private readonly StrategyParam<int> _slowMaPeriod;
 
 	private AverageTrueRange _atr;
 	private SimpleMovingAverage _fastMovingAverage;
@@ -51,6 +50,14 @@ public class RiskManagementAtrStrategy : Strategy
 		_fixedStopLossPoints = Param(nameof(FixedStopLossPoints), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Fixed stop (points)", "Stop-loss distance expressed in price steps when ATR mode is disabled.", "Risk");
+
+		_fastMaPeriod = Param(nameof(FastMaPeriod), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast MA period", "Length of the fast moving average used for signals.", "Indicators");
+
+		_slowMaPeriod = Param(nameof(SlowMaPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow MA period", "Length of the slow moving average used for signals.", "Indicators");
 	}
 
 	public DataType CandleType
@@ -87,6 +94,18 @@ public class RiskManagementAtrStrategy : Strategy
 	{
 		get => _fixedStopLossPoints.Value;
 		set => _fixedStopLossPoints.Value = value;
+	}
+
+	public int FastMaPeriod
+	{
+		get => _fastMaPeriod.Value;
+		set => _fastMaPeriod.Value = value;
+	}
+
+	public int SlowMaPeriod
+	{
+		get => _slowMaPeriod.Value;
+		set => _slowMaPeriod.Value = value;
 	}
 
 	/// <inheritdoc />
