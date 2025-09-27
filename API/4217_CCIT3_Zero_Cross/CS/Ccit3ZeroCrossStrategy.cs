@@ -14,63 +14,6 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Operating modes supported by <see cref="Ccit3ZeroCrossStrategy"/>.
-/// </summary>
-public enum Ccit3Modes
-{
-	/// <summary>
-	/// Classic CCIT3 calculation with persistent Tillson T3 smoothing.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Non-recalculated CCIT3 variant that evaluates the Tillson chain only for the latest bar.
-	/// </summary>
-	NoRecalc,
-}
-
-/// <summary>
-/// Applied price options compatible with the CCIT3 port.
-/// </summary>
-public enum CciAppliedPriceTypes
-{
-	/// <summary>
-	/// Use candle close price.
-	/// </summary>
-	Close,
-
-	/// <summary>
-	/// Use candle open price.
-	/// </summary>
-	Open,
-
-	/// <summary>
-	/// Use candle high price.
-	/// </summary>
-	High,
-
-	/// <summary>
-	/// Use candle low price.
-	/// </summary>
-	Low,
-
-	/// <summary>
-	/// Use median price ((High + Low) / 2).
-	/// </summary>
-	Median,
-
-	/// <summary>
-	/// Use typical price ((High + Low + Close) / 3).
-	/// </summary>
-	Typical,
-
-	/// <summary>
-	/// Use weighted price ((High + Low + 2 * Close) / 4).
-	/// </summary>
-	Weighted,
-}
-
-/// <summary>
 /// Port of the MetaTrader CCIT3 expert advisor that trades zero-line crosses of a Tillson-smoothed CCI.
 /// </summary>
 public class Ccit3ZeroCrossStrategy : Strategy
@@ -103,6 +46,63 @@ public class Ccit3ZeroCrossStrategy : Strategy
 	private decimal _simpleE5;
 	private decimal _simpleE6;
 	private decimal? _previousT3;
+
+	/// <summary>
+	/// Operating modes supported by <see cref="Ccit3ZeroCrossStrategy"/>.
+	/// </summary>
+	public enum Ccit3Modes
+	{
+		/// <summary>
+		/// Classic CCIT3 calculation with persistent Tillson T3 smoothing.
+		/// </summary>
+		Simple,
+
+		/// <summary>
+		/// Non-recalculated CCIT3 variant that evaluates the Tillson chain only for the latest bar.
+		/// </summary>
+		NoRecalc,
+	}
+
+	/// <summary>
+	/// Applied price options compatible with the CCIT3 port.
+	/// </summary>
+	public enum CciAppliedPriceTypes
+	{
+		/// <summary>
+		/// Use candle close price.
+		/// </summary>
+		Close,
+
+		/// <summary>
+		/// Use candle open price.
+		/// </summary>
+		Open,
+
+		/// <summary>
+		/// Use candle high price.
+		/// </summary>
+		High,
+
+		/// <summary>
+		/// Use candle low price.
+		/// </summary>
+		Low,
+
+		/// <summary>
+		/// Use median price ((High + Low) / 2).
+		/// </summary>
+		Median,
+
+		/// <summary>
+		/// Use typical price ((High + Low + Close) / 3).
+		/// </summary>
+		Typical,
+
+		/// <summary>
+		/// Use weighted price ((High + Low + 2 * Close) / 4).
+		/// </summary>
+		Weighted,
+	}
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="Ccit3ZeroCrossStrategy"/>.

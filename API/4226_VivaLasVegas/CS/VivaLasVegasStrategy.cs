@@ -28,6 +28,15 @@ private readonly StrategyParam<MoneyManagementModes> _moneyManagementMode;
 	private decimal _lastRealizedPnL;
 	private bool _orderInFlight;
 
+	public enum MoneyManagementModes
+	{
+		Martingale,
+		NegativePyramid,
+		Labouchere,
+		OscarsGrind,
+		System31,
+	}
+
 	public VivaLasVegasStrategy()
 	{
 		_stopTakePips = Param(nameof(StopTakePips), 50)
@@ -236,15 +245,6 @@ MoneyManagementModes.OscarsGrind => new OscarsGrindManagement(),
 MoneyManagementModes.System31 => new System31Management(),
 _ => new MartingaleManagement(),
 };
-}
-
-public enum MoneyManagementModes
-{
-Martingale,
-NegativePyramid,
-Labouchere,
-OscarsGrind,
-System31,
 }
 
 	private enum TradeResults

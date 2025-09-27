@@ -77,6 +77,22 @@ private readonly StrategyParam<CycleFilterModes> _cycleFilterMode;
 	private DateTimeOffset _currentBarTime;
 
 	/// <summary>
+	/// Defines the data source used by the zero-lag filter.
+	/// </summary>
+	public enum CycleFilterModes
+	{
+		/// <summary>
+		/// Use the smoothed price series as filter input.
+		/// </summary>
+		Sma = 1,
+
+		/// <summary>
+		/// Use a Wilder style RSI computed on the smoothed price series as filter input.
+		/// </summary>
+		Rsi = 2,
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="CyclopsCycleIdentifierStrategy"/> class.
 	/// </summary>
 	public CyclopsCycleIdentifierStrategy()
@@ -791,22 +807,6 @@ if (this.CycleFilterMode == CycleFilterModes.Sma)
 		_shortTakeProfitPrice = null;
 		_shortBreakEvenActive = false;
 	}
-}
-
-/// <summary>
-/// Defines the data source used by the zero-lag filter.
-/// </summary>
-public enum CycleFilterModes
-{
-/// <summary>
-/// Use the smoothed price series as filter input.
-/// </summary>
-Sma = 1,
-
-	/// <summary>
-	/// Use a Wilder style RSI computed on the smoothed price series as filter input.
-	/// </summary>
-	Rsi = 2,
 }
 
 internal readonly record struct CycleSignals(bool MajorBuy, bool MajorSell, bool MinorBuyExit, bool MinorSellExit);

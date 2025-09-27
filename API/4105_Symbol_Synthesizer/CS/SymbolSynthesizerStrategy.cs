@@ -41,6 +41,27 @@ public class SymbolSynthesizerStrategy : Strategy
 		new("GBPCHF", "GBPUSD", "USDCHF", true)
 	};
 
+	/// <summary>
+	/// Manual actions exposed by <see cref="SymbolSynthesizerStrategy"/>.
+	/// </summary>
+	public enum SyntheticTradeActions
+	{
+		/// <summary>
+		/// No action requested.
+		/// </summary>
+		None,
+
+		/// <summary>
+		/// Open the synthetic position using buy logic.
+		/// </summary>
+		Buy,
+
+		/// <summary>
+		/// Open the synthetic position using sell logic.
+		/// </summary>
+		Sell
+	}
+
 	private readonly StrategyParam<int> _combinationParam;
 	private readonly StrategyParam<SyntheticTradeActions> _tradeActionParam;
 
@@ -390,23 +411,3 @@ public class SymbolSynthesizerStrategy : Strategy
 	}
 }
 
-/// <summary>
-/// Manual actions exposed by <see cref="SymbolSynthesizerStrategy"/>.
-/// </summary>
-public enum SyntheticTradeActions
-{
-	/// <summary>
-	/// No action requested.
-	/// </summary>
-	None,
-
-	/// <summary>
-	/// Open the synthetic position using buy logic.
-	/// </summary>
-	Buy,
-
-	/// <summary>
-	/// Open the synthetic position using sell logic.
-	/// </summary>
-	Sell
-}

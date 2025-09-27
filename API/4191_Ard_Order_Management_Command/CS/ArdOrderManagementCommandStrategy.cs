@@ -14,38 +14,6 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Order commands supported by <see cref="ArdOrderManagementCommandStrategy"/>.
-/// Mirrors the constants used by the original MQL expert advisor.
-/// </summary>
-public enum ArdOrderCommands
-{
-	/// <summary>
-	/// No action requested.
-	/// </summary>
-	None = 0,
-
-	/// <summary>
-	/// Open a long position.
-	/// </summary>
-	Buy = 1,
-
-	/// <summary>
-	/// Open a short position.
-	/// </summary>
-	Sell = 2,
-
-	/// <summary>
-	/// Close every open position on the primary symbol.
-	/// </summary>
-	Close = 3,
-
-	/// <summary>
-	/// Rebuild stop-loss and take-profit orders around the active position.
-	/// </summary>
-	Modify = 4,
-}
-
-/// <summary>
 /// High-level implementation of the "ARD Order Management" expert advisor.
 /// Allows manual commands (buy, sell, close, modify) while automatically managing stop-loss and take-profit orders.
 /// </summary>
@@ -70,6 +38,38 @@ public class ArdOrderManagementCommandStrategy : Strategy
 	private decimal _pendingEntryVolume;
 	private decimal _pendingStopPoints;
 	private decimal _pendingTakePoints;
+
+	/// <summary>
+	/// Order commands supported by <see cref="ArdOrderManagementCommandStrategy"/>.
+	/// Mirrors the constants used by the original MQL expert advisor.
+	/// </summary>
+	public enum ArdOrderCommands
+	{
+		/// <summary>
+		/// No action requested.
+		/// </summary>
+		None = 0,
+
+		/// <summary>
+		/// Open a long position.
+		/// </summary>
+		Buy = 1,
+
+		/// <summary>
+		/// Open a short position.
+		/// </summary>
+		Sell = 2,
+
+		/// <summary>
+		/// Close every open position on the primary symbol.
+		/// </summary>
+		Close = 3,
+
+		/// <summary>
+		/// Rebuild stop-loss and take-profit orders around the active position.
+		/// </summary>
+		Modify = 4,
+	}
 
 	/// <summary>
 	/// Accepted execution slippage in price steps.
