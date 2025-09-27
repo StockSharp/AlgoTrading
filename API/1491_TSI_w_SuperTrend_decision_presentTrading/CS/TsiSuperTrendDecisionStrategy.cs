@@ -26,7 +26,7 @@ public class TsiSuperTrendDecisionStrategy : Strategy
 	private readonly StrategyParam<decimal> _stMultiplier;
 	private readonly StrategyParam<decimal> _threshold;
 	private readonly StrategyParam<Sides?> _direction;
-	private readonly StrategyParam<ProtectionType> _tpsl;
+	private readonly StrategyParam<ProtectionTypes> _tpsl;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
 
@@ -34,7 +34,7 @@ public class TsiSuperTrendDecisionStrategy : Strategy
 	private decimal[] _prices;
 	private int _index;
 
-	public enum ProtectionType
+	public enum ProtectionTypes
 	{
 		None,
 		TP,
@@ -65,7 +65,7 @@ public class TsiSuperTrendDecisionStrategy : Strategy
 	public decimal StMultiplier { get => _stMultiplier.Value; set => _stMultiplier.Value = value; }
 	public decimal Threshold { get => _threshold.Value; set => _threshold.Value = value; }
 	public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
-	public ProtectionType Tpsl { get => _tpsl.Value; set => _tpsl.Value = value; }
+	public ProtectionTypes Tpsl { get => _tpsl.Value; set => _tpsl.Value = value; }
 	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
 	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
 
@@ -83,7 +83,7 @@ public class TsiSuperTrendDecisionStrategy : Strategy
 		.SetDisplay("TSI Threshold", "Entry threshold", "Trading");
 		_direction = Param(nameof(Direction), (Sides?)null)
 		.SetDisplay("Direction", "Trade direction", "Trading");
-		_tpsl = Param(nameof(Tpsl), ProtectionType.None)
+		_tpsl = Param(nameof(Tpsl), ProtectionTypes.None)
 		.SetDisplay("TPSL", "Protection type", "Risk");
 		_takeProfit = Param(nameof(TakeProfit), 30m)
 		.SetDisplay("Take Profit %", "Take profit", "Risk");
@@ -100,13 +100,13 @@ public class TsiSuperTrendDecisionStrategy : Strategy
 
 		switch (Tpsl)
 		{
-			case ProtectionType.TP:
+			case ProtectionTypes.TP:
 				StartProtection(new Unit(TakeProfit, UnitTypes.Percent), new Unit(0));
 				break;
-			case ProtectionType.SL:
+			case ProtectionTypes.SL:
 				StartProtection(new Unit(0), new Unit(StopLoss, UnitTypes.Percent));
 				break;
-			case ProtectionType.Both:
+			case ProtectionTypes.Both:
 				StartProtection(new Unit(TakeProfit, UnitTypes.Percent), new Unit(StopLoss, UnitTypes.Percent));
 				break;
 			default:

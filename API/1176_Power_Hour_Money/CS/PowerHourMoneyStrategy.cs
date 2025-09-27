@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class PowerHourMoneyStrategy : Strategy
 {
-	private readonly StrategyParam<TradingSession> _session;
+	private readonly StrategyParam<TradingSessions> _session;
 	private readonly StrategyParam<bool> _useTrail;
 	private readonly StrategyParam<decimal> _longTrail;
 	private readonly StrategyParam<decimal> _shortTrail;
@@ -38,7 +38,7 @@ public class PowerHourMoneyStrategy : Strategy
 	/// <summary>
 	/// Trading session filter.
 	/// </summary>
-	public TradingSession Session
+	public TradingSessions Session
 	{
 		get => _session.Value;
 		set => _session.Value = value;
@@ -94,7 +94,7 @@ public class PowerHourMoneyStrategy : Strategy
 	/// </summary>
 	public PowerHourMoneyStrategy()
 	{
-		_session = Param(nameof(Session), TradingSession.NySession)
+		_session = Param(nameof(Session), TradingSessions.NySession)
 			.SetDisplay("Session", "Trading session", "Core");
 
 		_useTrail = Param(nameof(UseTrail), true)
@@ -195,8 +195,8 @@ public class PowerHourMoneyStrategy : Strategy
 
 		var tradeable = Session switch
 		{
-			TradingSession.NySession => local >= new TimeSpan(9, 30, 0) && local <= new TimeSpan(11, 30, 0),
-			TradingSession.ExtendedNy => local >= new TimeSpan(8, 0, 0) && local <= new TimeSpan(16, 0, 0),
+			TradingSessions.NySession => local >= new TimeSpan(9, 30, 0) && local <= new TimeSpan(11, 30, 0),
+			TradingSessions.ExtendedNy => local >= new TimeSpan(8, 0, 0) && local <= new TimeSpan(16, 0, 0),
 			_ => true,
 		};
 
@@ -260,7 +260,7 @@ public class PowerHourMoneyStrategy : Strategy
 /// <summary>
 /// Trading sessions.
 /// </summary>
-public enum TradingSession
+public enum TradingSessions
 {
 	/// <summary>
 	/// NY Session 9:30-11:30.

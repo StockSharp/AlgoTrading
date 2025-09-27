@@ -20,10 +20,10 @@ public class XTrail2Strategy : Strategy
 {
 	private readonly StrategyParam<int> _ma1Length;
 	private readonly StrategyParam<int> _ma2Length;
-	private readonly StrategyParam<MovingAverageTypeEnum> _ma1Type;
-	private readonly StrategyParam<MovingAverageTypeEnum> _ma2Type;
-	private readonly StrategyParam<AppliedPriceType> _ma1PriceType;
-	private readonly StrategyParam<AppliedPriceType> _ma2PriceType;
+	private readonly StrategyParam<MovingAverageTypes> _ma1Type;
+	private readonly StrategyParam<MovingAverageTypes> _ma2Type;
+	private readonly StrategyParam<AppliedPriceTypes> _ma1PriceType;
+	private readonly StrategyParam<AppliedPriceTypes> _ma2PriceType;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private IIndicator _ma1;
@@ -47,22 +47,22 @@ public class XTrail2Strategy : Strategy
 	/// <summary>
 	/// Type of the first moving average.
 	/// </summary>
-	public MovingAverageTypeEnum Ma1Type { get => _ma1Type.Value; set => _ma1Type.Value = value; }
+	public MovingAverageTypes Ma1Type { get => _ma1Type.Value; set => _ma1Type.Value = value; }
 
 	/// <summary>
 	/// Type of the second moving average.
 	/// </summary>
-	public MovingAverageTypeEnum Ma2Type { get => _ma2Type.Value; set => _ma2Type.Value = value; }
+	public MovingAverageTypes Ma2Type { get => _ma2Type.Value; set => _ma2Type.Value = value; }
 
 	/// <summary>
 	/// Applied price for the first moving average.
 	/// </summary>
-	public AppliedPriceType Ma1PriceType { get => _ma1PriceType.Value; set => _ma1PriceType.Value = value; }
+	public AppliedPriceTypes Ma1PriceType { get => _ma1PriceType.Value; set => _ma1PriceType.Value = value; }
 
 	/// <summary>
 	/// Applied price for the second moving average.
 	/// </summary>
-	public AppliedPriceType Ma2PriceType { get => _ma2PriceType.Value; set => _ma2PriceType.Value = value; }
+	public AppliedPriceTypes Ma2PriceType { get => _ma2PriceType.Value; set => _ma2PriceType.Value = value; }
 
 	/// <summary>
 	/// Candle type to process.
@@ -82,16 +82,16 @@ public class XTrail2Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MA2 Length", "Length of the second MA", "Moving Averages");
 
-		_ma1Type = Param(nameof(Ma1Type), MovingAverageTypeEnum.Simple)
+		_ma1Type = Param(nameof(Ma1Type), MovingAverageTypes.Simple)
 			.SetDisplay("MA1 Type", "Type of the first MA", "Moving Averages");
 
-		_ma2Type = Param(nameof(Ma2Type), MovingAverageTypeEnum.Simple)
+		_ma2Type = Param(nameof(Ma2Type), MovingAverageTypes.Simple)
 			.SetDisplay("MA2 Type", "Type of the second MA", "Moving Averages");
 
-		_ma1PriceType = Param(nameof(Ma1PriceType), AppliedPriceType.Median)
+		_ma1PriceType = Param(nameof(Ma1PriceType), AppliedPriceTypes.Median)
 			.SetDisplay("MA1 Price", "Applied price for the first MA", "Moving Averages");
 
-		_ma2PriceType = Param(nameof(Ma2PriceType), AppliedPriceType.Median)
+		_ma2PriceType = Param(nameof(Ma2PriceType), AppliedPriceTypes.Median)
 			.SetDisplay("MA2 Price", "Applied price for the second MA", "Moving Averages");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -160,27 +160,27 @@ public class XTrail2Strategy : Strategy
 		_ma2Prev = ma2;
 	}
 
-	private static IIndicator CreateMa(MovingAverageTypeEnum type, int length)
+	private static IIndicator CreateMa(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypeEnum.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageTypeEnum.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageTypeEnum.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
 
-	private static decimal GetPrice(ICandleMessage candle, AppliedPriceType priceType)
+	private static decimal GetPrice(ICandleMessage candle, AppliedPriceTypes priceType)
 	{
 		return priceType switch
 		{
-			AppliedPriceType.Open => candle.OpenPrice,
-			AppliedPriceType.High => candle.HighPrice,
-			AppliedPriceType.Low => candle.LowPrice,
-			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
+			AppliedPriceTypes.Open => candle.OpenPrice,
+			AppliedPriceTypes.High => candle.HighPrice,
+			AppliedPriceTypes.Low => candle.LowPrice,
+			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
@@ -189,7 +189,7 @@ public class XTrail2Strategy : Strategy
 /// <summary>
 /// Moving average calculation method.
 /// </summary>
-public enum MovingAverageTypeEnum
+public enum MovingAverageTypes
 {
 	/// <summary>Simple moving average.</summary>
 	Simple,
@@ -204,7 +204,7 @@ public enum MovingAverageTypeEnum
 /// <summary>
 /// Price type used for indicator calculations.
 /// </summary>
-public enum AppliedPriceType
+public enum AppliedPriceTypes
 {
 	/// <summary>Close price.</summary>
 	Close,

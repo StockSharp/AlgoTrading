@@ -22,7 +22,7 @@ namespace StockSharp.Samples.Strategies;
 public class RideAlligatorStrategy : Strategy
 {
 	private readonly StrategyParam<int> _alligatorPeriod;
-	private readonly StrategyParam<MovingAverageTypeEnum> _maType;
+	private readonly StrategyParam<MovingAverageTypes> _maType;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private LengthIndicator<decimal> _jaw;
@@ -44,7 +44,7 @@ public class RideAlligatorStrategy : Strategy
 	/// <summary>
 	/// Moving average type for Alligator lines.
 	/// </summary>
-	public MovingAverageTypeEnum MaType
+	public MovingAverageTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -68,7 +68,7 @@ public class RideAlligatorStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Alligator Period", "Base period for Alligator", "Alligator");
 
-		_maType = Param(nameof(MaType), MovingAverageTypeEnum.Weighted)
+		_maType = Param(nameof(MaType), MovingAverageTypes.Weighted)
 		.SetDisplay("MA Type", "Moving average type", "Alligator");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -154,14 +154,14 @@ public class RideAlligatorStrategy : Strategy
 		}
 	}
 
-	private static LengthIndicator<decimal> CreateMa(MovingAverageTypeEnum type, int length)
+	private static LengthIndicator<decimal> CreateMa(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypeEnum.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageTypeEnum.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageTypeEnum.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageTypeEnum.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
 			_ => throw new ArgumentOutOfRangeException(nameof(type), type, null),
 		};
 	}
@@ -169,7 +169,7 @@ public class RideAlligatorStrategy : Strategy
 	/// <summary>
 	/// Moving average types supported by the strategy.
 	/// </summary>
-	public enum MovingAverageTypeEnum
+	public enum MovingAverageTypes
 	{
 		Simple,
 		Exponential,

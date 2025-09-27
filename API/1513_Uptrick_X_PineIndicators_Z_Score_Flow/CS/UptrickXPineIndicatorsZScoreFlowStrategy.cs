@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class UptrickXPineIndicatorsZScoreFlowStrategy : Strategy
 {
-public enum TradeMode
+public enum TradeModes
 {
 Standard,
 ZeroCross,
@@ -36,7 +36,7 @@ private readonly StrategyParam<int> _cooldownBars;
 private readonly StrategyParam<int> _slopeIndex;
 private readonly StrategyParam<bool> _enableLong;
 private readonly StrategyParam<bool> _enableShort;
-private readonly StrategyParam<TradeMode> _tradeMode;
+private readonly StrategyParam<TradeModes> _tradeMode;
 
 private SMA _basis;
 private StandardDeviation _stdev;
@@ -113,7 +113,7 @@ public bool EnableShort { get => _enableShort.Value; set => _enableShort.Value =
 /// <summary>
 /// Trade execution mode.
 /// </summary>
-public TradeMode Mode { get => _tradeMode.Value; set => _tradeMode.Value = value; }
+public TradeModes Mode { get => _tradeMode.Value; set => _tradeMode.Value = value; }
 
 public UptrickXPineIndicatorsZScoreFlowStrategy()
 {
@@ -156,7 +156,7 @@ _enableLong = Param(nameof(EnableLong), true)
 _enableShort = Param(nameof(EnableShort), true)
 .SetDisplay("Enable Short", "Allow short trades", "Trading");
 
-_tradeMode = Param(nameof(Mode), TradeMode.Standard)
+_tradeMode = Param(nameof(Mode), TradeModes.Standard)
 .SetDisplay("Trade Mode", "Execution mode", "Trading");
 }
 
@@ -248,13 +248,13 @@ _prevBearish = bearishCondition;
 
 switch (Mode)
 {
-case TradeMode.Standard:
+case TradeModes.Standard:
 StandardMode(buySignal, sellSignal);
 break;
-case TradeMode.ZeroCross:
+case TradeModes.ZeroCross:
 ZeroCrossMode(zscore);
 break;
-case TradeMode.TrendReversal:
+case TradeModes.TrendReversal:
 TrendReversalMode(trendBullishReversal, trendBearishReversal);
 break;
 }

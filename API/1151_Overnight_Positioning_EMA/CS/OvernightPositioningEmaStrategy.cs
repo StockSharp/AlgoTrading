@@ -20,7 +20,7 @@ public class OvernightPositioningEmaStrategy : Strategy
 	private readonly StrategyParam<int> _emaLen;
 	private readonly StrategyParam<bool> _useEma;
 	private readonly StrategyParam<DataType> _candle;
-	private readonly StrategyParam<Market> _market;
+	private readonly StrategyParam<Markets> _market;
 
 	private TimeZoneInfo _tz = TimeZoneInfo.Utc;
 	private TimeSpan _open;
@@ -31,9 +31,9 @@ public class OvernightPositioningEmaStrategy : Strategy
 	public int EmaLength { get => _emaLen.Value; set => _emaLen.Value = value; }
 	public bool UseEma { get => _useEma.Value; set => _useEma.Value = value; }
 	public DataType CandleType { get => _candle.Value; set => _candle.Value = value; }
-	public Market MarketSelection { get => _market.Value; set => _market.Value = value; }
+	public Markets MarketSelection { get => _market.Value; set => _market.Value = value; }
 
-	public enum Market { US, Asia, Europe }
+	public enum Markets { US, Asia, Europe }
 
 	public OvernightPositioningEmaStrategy()
 	{
@@ -42,7 +42,7 @@ public class OvernightPositioningEmaStrategy : Strategy
 		_emaLen = Param(nameof(EmaLength), 100).SetGreaterThanZero();
 		_useEma = Param(nameof(UseEma), true);
 		_candle = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
-		_market = Param(nameof(MarketSelection), Market.US);
+		_market = Param(nameof(MarketSelection), Markets.US);
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
@@ -61,17 +61,17 @@ public class OvernightPositioningEmaStrategy : Strategy
 	{
 		switch (MarketSelection)
 		{
-			case Market.US:
+			case Markets.US:
 				_tz = TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
 				_open = new(9, 30, 0);
 				_close = new(16, 0, 0);
 				break;
-			case Market.Asia:
+			case Markets.Asia:
 				_tz = TimeZoneInfo.FindSystemTimeZoneById("Asia/Tokyo");
 				_open = new(9, 0, 0);
 				_close = new(15, 0, 0);
 				break;
-			case Market.Europe:
+			case Markets.Europe:
 				_tz = TimeZoneInfo.FindSystemTimeZoneById("Europe/London");
 				_open = new(8, 0, 0);
 				_close = new(16, 30, 0);

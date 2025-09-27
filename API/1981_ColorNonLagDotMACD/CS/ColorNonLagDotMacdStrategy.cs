@@ -22,7 +22,7 @@ public class ColorNonLagDotMacdStrategy : Strategy
 	/// <summary>
 	/// Algorithm mode for generating signals.
 	/// </summary>
-	public enum AlgorithmMode
+	public enum AlgorithmModes
 	{
 	    /// <summary>
 	    /// Trade on zero line breakout of MACD histogram.
@@ -48,7 +48,7 @@ public class ColorNonLagDotMacdStrategy : Strategy
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<int> _signalLength;
-	private readonly StrategyParam<AlgorithmMode> _mode;
+	private readonly StrategyParam<AlgorithmModes> _mode;
 	private readonly StrategyParam<bool> _buyOpen;
 	private readonly StrategyParam<bool> _sellOpen;
 	private readonly StrategyParam<bool> _buyClose;
@@ -92,7 +92,7 @@ public class ColorNonLagDotMacdStrategy : Strategy
 	/// <summary>
 	/// Mode that defines how signals are detected.
 	/// </summary>
-	public AlgorithmMode Mode
+	public AlgorithmModes Mode
 	{
 	    get => _mode.Value;
 	    set => _mode.Value = value;
@@ -184,7 +184,7 @@ public class ColorNonLagDotMacdStrategy : Strategy
 	        .SetCanOptimize(true)
 	        .SetOptimize(5, 15, 2);
 
-	    _mode = Param(nameof(Mode), AlgorithmMode.MacdDisposition)
+	    _mode = Param(nameof(Mode), AlgorithmModes.MacdDisposition)
 	        .SetDisplay("Mode", "Signal detection mode", "General");
 
 	    _buyOpen = Param(nameof(BuyPosOpen), true)
@@ -273,19 +273,19 @@ public class ColorNonLagDotMacdStrategy : Strategy
 
 	    switch (Mode)
 	    {
-	        case AlgorithmMode.Breakdown:
+	        case AlgorithmModes.Breakdown:
 	            buySignal = _prevMacd <= 0 && macd > 0;
 	            sellSignal = _prevMacd >= 0 && macd < 0;
 	            break;
-	        case AlgorithmMode.MacdTwist:
+	        case AlgorithmModes.MacdTwist:
 	            buySignal = _prevMacd < _prevMacd2 && macd > _prevMacd;
 	            sellSignal = _prevMacd > _prevMacd2 && macd < _prevMacd;
 	            break;
-	        case AlgorithmMode.SignalTwist:
+	        case AlgorithmModes.SignalTwist:
 	            buySignal = _prevSignal < _prevSignal2 && signal > _prevSignal;
 	            sellSignal = _prevSignal > _prevSignal2 && signal < _prevSignal;
 	            break;
-	        case AlgorithmMode.MacdDisposition:
+	        case AlgorithmModes.MacdDisposition:
 	            buySignal = _prevMacd <= _prevSignal && macd > signal;
 	            sellSignal = _prevMacd >= _prevSignal && macd < signal;
 	            break;

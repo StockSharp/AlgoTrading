@@ -18,13 +18,13 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class VROverturnStrategy : Strategy
 {
-	private enum TradeMode
+	private enum TradeModes
 	{
 		Martingale,
 		AntiMartingale
 	}
 
-	private readonly StrategyParam<TradeMode> _tradeMode;
+	private readonly StrategyParam<TradeModes> _tradeMode;
 	private readonly StrategyParam<Sides> _startSide;
 	private readonly StrategyParam<int> _takePoints;
 	private readonly StrategyParam<int> _stopPoints;
@@ -40,7 +40,7 @@ public class VROverturnStrategy : Strategy
 	/// <summary>
 	/// Trade mode selection.
 	/// </summary>
-	public TradeMode Mode { get => _tradeMode.Value; set => _tradeMode.Value = value; }
+	public TradeModes Mode { get => _tradeMode.Value; set => _tradeMode.Value = value; }
 
 	/// <summary>
 	/// Initial trade side.
@@ -72,7 +72,7 @@ public class VROverturnStrategy : Strategy
 	/// </summary>
 	public VROverturnStrategy()
 	{
-		_tradeMode = Param(nameof(Mode), TradeMode.Martingale)
+		_tradeMode = Param(nameof(Mode), TradeModes.Martingale)
 			.SetDisplay("Trade Mode", "Martingale or AntiMartingale", "General");
 
 		_startSide = Param(nameof(StartSide), Sides.Buy)
@@ -146,7 +146,7 @@ public class VROverturnStrategy : Strategy
 			var exitPrice = trade.Trade.Price;
 			var profit = (_currentSide == Sides.Buy ? exitPrice - _entryPrice : _entryPrice - exitPrice) * _currentVolume;
 
-			if (Mode == TradeMode.Martingale)
+			if (Mode == TradeModes.Martingale)
 			{
 				_currentVolume = profit > 0m ? StartVolume : _currentVolume * Multiplier;
 			}

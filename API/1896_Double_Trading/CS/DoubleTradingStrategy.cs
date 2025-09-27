@@ -18,14 +18,14 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class DoubleTradingStrategy : Strategy
 {
-	public enum TradeDirection { Auto, Buy, Sell }
+	public enum TradeDirections { Auto, Buy, Sell }
 
 	private readonly StrategyParam<decimal> _volume1;
 	private readonly StrategyParam<decimal> _volume2;
 	private readonly StrategyParam<decimal> _profitTarget;
 	private readonly StrategyParam<Security> _secondSecurity;
-	private readonly StrategyParam<TradeDirection> _direction1;
-	private readonly StrategyParam<TradeDirection> _direction2;
+	private readonly StrategyParam<TradeDirections> _direction1;
+	private readonly StrategyParam<TradeDirections> _direction2;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private Sides _side1;
@@ -39,8 +39,8 @@ public class DoubleTradingStrategy : Strategy
 	public decimal Volume2 { get => _volume2.Value; set => _volume2.Value = value; }
 	public decimal ProfitTarget { get => _profitTarget.Value; set => _profitTarget.Value = value; }
 	public Security SecondSecurity { get => _secondSecurity.Value; set => _secondSecurity.Value = value; }
-	public TradeDirection Direction1 { get => _direction1.Value; set => _direction1.Value = value; }
-	public TradeDirection Direction2 { get => _direction2.Value; set => _direction2.Value = value; }
+	public TradeDirections Direction1 { get => _direction1.Value; set => _direction1.Value = value; }
+	public TradeDirections Direction2 { get => _direction2.Value; set => _direction2.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public DoubleTradingStrategy()
@@ -49,8 +49,8 @@ public class DoubleTradingStrategy : Strategy
 		_volume2 = Param(nameof(Volume2), 1.3m).SetDisplay("Volume2", "Second volume", "Parameters");
 		_profitTarget = Param(nameof(ProfitTarget), 20m).SetDisplay("Profit Target", "Exit profit", "Risk");
 		_secondSecurity = Param<Security>(nameof(SecondSecurity)).SetDisplay("Second Security", "Hedged instrument", "Parameters").SetRequired();
-		_direction1 = Param(nameof(Direction1), TradeDirection.Auto).SetDisplay("Direction1", "First side", "Parameters");
-		_direction2 = Param(nameof(Direction2), TradeDirection.Auto).SetDisplay("Direction2", "Second side", "Parameters");
+		_direction1 = Param(nameof(Direction1), TradeDirections.Auto).SetDisplay("Direction1", "First side", "Parameters");
+		_direction2 = Param(nameof(Direction2), TradeDirections.Auto).SetDisplay("Direction2", "Second side", "Parameters");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Candles", "Data");
 	}
 
@@ -68,8 +68,8 @@ public class DoubleTradingStrategy : Strategy
 		SubscribeCandles(CandleType).Bind(ProcessFirst).Start();
 		SubscribeCandles(CandleType, security: SecondSecurity).Bind(ProcessSecond).Start();
 
-		_side1 = Direction1 == TradeDirection.Sell ? Sides.Sell : Sides.Buy;
-		_side2 = Direction2 == TradeDirection.Buy ? Sides.Buy : Sides.Sell;
+		_side1 = Direction1 == TradeDirections.Sell ? Sides.Sell : Sides.Buy;
+		_side2 = Direction2 == TradeDirections.Buy ? Sides.Buy : Sides.Sell;
 
 		if (_side1 == Sides.Buy)
 			BuyMarket(Volume1);

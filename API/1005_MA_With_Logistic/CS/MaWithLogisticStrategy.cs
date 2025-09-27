@@ -20,8 +20,8 @@ public class MaWithLogisticStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<MaTypeEnum> _maType;
-	private readonly StrategyParam<ExitTypeEnum> _exitType;
+	private readonly StrategyParam<MaTypes> _maType;
+	private readonly StrategyParam<ExitTypes> _exitType;
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<decimal> _logisticSlope;
@@ -51,7 +51,7 @@ public class MaWithLogisticStrategy : Strategy
 	/// <summary>
 	/// Moving average type.
 	/// </summary>
-	public MaTypeEnum MaType
+	public MaTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -60,7 +60,7 @@ public class MaWithLogisticStrategy : Strategy
 	/// <summary>
 	/// Exit mode.
 	/// </summary>
-	public ExitTypeEnum ExitType
+	public ExitTypes ExitType
 	{
 		get => _exitType.Value;
 		set => _exitType.Value = value;
@@ -138,8 +138,8 @@ public class MaWithLogisticStrategy : Strategy
 			Param(nameof(FastLength), 9).SetDisplay("Fast MA", "Fast MA period", "Indicators").SetGreaterThanZero();
 		_slowLength =
 			Param(nameof(SlowLength), 21).SetDisplay("Slow MA", "Slow MA period", "Indicators").SetGreaterThanZero();
-		_maType = Param(nameof(MaType), MaTypeEnum.EMA).SetDisplay("MA Type", "Moving average type", "Indicators");
-		_exitType = Param(nameof(ExitType), ExitTypeEnum.Percent).SetDisplay("Exit Type", "Exit method", "General");
+		_maType = Param(nameof(MaType), MaTypes.EMA).SetDisplay("MA Type", "Moving average type", "Indicators");
+		_exitType = Param(nameof(ExitType), ExitTypes.Percent).SetDisplay("Exit Type", "Exit method", "General");
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 20m)
 								 .SetDisplay("TP %", "Take profit percent", "Percent")
 								 .SetGreaterThanZero();
@@ -203,7 +203,7 @@ public class MaWithLogisticStrategy : Strategy
 
 		if (Position > 0)
 		{
-			if (ExitType == ExitTypeEnum.Percent)
+			if (ExitType == ExitTypes.Percent)
 			{
 				var tpPrice = PositionAvgPrice * (1m + TakeProfitPercent / 100m);
 				var slPrice = PositionAvgPrice * (1m - StopLossPercent / 100m);
@@ -211,7 +211,7 @@ public class MaWithLogisticStrategy : Strategy
 				if (close >= tpPrice || close <= slPrice)
 					SellMarket(Math.Abs(Position));
 			}
-			else if (ExitType == ExitTypeEnum.Logistic)
+			else if (ExitType == ExitTypes.Logistic)
 			{
 				var profitPct = (close - PositionAvgPrice) / PositionAvgPrice;
 				var prob = 1m / (1m + (decimal)Math.Exp((double)(-LogisticSlope * (profitPct - LogisticMidpoint))));
@@ -221,7 +221,7 @@ public class MaWithLogisticStrategy : Strategy
 		}
 		else if (Position < 0)
 		{
-			if (ExitType == ExitTypeEnum.Percent)
+			if (ExitType == ExitTypes.Percent)
 			{
 				var tpPrice = PositionAvgPrice * (1m - TakeProfitPercent / 100m);
 				var slPrice = PositionAvgPrice * (1m + StopLossPercent / 100m);
@@ -229,7 +229,7 @@ public class MaWithLogisticStrategy : Strategy
 				if (close <= tpPrice || close >= slPrice)
 					BuyMarket(Math.Abs(Position));
 			}
-			else if (ExitType == ExitTypeEnum.Logistic)
+			else if (ExitType == ExitTypes.Logistic)
 			{
 				var profitPct = (PositionAvgPrice - close) / PositionAvgPrice;
 				var prob = 1m / (1m + (decimal)Math.Exp((double)(-LogisticSlope * (profitPct - LogisticMidpoint))));
@@ -239,11 +239,11 @@ public class MaWithLogisticStrategy : Strategy
 		}
 	}
 
-	private MovingAverage CreateMa(MaTypeEnum type, int length)
+	private MovingAverage CreateMa(MaTypes type, int length)
 	{
 		return type switch {
-			MaTypeEnum.EMA => new ExponentialMovingAverage { Length = length },
-			MaTypeEnum.WMA => new WeightedMovingAverage { Length = length },
+			MaTypes.EMA => new ExponentialMovingAverage { Length = length },
+			MaTypes.WMA => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -251,7 +251,7 @@ public class MaWithLogisticStrategy : Strategy
 	/// <summary>
 	/// Moving average types.
 	/// </summary>
-	public enum MaTypeEnum
+	public enum MaTypes
 	{
 		EMA,
 		SMA,
@@ -261,7 +261,7 @@ public class MaWithLogisticStrategy : Strategy
 	/// <summary>
 	/// Exit modes.
 	/// </summary>
-	public enum ExitTypeEnum
+	public enum ExitTypes
 	{
 		None,
 		Percent,

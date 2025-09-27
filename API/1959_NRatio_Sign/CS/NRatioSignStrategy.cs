@@ -27,7 +27,7 @@ public class NRatioSignStrategy : Strategy
 	private readonly StrategyParam<decimal> _sharp;
 	private readonly StrategyParam<decimal> _upLevel;
 	private readonly StrategyParam<decimal> _downLevel;
-	private readonly StrategyParam<StrategyMode> _mode;
+	private readonly StrategyParam<StrategyModes> _mode;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
 
@@ -41,7 +41,7 @@ public class NRatioSignStrategy : Strategy
 	/// <summary>
 	/// NRatio calculation mode.
 	/// </summary>
-	public enum StrategyMode
+	public enum StrategyModes
 	{
 		ModeIn,
 		ModeOut,
@@ -113,7 +113,7 @@ public class NRatioSignStrategy : Strategy
 	/// <summary>
 	/// Signal generation mode.
 	/// </summary>
-	public StrategyMode Mode
+	public StrategyModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -166,7 +166,7 @@ public class NRatioSignStrategy : Strategy
 		_downLevel = Param(nameof(DownLevel), 20m)
 		.SetDisplay("Down Level", "Lower NRatio threshold", "Indicator");
 
-		_mode = Param(nameof(Mode), StrategyMode.ModeOut)
+		_mode = Param(nameof(Mode), StrategyModes.ModeOut)
 		.SetDisplay("Mode", "Signal generation mode", "Indicator");
 
 		_takeProfit = Param(nameof(TakeProfitPercent), 2m)
@@ -284,7 +284,7 @@ public class NRatioSignStrategy : Strategy
 	var buySignal = false;
 	var sellSignal = false;
 
-	if (Mode == StrategyMode.ModeIn)
+	if (Mode == StrategyModes.ModeIn)
 	{
 	if (nratio > UpLevel && _nratioPrev <= UpLevel)
 	buySignal = true;

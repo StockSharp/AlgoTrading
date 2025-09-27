@@ -21,7 +21,7 @@ public class VortexCrossMaConfirmationStrategy : Strategy
 	private readonly StrategyParam<int> _vortexLength;
 	private readonly StrategyParam<int> _smaLength;
 	private readonly StrategyParam<int> _smoothingLength;
-	private readonly StrategyParam<MaTypeEnum> _maType;
+	private readonly StrategyParam<MaTypes> _maType;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private SimpleMovingAverage _sma = null!;
@@ -66,7 +66,7 @@ public class VortexCrossMaConfirmationStrategy : Strategy
 	/// <summary>
 	/// Smoothing method.
 	/// </summary>
-	public MaTypeEnum MaType
+	public MaTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -84,7 +84,7 @@ public class VortexCrossMaConfirmationStrategy : Strategy
 	/// <summary>
 	/// Moving average types.
 	/// </summary>
-	public enum MaTypeEnum
+	public enum MaTypes
 	{
 		SMA,
 		EMA,
@@ -115,7 +115,7 @@ public class VortexCrossMaConfirmationStrategy : Strategy
 			.SetDisplay("Smoothing Length", "Length for additional smoothing", "General")
 			.SetCanOptimize(true);
 
-		_maType = Param(nameof(MaType), MaTypeEnum.SMA)
+		_maType = Param(nameof(MaType), MaTypes.SMA)
 			.SetDisplay("MA Type", "Smoothing method", "General")
 			.SetCanOptimize(true);
 
@@ -135,12 +135,12 @@ public class VortexCrossMaConfirmationStrategy : Strategy
 		_sma = new SimpleMovingAverage { Length = SmaLength };
 		_smoothMa = MaType switch
 		{
-			MaTypeEnum.EMA => new ExponentialMovingAverage { Length = SmoothingLength },
-			MaTypeEnum.RMA => new SmoothedMovingAverage { Length = SmoothingLength },
-			MaTypeEnum.WMA => new WeightedMovingAverage { Length = SmoothingLength },
-			MaTypeEnum.VWMA => new VolumeWeightedMovingAverage { Length = SmoothingLength },
-			MaTypeEnum.ALMA => new ArnaudLegouxMovingAverage { Length = SmoothingLength },
-			MaTypeEnum.HMA => new HullMovingAverage { Length = SmoothingLength },
+			MaTypes.EMA => new ExponentialMovingAverage { Length = SmoothingLength },
+			MaTypes.RMA => new SmoothedMovingAverage { Length = SmoothingLength },
+			MaTypes.WMA => new WeightedMovingAverage { Length = SmoothingLength },
+			MaTypes.VWMA => new VolumeWeightedMovingAverage { Length = SmoothingLength },
+			MaTypes.ALMA => new ArnaudLegouxMovingAverage { Length = SmoothingLength },
+			MaTypes.HMA => new HullMovingAverage { Length = SmoothingLength },
 			_ => new SimpleMovingAverage { Length = SmoothingLength }
 		};
 

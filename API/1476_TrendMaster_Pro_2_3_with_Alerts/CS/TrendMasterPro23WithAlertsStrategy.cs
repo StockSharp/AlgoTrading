@@ -18,17 +18,17 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TrendMasterPro23WithAlertsStrategy : Strategy
 {
-	public enum MaType
+	public enum MaTypes
 	{
 		Ema,
 		Sma
 	}
 
-	private readonly StrategyParam<MaType> _maType;
+	private readonly StrategyParam<MaTypes> _maType;
 	private readonly StrategyParam<int> _shortLength;
 	private readonly StrategyParam<int> _longLength;
 	private readonly StrategyParam<bool> _enableTrendFilter;
-	private readonly StrategyParam<MaType> _trendMaType;
+	private readonly StrategyParam<MaTypes> _trendMaType;
 	private readonly StrategyParam<int> _trendMaLength;
 	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<decimal> _rsiLong;
@@ -43,7 +43,7 @@ public class TrendMasterPro23WithAlertsStrategy : Strategy
 	/// <summary>
 	/// Type of moving average for signals.
 	/// </summary>
-	public MaType MovingAverageType
+	public MaTypes MovingAverageType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -79,7 +79,7 @@ public class TrendMasterPro23WithAlertsStrategy : Strategy
 	/// <summary>
 	/// Moving average type for trend filter.
 	/// </summary>
-	public MaType TrendMaType
+	public MaTypes TrendMaType
 	{
 		get => _trendMaType.Value;
 		set => _trendMaType.Value = value;
@@ -153,11 +153,11 @@ public class TrendMasterPro23WithAlertsStrategy : Strategy
 	/// </summary>
 	public TrendMasterPro23WithAlertsStrategy()
 	{
-		_maType = Param(nameof(MovingAverageType), MaType.Ema).SetDisplay("MA Type", "Moving average type", "Indicators");
+		_maType = Param(nameof(MovingAverageType), MaTypes.Ema).SetDisplay("MA Type", "Moving average type", "Indicators");
 		_shortLength = Param(nameof(ShortLength), 9).SetGreaterThanZero().SetDisplay("Short MA", "Short MA length", "Indicators");
 		_longLength = Param(nameof(LongLength), 21).SetGreaterThanZero().SetDisplay("Long MA", "Long MA length", "Indicators");
 		_enableTrendFilter = Param(nameof(EnableTrendFilter), false).SetDisplay("Enable Trend Filter", "Use higher timeframe trend", "Filter");
-		_trendMaType = Param(nameof(TrendMaType), MaType.Ema).SetDisplay("Trend MA Type", "Trend filter MA", "Filter");
+		_trendMaType = Param(nameof(TrendMaType), MaTypes.Ema).SetDisplay("Trend MA Type", "Trend filter MA", "Filter");
 		_trendMaLength = Param(nameof(TrendMaLength), 50).SetGreaterThanZero().SetDisplay("Trend MA Length", "Trend filter length", "Filter");
 		_rsiLength = Param(nameof(RsiLength), 14).SetGreaterThanZero().SetDisplay("RSI Length", "RSI period", "Indicators");
 		_rsiLong = Param(nameof(RsiLongThreshold), 55m).SetDisplay("RSI Long", "Long threshold", "Indicators");
@@ -173,9 +173,9 @@ public class TrendMasterPro23WithAlertsStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-	private IIndicator CreateMa(MaType type, int length)
+	private IIndicator CreateMa(MaTypes type, int length)
 	{
-		return type == MaType.Sma ? new SimpleMovingAverage { Length = length } : new ExponentialMovingAverage { Length = length };
+		return type == MaTypes.Sma ? new SimpleMovingAverage { Length = length } : new ExponentialMovingAverage { Length = length };
 	}
 
 	/// <inheritdoc />

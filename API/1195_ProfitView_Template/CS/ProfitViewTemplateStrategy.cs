@@ -18,9 +18,9 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ProfitViewTemplateStrategy : Strategy
 {
-	private readonly StrategyParam<MaType> _ma1Type;
+	private readonly StrategyParam<MaTypes> _ma1Type;
 	private readonly StrategyParam<int> _ma1Length;
-	private readonly StrategyParam<MaType> _ma2Type;
+	private readonly StrategyParam<MaTypes> _ma2Type;
 	private readonly StrategyParam<int> _ma2Length;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -31,7 +31,7 @@ public class ProfitViewTemplateStrategy : Strategy
 	/// <summary>
 	/// Moving average type.
 	/// </summary>
-	public enum MaType
+	public enum MaTypes
 	{
 		SMA,
 		EMA,
@@ -41,7 +41,7 @@ public class ProfitViewTemplateStrategy : Strategy
 	/// <summary>
 	/// Type of MA1.
 	/// </summary>
-	public MaType Ma1Type
+	public MaTypes Ma1Type
 	{
 		get => _ma1Type.Value;
 		set => _ma1Type.Value = value;
@@ -59,7 +59,7 @@ public class ProfitViewTemplateStrategy : Strategy
 	/// <summary>
 	/// Type of MA2.
 	/// </summary>
-	public MaType Ma2Type
+	public MaTypes Ma2Type
 	{
 		get => _ma2Type.Value;
 		set => _ma2Type.Value = value;
@@ -88,14 +88,14 @@ public class ProfitViewTemplateStrategy : Strategy
 	/// </summary>
 	public ProfitViewTemplateStrategy()
 	{
-		_ma1Type = Param(nameof(Ma1Type), MaType.SMA)
+		_ma1Type = Param(nameof(Ma1Type), MaTypes.SMA)
 			.SetDisplay("MA1 Type", "Type of first moving average", "Moving Averages");
 		_ma1Length = Param(nameof(Ma1Length), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("MA1 Length", "Length of first moving average", "Moving Averages")
 			.SetCanOptimize(true)
 			.SetOptimize(5, 50, 5);
-		_ma2Type = Param(nameof(Ma2Type), MaType.SMA)
+		_ma2Type = Param(nameof(Ma2Type), MaTypes.SMA)
 			.SetDisplay("MA2 Type", "Type of second moving average", "Moving Averages");
 		_ma2Length = Param(nameof(Ma2Length), 100)
 			.SetGreaterThanZero()
@@ -135,13 +135,13 @@ public class ProfitViewTemplateStrategy : Strategy
 		}
 	}
 
-	private IIndicator CreateMa(MaType type, int length)
+	private IIndicator CreateMa(MaTypes type, int length)
 	{
 		return type switch
 		{
-			MaType.SMA => new SimpleMovingAverage { Length = length },
-			MaType.EMA => new ExponentialMovingAverage { Length = length },
-			MaType.RMA => new SmoothedMovingAverage { Length = length },
+			MaTypes.SMA => new SimpleMovingAverage { Length = length },
+			MaTypes.EMA => new ExponentialMovingAverage { Length = length },
+			MaTypes.RMA => new SmoothedMovingAverage { Length = length },
 			_ => throw new ArgumentOutOfRangeException(nameof(type))
 		};
 	}

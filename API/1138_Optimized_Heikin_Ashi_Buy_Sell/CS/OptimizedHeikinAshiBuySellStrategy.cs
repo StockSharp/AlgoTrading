@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class OptimizedHeikinAshiBuySellStrategy : Strategy
 {
-	public enum TradeType
+	public enum TradeTypes
 	{
 		BuyOnly,
 		SellOnly
@@ -28,7 +28,7 @@ public class OptimizedHeikinAshiBuySellStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<DateTimeOffset> _startDate;
 	private readonly StrategyParam<DateTimeOffset> _endDate;
-	private readonly StrategyParam<TradeType> _tradeType;
+	private readonly StrategyParam<TradeTypes> _tradeType;
 	private readonly StrategyParam<bool> _useStopLoss;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<bool> _useTakeProfit;
@@ -48,7 +48,7 @@ public class OptimizedHeikinAshiBuySellStrategy : Strategy
 		_endDate = Param(nameof(EndDate), new DateTimeOffset(new DateTime(2024, 1, 1), TimeSpan.Zero))
 			.SetDisplay("End Date", "Backtest end date", "General");
 
-		_tradeType = Param(nameof(TradeMode), TradeType.BuyOnly)
+		_tradeType = Param(nameof(TradeMode), TradeTypes.BuyOnly)
 			.SetDisplay("Trade Type", "Choose buy or sell mode", "General");
 
 		_useStopLoss = Param(nameof(UseStopLoss), true)
@@ -82,7 +82,7 @@ public class OptimizedHeikinAshiBuySellStrategy : Strategy
 		set => _endDate.Value = value;
 	}
 
-	public TradeType TradeMode
+	public TradeTypes TradeMode
 	{
 		get => _tradeType.Value;
 		set => _tradeType.Value = value;
@@ -177,7 +177,7 @@ public class OptimizedHeikinAshiBuySellStrategy : Strategy
 		var isBullish = haClose > haOpen;
 		var isBearish = haClose < haOpen;
 
-		if (TradeMode == TradeType.BuyOnly)
+		if (TradeMode == TradeTypes.BuyOnly)
 		{
 			if (isBullish && Position <= 0)
 				BuyMarket(Volume + Math.Abs(Position));

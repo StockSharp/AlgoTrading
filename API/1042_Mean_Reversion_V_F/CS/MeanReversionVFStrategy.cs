@@ -15,7 +15,7 @@ namespace StockSharp.Samples.Strategies;
 
 public class MeanReversionVFStrategy : Strategy
 {
-	public enum MaType
+	public enum MaTypes
 	{
 		Wma,
 		Sma,
@@ -24,7 +24,7 @@ public class MeanReversionVFStrategy : Strategy
 		Hma
 	}
 
-	private readonly StrategyParam<MaType> _maType;
+	private readonly StrategyParam<MaTypes> _maType;
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<decimal> _deviation1;
 	private readonly StrategyParam<decimal> _deviation2;
@@ -51,7 +51,7 @@ public class MeanReversionVFStrategy : Strategy
 	private decimal _trailPrice;
 	private decimal _extremePrice;
 
-	public MaType MovingAverageType { get => _maType.Value; set => _maType.Value = value; }
+	public MaTypes MovingAverageType { get => _maType.Value; set => _maType.Value = value; }
 	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
 	public decimal Deviation1 { get => _deviation1.Value; set => _deviation1.Value = value; }
 	public decimal Deviation2 { get => _deviation2.Value; set => _deviation2.Value = value; }
@@ -71,7 +71,7 @@ public class MeanReversionVFStrategy : Strategy
 
 	public MeanReversionVFStrategy()
 	{
-		_maType = Param(nameof(MovingAverageType), MaType.Wma)
+		_maType = Param(nameof(MovingAverageType), MaTypes.Wma)
 			.SetDisplay("MA Type", "Type of moving average", "General");
 
 		_maLength = Param(nameof(MaLength), 20)
@@ -267,15 +267,15 @@ public class MeanReversionVFStrategy : Strategy
 		_extremePrice = 0m;
 	}
 
-	private static LengthIndicator<decimal> CreateMa(MaType type, int length)
+	private static LengthIndicator<decimal> CreateMa(MaTypes type, int length)
 	{
 		return type switch
 		{
-			MaType.Sma => new SimpleMovingAverage { Length = length },
-			MaType.Ema => new ExponentialMovingAverage { Length = length },
-			MaType.Wma => new WeightedMovingAverage { Length = length },
-			MaType.Rma => new SmoothedMovingAverage { Length = length },
-			MaType.Hma => new HullMovingAverage { Length = length },
+			MaTypes.Sma => new SimpleMovingAverage { Length = length },
+			MaTypes.Ema => new ExponentialMovingAverage { Length = length },
+			MaTypes.Wma => new WeightedMovingAverage { Length = length },
+			MaTypes.Rma => new SmoothedMovingAverage { Length = length },
+			MaTypes.Hma => new HullMovingAverage { Length = length },
 			_ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
 		};
 	}

@@ -22,7 +22,7 @@ public class RmacdReversalStrategy : Strategy
 	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<int> _signalLength;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<AlgMode> _mode;
+        private readonly StrategyParam<AlgModes> _mode;
 
 	private decimal _prevMacd;
 	private decimal _prevMacd2;
@@ -69,7 +69,7 @@ public class RmacdReversalStrategy : Strategy
 	/// <summary>
 	/// Entry mode selection.
 	/// </summary>
-	public AlgMode Mode
+        public AlgModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -95,7 +95,7 @@ public class RmacdReversalStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 
-		_mode = Param(nameof(Mode), AlgMode.MacdDisposition)
+                _mode = Param(nameof(Mode), AlgModes.MacdDisposition)
 			.SetDisplay("Mode", "Entry algorithm", "Trading");
 	}
 
@@ -171,24 +171,24 @@ public class RmacdReversalStrategy : Strategy
 		var buy = false;
 		var sell = false;
 
-		switch (Mode)
-		{
-			case AlgMode.Breakdown:
+                switch (Mode)
+                {
+                        case AlgModes.Breakdown:
 				buy = _prevMacd > 0m && macd <= 0m;
 				sell = _prevMacd < 0m && macd >= 0m;
 				break;
 
-			case AlgMode.MacdTwist:
+                        case AlgModes.MacdTwist:
 				buy = _prevMacd < _prevMacd2 && macd > _prevMacd;
 				sell = _prevMacd > _prevMacd2 && macd < _prevMacd;
 				break;
 
-			case AlgMode.SignalTwist:
+                        case AlgModes.SignalTwist:
 				buy = _prevSignal < _prevSignal2 && signal > _prevSignal;
 				sell = _prevSignal > _prevSignal2 && signal < _prevSignal;
 				break;
 
-			case AlgMode.MacdDisposition:
+                        case AlgModes.MacdDisposition:
 				buy = _prevMacd > _prevSignal && macd <= signal;
 				sell = _prevMacd < _prevSignal && macd >= signal;
 				break;
@@ -214,7 +214,7 @@ public class RmacdReversalStrategy : Strategy
 	/// <summary>
 	/// Entry modes for RMACD strategy.
 	/// </summary>
-	public enum AlgMode
+        public enum AlgModes
 	{
 		/// <summary>
 		/// MACD histogram crossing the zero line.

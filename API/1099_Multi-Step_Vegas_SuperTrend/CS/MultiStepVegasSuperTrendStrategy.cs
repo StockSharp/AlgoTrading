@@ -23,7 +23,7 @@ public class MultiStepVegasSuperTrendStrategy : Strategy
 	private readonly StrategyParam<int> _vegasWindow;
 	private readonly StrategyParam<decimal> _superTrendMultiplier;
 	private readonly StrategyParam<decimal> _volatilityAdjustment;
-private readonly StrategyParam<MaType> _maType;
+private readonly StrategyParam<MaTypes> _maType;
 private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<bool> _useTakeProfit;
 	private readonly StrategyParam<decimal> _takeProfitPercent1;
@@ -44,7 +44,7 @@ private readonly StrategyParam<Sides?> _direction;
 	private decimal? _prevLower;
 	private int _trend = 1;
 
-	public enum MaType
+	public enum MaTypes
 	{
 		Simple,
 		Jurik
@@ -70,7 +70,7 @@ private readonly StrategyParam<Sides?> _direction;
 		_volatilityAdjustment = Param(nameof(VolatilityAdjustment), 5m)
 			.SetDisplay("Volatility Adjustment", "Multiplier adjustment factor", "Parameters");
 
-		_maType = Param(nameof(MaType), MaType.Simple)
+		_maType = Param(nameof(MaType), MaTypes.Simple)
 			.SetDisplay("MA Type", "Vegas moving average type", "Parameters");
 	 _direction = Param(nameof(Direction), null)
 	        .SetDisplay("Direction", "Trade direction", "Parameters");
@@ -106,7 +106,7 @@ private readonly StrategyParam<Sides?> _direction;
 	public int VegasWindow { get => _vegasWindow.Value; set => _vegasWindow.Value = value; }
 	public decimal SuperTrendMultiplier { get => _superTrendMultiplier.Value; set => _superTrendMultiplier.Value = value; }
 	public decimal VolatilityAdjustment { get => _volatilityAdjustment.Value; set => _volatilityAdjustment.Value = value; }
-	public MaType MaType { get => _maType.Value; set => _maType.Value = value; }
+	public MaTypes MaType { get => _maType.Value; set => _maType.Value = value; }
 public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 	public bool UseTakeProfit { get => _useTakeProfit.Value; set => _useTakeProfit.Value = value; }
 	public decimal TakeProfitPercent1 { get => _takeProfitPercent1.Value; set => _takeProfitPercent1.Value = value; }
@@ -124,7 +124,7 @@ public Sides? Direction { get => _direction.Value; set => _direction.Value = val
 	{
 		base.OnStarted(time);
 
-		_vegasMa = CreateMa(MaType, VegasWindow);
+		_vegasMa = CreateMa(MaTypes, VegasWindow);
 		_std = new StandardDeviation { Length = VegasWindow };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 
@@ -220,11 +220,11 @@ public Sides? Direction { get => _direction.Value; set => _direction.Value = val
 		Place(4, TakeProfitPercent4, TakeProfitAmount4);
 	}
 
-	private static IIndicator CreateMa(MaType type, int length)
+	private static IIndicator CreateMa(MaTypes type, int length)
 	{
 		return type switch
 		{
-			MaType.Jurik => new JurikMovingAverage { Length = length },
+			MaTypes.Jurik => new JurikMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}

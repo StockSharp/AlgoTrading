@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TickDeltaVolumeStrategy : Strategy
 {
-	public enum DeltaMode
+	public enum DeltaModes
 	{
 		/// <summary>Use volume delta.</summary>
 		Volume,
@@ -28,7 +28,7 @@ public class TickDeltaVolumeStrategy : Strategy
 		PriceVolume
 	}
 
-	private readonly StrategyParam<DeltaMode> _mode;
+	private readonly StrategyParam<DeltaModes> _mode;
 	private readonly StrategyParam<int> _length;
 
 	private ExponentialMovingAverage _mean;
@@ -38,7 +38,7 @@ public class TickDeltaVolumeStrategy : Strategy
 	/// <summary>
 	/// Delta calculation mode.
 	/// </summary>
-	public DeltaMode Mode
+	public DeltaModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -58,7 +58,7 @@ public class TickDeltaVolumeStrategy : Strategy
 	/// </summary>
 	public TickDeltaVolumeStrategy()
 	{
-		_mode = Param(nameof(Mode), DeltaMode.Volume)
+		_mode = Param(nameof(Mode), DeltaModes.Volume)
 		.SetDisplay("Mode", "Delta calculation mode", "General");
 
 		_length = Param(nameof(Length), 10)
@@ -103,8 +103,8 @@ public class TickDeltaVolumeStrategy : Strategy
 
 		var vpd = Mode switch
 		{
-			DeltaMode.Price => priceDelta,
-			DeltaMode.PriceVolume => priceDelta * volumeDelta,
+			DeltaModes.Price => priceDelta,
+			DeltaModes.PriceVolume => priceDelta * volumeDelta,
 			_ => volumeDelta
 		};
 

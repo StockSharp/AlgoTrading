@@ -27,7 +27,7 @@ public class GgRsiCciStrategy : Strategy
 	private readonly StrategyParam<bool> _allowSellOpen;
 	private readonly StrategyParam<bool> _allowBuyClose;
 	private readonly StrategyParam<bool> _allowSellClose;
-	private readonly StrategyParam<SignalMode> _mode;
+	private readonly StrategyParam<SignalModes> _mode;
 
 	private SimpleMovingAverage _rsiFast = null!;
 	private SimpleMovingAverage _rsiSlow = null!;
@@ -38,7 +38,7 @@ public class GgRsiCciStrategy : Strategy
 	/// <summary>
 	/// Defines how positions are closed.
 	/// </summary>
-	public enum SignalMode
+	public enum SignalModes
 	{
 		/// <summary>Position is closed only on opposite signal.</summary>
 		Trend,
@@ -76,7 +76,7 @@ public class GgRsiCciStrategy : Strategy
 		_allowSellClose = Param(nameof(AllowSellClose), true)
 			.SetDisplay("Close Long", "Permit closing long positions.", "Permissions");
 
-		_mode = Param(nameof(Mode), SignalMode.Flat)
+		_mode = Param(nameof(Mode), SignalModes.Flat)
 			.SetDisplay("Mode", "Closing style.", "Trading");
 	}
 
@@ -129,7 +129,7 @@ public class GgRsiCciStrategy : Strategy
 		set => _allowSellClose.Value = value;
 	}
 
-	public SignalMode Mode
+	public SignalModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -196,7 +196,7 @@ public class GgRsiCciStrategy : Strategy
 			if (AllowSellOpen && Position >= 0 && _prevSignal != 0)
 				SellMarket(Volume + Math.Abs(Position));
 		}
-		else if (Mode == SignalMode.Flat)
+		else if (Mode == SignalModes.Flat)
 		{
 			if (AllowBuyClose && Position > 0)
 				SellMarket(Position);

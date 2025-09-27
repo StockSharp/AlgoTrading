@@ -22,7 +22,7 @@ public class BollingerBandsTrailingStopStrategy : Strategy
 	private readonly StrategyParam<decimal> _bbDeviation;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
-	private readonly StrategyParam<MovingAverageTypeEnum> _maType;
+	private readonly StrategyParam<MovingAverageTypes> _maType;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _highestPrice;
@@ -51,7 +51,7 @@ public class BollingerBandsTrailingStopStrategy : Strategy
 	/// <summary>
 	/// Moving average type for Bollinger basis.
 	/// </summary>
-	public MovingAverageTypeEnum MaType { get => _maType.Value; set => _maType.Value = value; }
+	public MovingAverageTypes MaType { get => _maType.Value; set => _maType.Value = value; }
 
 	/// <summary>
 	/// Candle type.
@@ -83,7 +83,7 @@ public class BollingerBandsTrailingStopStrategy : Strategy
 			.SetDisplay("ATR Multiplier", "ATR trailing stop multiplier", "Risk")
 			.SetCanOptimize(true);
 
-		_maType = Param(nameof(MaType), MovingAverageTypeEnum.Simple)
+		_maType = Param(nameof(MaType), MovingAverageTypes.Simple)
 			.SetDisplay("MA Type", "Moving average for Bollinger basis", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -167,14 +167,14 @@ public class BollingerBandsTrailingStopStrategy : Strategy
 		}
 	}
 
-	private static MovingAverage CreateMa(MovingAverageTypeEnum type, int length)
+	private static MovingAverage CreateMa(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypeEnum.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageTypeEnum.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageTypeEnum.Weighted => new WeightedMovingAverage { Length = length },
-			MovingAverageTypeEnum.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
+			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -182,7 +182,7 @@ public class BollingerBandsTrailingStopStrategy : Strategy
 	/// <summary>
 	/// Moving average types.
 	/// </summary>
-	public enum MovingAverageTypeEnum
+	public enum MovingAverageTypes
 	{
 		/// <summary>
 		/// Simple moving average.

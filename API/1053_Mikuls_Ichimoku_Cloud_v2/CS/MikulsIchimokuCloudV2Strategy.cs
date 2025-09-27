@@ -22,8 +22,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MikulsIchimokuCloudV2Strategy : Strategy
 {
-	private readonly StrategyParam<TrailSource> _trailSource;
-	private readonly StrategyParam<TrailMethod> _trailMethod;
+	private readonly StrategyParam<TrailSources> _trailSource;
+	private readonly StrategyParam<TrailMethods> _trailMethod;
 	private readonly StrategyParam<decimal> _trailPercent;
 	private readonly StrategyParam<int> _swingLookback;
 	private readonly StrategyParam<int> _atrPeriod;
@@ -32,7 +32,7 @@ public class MikulsIchimokuCloudV2Strategy : Strategy
 	private readonly StrategyParam<bool> _useTakeProfit;
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 	private readonly StrategyParam<bool> _useMaFilter;
-	private readonly StrategyParam<MovingAverageType> _maType;
+	private readonly StrategyParam<MovingAverageTypes> _maType;
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<int> _tenkanPeriod;
 	private readonly StrategyParam<int> _kijunPeriod;
@@ -52,12 +52,12 @@ public class MikulsIchimokuCloudV2Strategy : Strategy
 	/// <summary>
 	/// Source for trailing stop.
 	/// </summary>
-	public TrailSource TrailSource { get => _trailSource.Value; set => _trailSource.Value = value; }
+	public TrailSources TrailSource { get => _trailSource.Value; set => _trailSource.Value = value; }
 
 	/// <summary>
 	/// Trailing calculation method.
 	/// </summary>
-	public TrailMethod TrailMethod { get => _trailMethod.Value; set => _trailMethod.Value = value; }
+	public TrailMethods TrailMethod { get => _trailMethod.Value; set => _trailMethod.Value = value; }
 
 	/// <summary>
 	/// Percent for trailing stop.
@@ -102,7 +102,7 @@ public class MikulsIchimokuCloudV2Strategy : Strategy
 	/// <summary>
 	/// Moving average type.
 	/// </summary>
-	public MovingAverageType MaType { get => _maType.Value; set => _maType.Value = value; }
+	public MovingAverageTypes MaType { get => _maType.Value; set => _maType.Value = value; }
 
 	/// <summary>
 	/// Moving average length.
@@ -139,10 +139,10 @@ public class MikulsIchimokuCloudV2Strategy : Strategy
 	/// </summary>
 	public MikulsIchimokuCloudV2Strategy()
 	{
-		_trailSource = Param(nameof(TrailSource), Strategies.TrailSource.LowsHighs)
+		_trailSource = Param(nameof(TrailSource), Strategies.TrailSources.LowsHighs)
 			.SetDisplay("Trail Source", "Source for trailing stop", "Trailing");
 
-		_trailMethod = Param(nameof(TrailMethod), Strategies.TrailMethod.Atr)
+		_trailMethod = Param(nameof(TrailMethod), Strategies.TrailMethods.Atr)
 			.SetDisplay("Trail Method", "Trailing calculation method", "Trailing");
 
 		_trailPercent = Param(nameof(TrailPercent), 10m)
@@ -174,7 +174,7 @@ public class MikulsIchimokuCloudV2Strategy : Strategy
 		_useMaFilter = Param(nameof(UseMaFilter), false)
 			.SetDisplay("Use MA Filter", "Enable moving average filter", "MA Filter");
 
-		_maType = Param(nameof(MaType), Strategies.MovingAverageType.Ema)
+		_maType = Param(nameof(MaType), Strategies.MovingAverageTypes.Ema)
 			.SetDisplay("MA Type", "Moving average type", "MA Filter");
 
 		_maLength = Param(nameof(MaLength), 200)
@@ -242,15 +242,15 @@ public class MikulsIchimokuCloudV2Strategy : Strategy
 		}
 	}
 
-	private static IIndicator CreateMa(MovingAverageType type, int length)
+	private static IIndicator CreateMa(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageType.Sma => new SMA { Length = length },
-			MovingAverageType.Wma => new WMA { Length = length },
-			MovingAverageType.Hma => new HMA { Length = length },
-			MovingAverageType.Vwma => new VWMA { Length = length },
-			MovingAverageType.Vwap => new VWAP { Length = length },
+			MovingAverageTypes.Sma => new SMA { Length = length },
+			MovingAverageTypes.Wma => new WMA { Length = length },
+			MovingAverageTypes.Hma => new HMA { Length = length },
+			MovingAverageTypes.Vwma => new VWMA { Length = length },
+			MovingAverageTypes.Vwap => new VWAP { Length = length },
 			_ => new EMA { Length = length }
 		};
 	}
@@ -292,23 +292,23 @@ public class MikulsIchimokuCloudV2Strategy : Strategy
 
 		decimal? nextTrail = null;
 
-		if (TrailMethod == TrailMethod.Atr)
+		if (TrailMethods == TrailMethods.Atr)
 		{
 			var atrValue = atr * AtrMultiplier;
-			nextTrail = TrailSource switch
+			nextTrail = TrailSources switch
 			{
-				TrailSource.Close => close - atrValue,
-				TrailSource.Open => open - atrValue,
+				TrailSources.Close => close - atrValue,
+				TrailSources.Open => open - atrValue,
 				_ => swingLow - atrValue
 			};
 		}
-		else if (TrailMethod == TrailMethod.Percent)
+		else if (TrailMethods == TrailMethods.Percent)
 		{
 			var percentMulti = (100m - TrailPercent) / 100m;
-			var basis = TrailSource switch
+			var basis = TrailSources switch
 			{
-				TrailSource.Close => close,
-				TrailSource.Open => open,
+				TrailSources.Close => close,
+				TrailSources.Open => open,
 				_ => swingLow
 			};
 			nextTrail = basis * percentMulti;
@@ -351,7 +351,7 @@ public class MikulsIchimokuCloudV2Strategy : Strategy
 	/// <summary>
 	/// Trailing stop source options.
 	/// </summary>
-	public enum TrailSource
+	public enum TrailSources
 	{
 		LowsHighs,
 		Close,
@@ -361,7 +361,7 @@ public class MikulsIchimokuCloudV2Strategy : Strategy
 	/// <summary>
 	/// Trailing stop methods.
 	/// </summary>
-	public enum TrailMethod
+	public enum TrailMethods
 	{
 		Atr,
 		Percent,
@@ -371,7 +371,7 @@ public class MikulsIchimokuCloudV2Strategy : Strategy
 	/// <summary>
 	/// Moving average types.
 	/// </summary>
-	public enum MovingAverageType
+	public enum MovingAverageTypes
 	{
 		Ema,
 		Sma,

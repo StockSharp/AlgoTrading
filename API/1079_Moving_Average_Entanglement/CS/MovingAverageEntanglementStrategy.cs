@@ -21,7 +21,7 @@ public class MovingAverageEntanglementStrategy : Strategy
 	private readonly StrategyParam<int> _volatilityPeriod;
 	private readonly StrategyParam<decimal> _deadZonePercentage;
 	private readonly StrategyParam<decimal> _deviationMultiplier;
-	private readonly StrategyParam<MaType> _maType;
+	private readonly StrategyParam<MaTypes> _maType;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private MovingAverage _fastMa = null!;
@@ -67,7 +67,7 @@ public class MovingAverageEntanglementStrategy : Strategy
 		set => _deviationMultiplier.Value = value;
 	}
 
-	public MaType MaTypeParam
+	public MaTypes MaTypeParam
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -104,7 +104,7 @@ public class MovingAverageEntanglementStrategy : Strategy
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.5m)
 			.SetDisplay("Deviation Multiplier", "Std dev multiplier", "Trading");
 
-		_maType = Param(nameof(MaTypeParam), MaType.Sma)
+		_maType = Param(nameof(MaTypeParam), MaTypes.Sma)
 			.SetDisplay("MA Type", "Type of moving average", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -176,16 +176,16 @@ public class MovingAverageEntanglementStrategy : Strategy
 		_prevSellCondition = sellCondition;
 	}
 
-	private static MovingAverage CreateMa(MaType type, int length)
+	private static MovingAverage CreateMa(MaTypes type, int length)
 	{
 		return type switch
 		{
-		MaType.Ema => new ExponentialMovingAverage { Length = length },
+		MaTypes.Ema => new ExponentialMovingAverage { Length = length },
 		_ => new SimpleMovingAverage { Length = length },
 		};
 	}
 
-	public enum MaType
+	public enum MaTypes
 	{
 		Sma = 1,
 		Ema

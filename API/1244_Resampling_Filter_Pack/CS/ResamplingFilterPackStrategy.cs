@@ -19,14 +19,14 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ResamplingFilterPackStrategy : Strategy
 {
-	public enum FilterType
+	public enum FilterTypes
 	{
 		Sma,
 		Ema
 	}
 
 	private readonly StrategyParam<int> _barsPerSample;
-	private readonly StrategyParam<FilterType> _filterType;
+	private readonly StrategyParam<FilterTypes> _filterType;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -48,7 +48,7 @@ public class ResamplingFilterPackStrategy : Strategy
 	/// <summary>
 	/// Moving average type.
 	/// </summary>
-	public FilterType MovingAverageType
+	public FilterTypes MovingAverageType
 	{
 		get => _filterType.Value;
 		set => _filterType.Value = value;
@@ -82,7 +82,7 @@ public class ResamplingFilterPackStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(3, 7, 1);
 
-		_filterType = Param(nameof(MovingAverageType), FilterType.Ema)
+		_filterType = Param(nameof(MovingAverageType), FilterTypes.Ema)
 			.SetDisplay("Filter Type", "Moving average type", "Filter");
 
 		_maPeriod = Param(nameof(MaPeriod), 9)
@@ -105,7 +105,7 @@ public class ResamplingFilterPackStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_ma = MovingAverageType == FilterType.Sma
+		_ma = MovingAverageType == FilterTypes.Sma
 			? new SimpleMovingAverage { Length = MaPeriod }
 			: new ExponentialMovingAverage { Length = MaPeriod };
 

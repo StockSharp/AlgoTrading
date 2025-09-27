@@ -22,7 +22,7 @@ public class JBrainUltraRsiStrategy : Strategy
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<int> _stochLength;
 	private readonly StrategyParam<int> _signalLength;
-	private readonly StrategyParam<AlgorithmMode> _mode;
+	private readonly StrategyParam<AlgorithmModes> _mode;
 	private readonly StrategyParam<bool> _allowLongEntry;
 	private readonly StrategyParam<bool> _allowShortEntry;
 	private readonly StrategyParam<bool> _allowLongExit;
@@ -66,7 +66,7 @@ public class JBrainUltraRsiStrategy : Strategy
 	/// <summary>
 	/// Mode combining indicators.
 	/// </summary>
-	public AlgorithmMode Mode
+	public AlgorithmModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -137,7 +137,7 @@ public class JBrainUltraRsiStrategy : Strategy
 		.SetDisplay("Stochastic %D", "Period for %D line", "Indicators")
 		.SetCanOptimize(true);
 		
-		_mode = Param(nameof(Mode), AlgorithmMode.Composition)
+		_mode = Param(nameof(Mode), AlgorithmModes.Composition)
 		.SetDisplay("Mode", "Algorithm to enter the market", "General");
 		
 		_allowLongEntry = Param(nameof(AllowLongEntry), true)
@@ -254,15 +254,15 @@ public class JBrainUltraRsiStrategy : Strategy
 		
 		switch (Mode)
 		{
-			case AlgorithmMode.JBrainSig1Filter:
+			case AlgorithmModes.JBrainSig1Filter:
 			buySignal = rsiUp && k > d;
 			sellSignal = rsiDown && k < d;
 			break;
-			case AlgorithmMode.UltraRsiFilter:
+			case AlgorithmModes.UltraRsiFilter:
 			buySignal = stochUp && rsi > 50m;
 			sellSignal = stochDown && rsi < 50m;
 			break;
-			case AlgorithmMode.Composition:
+			case AlgorithmModes.Composition:
 			buySignal = rsiUp && stochUp;
 			sellSignal = rsiDown && stochDown;
 			break;
@@ -292,7 +292,7 @@ public class JBrainUltraRsiStrategy : Strategy
 /// <summary>
 /// Combination modes for indicators.
 /// </summary>
-public enum AlgorithmMode
+public enum AlgorithmModes
 {
 	JBrainSig1Filter,
 	UltraRsiFilter,

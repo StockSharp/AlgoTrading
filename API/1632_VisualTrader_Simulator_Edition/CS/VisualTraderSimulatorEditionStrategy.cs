@@ -19,19 +19,19 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class VisualTraderSimulatorEditionStrategy : Strategy
 {
-	public enum TradeDirection
+	public enum TradeDirections
 	{
 		Buy,
 		Sell
 	}
 
-	private readonly StrategyParam<TradeDirection> _tradeDirection;
+	private readonly StrategyParam<TradeDirections> _tradeDirection;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
 
 	public VisualTraderSimulatorEditionStrategy()
 	{
-		_tradeDirection = Param(nameof(Direction), TradeDirection.Buy)
+		_tradeDirection = Param(nameof(Direction), TradeDirections.Buy)
 			.SetDisplay("Trade Direction", "Initial trade direction", "General");
 
 		_takeProfit = Param(nameof(TakeProfit), 0m)
@@ -48,7 +48,7 @@ public class VisualTraderSimulatorEditionStrategy : Strategy
 	/// <summary>
 	/// Direction of the initial trade.
 	/// </summary>
-	public TradeDirection Direction
+	public TradeDirections Direction
 	{
 		get => _tradeDirection.Value;
 		set => _tradeDirection.Value = value;
@@ -81,7 +81,7 @@ public class VisualTraderSimulatorEditionStrategy : Strategy
 			takeProfit: TakeProfit > 0 ? new Unit(TakeProfit, UnitTypes.Absolute) : default,
 			stopLoss: StopLoss > 0 ? new Unit(StopLoss, UnitTypes.Absolute) : default);
 
-		if (Direction == TradeDirection.Buy)
+		if (Direction == TradeDirections.Buy)
 			BuyMarket();
 		else
 			SellMarket();

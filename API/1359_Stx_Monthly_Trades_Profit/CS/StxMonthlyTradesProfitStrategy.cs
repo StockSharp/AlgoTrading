@@ -20,7 +20,7 @@ public class StxMonthlyTradesProfitStrategy : Strategy
 {
 	private readonly StrategyParam<string> _testCase;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<ProfitMode> _profitMode;
+	private readonly StrategyParam<ProfitModes> _profitMode;
 	private readonly StrategyParam<int> _leverage;
 	private readonly StrategyParam<bool> _showYearly;
 
@@ -41,7 +41,7 @@ public class StxMonthlyTradesProfitStrategy : Strategy
 	/// <summary>
 	/// Profit calculation modes.
 	/// </summary>
-	public enum ProfitMode
+	public enum ProfitModes
 	{
 		/// <summary>Disable profit calculation.</summary>
 		Disabled,
@@ -66,7 +66,7 @@ public class StxMonthlyTradesProfitStrategy : Strategy
 	}
 
 	/// <summary>Profit calculation mode.</summary>
-	public ProfitMode Mode
+	public ProfitModes Mode
 	{
 		get => _profitMode.Value;
 		set => _profitMode.Value = value;
@@ -97,7 +97,7 @@ public class StxMonthlyTradesProfitStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
-		_profitMode = Param(nameof(Mode), ProfitMode.MonthlyProfit)
+		_profitMode = Param(nameof(Mode), ProfitModes.MonthlyProfit)
 			.SetDisplay("Profit Mode", "Monthly calculation mode", "Trades Profit Table");
 
 		_leverage = Param(nameof(Leverage), 1)
@@ -235,7 +235,7 @@ public class StxMonthlyTradesProfitStrategy : Strategy
 
 	private void UpdateProfit(ICandleMessage candle)
 	{
-		if (Mode == ProfitMode.Disabled)
+		if (Mode == ProfitModes.Disabled)
 			return;
 
 		var month = candle.OpenTime.Month;
@@ -247,7 +247,7 @@ public class StxMonthlyTradesProfitStrategy : Strategy
 			_monthlyPnL[year] = arr;
 		}
 
-		if (Mode == ProfitMode.MonthlyEquity)
+		if (Mode == ProfitModes.MonthlyEquity)
 		{
 			var equity = 1m + PnL;
 			_monthlyProfit = equity / (1m + _startMonthPnL) - 1m;

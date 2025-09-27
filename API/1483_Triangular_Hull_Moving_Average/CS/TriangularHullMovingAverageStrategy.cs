@@ -20,7 +20,7 @@ public class TriangularHullMovingAverageStrategy : Strategy
 {
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<EntryDirection> _entryMode;
+	private readonly StrategyParam<EntryDirections> _entryMode;
 
 	private decimal? _prev1;
 	private decimal? _prev2;
@@ -47,7 +47,7 @@ public class TriangularHullMovingAverageStrategy : Strategy
 	/// <summary>
 	/// Trade direction mode.
 	/// </summary>
-	public EntryDirection EntryMode
+	public EntryDirections EntryMode
 	{
 		get => _entryMode.Value;
 		set => _entryMode.Value = value;
@@ -66,7 +66,7 @@ public class TriangularHullMovingAverageStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_entryMode = Param(nameof(EntryMode), EntryDirection.LongAndShort)
+		_entryMode = Param(nameof(EntryMode), EntryDirections.LongAndShort)
 			.SetDisplay("Entry Mode", "Trade direction", "General");
 	}
 
@@ -131,21 +131,21 @@ public class TriangularHullMovingAverageStrategy : Strategy
 
 		switch (EntryMode)
 		{
-			case EntryDirection.LongAndShort:
+			case EntryDirections.LongAndShort:
 				if (signalUp && Position <= 0)
 					BuyMarket(volume);
 				else if (signalDn && Position >= 0)
 					SellMarket(volume);
 				break;
 
-			case EntryDirection.OnlyLong:
+			case EntryDirections.OnlyLong:
 				if (signalUp && Position <= 0)
 					BuyMarket(volume);
 				else if (signalDn && Position > 0)
 					SellMarket(Position);
 				break;
 
-			case EntryDirection.OnlyShort:
+			case EntryDirections.OnlyShort:
 				if (signalDn && Position >= 0)
 					SellMarket(volume);
 				else if (signalUp && Position < 0)
@@ -161,7 +161,7 @@ public class TriangularHullMovingAverageStrategy : Strategy
 	/// <summary>
 	/// Trade direction options.
 	/// </summary>
-	public enum EntryDirection
+	public enum EntryDirections
 	{
 		/// <summary>
 		/// Only long trades.

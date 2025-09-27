@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BullsVsBearsCrossoverStrategy : Strategy
 {
-	private readonly StrategyParam<MovingAverageTypeEnum> _maType;
+	private readonly StrategyParam<MovingAverageTypes> _maType;
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
@@ -37,7 +37,7 @@ public class BullsVsBearsCrossoverStrategy : Strategy
 	/// <summary>
 	/// Moving average calculation method.
 	/// </summary>
-	public MovingAverageTypeEnum MaType
+	public MovingAverageTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -120,7 +120,7 @@ public class BullsVsBearsCrossoverStrategy : Strategy
 	/// </summary>
 	public BullsVsBearsCrossoverStrategy()
 	{
-		_maType = Param(nameof(MaType), MovingAverageTypeEnum.SMA)
+		_maType = Param(nameof(MaType), MovingAverageTypes.SMA)
 			.SetDisplay("MA Type", "Moving average type", "General")
 			.SetCanOptimize(true);
 
@@ -255,14 +255,14 @@ public class BullsVsBearsCrossoverStrategy : Strategy
 		_prevBear = bear;
 	}
 
-	private static IIndicator CreateMovingAverage(MovingAverageTypeEnum type, int length)
+	private static IIndicator CreateMovingAverage(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypeEnum.SMA => new SimpleMovingAverage { Length = length },
-			MovingAverageTypeEnum.EMA => new ExponentialMovingAverage { Length = length },
-			MovingAverageTypeEnum.SMMA => new SmoothedMovingAverage { Length = length },
-			MovingAverageTypeEnum.WMA => new WeightedMovingAverage { Length = length },
+			MovingAverageTypes.SMA => new SimpleMovingAverage { Length = length },
+			MovingAverageTypes.EMA => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.SMMA => new SmoothedMovingAverage { Length = length },
+			MovingAverageTypes.WMA => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -271,7 +271,7 @@ public class BullsVsBearsCrossoverStrategy : Strategy
 /// <summary>
 /// Moving average types.
 /// </summary>
-public enum MovingAverageTypeEnum
+public enum MovingAverageTypes
 {
 	/// <summary>
 	/// Simple moving average.

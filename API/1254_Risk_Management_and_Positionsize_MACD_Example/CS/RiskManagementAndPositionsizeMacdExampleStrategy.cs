@@ -23,12 +23,12 @@ public class RiskManagementAndPositionsizeMacdExampleStrategy : Strategy
 	private readonly StrategyParam<bool> _leverageEquity;
 	private readonly StrategyParam<decimal> _marginFactor;
 	private readonly StrategyParam<decimal> _quantity;
-	private readonly StrategyParam<MovingAverageTypeEnum> _macdMaType;
+	private readonly StrategyParam<MovingAverageTypes> _macdMaType;
 	private readonly StrategyParam<int> _fastMaLength;
 	private readonly StrategyParam<int> _slowMaLength;
 	private readonly StrategyParam<int> _signalMaLength;
 	private readonly StrategyParam<TimeSpan> _macdTimeFrame;
-	private readonly StrategyParam<MovingAverageTypeEnum> _trendMaType;
+	private readonly StrategyParam<MovingAverageTypes> _trendMaType;
 	private readonly StrategyParam<int> _trendMaLength;
 	private readonly StrategyParam<TimeSpan> _trendTimeFrame;
 	private readonly StrategyParam<DataType> _candleType;
@@ -84,7 +84,7 @@ public class RiskManagementAndPositionsizeMacdExampleStrategy : Strategy
 	/// <summary>
 	/// Moving average type for MACD.
 	/// </summary>
-	public MovingAverageTypeEnum MacdMaType
+	public MovingAverageTypes MacdMaType
 	{
 		get => _macdMaType.Value;
 		set => _macdMaType.Value = value;
@@ -129,7 +129,7 @@ public class RiskManagementAndPositionsizeMacdExampleStrategy : Strategy
 	/// <summary>
 	/// Moving average type for trend filter.
 	/// </summary>
-	public MovingAverageTypeEnum TrendMaType
+	public MovingAverageTypes TrendMaType
 	{
 		get => _trendMaType.Value;
 		set => _trendMaType.Value = value;
@@ -185,7 +185,7 @@ public class RiskManagementAndPositionsizeMacdExampleStrategy : Strategy
 						.SetCanOptimize(true)
 						.SetOptimize(1m, 5m, 1m);
 
-		_macdMaType = Param(nameof(MacdMaType), MovingAverageTypeEnum.EMA)
+		_macdMaType = Param(nameof(MacdMaType), MovingAverageTypes.EMA)
 						  .SetDisplay("MACD MA Type", "Moving average type for MACD", "MACD Settings");
 
 		_fastMaLength = Param(nameof(FastMaLength), 11)
@@ -206,7 +206,7 @@ public class RiskManagementAndPositionsizeMacdExampleStrategy : Strategy
 		_macdTimeFrame = Param(nameof(MacdTimeFrame), TimeSpan.FromMinutes(30))
 							 .SetDisplay("MACD Higher Time Frame", "Time frame for MACD", "MACD Settings");
 
-		_trendMaType = Param(nameof(TrendMaType), MovingAverageTypeEnum.EMA)
+		_trendMaType = Param(nameof(TrendMaType), MovingAverageTypes.EMA)
 						   .SetDisplay("Trend MA Type", "Moving average type for trend", "Trend Settings");
 
 		_trendMaLength = Param(nameof(TrendMaLength), 55)
@@ -347,18 +347,18 @@ public class RiskManagementAndPositionsizeMacdExampleStrategy : Strategy
 		return equity * (1 + MarginFactor) / price;
 	}
 
-	private static MovingAverage CreateMa(MovingAverageTypeEnum type, int length)
+	private static MovingAverage CreateMa(MovingAverageTypes type, int length)
 	{
-		return type switch { MovingAverageTypeEnum.SMA => new SimpleMovingAverage { Length = length },
-							 MovingAverageTypeEnum.EMA => new ExponentialMovingAverage { Length = length },
-							 MovingAverageTypeEnum.DEMA => new DoubleExponentialMovingAverage { Length = length },
-							 MovingAverageTypeEnum.TEMA => new TripleExponentialMovingAverage { Length = length },
-							 MovingAverageTypeEnum.WMA => new WeightedMovingAverage { Length = length },
-							 MovingAverageTypeEnum.HMA => new HullMovingAverage { Length = length },
+		return type switch { MovingAverageTypes.SMA => new SimpleMovingAverage { Length = length },
+							 MovingAverageTypes.EMA => new ExponentialMovingAverage { Length = length },
+							 MovingAverageTypes.DEMA => new DoubleExponentialMovingAverage { Length = length },
+							 MovingAverageTypes.TEMA => new TripleExponentialMovingAverage { Length = length },
+							 MovingAverageTypes.WMA => new WeightedMovingAverage { Length = length },
+							 MovingAverageTypes.HMA => new HullMovingAverage { Length = length },
 							 _ => throw new ArgumentOutOfRangeException(nameof(type), type, null) };
 	}
 
-	public enum MovingAverageTypeEnum
+	public enum MovingAverageTypes
 	{
 		SMA,
 		EMA,

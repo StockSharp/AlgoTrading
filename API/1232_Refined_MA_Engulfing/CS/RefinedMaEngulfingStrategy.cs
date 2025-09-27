@@ -28,7 +28,7 @@ public class RefinedMaEngulfingStrategy : Strategy
 	private decimal _l1, _l2, _l3, _l4, _l5;
 	private decimal? _lastSwingHigh;
 	private decimal? _lastSwingLow;
-	private MarketStructure _marketStructure;
+	private MarketStructures _marketStructure;
 	private bool _structureConfirmed;
 	private decimal _prevClose;
 	private int _barIndex;
@@ -158,18 +158,18 @@ public class RefinedMaEngulfingStrategy : Strategy
 
 		if (bullBreakConfirmed)
 		{
-			_marketStructure = MarketStructure.Bullish;
+			_marketStructure = MarketStructures.Bullish;
 			_structureConfirmed = true;
 		}
 
 		if (bearBreakConfirmed)
 		{
-			_marketStructure = MarketStructure.Bearish;
+			_marketStructure = MarketStructures.Bearish;
 			_structureConfirmed = true;
 		}
 
-		var bullishStructure = _marketStructure == MarketStructure.Bullish && _structureConfirmed;
-		var bearishStructure = _marketStructure == MarketStructure.Bearish && _structureConfirmed;
+		var bullishStructure = _marketStructure == MarketStructures.Bullish && _structureConfirmed;
+		var bearishStructure = _marketStructure == MarketStructures.Bearish && _structureConfirmed;
 
 		var longConfluence = 1; // fib placeholder
 		if (bullEngulf)
@@ -214,7 +214,7 @@ public class RefinedMaEngulfingStrategy : Strategy
 		_barIndex++;
 	}
 
-	private enum MarketStructure
+	private enum MarketStructures
 	{
 		None,
 		Bullish,

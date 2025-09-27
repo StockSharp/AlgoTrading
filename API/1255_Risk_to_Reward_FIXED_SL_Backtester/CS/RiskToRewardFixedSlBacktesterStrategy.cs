@@ -21,7 +21,7 @@ public class RiskToRewardFixedSlBacktesterStrategy : Strategy
 	private readonly StrategyParam<decimal> _dealStartValue;
 	private readonly StrategyParam<bool> _useRiskToReward;
 	private readonly StrategyParam<decimal> _riskToRewardRatio;
-	private readonly StrategyParam<StopMode> _stopLossType;
+	private readonly StrategyParam<StopModes> _stopLossType;
 	private readonly StrategyParam<decimal> _atrFactor;
 	private readonly StrategyParam<int> _pivotLookback;
 	private readonly StrategyParam<decimal> _fixedTp;
@@ -44,7 +44,7 @@ public class RiskToRewardFixedSlBacktesterStrategy : Strategy
 	public decimal DealStartValue { get => _dealStartValue.Value; set => _dealStartValue.Value = value; }
 	public bool UseRiskToReward { get => _useRiskToReward.Value; set => _useRiskToReward.Value = value; }
 	public decimal RiskToRewardRatio { get => _riskToRewardRatio.Value; set => _riskToRewardRatio.Value = value; }
-	public StopMode StopLossType { get => _stopLossType.Value; set => _stopLossType.Value = value; }
+	public StopModes StopLossType { get => _stopLossType.Value; set => _stopLossType.Value = value; }
 	public decimal AtrFactor { get => _atrFactor.Value; set => _atrFactor.Value = value; }
 	public int PivotLookback { get => _pivotLookback.Value; set => _pivotLookback.Value = value; }
 	public decimal FixedTp { get => _fixedTp.Value; set => _fixedTp.Value = value; }
@@ -65,7 +65,7 @@ public class RiskToRewardFixedSlBacktesterStrategy : Strategy
 		_riskToRewardRatio = Param(nameof(RiskToRewardRatio), 1.5m)
 			.SetDisplay("Risk To Reward Ratio", "Take profit ratio", "Risk Management");
 
-		_stopLossType = Param(nameof(StopLossType), StopMode.Atr)
+		_stopLossType = Param(nameof(StopLossType), StopModes.Atr)
 			.SetDisplay("Stop Loss Type", "ATR or Pivot", "Risk Management");
 
 		_atrFactor = Param(nameof(AtrFactor), 1.4m)
@@ -140,9 +140,9 @@ public class RiskToRewardFixedSlBacktesterStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (StopLossType == StopMode.Atr && !_atr.IsFormed)
+		if (StopLossType == StopModes.Atr && !_atr.IsFormed)
 			return;
-		if (StopLossType == StopMode.PivotLow && !_lowest.IsFormed)
+		if (StopLossType == StopModes.PivotLow && !_lowest.IsFormed)
 			return;
 
 		var dealStart = candle.ClosePrice == DealStartValue;
@@ -150,8 +150,8 @@ public class RiskToRewardFixedSlBacktesterStrategy : Strategy
 		var sl = UseRiskToReward
 		? StopLossType switch
 		{
-			StopMode.Atr => candle.LowPrice - atrValue * AtrFactor,
-			StopMode.PivotLow => lowestValue,
+			StopModes.Atr => candle.LowPrice - atrValue * AtrFactor,
+			StopModes.PivotLow => lowestValue,
 			_ => candle.LowPrice - atrValue * AtrFactor,
 		}
 		: candle.ClosePrice * (1m - FixedSl);
@@ -188,7 +188,7 @@ public class RiskToRewardFixedSlBacktesterStrategy : Strategy
 			SellMarket(Position);
 	}
 
-	public enum StopMode
+	public enum StopModes
 	{
 		Atr,
 		PivotLow
