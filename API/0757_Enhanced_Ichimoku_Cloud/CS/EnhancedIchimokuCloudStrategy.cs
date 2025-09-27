@@ -19,14 +19,17 @@ namespace StockSharp.Samples.Strategies;
 /// the high 25 bars ago, Tenkan-sen above Kijun-sen and close above EMA.
 /// Exits when Tenkan-sen crosses below Kijun-sen.
 /// </summary>
-public enum TradeModes
-{
-	Ichi,
-	Cloud
-}
-
 public class EnhancedIchimokuCloudStrategy : Strategy
 {
+	/// <summary>
+	/// Trade mode options for Ichimoku Cloud processing.
+	/// </summary>
+	public enum TradeModes
+	{
+		Ichi,
+		Cloud
+	}
+
 	private readonly StrategyParam<int> _conversionPeriods;
 	private readonly StrategyParam<int> _basePeriods;
 	private readonly StrategyParam<int> _laggingSpan2Periods;

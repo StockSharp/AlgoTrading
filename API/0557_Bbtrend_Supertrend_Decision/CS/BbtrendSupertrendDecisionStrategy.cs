@@ -21,6 +21,17 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BbtrendSupertrendDecisionStrategy : Strategy
 {
+	/// <summary>
+	/// Protection mode for take profit and stop loss.
+	/// </summary>
+	public enum TpSlModes
+	{
+		None,
+		TP,
+		SL,
+		Both
+	}
+
 	private readonly StrategyParam<int> _shortBbLength;
 	private readonly StrategyParam<int> _longBbLength;
 	private readonly StrategyParam<decimal> _stdDev;
@@ -277,15 +288,4 @@ public class BbtrendSupertrendDecisionStrategy : Strategy
 		_prevDn = dn;
 		_prevSt = st;
 	}
-}
-
-/// <summary>
-/// Protection mode for take profit and stop loss.
-/// </summary>
-public enum TpSlModes
-{
-	None,
-	TP,
-	SL,
-	Both
 }

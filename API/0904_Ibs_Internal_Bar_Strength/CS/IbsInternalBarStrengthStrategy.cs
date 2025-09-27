@@ -13,18 +13,18 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum TradeTypes
-{
-	Long,
-	Short,
-	All
-}
-
 /// <summary>
 /// Internal Bar Strength mean reversion strategy with optional EMA filter and dollar-cost averaging.
 /// </summary>
 public class IbsInternalBarStrengthStrategy : Strategy
 {
+	public enum TradeTypes
+	{
+		Long,
+		Short,
+		All
+	}
+
 	private readonly StrategyParam<decimal> _ibsEntryThreshold;
 	private readonly StrategyParam<decimal> _ibsExitThreshold;
 	private readonly StrategyParam<int> _emaPeriod;

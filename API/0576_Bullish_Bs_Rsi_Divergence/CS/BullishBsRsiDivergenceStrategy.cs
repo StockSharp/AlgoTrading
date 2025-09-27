@@ -18,6 +18,19 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BullishBsRsiDivergenceStrategy : Strategy
 {
+	/// <summary>
+	/// Trailing stop-loss types.
+	/// </summary>
+	public enum TrailingStopTypes
+	{
+		/// <summary> No trailing stop. </summary>
+		None,
+		/// <summary> ATR based trailing stop. </summary>
+		Atr,
+		/// <summary> Percent based trailing stop. </summary>
+		Percent
+	}
+
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<int> _pivotRight;
 	private readonly StrategyParam<int> _pivotLeft;
@@ -233,17 +246,4 @@ public class BullishBsRsiDivergenceStrategy : Strategy
 		}
 	}
 
-}
-
-/// <summary>
-/// Trailing stop-loss types.
-/// </summary>
-public enum TrailingStopTypes
-{
-	/// <summary> No trailing stop. </summary>
-	None,
-	/// <summary> ATR based trailing stop. </summary>
-	Atr,
-	/// <summary> Percent based trailing stop. </summary>
-	Percent
 }

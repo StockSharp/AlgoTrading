@@ -11,20 +11,18 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
-public enum SignalConditions
-{
-	ZeroCrossing,
-	SignalLineCrossing,
-	DirectionChange,
-}
-
 /// <summary>
 /// Delta-RSI Oscillator Strategy
 /// </summary>
 public class DeltaRsiOscillatorStrategy : Strategy
 {
+	public enum SignalConditions
+	{
+		ZeroCrossing,
+		SignalLineCrossing,
+		DirectionChange,
+	}
+
 	private readonly StrategyParam<DataType> _candleTypeParam;
 	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<int> _signalLength;

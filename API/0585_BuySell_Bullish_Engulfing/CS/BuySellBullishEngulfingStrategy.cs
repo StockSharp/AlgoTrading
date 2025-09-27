@@ -18,6 +18,27 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BuySellBullishEngulfingStrategy : Strategy
 {
+	/// <summary>
+	/// Trend detection modes.
+	/// </summary>
+	public enum TrendModes
+	{
+		/// <summary>
+		/// Price below SMA50.
+		/// </summary>
+		Sma50,
+
+		/// <summary>
+		/// Price below SMA50 and SMA50 below SMA200.
+		/// </summary>
+		Sma50And200,
+
+		/// <summary>
+		/// No trend check.
+		/// </summary>
+		None
+	}
+
 	private readonly StrategyParam<int> _bodyEmaLength;
 
 	private readonly StrategyParam<DataType> _candleType;
@@ -205,25 +226,4 @@ public class BuySellBullishEngulfingStrategy : Strategy
 		var size = portfolioValue * (OrderPercent / 100m) / price;
 		return size > 0 ? size : Volume;
 	}
-}
-
-/// <summary>
-/// Trend detection modes.
-/// </summary>
-public enum TrendModes
-{
-	/// <summary>
-	/// Price below SMA50.
-	/// </summary>
-	Sma50,
-
-	/// <summary>
-	/// Price below SMA50 and SMA50 below SMA200.
-	/// </summary>
-	Sma50And200,
-
-	/// <summary>
-	/// No trend check.
-	/// </summary>
-	None
 }

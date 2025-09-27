@@ -18,6 +18,13 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class HullSuite1RiskNoSlTpStrategy : Strategy
 {
+	public enum HullVariations
+	{
+		Hma,
+		Ehma,
+		Thma
+	}
+
 	private readonly StrategyParam<int> _hullLength;
 	private readonly StrategyParam<HullVariations> _mode;
 	private readonly StrategyParam<DataType> _candleType;
@@ -197,11 +204,4 @@ public class HullSuite1RiskNoSlTpStrategy : Strategy
 				throw new InvalidOperationException(Mode.ToString());
 		}
 	}
-}
-
-public enum HullVariations
-{
-	Hma,
-	Ehma,
-	Thma
 }
