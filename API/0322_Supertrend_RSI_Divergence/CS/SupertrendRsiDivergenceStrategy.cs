@@ -34,7 +34,7 @@ public class SupertrendRsiDivergenceStrategy : Strategy
 
 	// Supertrend state tracking
 	private decimal _supertrendValue;
-	private TrendDirection _trendDirection = TrendDirection.None;
+	private TrendDirections _trendDirection = TrendDirections.None;
 
 	/// <summary>
 	/// Supertrend period.
@@ -111,7 +111,7 @@ public class SupertrendRsiDivergenceStrategy : Strategy
 		_rsiValues.Clear();
 		_isLongPosition = false;
 		_isShortPosition = false;
-		_trendDirection = TrendDirection.None;
+_trendDirection = TrendDirections.None;
 		_supertrendValue = 0;
 	}
 
@@ -178,15 +178,15 @@ public class SupertrendRsiDivergenceStrategy : Strategy
 		}
 
 		// Determine Supertrend trend direction
-		TrendDirection previousDirection = _trendDirection;
+TrendDirections previousDirection = _trendDirection;
 
 		if (candle.ClosePrice > _supertrendValue)
-		_trendDirection = TrendDirection.Up;
+_trendDirection = TrendDirections.Up;
 		else if (candle.ClosePrice < _supertrendValue)
-		_trendDirection = TrendDirection.Down;
+_trendDirection = TrendDirections.Down;
 
 		// Check for trend direction change
-		bool trendDirectionChanged = previousDirection != TrendDirection.None && previousDirection != _trendDirection;
+bool trendDirectionChanged = previousDirection != TrendDirections.None && previousDirection != _trendDirection;
 
 		// Check for divergence
 		bool bullishDivergence = CheckBullishDivergence();
@@ -276,7 +276,7 @@ public class SupertrendRsiDivergenceStrategy : Strategy
 	}
 
 	// Trend direction enum for tracking Supertrend state
-	private enum TrendDirection
+	private enum TrendDirections
 	{
 		None,
 		Up,

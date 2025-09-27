@@ -23,7 +23,7 @@ public class HullKMeansClusterStrategy : Strategy
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private enum MarketState
+	private enum MarketStates
 	{
 		Neutral,
 		Bullish,
@@ -31,7 +31,7 @@ public class HullKMeansClusterStrategy : Strategy
 	}
 
 	private decimal _prevHullValue;
-	private MarketState _currentMarketState = MarketState.Neutral;
+	private MarketStates _currentMarketState = MarketStates.Neutral;
 
 	// Feature data for clustering
 	private readonly Queue<decimal> _priceChangeData = [];
@@ -110,7 +110,7 @@ public class HullKMeansClusterStrategy : Strategy
 		base.OnReseted();
 
 		_prevHullValue = default;
-		_currentMarketState = MarketState.Neutral;
+_currentMarketState = MarketStates.Neutral;
 		_lastPrice = default;
 		_avgVolume = default;
 
@@ -181,7 +181,7 @@ public class HullKMeansClusterStrategy : Strategy
 		_volumeRatioData.Count >= ClusterDataLength)
 		{
 			// Perform K-Means clustering for market state detection
-			_currentMarketState = DetectMarketState();
+_currentMarketState = DetectMarketState();
 			LogInfo($"Current market state: {_currentMarketState}");
 		}
 
@@ -189,13 +189,13 @@ public class HullKMeansClusterStrategy : Strategy
 		bool isHullRising = hullValue > _prevHullValue;
 
 		// Trading logic based on Hull MA direction and market state
-		if (isHullRising && _currentMarketState == MarketState.Bullish && Position <= 0)
+if (isHullRising && _currentMarketState == MarketStates.Bullish && Position <= 0)
 		{
 			// Hull MA rising in bullish market state - Buy signal
 			LogInfo($"Buy signal: Hull MA rising ({hullValue} > {_prevHullValue}) in bullish market state");
 			BuyMarket(Volume + Math.Abs(Position));
 		}
-		else if (!isHullRising && _currentMarketState == MarketState.Bearish && Position >= 0)
+else if (!isHullRising && _currentMarketState == MarketStates.Bearish && Position >= 0)
 		{
 			// Hull MA falling in bearish market state - Sell signal
 			LogInfo($"Sell signal: Hull MA falling ({hullValue} < {_prevHullValue}) in bearish market state");
@@ -244,7 +244,7 @@ public class HullKMeansClusterStrategy : Strategy
 		_volumeRatioData.Dequeue();
 	}
 
-	private MarketState DetectMarketState()
+private MarketStates DetectMarketState()
 	{
 		// Simplified implementation of K-Means clustering for market state detection
 		// This is a basic approach - a full implementation would use proper K-Means algorithm
@@ -261,15 +261,15 @@ public class HullKMeansClusterStrategy : Strategy
 
 		if (avgRsi > 60 && avgPriceChange > 0.1m && avgVolumeRatio > 1.1m)
 		{
-			return MarketState.Bullish;
+return MarketStates.Bullish;
 		}
 		else if (avgRsi < 40 && avgPriceChange < -0.1m && avgVolumeRatio > 1.1m)
 		{
-			return MarketState.Bearish;
+return MarketStates.Bearish;
 		}
 		else
 		{
-			return MarketState.Neutral;
+return MarketStates.Neutral;
 		}
 	}
 }

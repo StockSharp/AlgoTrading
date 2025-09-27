@@ -30,14 +30,14 @@ public class KeltnerWithRLSignalStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossAtr;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private enum RLSignal
+	private enum RLSignals
 	{
 		None,
 		Buy,
 		Sell
 	}
 
-	private RLSignal _currentSignal = RLSignal.None;
+	private RLSignals _currentSignal = RLSignals.None;
 
 	// State variables for RL
 	private decimal _lastPrice;
@@ -212,14 +212,14 @@ public class KeltnerWithRLSignalStrategy : Strategy
 		// Entry conditions
 
 		// Long entry: Price above upper band and RL signal is Buy
-		if (priceAboveUpperBand && _currentSignal == RLSignal.Buy && Position <= 0)
+if (priceAboveUpperBand && _currentSignal == RLSignals.Buy && Position <= 0)
 		{
 			LogInfo($"Long signal: Price {price} > Upper Band {upperBand}, RL Signal = Buy");
 			BuyMarket(Volume);
 			_previousSignalPrice = price;
 		}
 		// Short entry: Price below lower band and RL signal is Sell
-		else if (priceBelowLowerBand && _currentSignal == RLSignal.Sell && Position >= 0)
+else if (priceBelowLowerBand && _currentSignal == RLSignals.Sell && Position >= 0)
 		{
 			LogInfo($"Short signal: Price {price} < Lower Band {lowerBand}, RL Signal = Sell");
 			SellMarket(Volume);
@@ -277,12 +277,12 @@ public class KeltnerWithRLSignalStrategy : Strategy
 		// Simplified Q-learning decision matrix
 		if (bullishCandle && priceAboveEma && (priceIncreasing || aggressiveMode))
 		{
-			_currentSignal = RLSignal.Buy;
+_currentSignal = RLSignals.Buy;
 			LogInfo("RL Signal: Buy");
 		}
 		else if (!bullishCandle && !priceAboveEma && (!priceIncreasing || aggressiveMode))
 		{
-			_currentSignal = RLSignal.Sell;
+_currentSignal = RLSignals.Sell;
 			LogInfo("RL Signal: Sell");
 		}
 		else
@@ -291,7 +291,7 @@ public class KeltnerWithRLSignalStrategy : Strategy
 			if (volatilityIncreasing)
 			{
 				// High volatility might warrant reducing exposure
-				_currentSignal = RLSignal.None;
+_currentSignal = RLSignals.None;
 				LogInfo("RL Signal: None (high volatility)");
 			}
 			// Otherwise keep current signal

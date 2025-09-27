@@ -33,7 +33,7 @@ public class WyckoffAccumulationStrategy : Strategy
 	private Highest _highest;
 	private Lowest _lowest;
 	
-	private enum WyckoffPhase
+	private enum WyckoffPhases
 	{
 		None,
 		PhaseA,  // Selling climax, automatic rally, secondary test
@@ -43,7 +43,7 @@ public class WyckoffAccumulationStrategy : Strategy
 		PhaseE   // Markup, price rise
 	}
 	
-	private WyckoffPhase _currentPhase = WyckoffPhase.None;
+	private WyckoffPhases _currentPhase = WyckoffPhases.None;
 	private decimal _lastRangeHigh;
 	private decimal _lastRangeLow;
 	private int _sidewaysCount;
@@ -136,7 +136,7 @@ public class WyckoffAccumulationStrategy : Strategy
 		_highest = default;
 		_lowest = default;
 
-		_currentPhase = WyckoffPhase.None;
+_currentPhase = WyckoffPhases.None;
 		_lastRangeHigh = 0;
 		_lastRangeLow = 0;
 		_sidewaysCount = 0;
@@ -200,26 +200,26 @@ public class WyckoffAccumulationStrategy : Strategy
 		// State machine for Wyckoff Accumulation phases
 		switch (_currentPhase)
 		{
-			case WyckoffPhase.None:
+case WyckoffPhases.None:
 				// Look for Phase A: Selling climax (high volume, wide range down bar)
 				if (!isBullish && highVolume && candle.ClosePrice < lowest)
 				{
-					_currentPhase = WyckoffPhase.PhaseA;
+_currentPhase = WyckoffPhases.PhaseA;
 					LogInfo($"Wyckoff Phase A detected: Selling climax at {candle.ClosePrice}");
 				}
 				break;
 				
-			case WyckoffPhase.PhaseA:
+case WyckoffPhases.PhaseA:
 				// Look for automatic rally (rebound from selling climax)
 				if (isBullish && candle.ClosePrice > ma)
 				{
-					_currentPhase = WyckoffPhase.PhaseB;
+_currentPhase = WyckoffPhases.PhaseB;
 					LogInfo($"Entering Wyckoff Phase B: Automatic rally at {candle.ClosePrice}");
 					_sidewaysCount = 0;
 				}
 				break;
 				
-			case WyckoffPhase.PhaseB:
+case WyckoffPhases.PhaseB:
 				// Phase B is characterized by sideways movement (accumulation)
 				if (isNarrowRange && candle.ClosePrice > _lastRangeLow && candle.ClosePrice < _lastRangeHigh)
 				{
@@ -228,7 +228,7 @@ public class WyckoffAccumulationStrategy : Strategy
 					// After sufficient sideways movement, look for Phase C
 					if (_sidewaysCount >= 5)
 					{
-						_currentPhase = WyckoffPhase.PhaseC;
+_currentPhase = WyckoffPhases.PhaseC;
 						LogInfo($"Entering Wyckoff Phase C: Accumulation complete after {_sidewaysCount} sideways candles");
 					}
 				}
@@ -238,26 +238,26 @@ public class WyckoffAccumulationStrategy : Strategy
 				}
 				break;
 				
-			case WyckoffPhase.PhaseC:
+case WyckoffPhases.PhaseC:
 				// Phase C includes a spring (price briefly goes below support)
 				if (candle.LowPrice < _lastRangeLow && candle.ClosePrice > _lastRangeLow)
 				{
 					_springLow = candle.LowPrice;
-					_currentPhase = WyckoffPhase.PhaseD;
+_currentPhase = WyckoffPhases.PhaseD;
 					LogInfo($"Entering Wyckoff Phase D: Spring detected at {_springLow}");
 				}
 				break;
 				
-			case WyckoffPhase.PhaseD:
+case WyckoffPhases.PhaseD:
 				// Phase D shows sign of strength (strong move up with volume)
 				if (isBullish && highVolume && priceAboveMA)
 				{
-					_currentPhase = WyckoffPhase.PhaseE;
+_currentPhase = WyckoffPhases.PhaseE;
 					LogInfo($"Entering Wyckoff Phase E: Sign of strength detected at {candle.ClosePrice}");
 				}
 				break;
 				
-			case WyckoffPhase.PhaseE:
+case WyckoffPhases.PhaseE:
 				// Phase E is the markup phase where we enter our position
 				if (isBullish && priceAboveMA && !_positionOpened)
 				{
@@ -279,7 +279,7 @@ public class WyckoffAccumulationStrategy : Strategy
 			{
 				SellMarket(Math.Abs(Position));
 				_positionOpened = false;
-				_currentPhase = WyckoffPhase.None; // Reset the pattern detection
+_currentPhase = WyckoffPhases.None; // Reset the pattern detection
 				
 				LogInfo($"Exit signal: Price broke above range high ({_lastRangeHigh}). Closed long position at {candle.ClosePrice}");
 			}
@@ -288,7 +288,7 @@ public class WyckoffAccumulationStrategy : Strategy
 			{
 				SellMarket(Math.Abs(Position));
 				_positionOpened = false;
-				_currentPhase = WyckoffPhase.None; // Reset the pattern detection
+_currentPhase = WyckoffPhases.None; // Reset the pattern detection
 				
 				LogInfo($"Exit signal: Price fell below MA. Pattern may have failed. Closed long position at {candle.ClosePrice}");
 			}

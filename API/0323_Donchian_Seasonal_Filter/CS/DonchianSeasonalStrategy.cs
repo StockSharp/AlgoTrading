@@ -28,7 +28,7 @@ public class DonchianSeasonalStrategy : Strategy
 	private bool _isShortPosition;
 	
 	// Seasonal data storage
-	private readonly SynchronizedDictionary<Month, decimal> _monthlyReturns = [];
+	private readonly SynchronizedDictionary<Months, decimal> _monthlyReturns = [];
 	
 	// Simulated seasonal data count
 
@@ -99,25 +99,25 @@ public class DonchianSeasonalStrategy : Strategy
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 			
 		// Initialize monthly returns with neutral values
-		foreach (Month month in Enum.GetValues(typeof(Month)))
+foreach (Months month in Enum.GetValues(typeof(Months)))
 		{
 			_monthlyReturns[month] = 0m;
 		}
 		
 		// Simulated historical seasonal data (in a real strategy, this would come from analysis of historical data)
 		// These are example values that suggest certain months tend to be bullish or bearish
-		_monthlyReturns[Month.January] = 0.8m;
-		_monthlyReturns[Month.February] = 0.3m;
-		_monthlyReturns[Month.March] = 0.6m;
-		_monthlyReturns[Month.April] = 0.9m;
-		_monthlyReturns[Month.May] = 0.2m;
-		_monthlyReturns[Month.June] = -0.4m;
-		_monthlyReturns[Month.July] = -0.2m;
-		_monthlyReturns[Month.August] = -0.7m;
-		_monthlyReturns[Month.September] = -0.9m;
-		_monthlyReturns[Month.October] = -0.1m;
-		_monthlyReturns[Month.November] = 0.5m;
-		_monthlyReturns[Month.December] = 0.7m;
+_monthlyReturns[Months.January] = 0.8m;
+_monthlyReturns[Months.February] = 0.3m;
+_monthlyReturns[Months.March] = 0.6m;
+_monthlyReturns[Months.April] = 0.9m;
+_monthlyReturns[Months.May] = 0.2m;
+_monthlyReturns[Months.June] = -0.4m;
+_monthlyReturns[Months.July] = -0.2m;
+_monthlyReturns[Months.August] = -0.7m;
+_monthlyReturns[Months.September] = -0.9m;
+_monthlyReturns[Months.October] = -0.1m;
+_monthlyReturns[Months.November] = 0.5m;
+_monthlyReturns[Months.December] = 0.7m;
 	}
 
 	/// <inheritdoc />
@@ -235,7 +235,7 @@ public class DonchianSeasonalStrategy : Strategy
 	private void UpdateSeasonalStrength(DateTimeOffset time)
 	{
 		// Get current month
-		Month currentMonth = (Month)time.Month;
+		Months currentMonth = (Months)time.Month;
 		
 		// Get historical return for this month
 		_seasonalStrength = _monthlyReturns[currentMonth];
@@ -250,7 +250,7 @@ public class DonchianSeasonalStrategy : Strategy
 	/// <summary>
 	/// Enumeration for months of the year.
 	/// </summary>
-	private enum Month
+	private enum Months
 	{
 		January = 1,
 		February,

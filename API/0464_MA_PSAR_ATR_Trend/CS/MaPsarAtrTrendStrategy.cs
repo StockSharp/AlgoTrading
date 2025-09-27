@@ -20,8 +20,8 @@ public class MaPsarAtrTrendStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastMaPeriod;
 	private readonly StrategyParam<int> _slowMaPeriod;
-	private readonly StrategyParam<MovingAverageTypeEnum> _fastMaType;
-	private readonly StrategyParam<MovingAverageTypeEnum> _slowMaType;
+	private readonly StrategyParam<MovingAverageTypes> _fastMaType;
+	private readonly StrategyParam<MovingAverageTypes> _slowMaType;
 	private readonly StrategyParam<decimal> _sarStep;
 	private readonly StrategyParam<decimal> _sarMaxStep;
 	private readonly StrategyParam<int> _atrPeriod;
@@ -54,7 +54,7 @@ public class MaPsarAtrTrendStrategy : Strategy
 	/// <summary>
 	/// Fast MA type.
 	/// </summary>
-	public MovingAverageTypeEnum FastMaType
+	public MovingAverageTypes FastMaType
 	{
 		get => _fastMaType.Value;
 		set => _fastMaType.Value = value;
@@ -63,7 +63,7 @@ public class MaPsarAtrTrendStrategy : Strategy
 	/// <summary>
 	/// Slow MA type.
 	/// </summary>
-	public MovingAverageTypeEnum SlowMaType
+	public MovingAverageTypes SlowMaType
 	{
 		get => _slowMaType.Value;
 		set => _slowMaType.Value = value;
@@ -145,10 +145,10 @@ public class MaPsarAtrTrendStrategy : Strategy
 			.SetDisplay("Slow MA Period", "Period for slow moving average", "MA")
 			.SetGreaterThanZero();
 
-		_fastMaType = Param(nameof(FastMaType), MovingAverageTypeEnum.Simple)
+		_fastMaType = Param(nameof(FastMaType), MovingAverageTypes.Simple)
 			.SetDisplay("Fast MA Type", "Type of fast moving average", "MA");
 
-		_slowMaType = Param(nameof(SlowMaType), MovingAverageTypeEnum.Simple)
+		_slowMaType = Param(nameof(SlowMaType), MovingAverageTypes.Simple)
 			.SetDisplay("Slow MA Type", "Type of slow moving average", "MA");
 
 		_sarStep = Param(nameof(SarStep), 0.02m)
@@ -229,14 +229,14 @@ public class MaPsarAtrTrendStrategy : Strategy
 		}
 	}
 
-	private IIndicator CreateMa(MovingAverageTypeEnum type, int length)
+	private IIndicator CreateMa(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypeEnum.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageTypeEnum.Weighted => new WeightedMovingAverage { Length = length },
-			MovingAverageTypeEnum.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageTypeEnum.Hull => new HullMovingAverage { Length = length },
+			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageTypes.Hull => new HullMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -296,7 +296,7 @@ public class MaPsarAtrTrendStrategy : Strategy
 	/// <summary>
 	/// Moving average type enumeration.
 	/// </summary>
-	public enum MovingAverageTypeEnum
+	public enum MovingAverageTypes
 	{
 		/// <summary>
 		/// Simple Moving Average.

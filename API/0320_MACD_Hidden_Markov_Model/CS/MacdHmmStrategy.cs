@@ -27,14 +27,14 @@ public class MacdHmmStrategy : Strategy
 	private MovingAverageConvergenceDivergenceSignal _macd;
 
 	// Hidden Markov Model states
-	private enum MarketState
+	private enum MarketStates
 	{
 		Bullish,
 		Neutral,
 		Bearish
 	}
 
-	private MarketState _currentState = MarketState.Neutral;
+	private MarketStates _currentState = MarketStates.Neutral;
 
 	// Data for HMM calculations
 	private readonly SynchronizedList<decimal> _priceChanges = [];
@@ -126,7 +126,7 @@ public class MacdHmmStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_currentState = MarketState.Neutral;
+_currentState = MarketStates.Neutral;
 		_prevPrice = 0;
 		_priceChanges.Clear();
 		_volumes.Clear();
@@ -194,20 +194,20 @@ public class MacdHmmStrategy : Strategy
 		var signal = macdTyped.Signal;
 
 		// Generate trade signals based on MACD and HMM state
-		if (macd > signal && _currentState == MarketState.Bullish && Position <= 0)
+			if (macd > signal && _currentState == MarketStates.Bullish && Position <= 0)
 		{
 			// Buy signal - MACD above signal line and bullish state
 			BuyMarket(Volume);
 			LogInfo($"Buy Signal: MACD ({macd:F6}) > Signal ({signal:F6}) in Bullish state");
 		}
-		else if (macd < signal && _currentState == MarketState.Bearish && Position >= 0)
+			else if (macd < signal && _currentState == MarketStates.Bearish && Position >= 0)
 		{
 			// Sell signal - MACD below signal line and bearish state
 			SellMarket(Volume + Math.Abs(Position));
 			LogInfo($"Sell Signal: MACD ({macd:F6}) < Signal ({signal:F6}) in Bearish state");
 		}
-		else if ((Position > 0 && (_currentState == MarketState.Neutral || _currentState == MarketState.Bearish)) ||
-		(Position < 0 && (_currentState == MarketState.Neutral || _currentState == MarketState.Bullish)))
+			else if ((Position > 0 && (_currentState == MarketStates.Neutral || _currentState == MarketStates.Bearish)) ||
+				(Position < 0 && (_currentState == MarketStates.Neutral || _currentState == MarketStates.Bullish)))
 		{
 			// Exit position if market state changes
 			ClosePosition();
@@ -275,15 +275,15 @@ public class MacdHmmStrategy : Strategy
 		// Determine market state based on price change direction and volume
 		if (positiveChanges >= 7 || (positiveChanges >= 6 && upVolume > downVolume * 1.5m))
 		{
-			_currentState = MarketState.Bullish;
+_currentState = MarketStates.Bullish;
 		}
 		else if (negativeChanges >= 7 || (negativeChanges >= 6 && downVolume > upVolume * 1.5m))
 		{
-			_currentState = MarketState.Bearish;
+_currentState = MarketStates.Bearish;
 		}
 		else
 		{
-			_currentState = MarketState.Neutral;
+_currentState = MarketStates.Neutral;
 		}
 
 		LogInfo($"Market State: {_currentState}, Positive Changes: {positiveChanges}, Negative Changes: {negativeChanges}");
