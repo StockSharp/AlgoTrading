@@ -15,8 +15,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class AfStarStrategy : Strategy
 {
-	private const int RangeLength = 10;
-	private const int MaxHistory = 512;
+	private readonly StrategyParam<int> _rangeLength;
+	private readonly StrategyParam<int> _maxHistory;
 
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<DataType> _candleType;
@@ -94,6 +94,14 @@ public class AfStarStrategy : Strategy
 		_stepRisk = Param(nameof(StepRisk), 0.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Risk Step", "Increment for risk parameter", "Williams %R");
+
+		_rangeLength = Param(nameof(RangeLength), 10)
+		.SetRange(1, 200, 1)
+		.SetDisplay("Range Length", "Bars used to compute the average range filter", "Indicator");
+
+		_maxHistory = Param(nameof(MaxHistory), 512)
+		.SetRange(10, 5000, 1)
+		.SetDisplay("Max History", "Maximum candles stored for calculations", "General");
 
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetRange(0, 10, 1)
@@ -208,6 +216,28 @@ public class AfStarStrategy : Strategy
 	{
 		get => _stepRisk.Value;
 		set => _stepRisk.Value = value;
+	}
+
+	/// <summary>
+	/// Number of bars used to calculate the average range filter.
+	/// </summary>
+	public int RangeLength
+	{
+		get => _rangeLength.Value;
+		set => _rangeLength.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum number of stored candles for calculations.
+	/// </summary>
+	public int MaxHistory
+	{
+		get => _maxHistory.Value;
+		set
+		{
+			_maxHistory.Value = value;
+			TrimHistory();
+		}
 	}
 
 	/// <summary>
@@ -349,6 +379,19 @@ public class AfStarStrategy : Strategy
 				var activeSignal = _signalQueue.Dequeue();
 				ExecuteSignal(activeSignal, candle);
 			}
+		}
+	}
+
+	private void TrimHistory()
+	{
+		while (_candles.Count > MaxHistory)
+		{
+			_candles.RemoveAt(0);
+		}
+
+		while (_value2History.Count > MaxHistory)
+		{
+			_value2History.RemoveAt(0);
 		}
 	}
 

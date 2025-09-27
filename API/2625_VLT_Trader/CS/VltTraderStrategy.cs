@@ -13,7 +13,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class VltTraderStrategy : Strategy
 {
-	private const decimal BreakoutBufferPips = 10m;
+	private readonly StrategyParam<decimal> _breakoutBufferPips;
 
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _stopLossPips;
@@ -59,6 +59,12 @@ public class VltTraderStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(5m, 30m, 5m);
 
+		_breakoutBufferPips = Param(nameof(BreakoutBufferPips), 10m)
+			.SetNotNegative()
+			.SetDisplay("Breakout Buffer (pips)", "Additional distance added to breakout entries", "Signals")
+			.SetCanOptimize(true)
+			.SetOptimize(0m, 30m, 5m);
+
 		_maxCandleSizePips = Param(nameof(MaxCandleSizePips), 100m)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Candle Size (pips)", "Largest candle range considered for comparison", "Signals")
@@ -91,6 +97,15 @@ public class VltTraderStrategy : Strategy
 	{
 		get => _stopLossPips.Value;
 		set => _stopLossPips.Value = value;
+	}
+
+	/// <summary>
+	/// Additional breakout buffer applied on both sides of the price range.
+	/// </summary>
+	public decimal BreakoutBufferPips
+	{
+		get => _breakoutBufferPips.Value;
+		set => _breakoutBufferPips.Value = value;
 	}
 
 	/// <summary>

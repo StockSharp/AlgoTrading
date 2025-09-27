@@ -13,7 +13,7 @@ using StockSharp.Messages;
 /// </summary>
 public class BollingerBandsNPositionsStrategy : Strategy
 {
-	private const decimal VolumeTolerance = 0.00000001m;
+	private readonly StrategyParam<decimal> _volumeTolerance;
 
 	private readonly StrategyParam<int> _maxPositions;
 	private readonly StrategyParam<int> _bollingerPeriod;
@@ -93,6 +93,15 @@ public class BollingerBandsNPositionsStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Net position magnitude treated as flat.
+	/// </summary>
+	public decimal VolumeTolerance
+	{
+		get => _volumeTolerance.Value;
+		set => _volumeTolerance.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type used for signal calculations.
 	/// </summary>
 	public DataType CandleType
@@ -133,6 +142,10 @@ public class BollingerBandsNPositionsStrategy : Strategy
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Step (pips)", "Trailing adjustment increment", "Risk");
+
+		_volumeTolerance = Param(nameof(VolumeTolerance), 0.00000001m)
+		.SetNotNegative()
+		.SetDisplay("Volume Tolerance", "Minimum net position magnitude treated as flat", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Source candles", "General");
