@@ -14,7 +14,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class WilliamsAoAcStrategy : Strategy
 {
-	private const int AcceleratorSmoothingPeriod = 5;
+	private readonly StrategyParam<int> _acceleratorSmoothingPeriod;
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _bollingerPeriod;
@@ -53,6 +53,10 @@ public class WilliamsAoAcStrategy : Strategy
 	/// </summary>
 	public WilliamsAoAcStrategy()
 	{
+		_acceleratorSmoothingPeriod = Param(nameof(AcceleratorSmoothingPeriod), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("AC Smoothing", "Length of the smoothing average for Accelerator Oscillator", "Awesome Oscillator");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Primary candle series used for calculations", "General");
 
@@ -217,6 +221,15 @@ public class WilliamsAoAcStrategy : Strategy
 	{
 		get => _rsiSellThreshold.Value;
 		set => _rsiSellThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Length of the smoothing average applied to the Accelerator Oscillator.
+	/// </summary>
+	public int AcceleratorSmoothingPeriod
+	{
+		get => _acceleratorSmoothingPeriod.Value;
+		set => _acceleratorSmoothingPeriod.Value = value;
 	}
 
 	/// <summary>
