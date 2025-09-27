@@ -81,7 +81,7 @@ public class ESmartTrailingStrategy : Strategy
 
 	private void ProcessTrade(ITickTradeMessage trade)
 	{
-		var tradePrice = trade.TradePrice;
+		var tradePrice = trade.Price;
 
 		if (tradePrice is null)
 			return;

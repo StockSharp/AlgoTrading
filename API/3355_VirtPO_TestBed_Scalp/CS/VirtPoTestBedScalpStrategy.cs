@@ -581,23 +581,21 @@ public class VirtPoTestBedScalpStrategy : Strategy
 			_lastAsk = askPrice;
 	}
 
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		var price = trade.TradePrice;
-		if (price is null || price <= 0m)
+		private void ProcessTrade(ITickTradeMessage trade)
+		{
+			var price = trade.Price;
+
+			_lastTradePrice = price;
+
+			if (!TickLevel)
 			return;
 
-		_lastTradePrice = price.Value;
-
-		if (!TickLevel)
-			return;
-
-		var time = trade.ServerTime != default ? trade.ServerTime : trade.LocalTime;
-		if (time == default)
+			var time = trade.ServerTime != default ? trade.ServerTime : trade.LocalTime;
+			if (time == default)
 			time = CurrentTime;
 
-		EvaluatePendingOrders(time, price.Value);
-		UpdateRiskManagement(time, price.Value, price.Value, price.Value);
+			EvaluatePendingOrders(time, price);
+			UpdateRiskManagement(time, price, price, price);
 	}
 
 	private void ProcessCandle(
@@ -695,7 +693,7 @@ public class VirtPoTestBedScalpStrategy : Strategy
 
 		ExpireVirtualOrders(candle.CloseTime);
 
-		if (!TickLevel)
+			if (!TickLevel)
 		{
 			EvaluatePendingOrders(candle.CloseTime, candle.ClosePrice);
 		}

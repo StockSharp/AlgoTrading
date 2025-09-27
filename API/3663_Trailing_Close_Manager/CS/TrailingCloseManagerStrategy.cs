@@ -254,13 +254,11 @@ public class TrailingCloseManagerStrategy : Strategy
 		UpdatePositionTargets();
 	}
 
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		var price = trade.TradePrice;
-		if (price == null || price.Value <= 0m)
-			return;
+		private void ProcessTrade(ITickTradeMessage trade)
+		{
+			var price = trade.Price;
 
-		_lastTradePrice = price.Value;
+			_lastTradePrice = price;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
@@ -273,7 +271,7 @@ public class TrailingCloseManagerStrategy : Strategy
 		ProcessFloatingThresholds(time);
 		ProcessCloseRequests(time);
 
-		ManageTrailing(price.Value);
+		ManageTrailing(price);
 	}
 
 	private void ProcessManualButtons(DateTimeOffset time)

@@ -272,10 +272,9 @@ public class PreviousCandleBreakdownStrategy : Strategy
 		EvaluateRisk(candle.ClosePrice);
 	}
 
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		if (trade.TradePrice is not decimal price || price <= 0m)
-			return;
+		private void ProcessTrade(ITickTradeMessage trade)
+		{
+			var price = trade.Price;
 
 		_lastPrice = price;
 

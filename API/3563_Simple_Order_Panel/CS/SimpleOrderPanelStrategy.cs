@@ -880,16 +880,15 @@ public class SimpleOrderPanelStrategy : Strategy
 		}
 
 		CheckPendingOrders();
-		CheckProtectiveLevels();
+			CheckProtectiveLevels();
 	}
 
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		if (trade.TradePrice is decimal tradePrice)
+		private void ProcessTrade(ITickTradeMessage trade)
 		{
+			var tradePrice = trade.Price;
+
 			_lastTradePrice = tradePrice;
 			CheckProtectiveLevels();
-		}
 	}
 
 	private void CheckPendingOrders()

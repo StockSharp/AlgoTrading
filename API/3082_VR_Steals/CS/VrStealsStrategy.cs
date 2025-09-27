@@ -135,8 +135,7 @@ public class VrStealsStrategy : Strategy
 
 	private void ProcessTrade(ITickTradeMessage trade)
 	{
-		if (trade.TradePrice is not decimal price)
-			return;
+		var price = trade.Price;
 
 		if (Position > 0m)
 		{

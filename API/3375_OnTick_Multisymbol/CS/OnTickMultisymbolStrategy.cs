@@ -134,8 +134,7 @@ public class OnTickMultisymbolStrategy : Strategy
 
 	private void OnTrade(Security security, ITickTradeMessage trade)
 	{
-		if (trade.TradePrice is not decimal price)
-			return;
+		var price = trade.Price;
 
 		var volume = trade.Volume ?? 0m;
 		var time = trade.ServerTime != default ? trade.ServerTime : trade.LocalTime;

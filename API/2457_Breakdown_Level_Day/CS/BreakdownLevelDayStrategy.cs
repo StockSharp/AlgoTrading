@@ -122,7 +122,7 @@ public class BreakdownLevelDayStrategy : Strategy
 
 	private void ProcessTrade(ITickTradeMessage trade)
 	{
-		var price = trade.TradePrice ?? 0m;
+		var price = trade.Price;
 		var time = trade.ServerTime;
 
 		if (time.Date > _tradeDay)

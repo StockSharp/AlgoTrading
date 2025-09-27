@@ -46,14 +46,11 @@ public class ExpToCloseProfitStrategy : Strategy
 		StartProtection();
 	}
 
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		var price = trade.TradePrice;
+		private void ProcessTrade(ITickTradeMessage trade)
+		{
+			var price = trade.Price;
 
-		if (price is null)
-			return;
-
-		var unrealized = Position * (price.Value - PositionPrice);
+		var unrealized = Position * (price - PositionPrice);
 		var totalProfit = PnL + unrealized;
 
 		LogInfo($"Profit = {totalProfit:0.##}; MaxProfit = {MaxProfit:0.##};");

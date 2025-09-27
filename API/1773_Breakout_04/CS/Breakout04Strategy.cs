@@ -110,7 +110,7 @@ public class Breakout04Strategy : Strategy
 		if (_prevHigh == 0m && _prevLow == 0m)
 			return;
 
-		var price = trade.TradePrice ?? 0m;
+		var price = trade.Price;
 		var step = Security.PriceStep ?? 1m;
 		var stopOffset = StopLoss * step;
 		var takeOffset = TakeProfit * step;

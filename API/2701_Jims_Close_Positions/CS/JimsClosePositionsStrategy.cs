@@ -123,13 +123,12 @@ public class JimsClosePositionsStrategy : Strategy
 		return false;
 	}
 
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		if (trade.TradePrice is not decimal tradePrice)
-			return;
+		private void ProcessTrade(ITickTradeMessage trade)
+		{
+			var tradePrice = trade.Price;
 
-		ProcessPrice(tradePrice);
-	}
+			ProcessPrice(tradePrice);
+		}
 
 	private void ProcessPrice(decimal marketPrice)
 	{

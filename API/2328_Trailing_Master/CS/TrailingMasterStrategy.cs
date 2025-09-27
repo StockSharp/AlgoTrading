@@ -120,7 +120,7 @@ public class TrailingMasterStrategy : Strategy
 
 	private void ProcessTrade(ITickTradeMessage trade)
 	{
-		var price = trade.TradePrice ?? 0m;
+		var price = trade.Price;
 		var step = Security.PriceStep ?? 1m;
 
 		if (_entryPrice == 0m && Position != 0)

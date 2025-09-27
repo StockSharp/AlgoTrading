@@ -63,7 +63,7 @@ public class TrailingStopEAStrategy : Strategy
 
 	private void ProcessTrade(ITickTradeMessage trade)
 	{
-		var price = trade.TradePrice ?? 0m;
+		var price = trade.Price;
 
 		if (Position > 0)
 		{

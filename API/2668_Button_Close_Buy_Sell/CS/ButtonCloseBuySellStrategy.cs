@@ -124,8 +124,7 @@ public class ButtonCloseBuySellStrategy : Strategy
 	/// <param name="trade">Incoming trade message.</param>
 	private void ProcessTrade(ITickTradeMessage trade)
 	{
-		if (trade.TradePrice is not decimal price)
-			return;
+		var price = trade.Price;
 
 		_lastTradePrice = price;
 		UpdateFloatingProfit();

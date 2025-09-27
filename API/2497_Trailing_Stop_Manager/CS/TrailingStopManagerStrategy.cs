@@ -113,32 +113,34 @@ public class TrailingStopManagerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		base.OnOwnTradeReceived(trade);
+		protected override void OnOwnTradeReceived(MyTrade trade)
+		{
+			base.OnOwnTradeReceived(trade);
 
-		var tradePrice = trade.Trade?.Price ?? 0m;
-		if (tradePrice <= 0m)
-			return;
+			if (trade.Trade == null)
+				return;
 
-		// Reset trailing state whenever a new position is opened.
-		if (Position > 0 && trade.Order.Side == Sides.Buy)
-		{
-			_entryPrice = tradePrice;
-			_trailingActive = false;
-			_trailingStopPrice = 0m;
-			_currentDirection = InitialDirection.Long;
-		}
-		else if (Position < 0 && trade.Order.Side == Sides.Sell)
-		{
-			_entryPrice = tradePrice;
-			_trailingActive = false;
-			_trailingStopPrice = 0m;
-			_currentDirection = InitialDirection.Short;
-		}
-		else if (Position == 0)
-		{
-			ResetTrailing();
+			var tradePrice = trade.Trade.Price;
+
+			// Reset trailing state whenever a new position is opened.
+			if (Position > 0 && trade.Order.Side == Sides.Buy)
+			{
+				_entryPrice = tradePrice;
+				_trailingActive = false;
+				_trailingStopPrice = 0m;
+				_currentDirection = InitialDirection.Long;
+			}
+			else if (Position < 0 && trade.Order.Side == Sides.Sell)
+			{
+				_entryPrice = tradePrice;
+				_trailingActive = false;
+				_trailingStopPrice = 0m;
+				_currentDirection = InitialDirection.Short;
+			}
+			else if (Position == 0)
+			{
+				ResetTrailing();
+			}
 		}
 	}
 
@@ -151,11 +153,9 @@ public class TrailingStopManagerStrategy : Strategy
 			ResetTrailing();
 	}
 
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		var price = trade.TradePrice;
-		if (price == null || price.Value <= 0m)
-			return;
+		private void ProcessTrade(ITickTradeMessage trade)
+		{
+			var price = trade.Price;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
@@ -163,7 +163,7 @@ public class TrailingStopManagerStrategy : Strategy
 		if (_entryPrice <= 0m)
 			return;
 
-		var currentPrice = price.Value;
+		var currentPrice = price;
 
 		if (Position > 0 && _currentDirection == InitialDirection.Long)
 		{

@@ -41,28 +41,27 @@ public class HiddenSlStrategy : Strategy
 			.Start();
 	}
 
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		var price = trade.TradePrice;
-		if (price is null)
-			return;
-
-		var pos = Position;
-		if (pos == 0)
-			return;
-
-		var entryPrice = Position.AveragePrice;
-		if (entryPrice == 0m)
-			return;
-
-		var profit = (price.Value - entryPrice) * pos;
-
-		if (profit >= TakeProfit || profit <= StopLoss)
+		private void ProcessTrade(ITickTradeMessage trade)
 		{
-			if (pos > 0)
-				SellMarket(pos);
-			else
-				BuyMarket(-pos);
+			var price = trade.Price;
+
+			var pos = Position;
+			if (pos == 0)
+				return;
+
+			var entryPrice = Position.AveragePrice;
+			if (entryPrice == 0m)
+				return;
+
+			var profit = (price - entryPrice) * pos;
+
+			if (profit >= TakeProfit || profit <= StopLoss)
+			{
+				if (pos > 0)
+					SellMarket(pos);
+				else
+					BuyMarket(-pos);
+			}
 		}
 	}
 }

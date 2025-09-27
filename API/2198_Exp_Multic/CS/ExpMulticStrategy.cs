@@ -97,7 +97,7 @@ subscription.Bind(trade => ProcessTrade(sec, trade)).Start();
 
 private void ProcessTrade(Security sec, ITickTradeMessage trade)
 {
-_lastPrice[sec] = trade.TradePrice ?? 0m;
+_lastPrice[sec] = trade.Price;
 Process(sec);
 }
 

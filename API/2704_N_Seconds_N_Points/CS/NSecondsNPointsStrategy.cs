@@ -100,14 +100,12 @@ public class NSecondsNPointsStrategy : Strategy
 		return priceStep.Value * adjust;
 	}
 
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		var price = trade.TradePrice;
-		if (price == null)
-			return;
+		private void ProcessTrade(ITickTradeMessage trade)
+		{
+			var price = trade.Price;
 
-		_lastPrice = price.Value;
-		_hasLastPrice = true;
+			_lastPrice = price;
+			_hasLastPrice = true;
 	}
 
 	private void ProcessTimer()

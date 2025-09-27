@@ -217,7 +217,7 @@ public class VirtualProfitCloseStrategy : Strategy
 
 	private void ProcessTrade(ITickTradeMessage trade)
 	{
-		var lastPrice = trade.TradePrice;
+		var lastPrice = trade.Price;
 		if (lastPrice is null)
 		return;
 

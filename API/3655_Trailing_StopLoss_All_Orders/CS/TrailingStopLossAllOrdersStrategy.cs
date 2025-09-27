@@ -80,7 +80,7 @@ public class TrailingStopLossAllOrdersStrategy : Strategy
 		if (_pipSize <= 0m)
 			_pipSize = 1m;
 
-		RecalculateDistances();
+			RecalculateDistances();
 
 		SubscribeTicks()
 			.Bind(ProcessTrade)
@@ -96,30 +96,28 @@ public class TrailingStopLossAllOrdersStrategy : Strategy
 			ResetState();
 	}
 
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		var price = trade.TradePrice;
-		if (price is null || price.Value <= 0m)
+		private void ProcessTrade(ITickTradeMessage trade)
+		{
+			var price = trade.Price;
+
+			if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+			var lastPrice = price;
 
-		var lastPrice = price.Value;
+			RecalculateDistances();
 
-		RecalculateDistances();
-
-		if (Position > 0 && PositionPrice is decimal entryPrice)
+			if (Position > 0 && PositionPrice is decimal entryPrice)
 		{
 			UpdateLongTrailing(entryPrice, lastPrice);
 		}
-		else if (Position < 0 && PositionPrice is decimal entryPriceShort)
+			else if (Position < 0 && PositionPrice is decimal entryPriceShort)
 		{
 			UpdateShortTrailing(entryPriceShort, lastPrice);
 		}
-		else
-		{
-			ResetState();
+			else
+			{
+				ResetState();
 		}
 	}
 

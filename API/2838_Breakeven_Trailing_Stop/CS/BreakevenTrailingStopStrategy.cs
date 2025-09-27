@@ -105,25 +105,23 @@ public class BreakevenTrailingStopStrategy : Strategy
 			.Start();
 	}
 
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		var price = trade.TradePrice;
-		if (price is null || price <= 0m)
-			return;
+		private void ProcessTrade(ITickTradeMessage trade)
+		{
+			var price = trade.Price;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+			if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		if (EnableDemoEntries)
-			TryCreateDemoEntry(trade, price.Value);
+			TryCreateDemoEntry(trade, price);
 
 		if (TrailingStopPips <= 0m || _pointValue <= 0m || Position == 0)
 			return;
 
 		if (Position > 0)
-			UpdateLongTrailing(price.Value);
+			UpdateLongTrailing(price);
 		else if (Position < 0)
-			UpdateShortTrailing(price.Value);
+			UpdateShortTrailing(price);
 	}
 
 	private void TryCreateDemoEntry(ITickTradeMessage trade, decimal price)

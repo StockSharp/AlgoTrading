@@ -77,7 +77,7 @@ public class ScalpingEAStrategy : Strategy
 
 	private void ProcessTrade(ITickTradeMessage trade)
 	{
-		var price = trade.TradePrice ?? 0m;
+		var price = trade.Price;
 		var step = Security.PriceStep ?? 1m;
 
 		if (_buyOrder?.State == OrderStates.Active)

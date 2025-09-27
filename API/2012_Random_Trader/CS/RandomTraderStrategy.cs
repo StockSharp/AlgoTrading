@@ -76,7 +76,7 @@ public class RandomTraderStrategy : Strategy
 
 	private void ProcessTrade(ITickTradeMessage trade)
 	{
-		var price = trade.TradePrice ?? 0m;
+		var price = trade.Price;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;

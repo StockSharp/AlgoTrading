@@ -75,13 +75,11 @@ public class PeakVolumeCounterStrategy : Strategy
 		_frameStartTime = null;
 	}
 
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		// Fall back to the last known price when the feed omits a trade price.
-		var price = trade.TradePrice ?? _lastTradePrice;
-
-		if (trade.TradePrice is decimal tradePrice)
-			_lastTradePrice = tradePrice;
+		private void ProcessTrade(ITickTradeMessage trade)
+		{
+			// Remember the most recent trade price for diagnostics.
+			var price = trade.Price;
+			_lastTradePrice = price;
 
 		// MetaTrader counted ticks, so treat missing or zero volumes as a single unit.
 		var volumeIncrement = trade.Volume ?? 0m;
