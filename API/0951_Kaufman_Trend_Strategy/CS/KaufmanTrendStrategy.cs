@@ -34,11 +34,11 @@ public class KaufmanTrendStrategy : Strategy
 	private decimal _p10;
 	private decimal _p11 = 1m;
 
-	private const decimal ProcessNoise1 = 0.01m;
-	private const decimal ProcessNoise2 = 0.01m;
-	private const decimal MeasurementNoise = 500m;
-	private const int OscBufferLength = 10;
-	private const int R2 = 10;
+private readonly StrategyParam<decimal> _processNoise1;
+private readonly StrategyParam<decimal> _processNoise2;
+private readonly StrategyParam<decimal> _measurementNoise;
+private readonly StrategyParam<int> _oscBufferLength;
+private readonly StrategyParam<int> _trendWmaLength;
 
 	private readonly Queue<decimal> _oscBuffer = new();
 	private decimal _prevTrendStrength;
@@ -84,13 +84,43 @@ public class KaufmanTrendStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(30, 80, 5);
 
-		_trendStrengthExit = Param(nameof(TrendStrengthExit), 40)
-		.SetDisplay("Trend Strength Exit", "Exit threshold", "Trend")
-		.SetCanOptimize(true)
-		.SetOptimize(10, 60, 5);
+_trendStrengthExit = Param(nameof(TrendStrengthExit), 40)
+			.SetDisplay("Trend Strength Exit", "Exit threshold", "Trend")
+			.SetCanOptimize(true)
+			.SetOptimize(10, 60, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
+
+		_processNoise1 = Param(nameof(ProcessNoise1), 0.01m)
+			.SetGreaterThanZero()
+			.SetDisplay("Process Noise 1", "Kalman process noise level", "Kalman")
+			.SetCanOptimize(true)
+			.SetOptimize(0.001m, 0.05m, 0.005m);
+
+		_processNoise2 = Param(nameof(ProcessNoise2), 0.01m)
+			.SetGreaterThanZero()
+			.SetDisplay("Process Noise 2", "Kalman process noise slope", "Kalman")
+			.SetCanOptimize(true)
+			.SetOptimize(0.001m, 0.05m, 0.005m);
+
+		_measurementNoise = Param(nameof(MeasurementNoise), 500m)
+			.SetGreaterThanZero()
+			.SetDisplay("Measurement Noise", "Observation noise", "Kalman")
+			.SetCanOptimize(true)
+			.SetOptimize(100m, 1000m, 50m);
+
+		_oscBufferLength = Param(nameof(OscBufferLength), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Oscillator Buffer", "Bars for normalization", "Trend")
+			.SetCanOptimize(true)
+			.SetOptimize(5, 30, 1);
+
+		_trendWmaLength = Param(nameof(TrendWmaLength), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Trend WMA Length", "Trend smoothing period", "Trend")
+			.SetCanOptimize(true)
+			.SetOptimize(5, 30, 1);
 	}
 
 	/// <summary>
@@ -165,6 +195,36 @@ public class KaufmanTrendStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
+	public decimal ProcessNoise1
+{
+		get => _processNoise1.Value;
+		set => _processNoise1.Value = value;
+}
+
+	public decimal ProcessNoise2
+{
+		get => _processNoise2.Value;
+		set => _processNoise2.Value = value;
+}
+
+	public decimal MeasurementNoise
+{
+		get => _measurementNoise.Value;
+		set => _measurementNoise.Value = value;
+}
+
+	public int OscBufferLength
+{
+		get => _oscBufferLength.Value;
+		set => _oscBufferLength.Value = value;
+}
+
+	public int TrendWmaLength
+{
+		get => _trendWmaLength.Value;
+		set => _trendWmaLength.Value = value;
+}
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
@@ -204,7 +264,7 @@ public class KaufmanTrendStrategy : Strategy
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 		_highest = new Highest { Length = SwingLookback };
 		_lowest = new Lowest { Length = SwingLookback };
-		_trendWma = new WeightedMovingAverage { Length = R2 };
+				_trendWma = new WeightedMovingAverage { Length = TrendWmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

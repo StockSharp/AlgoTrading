@@ -14,10 +14,10 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class FractalBreakoutTrendFollowingStrategy : Strategy
 {
-	private const int AtrLen = 13;
-	private const int AtrLookback = 52;
-	
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _atrLength;
+	private readonly StrategyParam<int> _atrLookback;
+
+private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<decimal> _atrThreshold;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<DataType> _candleType;
@@ -69,6 +69,24 @@ public class FractalBreakoutTrendFollowingStrategy : Strategy
 		get => _atrPeriod.Value;
 		set => _atrPeriod.Value = value;
 	}
+
+	/// <summary>
+	/// ATR calculation length.
+	/// </summary>
+	public int AtrLength
+	{
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
+	}
+
+	/// <summary>
+	/// ATR percentile lookback.
+	/// </summary>
+	public int AtrLookback
+	{
+		get => _atrLookback.Value;
+		set => _atrLookback.Value = value;
+	}
 	
 	/// <summary>
 	/// Candle type used by the strategy.
@@ -103,28 +121,40 @@ public class FractalBreakoutTrendFollowingStrategy : Strategy
 	public FractalBreakoutTrendFollowingStrategy()
 	{
 		_stopLossPercent = Param(nameof(StopLossPercent), 0.03m)
-		.SetDisplay("Stop Loss (%)", "Percent stop-loss", "Risk");
-		
+			.SetDisplay("Stop Loss (%)", "Percent stop-loss", "Risk");
+
 		_atrThreshold = Param(nameof(AtrThreshold), 50m)
-		.SetDisplay("ATR Threshold", "ATR percentile threshold", "Parameters")
-		.SetCanOptimize(true)
-		.SetOptimize(10m, 90m, 5m);
-		
+			.SetDisplay("ATR Threshold", "ATR percentile threshold", "Parameters")
+			.SetCanOptimize(true)
+			.SetOptimize(10m, 90m, 5m);
+
 		_atrPeriod = Param(nameof(AtrPeriod), 5)
-		.SetGreaterThanZero()
-		.SetDisplay("ATR Period", "Bars for ATR average", "Parameters")
-		.SetCanOptimize(true)
-		.SetOptimize(1, 20, 1);
-		
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "Bars for ATR average", "Parameters")
+			.SetCanOptimize(true)
+			.SetOptimize(1, 20, 1);
+
+		_atrLength = Param(nameof(AtrLength), 13)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Length", "ATR calculation length", "Parameters")
+			.SetCanOptimize(true)
+			.SetOptimize(5, 30, 1);
+
+		_atrLookback = Param(nameof(AtrLookback), 52)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Lookback", "Bars for ATR percentile rank", "Parameters")
+			.SetCanOptimize(true)
+			.SetOptimize(20, 100, 5);
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
-		
+			.SetDisplay("Candle Type", "Type of candles", "General");
+
 		_tradeStart = Param(nameof(TradeStart), new DateTimeOffset(new DateTime(2023, 1, 1), TimeSpan.Zero))
-		.SetDisplay("Trade Start", "Start trading date", "Time");
-		
+			.SetDisplay("Trade Start", "Start trading date", "Time");
+
 		_tradeStop = Param(nameof(TradeStop), new DateTimeOffset(new DateTime(2025, 1, 1), TimeSpan.Zero))
-		.SetDisplay("Trade Stop", "End trading date", "Time");
-		
+			.SetDisplay("Trade Stop", "End trading date", "Time");
+
 		Volume = 1;
 	}
 	
@@ -158,7 +188,7 @@ public class FractalBreakoutTrendFollowingStrategy : Strategy
 	{
 		base.OnStarted(time);
 		
-		_atr = new AverageTrueRange { Length = AtrLen };
+		_atr = new AverageTrueRange { Length = AtrLength };
 		_teethSmma = new SmoothedMovingAverage { Length = 8 };
 		
 		var subscription = SubscribeCandles(CandleType);

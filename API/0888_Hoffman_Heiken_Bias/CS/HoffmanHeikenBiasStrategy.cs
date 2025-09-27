@@ -13,15 +13,15 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class HoffmanHeikenBiasStrategy : Strategy
 {
-	private const int FastSmaLength = 5;
-	private const int FastEmaLength = 18;
-	private const int Ema20Length = 20;
-	private const int Sma50Length = 50;
-	private const int Sma89Length = 89;
-	private const int Ema144Length = 144;
-	private const int Ema35Length = 35;
-	private const int AtrLength = 35;
-	private const int NetVolumeLength = 25;
+	private readonly StrategyParam<int> _fastSmaLength;
+	private readonly StrategyParam<int> _fastEmaLength;
+	private readonly StrategyParam<int> _ema20Length;
+	private readonly StrategyParam<int> _sma50Length;
+	private readonly StrategyParam<int> _sma89Length;
+	private readonly StrategyParam<int> _ema144Length;
+	private readonly StrategyParam<int> _ema35Length;
+	private readonly StrategyParam<int> _atrLength;
+	private readonly StrategyParam<int> _netVolumeLength;
 
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -39,14 +39,122 @@ public class HoffmanHeikenBiasStrategy : Strategy
 	private decimal _haClosePrev;
 	private bool _isFirstHa = true;
 
+	public int FastSmaLength
+{
+		get => _fastSmaLength.Value;
+		set => _fastSmaLength.Value = value;
+}
+
+	public int FastEmaLength
+{
+		get => _fastEmaLength.Value;
+		set => _fastEmaLength.Value = value;
+}
+
+	public int Ema20Length
+{
+		get => _ema20Length.Value;
+		set => _ema20Length.Value = value;
+}
+
+	public int Sma50Length
+{
+		get => _sma50Length.Value;
+		set => _sma50Length.Value = value;
+}
+
+	public int Sma89Length
+{
+		get => _sma89Length.Value;
+		set => _sma89Length.Value = value;
+}
+
+	public int Ema144Length
+{
+		get => _ema144Length.Value;
+		set => _ema144Length.Value = value;
+}
+
+	public int Ema35Length
+{
+		get => _ema35Length.Value;
+		set => _ema35Length.Value = value;
+}
+
+	public int AtrLength
+{
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
+}
+
+	public int NetVolumeLength
+{
+		get => _netVolumeLength.Value;
+		set => _netVolumeLength.Value = value;
+}
+
 	public DataType CandleType
-	{
+{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
-	}
+}
 
 	public HoffmanHeikenBiasStrategy()
-	{
+{
+		_fastSmaLength = Param(nameof(FastSmaLength), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast SMA Length", "Fast SMA lookback", "Parameters")
+			.SetCanOptimize(true)
+			.SetOptimize(3, 10, 1);
+
+		_fastEmaLength = Param(nameof(FastEmaLength), 18)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA Length", "Fast EMA lookback", "Parameters")
+			.SetCanOptimize(true)
+			.SetOptimize(10, 30, 2);
+
+		_ema20Length = Param(nameof(Ema20Length), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA20 Length", "EMA 20 period", "Parameters")
+			.SetCanOptimize(true)
+			.SetOptimize(10, 40, 5);
+
+		_sma50Length = Param(nameof(Sma50Length), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("SMA50 Length", "SMA 50 period", "Parameters")
+			.SetCanOptimize(true)
+			.SetOptimize(30, 80, 5);
+
+		_sma89Length = Param(nameof(Sma89Length), 89)
+			.SetGreaterThanZero()
+			.SetDisplay("SMA89 Length", "SMA 89 period", "Parameters")
+			.SetCanOptimize(true)
+			.SetOptimize(50, 120, 5);
+
+		_ema144Length = Param(nameof(Ema144Length), 144)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA144 Length", "EMA 144 period", "Parameters")
+			.SetCanOptimize(true)
+			.SetOptimize(100, 200, 10);
+
+		_ema35Length = Param(nameof(Ema35Length), 35)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA35 Length", "EMA 35 period", "Parameters")
+			.SetCanOptimize(true)
+			.SetOptimize(20, 60, 5);
+
+		_atrLength = Param(nameof(AtrLength), 35)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Length", "ATR lookback", "Parameters")
+			.SetCanOptimize(true)
+			.SetOptimize(10, 50, 5);
+
+		_netVolumeLength = Param(nameof(NetVolumeLength), 25)
+			.SetGreaterThanZero()
+			.SetDisplay("Net Volume Length", "Linear regression length", "Parameters")
+			.SetCanOptimize(true)
+			.SetOptimize(10, 40, 5);
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}

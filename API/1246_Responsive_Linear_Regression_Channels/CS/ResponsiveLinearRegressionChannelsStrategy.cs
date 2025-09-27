@@ -18,9 +18,9 @@ public class ResponsiveLinearRegressionChannelsStrategy : Strategy
 	private readonly StrategyParam<bool> _useSmartLookback;
 	private readonly StrategyParam<decimal> _deviationMultiplier;
 	private readonly StrategyParam<bool> _useStandardDeviation;
+	private readonly StrategyParam<int> _maxBars;
 
-	private readonly Queue<decimal> _closes = new();
-	private const int MaxBars = 3000;
+private readonly Queue<decimal> _closes = new();
 
 	/// <summary>
 	/// Candle type for calculations.
@@ -47,6 +47,8 @@ public class ResponsiveLinearRegressionChannelsStrategy : Strategy
 	/// </summary>
 	public bool UseStandardDeviation { get => _useStandardDeviation.Value; set => _useStandardDeviation.Value = value; }
 
+	public int MaxBars { get => _maxBars.Value; set => _maxBars.Value = value; }
+
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ResponsiveLinearRegressionChannelsStrategy"/> class.
 	/// </summary>
@@ -72,6 +74,12 @@ public class ResponsiveLinearRegressionChannelsStrategy : Strategy
 
 		_useStandardDeviation = Param(nameof(UseStandardDeviation), false)
 			.SetDisplay("Use Standard Deviation", "Use standard deviation instead of RMSE", "Parameters");
+
+		_maxBars = Param(nameof(MaxBars), 3000)
+			.SetGreaterThanZero()
+			.SetDisplay("Max Bars", "Maximum stored closes", "Parameters")
+			.SetCanOptimize(true)
+			.SetOptimize(1000, 5000, 500);
 	}
 
 	/// <inheritdoc />
