@@ -15,7 +15,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class OverHedgeV2Strategy : Strategy
 {
-	private const decimal VolumeTolerance = 1e-6m;
 
 	private readonly StrategyParam<decimal> _baseVolume;
 	private readonly StrategyParam<decimal> _hedgeMultiplier;
@@ -25,6 +24,7 @@ public class OverHedgeV2Strategy : Strategy
 	private readonly StrategyParam<int> _emaLongPeriod;
 	private readonly StrategyParam<bool> _shutdownGrid;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _volumeTolerance;
 
 	private readonly HashSet<Order> _activeEntryOrders = new();
 	private readonly HashSet<Order> _activeExitOrders = new();
@@ -94,6 +94,9 @@ public class OverHedgeV2Strategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used to calculate the EMA filters.", "Indicators");
+		_volumeTolerance = Param(nameof(VolumeTolerance), 1e-6m)
+			.SetDisplay("Volume tolerance", "Threshold used when checking exposure neutrality.", "Trading")
+			.SetNotNegative();
 	}
 
 	/// <summary>
@@ -166,6 +169,14 @@ public class OverHedgeV2Strategy : Strategy
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
+	}
+	/// <summary>
+	/// Minimum volume difference treated as zero when comparing exposures.
+	/// </summary>
+	public decimal VolumeTolerance
+	{
+		get => _volumeTolerance.Value;
+		set => _volumeTolerance.Value = value;
 	}
 
 	/// <inheritdoc />

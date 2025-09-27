@@ -15,7 +15,6 @@ using StockSharp.Messages;
 /// </summary>
 public class Zs1ForexInstrumentsStrategy : Strategy
 {
-	private const decimal VolumeTolerance = 0.0000001m;
 
 	private static readonly decimal[] TunnelMultipliers =
 	{
@@ -25,6 +24,7 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 	private readonly StrategyParam<decimal> _ordersSpacePips;
 	private readonly StrategyParam<int> _pkPips;
 	private readonly StrategyParam<decimal> _initialVolume;
+	private readonly StrategyParam<decimal> _volumeTolerance;
 
 	private readonly Dictionary<Order, OrderIntent> _orderIntents = new();
 	private readonly List<Entry> _longEntries = new();
@@ -91,6 +91,14 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 		get => _initialVolume.Value;
 		set => _initialVolume.Value = value;
 	}
+	/// <summary>
+	/// Allowed difference used when comparing position volumes.
+	/// </summary>
+	public decimal VolumeTolerance
+	{
+		get => _volumeTolerance.Value;
+		set => _volumeTolerance.Value = value;
+	}
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="Zs1ForexInstrumentsStrategy"/> class.
@@ -112,6 +120,9 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 			.SetDisplay("Initial Volume", "Base volume for the hedge orders.", "Trading")
 			.SetCanOptimize(true)
 			.SetOptimize(0.01m, 1m, 0.01m);
+		_volumeTolerance = Param(nameof(VolumeTolerance), 0.0000001m)
+			.SetDisplay("Volume tolerance", "Allowed difference when comparing cumulative volumes.", "Trading")
+			.SetNotNegative();
 	}
 
 	/// <inheritdoc />

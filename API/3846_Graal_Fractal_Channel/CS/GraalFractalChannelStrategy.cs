@@ -16,7 +16,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class GraalFractalChannelStrategy : Strategy
 {
-	private const int DefaultSignalAge = 3;
 
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<decimal> _stopLossPips;
@@ -125,7 +124,7 @@ public class GraalFractalChannelStrategy : Strategy
 		_singlePosition = Param(nameof(SinglePosition), false)
 			.SetDisplay("Single Position Mode", "Block additional entries while already holding exposure in that direction.", "Orders");
 
-		_signalAgeLimit = Param(nameof(SignalAgeLimit), DefaultSignalAge)
+		_signalAgeLimit = Param(nameof(SignalAgeLimit), 3)
 			.SetDisplay("Signal Age (bars)", "Maximum number of new bars during which a fractal signal remains valid.", "Orders")
 			.SetGreaterThanZero();
 
