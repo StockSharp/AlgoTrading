@@ -22,14 +22,14 @@ public class VwapHiddenMarkovModelStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private enum MarketState
+	private enum MarketStates
 	{
 		Neutral,
 		Bullish,
 		Bearish
 	}
 
-	private MarketState _currentMarketState = MarketState.Neutral;
+	private MarketStates _currentMarketState = MarketStates.Neutral;
 
 	// Feature data for HMM
 	private readonly Queue<decimal> _priceData = [];
@@ -98,7 +98,7 @@ public class VwapHiddenMarkovModelStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_currentMarketState = MarketState.Neutral;
+_currentMarketState = MarketStates.Neutral;
 		_priceData.Clear();
 		_volumeData.Clear();
 	}
@@ -161,13 +161,13 @@ public class VwapHiddenMarkovModelStrategy : Strategy
 		}
 
 		// Trading logic based on VWAP and HMM state
-		if (_currentMarketState == MarketState.Bullish && candle.ClosePrice > vwapValue && Position <= 0)
+		if (_currentMarketState == MarketStates.Bullish && candle.ClosePrice > vwapValue && Position <= 0)
 		{
 			// Price above VWAP in bullish state - Buy signal
 			LogInfo($"Buy signal: Price ({candle.ClosePrice}) above VWAP ({vwapValue}) in bullish state");
 			BuyMarket(Volume + Math.Abs(Position));
 		}
-		else if (_currentMarketState == MarketState.Bearish && candle.ClosePrice < vwapValue && Position >= 0)
+		else if (_currentMarketState == MarketStates.Bearish && candle.ClosePrice < vwapValue && Position >= 0)
 		{
 			// Price below VWAP in bearish state - Sell signal
 			LogInfo($"Sell signal: Price ({candle.ClosePrice}) below VWAP ({vwapValue}) in bearish state");
@@ -180,15 +180,15 @@ public class VwapHiddenMarkovModelStrategy : Strategy
 		// Add price data to queue
 		_priceData.Enqueue(candle.ClosePrice);
 		if (_priceData.Count > HmmDataLength)
-		_priceData.Dequeue();
+			_priceData.Dequeue();
 
 		// Add volume data to queue
 		_volumeData.Enqueue(candle.TotalVolume);
 		if (_volumeData.Count > HmmDataLength)
-		_volumeData.Dequeue();
+			_volumeData.Dequeue();
 	}
 
-	private MarketState RunHmm()
+	private MarketStates RunHmm()
 	{
 		// This is a simplified implementation of Hidden Markov Model
 		// A full implementation would use Baum-Welch algorithm for training and Viterbi algorithm for decoding
@@ -236,7 +236,7 @@ public class VwapHiddenMarkovModelStrategy : Strategy
 		return result;
 	}
 
-	private List<MarketState> SimplifiedViterbi(List<int> observations)
+	private List<MarketStates> SimplifiedViterbi(List<int> observations)
 	{
 		// This is a very simplified version of the Viterbi algorithm
 		// For a real implementation, proper HMM libraries should be used
@@ -251,7 +251,7 @@ public class VwapHiddenMarkovModelStrategy : Strategy
 
 		// Initialize with equal probabilities for each state
 		var currentStateProbabilities = new decimal[3] { 1m / 3, 1m / 3, 1m / 3 };
-		var stateSequence = new List<MarketState>();
+		var stateSequence = new List<MarketStates>();
 
 		// Process each observation
 		foreach (var obs in observations)
@@ -290,7 +290,7 @@ public class VwapHiddenMarkovModelStrategy : Strategy
 			}
 
 			// Add state to sequence
-			stateSequence.Add((MarketState)maxIndex);
+			stateSequence.Add((MarketStates)maxIndex);
 
 			// Update current probabilities
 			currentStateProbabilities = newProbabilities;

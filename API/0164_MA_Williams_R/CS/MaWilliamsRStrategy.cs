@@ -24,7 +24,7 @@ namespace StockSharp.Samples.Strategies;
 public class MaWilliamsRStrategy : Strategy
 {
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<MovingAverageTypeEnum> _maType;
+	private readonly StrategyParam<MovingAverageTypes> _maType;
 	private readonly StrategyParam<int> _williamsRPeriod;
 	private readonly StrategyParam<decimal> _williamsROversold;
 	private readonly StrategyParam<decimal> _williamsROverbought;
@@ -43,7 +43,7 @@ public class MaWilliamsRStrategy : Strategy
 	/// <summary>
 	/// Moving Average type.
 	/// </summary>
-	public MovingAverageTypeEnum MaType
+	public MovingAverageTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -103,7 +103,7 @@ public class MaWilliamsRStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for Moving Average", "MA Parameters");
 
-		_maType = Param(nameof(MaType), MovingAverageTypeEnum.Simple)
+		_maType = Param(nameof(MaType), MovingAverageTypes.Simple)
 			.SetDisplay("MA Type", "Type of Moving Average", "MA Parameters");
 
 		_williamsRPeriod = Param(nameof(WilliamsRPeriod), 14)
@@ -150,19 +150,19 @@ protected override void OnStarted(DateTimeOffset time)
 		// Create MA based on selected type
 		switch (MaType)
 		{
-			case MovingAverageTypeEnum.Exponential:
+			case MovingAverageTypes.Exponential:
 				ma = new ExponentialMovingAverage { Length = MaPeriod };
 				break;
-			case MovingAverageTypeEnum.Weighted:
+			case MovingAverageTypes.Weighted:
 				ma = new WeightedMovingAverage { Length = MaPeriod };
 				break;
-			case MovingAverageTypeEnum.Smoothed:
+			case MovingAverageTypes.Smoothed:
 				ma = new SmoothedMovingAverage { Length = MaPeriod };
 				break;
-			case MovingAverageTypeEnum.HullMA:
+			case MovingAverageTypes.HullMA:
 				ma = new HullMovingAverage { Length = MaPeriod };
 				break;
-			case MovingAverageTypeEnum.Simple:
+			case MovingAverageTypes.Simple:
 			default:
 				ma = new SimpleMovingAverage { Length = MaPeriod };
 				break;
@@ -252,7 +252,7 @@ protected override void OnStarted(DateTimeOffset time)
 	/// <summary>
 	/// Enum for Moving Average types.
 	/// </summary>
-	public enum MovingAverageTypeEnum
+	public enum MovingAverageTypes
 	{
 		/// <summary>
 		/// Simple Moving Average
