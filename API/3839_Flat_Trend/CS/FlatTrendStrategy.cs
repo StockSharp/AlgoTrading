@@ -1,5 +1,5 @@
 using System;
-
+using System.Collections.Generic;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;

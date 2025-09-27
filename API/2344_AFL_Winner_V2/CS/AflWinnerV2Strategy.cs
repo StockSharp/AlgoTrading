@@ -1,6 +1,8 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+
+using StockSharp.Algo.Strategies;
 using StockSharp.Algo.Indicators;
 using StockSharp.Messages;
 

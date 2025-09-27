@@ -74,7 +74,7 @@ public class VolumeWeightedMaStDevStrategy : Strategy
 		set => _k2.Value = value;
 	}
 
-	public override System.Collections.Generic.IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />

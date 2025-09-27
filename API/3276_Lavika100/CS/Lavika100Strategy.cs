@@ -267,7 +267,7 @@ public bool CloseOpposite
 }
 
 /// <inheritdoc />
-public override System.Collections.Generic.IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 {
 	return [(Security, H1CandleType), (Security, H4CandleType)];
 }

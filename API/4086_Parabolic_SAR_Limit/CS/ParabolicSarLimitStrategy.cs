@@ -1,5 +1,5 @@
 using System;
-
+using System.Collections.Generic;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -136,7 +136,7 @@ public class ParabolicSarLimitStrategy : Strategy
 			.SetDisplay("Candle Type", "Time frame for Parabolic SAR analysis", "General");
 	}
 	/// <inheritdoc />
-	public override System.Collections.Generic.IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}

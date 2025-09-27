@@ -1,7 +1,7 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
-
+using System.Collections.Generic;
 using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;

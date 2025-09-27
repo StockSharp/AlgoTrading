@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using StockSharp.Algo.Candles;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;

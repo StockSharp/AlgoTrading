@@ -1,7 +1,7 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
-
+using System.Collections.Generic;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -42,12 +42,12 @@ public class EasiestRsiStrategy : Strategy
 	/// <summary>
 	/// Initializes a new instance of <see cref="EasiestRsiStrategy"/>.
 	/// </summary>
-public EasiestRsiStrategy()
-{
-_lotSize = Param(nameof(LotSize), 1m)
-.SetGreaterThanZero()
-.SetDisplay("Order Volume", "Trade volume used for each market order", "Trading")
-			.SetCanOptimize(true);
+	public EasiestRsiStrategy()
+	{
+		_lotSize = Param(nameof(LotSize), 1m)
+		.SetGreaterThanZero()
+		.SetDisplay("Order Volume", "Trade volume used for each market order", "Trading")
+					.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 			.SetDisplay("Stop Loss (pips)", "Initial stop-loss distance expressed in pips", "Risk")
@@ -79,14 +79,14 @@ _lotSize = Param(nameof(LotSize), 1m)
 			.SetDisplay("Maximum Entries", "Maximum number of sequential entries allowed in the same direction", "Strategy")
 			.SetCanOptimize(true);
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-.SetDisplay("Candle Type", "Time frame used for signal evaluation", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		.SetDisplay("Candle Type", "Time frame used for signal evaluation", "General");
 
-_trailingBufferPoints = Param(nameof(TrailingBufferPoints), 5)
-.SetNotNegative()
-.SetDisplay("Trailing Buffer", "Minimum improvement in stop level before updating (price steps)", "Risk")
-.SetCanOptimize(true);
-}
+		_trailingBufferPoints = Param(nameof(TrailingBufferPoints), 5)
+		.SetNotNegative()
+		.SetDisplay("Trailing Buffer", "Minimum improvement in stop level before updating (price steps)", "Risk")
+		.SetCanOptimize(true);
+	}
 
 	/// <summary>
 	/// Trade volume used for each market order.
@@ -163,22 +163,22 @@ _trailingBufferPoints = Param(nameof(TrailingBufferPoints), 5)
 	/// <summary>
 	/// Time frame used for signal evaluation.
 	/// </summary>
-public DataType CandleType
-{
-get => _candleType.Value;
-set => _candleType.Value = value;
-}
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
-public int TrailingBufferPoints
-{
-get => _trailingBufferPoints.Value;
-set => _trailingBufferPoints.Value = value;
-}
+	public int TrailingBufferPoints
+	{
+		get => _trailingBufferPoints.Value;
+		set => _trailingBufferPoints.Value = value;
+	}
 
 	/// <inheritdoc />
-	public override System.Collections.Generic.IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-	return [(Security, CandleType)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -238,17 +238,17 @@ set => _trailingBufferPoints.Value = value;
 		base.OnNewMyTrade(trade);
 
 		if (trade?.Order == null)
-		return;
+			return;
 
 		if (trade.Order.Side == Sides.Buy)
 		{
-		_longOrderPending = false;
-		_lastLongEntryPrice = trade.Trade.Price;
+			_longOrderPending = false;
+			_lastLongEntryPrice = trade.Trade.Price;
 		}
 		else if (trade.Order.Side == Sides.Sell)
 		{
-		_shortOrderPending = false;
-		_lastShortEntryPrice = trade.Trade.Price;
+			_shortOrderPending = false;
+			_lastShortEntryPrice = trade.Trade.Price;
 		}
 	}
 
@@ -259,84 +259,84 @@ set => _trailingBufferPoints.Value = value;
 
 		if (Position > 0m)
 		{
-		_longEntries = CalculateEntryCount(Position);
-		_shortEntries = 0;
-		_lastShortEntryPrice = null;
-		_shortExitPending = false;
+			_longEntries = CalculateEntryCount(Position);
+			_shortEntries = 0;
+			_lastShortEntryPrice = null;
+			_shortExitPending = false;
 
-		var stopDistance = GetStopLossDistance();
-		if (stopDistance > 0m)
-		{
-		var candidate = PositionPrice - stopDistance;
-		_longStopPrice = _longStopPrice is decimal current
-		? Math.Min(current, candidate)
-		: candidate;
-		}
-		else
-		{
-		_longStopPrice = null;
-		}
+			var stopDistance = GetStopLossDistance();
+			if (stopDistance > 0m)
+			{
+				var candidate = PositionPrice - stopDistance;
+				_longStopPrice = _longStopPrice is decimal current
+				? Math.Min(current, candidate)
+				: candidate;
+			}
+			else
+			{
+				_longStopPrice = null;
+			}
 		}
 		else if (Position < 0m)
 		{
-		_shortEntries = CalculateEntryCount(Position);
-		_longEntries = 0;
-		_lastLongEntryPrice = null;
-		_longExitPending = false;
+			_shortEntries = CalculateEntryCount(Position);
+			_longEntries = 0;
+			_lastLongEntryPrice = null;
+			_longExitPending = false;
 
-		var stopDistance = GetStopLossDistance();
-		if (stopDistance > 0m)
-		{
-		var candidate = PositionPrice + stopDistance;
-		_shortStopPrice = _shortStopPrice is decimal current
-		? Math.Max(current, candidate)
-		: candidate;
+			var stopDistance = GetStopLossDistance();
+			if (stopDistance > 0m)
+			{
+				var candidate = PositionPrice + stopDistance;
+				_shortStopPrice = _shortStopPrice is decimal current
+				? Math.Max(current, candidate)
+				: candidate;
+			}
+			else
+			{
+				_shortStopPrice = null;
+			}
 		}
 		else
 		{
-		_shortStopPrice = null;
-		}
-		}
-		else
-		{
-		_longEntries = 0;
-		_shortEntries = 0;
-		_longStopPrice = null;
-		_shortStopPrice = null;
-		_lastLongEntryPrice = null;
-		_lastShortEntryPrice = null;
-		_longOrderPending = false;
-		_shortOrderPending = false;
-		_longExitPending = false;
-		_shortExitPending = false;
+			_longEntries = 0;
+			_shortEntries = 0;
+			_longStopPrice = null;
+			_shortStopPrice = null;
+			_lastLongEntryPrice = null;
+			_lastShortEntryPrice = null;
+			_longOrderPending = false;
+			_shortOrderPending = false;
+			_longExitPending = false;
+			_shortExitPending = false;
 		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		ManageStops(candle);
 
 		if (_previousRsi is null)
 		{
-		_previousRsi = rsiValue;
-		return;
+			_previousRsi = rsiValue;
+			return;
 		}
 
 		if (_olderRsi is null)
 		{
-		_olderRsi = _previousRsi;
-		_previousRsi = rsiValue;
-		return;
+			_olderRsi = _previousRsi;
+			_previousRsi = rsiValue;
+			return;
 		}
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-		_olderRsi = _previousRsi;
-		_previousRsi = rsiValue;
-		return;
+			_olderRsi = _previousRsi;
+			_previousRsi = rsiValue;
+			return;
 		}
 
 		var prev = _previousRsi.Value;
@@ -347,22 +347,22 @@ set => _trailingBufferPoints.Value = value;
 
 		if (Position == 0m)
 		{
-		if (crossedAbove && !_longOrderPending)
-		{
-		SendLongEntry();
-		}
-		else if (crossedBelow && !_shortOrderPending)
-		{
-		SendShortEntry();
-		}
+			if (crossedAbove && !_longOrderPending)
+			{
+				SendLongEntry();
+			}
+			else if (crossedBelow && !_shortOrderPending)
+			{
+				SendShortEntry();
+			}
 		}
 		else if (Position > 0m)
 		{
-		TryScaleLong(candle);
+			TryScaleLong(candle);
 		}
 		else if (Position < 0m)
 		{
-		TryScaleShort(candle);
+			TryScaleShort(candle);
 		}
 
 		_olderRsi = prev;
@@ -373,11 +373,11 @@ set => _trailingBufferPoints.Value = value;
 	{
 		if (Position > 0m)
 		{
-		ManageLongStops(candle);
+			ManageLongStops(candle);
 		}
 		else if (Position < 0m)
 		{
-		ManageShortStops(candle);
+			ManageShortStops(candle);
 		}
 	}
 
@@ -385,13 +385,13 @@ set => _trailingBufferPoints.Value = value;
 	{
 		if (_longStopPrice is decimal stop && candle.LowPrice <= stop)
 		{
-		TryCloseLong();
-		return;
+			TryCloseLong();
+			return;
 		}
 
 		var trailDistance = GetTrailingDistance();
 		if (trailDistance <= 0m)
-		return;
+			return;
 
 		var referencePrice = Math.Max(candle.HighPrice, candle.ClosePrice);
 		var desiredStop = referencePrice - trailDistance;
@@ -399,12 +399,12 @@ set => _trailingBufferPoints.Value = value;
 
 		if (_longStopPrice is decimal currentStop)
 		{
-		if (desiredStop - currentStop > buffer)
-		_longStopPrice = desiredStop;
+			if (desiredStop - currentStop > buffer)
+				_longStopPrice = desiredStop;
 		}
 		else
 		{
-		_longStopPrice = desiredStop;
+			_longStopPrice = desiredStop;
 		}
 	}
 
@@ -412,13 +412,13 @@ set => _trailingBufferPoints.Value = value;
 	{
 		if (_shortStopPrice is decimal stop && candle.HighPrice >= stop)
 		{
-		TryCloseShort();
-		return;
+			TryCloseShort();
+			return;
 		}
 
 		var trailDistance = GetTrailingDistance();
 		if (trailDistance <= 0m)
-		return;
+			return;
 
 		var referencePrice = Math.Min(candle.LowPrice, candle.ClosePrice);
 		var desiredStop = referencePrice + trailDistance;
@@ -426,33 +426,33 @@ set => _trailingBufferPoints.Value = value;
 
 		if (_shortStopPrice is decimal currentStop)
 		{
-		if (currentStop - desiredStop > buffer)
-		_shortStopPrice = desiredStop;
+			if (currentStop - desiredStop > buffer)
+				_shortStopPrice = desiredStop;
 		}
 		else
 		{
-		_shortStopPrice = desiredStop;
+			_shortStopPrice = desiredStop;
 		}
 	}
 
 	private void TryScaleLong(ICandleMessage candle)
 	{
 		if (_longEntries <= 0 || _longEntries >= MaxEntries)
-		return;
+			return;
 
 		if (_longOrderPending || _longExitPending)
-		return;
+			return;
 
 		var stepDistance = GetStepDistance();
 		if (stepDistance <= 0m)
-		return;
+			return;
 
 		if (_lastLongEntryPrice is not decimal lastPrice)
-		return;
+			return;
 
 		var referencePrice = Math.Max(candle.HighPrice, candle.ClosePrice);
 		if (referencePrice < lastPrice + stepDistance)
-		return;
+			return;
 
 		SendLongEntry();
 	}
@@ -460,21 +460,21 @@ set => _trailingBufferPoints.Value = value;
 	private void TryScaleShort(ICandleMessage candle)
 	{
 		if (_shortEntries <= 0 || _shortEntries >= MaxEntries)
-		return;
+			return;
 
 		if (_shortOrderPending || _shortExitPending)
-		return;
+			return;
 
 		var stepDistance = GetStepDistance();
 		if (stepDistance <= 0m)
-		return;
+			return;
 
 		if (_lastShortEntryPrice is not decimal lastPrice)
-		return;
+			return;
 
 		var referencePrice = Math.Min(candle.LowPrice, candle.ClosePrice);
 		if (referencePrice > lastPrice - stepDistance)
-		return;
+			return;
 
 		SendShortEntry();
 	}
@@ -483,7 +483,7 @@ set => _trailingBufferPoints.Value = value;
 	{
 		var volume = LotSize;
 		if (volume <= 0m)
-		return;
+			return;
 
 		_longOrderPending = true;
 		BuyMarket(volume: volume);
@@ -493,7 +493,7 @@ set => _trailingBufferPoints.Value = value;
 	{
 		var volume = LotSize;
 		if (volume <= 0m)
-		return;
+			return;
 
 		_shortOrderPending = true;
 		SellMarket(volume: volume);
@@ -502,11 +502,11 @@ set => _trailingBufferPoints.Value = value;
 	private void TryCloseLong()
 	{
 		if (_longExitPending)
-		return;
+			return;
 
 		var volume = Math.Abs(Position);
 		if (volume <= 0m)
-		return;
+			return;
 
 		_longExitPending = true;
 		SellMarket(volume: volume);
@@ -515,11 +515,11 @@ set => _trailingBufferPoints.Value = value;
 	private void TryCloseShort()
 	{
 		if (_shortExitPending)
-		return;
+			return;
 
 		var volume = Math.Abs(Position);
 		if (volume <= 0m)
-		return;
+			return;
 
 		_shortExitPending = true;
 		BuyMarket(volume: volume);
@@ -529,11 +529,11 @@ set => _trailingBufferPoints.Value = value;
 	{
 		var baseVolume = LotSize;
 		if (baseVolume <= 0m)
-		return 0;
+			return 0;
 
 		var ratio = Math.Abs(positionVolume) / baseVolume;
 		if (ratio <= 0m)
-		return 0;
+			return 0;
 
 		return Math.Max(1, (int)Math.Round(ratio, MidpointRounding.AwayFromZero));
 	}
@@ -544,16 +544,16 @@ set => _trailingBufferPoints.Value = value;
 
 	private decimal GetStepDistance() => StepPips * _pipSize;
 
-private decimal GetTrailingBuffer()
-{
-return _pointSize > 0m ? TrailingBufferPoints * _pointSize : 0m;
-}
+	private decimal GetTrailingBuffer()
+	{
+		return _pointSize > 0m ? TrailingBufferPoints * _pointSize : 0m;
+	}
 
 	private decimal CalculatePipSize()
 	{
 		var step = Security?.Step ?? 0m;
 		if (step <= 0m)
-		return 1m;
+			return 1m;
 
 		var decimals = GetDecimalPlaces(step);
 		return decimals == 3 || decimals == 5 ? step * 10m : step;

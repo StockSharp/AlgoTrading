@@ -25,7 +25,7 @@ public class HiddenSlStrategy : Strategy
 			.SetDisplay("Stop Loss", "Loss limit in currency (negative value)", "General");
 	}
 
-	public override System.Collections.Generic.IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, DataType.Ticks)];
 	}

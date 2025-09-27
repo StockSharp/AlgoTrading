@@ -1,7 +1,7 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
-
+using System.Collections.Generic;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -242,7 +242,7 @@ public class Starter2005Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	public override System.Collections.Generic.IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}

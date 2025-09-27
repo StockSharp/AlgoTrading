@@ -257,7 +257,7 @@ public class IchimokuPriceActionStrategy : Strategy
 		.SetDisplay("Trailing Step", "Minimum improvement in pips before stop is moved", "Risk");
 	}
 
-	public override System.Collections.Generic.IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		yield return (Security, CandleType);
 		if (AtrCandleType != CandleType)

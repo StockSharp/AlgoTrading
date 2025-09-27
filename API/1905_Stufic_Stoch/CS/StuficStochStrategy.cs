@@ -150,7 +150,7 @@ public class StuficStochStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	public override System.Collections.Generic.IEnumerable<(StockSharp.BusinessEntities.Security sec, DataType dt)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}

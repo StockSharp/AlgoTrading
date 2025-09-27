@@ -1,5 +1,5 @@
 using System;
-
+using System.Collections.Generic;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -207,7 +207,7 @@ public TakeProfitBreakoutStrategy()
 }
 
 /// <inheritdoc />
-public override System.Collections.Generic.IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 {
 	return [(Security, CandleType)];
 }

@@ -65,7 +65,7 @@ public class BitcoinMomentumStrategy : Strategy
 	public DateTimeOffset StartTime { get => _startTime.Value; set => _startTime.Value = value; }
 	public DateTimeOffset EndTime { get => _endTime.Value; set => _endTime.Value = value; }
 	
-	public override System.Collections.Generic.IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	=> [(Security, CandleType), (Security, HigherCandleType)];
 	
 	protected override void OnReseted()

@@ -1,5 +1,5 @@
 using System;
-
+using System.Collections.Generic;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -195,7 +195,7 @@ public class FrBestExp02MalomaModStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	public override System.Collections.Generic.IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return new[] { (Security, CandleType) };
 	}

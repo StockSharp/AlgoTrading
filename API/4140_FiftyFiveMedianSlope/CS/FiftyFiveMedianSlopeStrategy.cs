@@ -1,7 +1,7 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
-
+using System.Collections.Generic;
 using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -143,7 +143,7 @@ public class FiftyFiveMedianSlopeStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	public override System.Collections.Generic.IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	=> [(Security, CandleType)];
 
 	protected override void OnReseted()

@@ -4,6 +4,7 @@ using StockSharp.Algo;
 using StockSharp.Algo.Strategies;
 using StockSharp.Algo.Indicators;
 using StockSharp.Messages;
+using StockSharp.BusinessEntities;
 
 namespace StockSharp.Samples.Strategies;
 

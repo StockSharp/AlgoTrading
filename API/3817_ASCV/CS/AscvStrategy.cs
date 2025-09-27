@@ -227,7 +227,7 @@ public class AscvStrategy : Strategy
 		set => _orderVolume.Value = value;
 	}
 
-	public override System.Collections.Generic.IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}

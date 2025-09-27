@@ -63,7 +63,7 @@ public class DailyTargetStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	public override System.Collections.Generic.IEnumerable<(StockSharp.BusinessEntities.Security sec, DataType dt)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, DataType.Level1), (Security, DataType.Ticks)];
 
 	/// <inheritdoc />
@@ -110,7 +110,7 @@ public class DailyTargetStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(StockSharp.BusinessEntities.MyTrade trade)
+	protected override void OnNewMyTrade(MyTrade trade)
 	{
 		base.OnNewMyTrade(trade);
 		// Realized profit changes immediately after each fill.

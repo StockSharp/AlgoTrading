@@ -57,7 +57,7 @@ public class GoldenCrossVwmaEmaStrategy : Strategy
 		set => _emaLength.Value = value;
 	}
 
-	public override System.Collections.Generic.IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType), (Security, HigherCandleType)];
 
 	protected override void OnReseted()

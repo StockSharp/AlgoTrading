@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 using StockSharp.Algo.Strategies;
@@ -99,7 +100,7 @@ public class S4IBSMeanRev3candleExitStrategy : Strategy
 		base.OnStarted(time);
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)

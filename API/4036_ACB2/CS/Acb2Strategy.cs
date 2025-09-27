@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 
 using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;

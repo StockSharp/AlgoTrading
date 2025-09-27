@@ -1,5 +1,5 @@
 using System;
-
+using System.Collections.Generic;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -171,7 +171,7 @@ public class KlossMql8186Strategy : Strategy
         public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
         /// <inheritdoc />
-        public override System.Collections.Generic.IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+        public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
         {
                 return [(Security, CandleType)];
         }

@@ -264,7 +264,7 @@ public class Tdi2ReOpenStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	public override System.Collections.Generic.IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
@@ -441,7 +441,7 @@ public class Tdi2ReOpenStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(StockSharp.BusinessEntities.MyTrade trade)
+	protected override void OnNewMyTrade(MyTrade trade)
 	{
 		base.OnNewMyTrade(trade);
 
