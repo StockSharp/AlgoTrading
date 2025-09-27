@@ -30,6 +30,7 @@ public class IbsRsiCciV4Strategy : Strategy
 	private readonly StrategyParam<bool> _enableLongClose;
 	private readonly StrategyParam<bool> _enableShortClose;
 	private readonly StrategyParam<decimal> _volume;
+	private readonly StrategyParam<decimal> _cciWeight;
 
 	private RelativeStrengthIndex _rsi = null!;
 	private CommodityChannelIndex _cci = null!;
@@ -46,7 +47,6 @@ public class IbsRsiCciV4Strategy : Strategy
 
 	private const decimal IbsWeight = 700m;
 	private const decimal RsiWeight = 9m;
-	private const decimal CciWeight = 1m;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="IbsRsiCciV4Strategy"/> class.
@@ -87,6 +87,9 @@ public class IbsRsiCciV4Strategy : Strategy
 
 		_stepThreshold = Param(nameof(StepThreshold), 50m)
 		.SetDisplay("Step Threshold", "Maximum adjustment applied when the composite signal jumps", "Trading")
+		.SetCanOptimize(true);
+		_cciWeight = Param(nameof(CciWeight), 1m)
+		.SetDisplay("CCI Weight", "Weight applied to the CCI component within the composite signal", "Indicator")
 		.SetCanOptimize(true);
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -189,6 +192,15 @@ public class IbsRsiCciV4Strategy : Strategy
 	{
 		get => _stepThreshold.Value;
 		set => _stepThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Weight applied to the CCI component within the composite oscillator.
+	/// </summary>
+	public decimal CciWeight
+	{
+		get => _cciWeight.Value;
+		set => _cciWeight.Value = value;
 	}
 
 	/// <summary>
