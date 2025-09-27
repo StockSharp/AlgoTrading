@@ -26,6 +26,7 @@ public class DonchianScalperStrategy : Strategy
 	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<decimal> _priceToleranceMultiplier;
 
 	private DonchianChannels _donchian = null!;
 	private ExponentialMovingAverage _ema = null!;
@@ -46,8 +47,6 @@ public class DonchianScalperStrategy : Strategy
 	private decimal _lastAtr;
 	private int _barsSinceExit = int.MaxValue;
 	private decimal _previousPosition;
-
-	private const decimal PriceToleranceMultiplier = 0.5m;
 
 	/// <summary>
 	/// Determines how the strategy manages profitable positions.
@@ -168,6 +167,15 @@ public class DonchianScalperStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Multiplier applied to the instrument point size to derive price tolerance when adjusting orders.
+	/// </summary>
+	public decimal PriceToleranceMultiplier
+	{
+		get => _priceToleranceMultiplier.Value;
+		set => _priceToleranceMultiplier.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes the Donchian scalper strategy.
 	/// </summary>
 	public DonchianScalperStrategy()
@@ -220,6 +228,12 @@ public class DonchianScalperStrategy : Strategy
 		.SetDisplay("ATR Multiplier", "Multiplier applied to the ATR based trailing stop", "Indicators")
 		.SetCanOptimize(true)
 		.SetOptimize(0.5m, 5m, 0.5m);
+
+		_priceToleranceMultiplier = Param(nameof(PriceToleranceMultiplier), 0.5m)
+			.SetDisplay("Price Tolerance Multiplier", "Multiplier applied to point size when reconciling order prices", "Orders")
+			.SetGreaterThanZero()
+			.SetCanOptimize(true)
+			.SetOptimize(0.1m, 2m, 0.1m);
 	}
 
 	/// <inheritdoc />
