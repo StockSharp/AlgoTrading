@@ -14,8 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class VortexIndicatorMmrecDuplexStrategy : Strategy
 {
-	private const int MaxHistory = 512;
-
 	private readonly StrategyParam<DataType> _longCandleType;
 	private readonly StrategyParam<DataType> _shortCandleType;
 	private readonly StrategyParam<int> _longLength;
@@ -42,6 +40,7 @@ public class VortexIndicatorMmrecDuplexStrategy : Strategy
 	private readonly StrategyParam<decimal> _shortTakeProfitSteps;
 	private readonly StrategyParam<decimal> _longSlippageSteps;
 	private readonly StrategyParam<decimal> _shortSlippageSteps;
+	private readonly StrategyParam<int> _maxHistory;
 
 	private VortexIndicator _longVortex = null!;
 	private VortexIndicator _shortVortex = null!;
@@ -400,6 +399,15 @@ public class VortexIndicatorMmrecDuplexStrategy : Strategy
 	{
 		get => _shortSlippageSteps.Value;
 		set => _shortSlippageSteps.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum number of indicator points stored for divergence detection.
+	/// </summary>
+	public int MaxHistory
+	{
+		get => _maxHistory.Value;
+		set => _maxHistory.Value = value;
 	}
 
 	/// <inheritdoc />

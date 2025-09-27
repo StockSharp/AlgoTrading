@@ -16,9 +16,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TengriStrategy : Strategy
 {
-	private const decimal RsiUpperThreshold = 70m;
-	private const decimal RsiLowerThreshold = 30m;
-
 	private readonly StrategyParam<DataType> _dealCandleType;
 	private readonly StrategyParam<DataType> _entryCandleType;
 	private readonly StrategyParam<DataType> _scaleCandleType;
@@ -26,6 +23,8 @@ public class TengriStrategy : Strategy
 	private readonly StrategyParam<DataType> _silence1CandleType;
 	private readonly StrategyParam<DataType> _silence2CandleType;
 	private readonly StrategyParam<int> _rsiPeriod;
+	private readonly StrategyParam<decimal> _rsiUpperThreshold;
+	private readonly StrategyParam<decimal> _rsiLowerThreshold;
 	private readonly StrategyParam<int> _silencePeriod1;
 	private readonly StrategyParam<int> _silenceInterpolation1;
 	private readonly StrategyParam<decimal> _silenceLevel1;
@@ -110,6 +109,12 @@ public class TengriStrategy : Strategy
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "Lookback period for the RSI filter", "Indicators");
+
+		_rsiUpperThreshold = Param(nameof(RsiUpperThreshold), 70m)
+			.SetDisplay("RSI Overbought", "Upper RSI level blocking additional longs", "Indicators");
+
+		_rsiLowerThreshold = Param(nameof(RsiLowerThreshold), 30m)
+			.SetDisplay("RSI Oversold", "Lower RSI level blocking additional shorts", "Indicators");
 
 		_silencePeriod1 = Param(nameof(SilencePeriod1), 11)
 			.SetDisplay("Silence #1 Period", "ATR length for the first quiet-market detector", "Indicators")
@@ -255,6 +260,24 @@ public class TengriStrategy : Strategy
 	{
 		get => _rsiPeriod.Value;
 		set => _rsiPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// RSI level considered overbought and used to pause new long entries.
+	/// </summary>
+	public decimal RsiUpperThreshold
+	{
+		get => _rsiUpperThreshold.Value;
+		set => _rsiUpperThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// RSI level considered oversold and used to pause new short entries.
+	/// </summary>
+	public decimal RsiLowerThreshold
+	{
+		get => _rsiLowerThreshold.Value;
+		set => _rsiLowerThreshold.Value = value;
 	}
 
 	/// <summary>

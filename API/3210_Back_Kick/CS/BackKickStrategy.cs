@@ -13,13 +13,12 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BackKickStrategy : Strategy
 {
-	private const decimal VolumeTolerance = 0.0000001m;
-
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<bool> _logDiagnostics;
+	private readonly StrategyParam<decimal> _volumeTolerance;
 
 	private readonly Dictionary<Order, PendingOrderInfo> _pendingOrders = new();
 
@@ -84,6 +83,15 @@ public class BackKickStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Minimal volume difference treated as meaningful when reconciling hedged orders.
+	/// </summary>
+	public decimal VolumeTolerance
+	{
+		get => _volumeTolerance.Value;
+		set => _volumeTolerance.Value = value;
+	}
+
+	/// <summary>
 	/// Initialize strategy parameters.
 	/// </summary>
 	public BackKickStrategy()
@@ -111,6 +119,10 @@ public class BackKickStrategy : Strategy
 
 		_logDiagnostics = Param(nameof(LogDiagnostics), false)
 		.SetDisplay("Log Diagnostics", "Write detailed fill information", "Logging");
+
+		_volumeTolerance = Param(nameof(VolumeTolerance), 0.0000001m)
+		.SetGreaterThanZero()
+		.SetDisplay("Volume Tolerance", "Minimum difference treated as a volume change", "Trading");
 	}
 
 	/// <inheritdoc />

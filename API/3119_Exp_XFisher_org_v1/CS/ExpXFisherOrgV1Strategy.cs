@@ -46,8 +46,6 @@ public enum XfisherAppliedPrice
 /// </summary>
 public class ExpXFisherOrgV1Strategy : Strategy
 {
-	private const int MaxHistory = 1024;
-
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<bool> _buyOpen;
 	private readonly StrategyParam<bool> _sellOpen;
@@ -60,6 +58,7 @@ public class ExpXFisherOrgV1Strategy : Strategy
 	private readonly StrategyParam<XfisherSmoothingMethod> _smoothingMethod;
 	private readonly StrategyParam<XfisherAppliedPrice> _priceType;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _maxHistory;
 
 	private XFisherOrgIndicator _indicator = null!;
 	private readonly List<decimal> _fisherHistory = new();
@@ -173,6 +172,15 @@ public class ExpXFisherOrgV1Strategy : Strategy
 	}
 
 	/// <summary>
+	/// Maximum number of Fisher readings cached for reversal detection.
+	/// </summary>
+	public int MaxHistory
+	{
+		get => _maxHistory.Value;
+		set => _maxHistory.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of <see cref="ExpXFisherOrgV1Strategy"/>.
 	/// </summary>
 	public ExpXFisherOrgV1Strategy()
@@ -222,6 +230,10 @@ public class ExpXFisherOrgV1Strategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for calculations", "General");
+
+		_maxHistory = Param(nameof(MaxHistory), 1024)
+			.SetGreaterThanZero()
+			.SetDisplay("History Size", "Maximum number of cached Fisher values", "Advanced");
 	}
 
 	/// <inheritdoc />

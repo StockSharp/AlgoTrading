@@ -14,8 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class PuriaMethodStrategy : Strategy
 {
-	private const decimal Epsilon = 0.0000001m;
-
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _trailingStopPips;
@@ -23,6 +21,7 @@ public class PuriaMethodStrategy : Strategy
 	private readonly StrategyParam<decimal> _minProfitStepPips;
 	private readonly StrategyParam<decimal> _minProfitFraction;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _epsilon;
 
 	private readonly StrategyParam<int> _ma0Period;
 	private readonly StrategyParam<int> _ma0Shift;
@@ -101,6 +100,10 @@ public class PuriaMethodStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series", "Data");
+
+		_epsilon = Param(nameof(Epsilon), 0.0000001m)
+			.SetGreaterThanZero()
+			.SetDisplay("Comparison Tolerance", "Minimum difference considered significant in price/volume checks", "Advanced");
 
 		_ma0Period = Param(nameof(Ma0Period), 69)
 			.SetGreaterThanZero()
@@ -225,6 +228,15 @@ public class PuriaMethodStrategy : Strategy
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Numerical tolerance applied when comparing prices and volumes.
+	/// </summary>
+	public decimal Epsilon
+	{
+		get => _epsilon.Value;
+		set => _epsilon.Value = value;
 	}
 
 	/// <summary>

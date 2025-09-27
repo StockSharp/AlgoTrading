@@ -15,8 +15,6 @@ using StockSharp.Messages;
 /// </summary>
 public class CidomoStrategy : Strategy
 {
-	private const int TimeWindowSeconds = 30;
-
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
@@ -30,6 +28,7 @@ public class CidomoStrategy : Strategy
 	private readonly StrategyParam<bool> _useTimeFilter;
 	private readonly StrategyParam<int> _startHour;
 	private readonly StrategyParam<int> _startMinute;
+	private readonly StrategyParam<int> _timeWindowSeconds;
 
 	private Highest _highest = null!;
 	private Lowest _lowest = null!;
@@ -106,6 +105,10 @@ public class CidomoStrategy : Strategy
 		_startMinute = Param(nameof(StartMinute), 58)
 			.SetRange(0, 59)
 			.SetDisplay("Start Minute", "Minute component of the trading window", "Filters");
+
+		_timeWindowSeconds = Param(nameof(TimeWindowSeconds), 30)
+			.SetGreaterThanZero()
+			.SetDisplay("Time Window (sec)", "Tolerance around the candle close for order placement", "Filters");
 	}
 
 	/// <summary>
@@ -223,6 +226,15 @@ public class CidomoStrategy : Strategy
 	{
 		get => _startMinute.Value;
 		set => _startMinute.Value = value;
+	}
+
+	/// <summary>
+	/// Allowed time difference between candle completion and range evaluation in seconds.
+	/// </summary>
+	public int TimeWindowSeconds
+	{
+		get => _timeWindowSeconds.Value;
+		set => _timeWindowSeconds.Value = value;
 	}
 
 	/// <inheritdoc />
