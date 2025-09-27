@@ -44,8 +44,8 @@ public class IbsRsiCciV4Strategy : Strategy
 	private readonly List<decimal> _signalHistory = [];
 	private readonly List<decimal> _baselineHistory = [];
 
-	private const decimal IbsWeight = 700m;
-	private const decimal RsiWeight = 9m;
+	private readonly StrategyParam<decimal> _ibsWeight;
+	private readonly StrategyParam<decimal> _rsiWeight;
 	private const decimal CciWeight = 1m;
 
 	/// <summary>
@@ -88,6 +88,12 @@ public class IbsRsiCciV4Strategy : Strategy
 		_stepThreshold = Param(nameof(StepThreshold), 50m)
 		.SetDisplay("Step Threshold", "Maximum adjustment applied when the composite signal jumps", "Trading")
 		.SetCanOptimize(true);
+
+		_ibsWeight = Param(nameof(IbsWeight), 700m)
+		.SetDisplay("IBS Weight", "Weight applied to IBS component", "Trading");
+
+		_rsiWeight = Param(nameof(RsiWeight), 9m)
+		.SetDisplay("RSI Weight", "Weight applied to RSI component", "Trading");
 
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetDisplay("Signal Bar", "Number of closed candles used for confirmation", "Trading")
@@ -189,6 +195,24 @@ public class IbsRsiCciV4Strategy : Strategy
 	{
 		get => _stepThreshold.Value;
 		set => _stepThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Weight applied to the IBS component.
+	/// </summary>
+	public decimal IbsWeight
+	{
+		get => _ibsWeight.Value;
+		set => _ibsWeight.Value = value;
+	}
+
+	/// <summary>
+	/// Weight applied to the RSI component.
+	/// </summary>
+	public decimal RsiWeight
+	{
+		get => _rsiWeight.Value;
+		set => _rsiWeight.Value = value;
 	}
 
 	/// <summary>

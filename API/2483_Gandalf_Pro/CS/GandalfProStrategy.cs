@@ -15,7 +15,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class GandalfProStrategy : Strategy
 {
-	private const decimal EntryBufferSteps = 15m;
+	private readonly StrategyParam<decimal> _entryBufferSteps;
 
 	private readonly StrategyParam<bool> _enableBuy;
 	private readonly StrategyParam<int> _buyLength;
@@ -179,6 +179,10 @@ public class GandalfProStrategy : Strategy
 	/// </summary>
 	public GandalfProStrategy()
 	{
+		_entryBufferSteps = Param(nameof(EntryBufferSteps), 15m)
+			.SetGreaterThanOrEqualToZero()
+			.SetDisplay("Entry Buffer", "Buffer distance in price steps", "General");
+
 		_enableBuy = Param(nameof(EnableBuy), true)
 			.SetDisplay("Enable Buy", "Allow long trades", "General");
 

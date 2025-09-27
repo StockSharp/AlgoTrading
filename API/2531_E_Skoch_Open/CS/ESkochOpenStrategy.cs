@@ -14,7 +14,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ESkochOpenStrategy : Strategy
 {
-	private const decimal MartingaleMultiplier = 1.6m;
+	private readonly StrategyParam<decimal> _martingaleMultiplier;
 
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
@@ -140,6 +140,10 @@ public class ESkochOpenStrategy : Strategy
 	/// </summary>
 	public ESkochOpenStrategy()
 	{
+		_martingaleMultiplier = Param(nameof(MartingaleMultiplier), 1.6m)
+			.SetGreaterThanOrEqual(1m)
+			.SetDisplay("Martingale Mult", "Volume multiplier after losses", "Risk");
+
 		_stopLossPoints = Param(nameof(StopLossPoints), 130m)
 		.SetDisplay("Stop Loss Points", "Loss distance measured in adjusted points", "Risk")
 		.SetGreaterThanOrEqual(0m);

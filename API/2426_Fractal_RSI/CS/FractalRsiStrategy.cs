@@ -21,6 +21,7 @@ public class FractalRsiStrategy : Strategy
 	private readonly StrategyParam<decimal> _lowLevel;
 	private readonly StrategyParam<int> _stopLoss;
 	private readonly StrategyParam<int> _takeProfit;
+	private readonly StrategyParam<double> _log2;
 
 	private decimal? _previousValue;
 
@@ -97,6 +98,15 @@ public class FractalRsiStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Natural logarithm of 2 used in indicator calculations.
+	/// </summary>
+	public double Log2Value
+	{
+		get => _log2.Value;
+		set => _log2.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the strategy.
 	/// </summary>
 	public FractalRsiStrategy()
@@ -146,7 +156,8 @@ public class FractalRsiStrategy : Strategy
 		var indicator = new FractalRsi
 		{
 			Period = FractalPeriod,
-			NormalSpeed = NormalSpeed
+			NormalSpeed = NormalSpeed,
+			Log2 = Log2Value
 		};
 
 		var subscription = SubscribeCandles(CandleType);
@@ -227,7 +238,7 @@ public class FractalRsiStrategy : Strategy
 		public int NormalSpeed { get; set; } = 30;
 
 		private readonly List<decimal> _prices = new();
-		private const double Log2 = 0.6931471805599453; // Math.Log(2)
+		public double Log2 { get; set; } = Math.Log(2.0);
 
 		protected override IIndicatorValue OnProcess(IIndicatorValue input)
 		{

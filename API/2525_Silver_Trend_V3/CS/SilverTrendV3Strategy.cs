@@ -12,11 +12,11 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SilverTrendV3Strategy : Strategy
 {
-	private const int CountBars = 350;
-	private const int Ssp = 9;
-	private const int JtpoLength = 14;
-	private const int HistoryCapacity = 400;
-	private const int Risk = 3;
+	private readonly StrategyParam<int> _countBars;
+	private readonly StrategyParam<int> _ssp;
+	private readonly StrategyParam<int> _jtpoLength;
+	private readonly StrategyParam<int> _historyCapacity;
+	private readonly StrategyParam<int> _risk;
 
 	private readonly StrategyParam<decimal> _trailingStopPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
@@ -80,10 +80,75 @@ public class SilverTrendV3Strategy : Strategy
 	}
 
 	/// <summary>
+	/// Number of bars used in the indicator history.
+	/// </summary>
+	public int CountBars
+	{
+		get => _countBars.Value;
+		set => _countBars.Value = value;
+	}
+
+	/// <summary>
+	/// Sliding window length for the signal filter.
+	/// </summary>
+	public int Ssp
+	{
+		get => _ssp.Value;
+		set => _ssp.Value = value;
+	}
+
+	/// <summary>
+	/// Length used when smoothing JTPO indicator.
+	/// </summary>
+	public int JtpoLength
+	{
+		get => _jtpoLength.Value;
+		set => _jtpoLength.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum number of candles stored in history.
+	/// </summary>
+	public int HistoryCapacity
+	{
+		get => _historyCapacity.Value;
+		set => _historyCapacity.Value = value;
+	}
+
+	/// <summary>
+	/// Risk coefficient used in signal calculations.
+	/// </summary>
+	public int Risk
+	{
+		get => _risk.Value;
+		set => _risk.Value = value;
+	}
+
+	/// <summary>
 	/// Initialize default parameters.
 	/// </summary>
 	public SilverTrendV3Strategy()
 	{
+		_countBars = Param(nameof(CountBars), 350)
+			.SetGreaterThanZero()
+			.SetDisplay("Count Bars", "Number of candles required before trading", "Indicator");
+
+		_ssp = Param(nameof(Ssp), 9)
+			.SetGreaterThanZero()
+			.SetDisplay("SSP", "Sliding window length", "Indicator");
+
+		_jtpoLength = Param(nameof(JtpoLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("JTPO Length", "JTPO smoothing length", "Indicator");
+
+		_historyCapacity = Param(nameof(HistoryCapacity), 400)
+			.SetGreaterThanZero()
+			.SetDisplay("History Capacity", "Maximum stored candles", "Indicator");
+
+		_risk = Param(nameof(Risk), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("Risk", "Risk coefficient", "Trading");
+
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 50m)
 			.SetDisplay("Trailing Stop", "Trailing distance in price steps", "Risk")
 			.SetGreaterThanOrEqualToZero();

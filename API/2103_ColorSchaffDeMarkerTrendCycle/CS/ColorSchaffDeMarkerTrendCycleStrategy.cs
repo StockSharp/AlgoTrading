@@ -25,6 +25,7 @@ public class ColorSchaffDeMarkerTrendCycleStrategy : Strategy
 	private readonly StrategyParam<bool> _sellPosOpen;
 	private readonly StrategyParam<bool> _buyPosClose;
 	private readonly StrategyParam<bool> _sellPosClose;
+	private readonly StrategyParam<decimal> _factor;
 	
 	private Highest _macdHigh = null!;
 	private Lowest _macdLow = null!;
@@ -37,7 +38,6 @@ public class ColorSchaffDeMarkerTrendCycleStrategy : Strategy
 	private bool _st2Pass;
 	private int _prevColor;
 	
-	private const decimal Factor = 0.5m;
 	
 	/// <summary>
 	/// Fast DeMarker period.
@@ -128,7 +128,16 @@ public class ColorSchaffDeMarkerTrendCycleStrategy : Strategy
 		get => _sellPosClose.Value;
 		set => _sellPosClose.Value = value;
 	}
-	
+
+	/// <summary>
+	/// Smoothing factor used in stochastic EMA updates.
+	/// </summary>
+	public decimal Factor
+	{
+		get => _factor.Value;
+		set => _factor.Value = value;
+	}
+
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ColorSchaffDeMarkerTrendCycleStrategy"/> class.
 	/// </summary>
@@ -172,6 +181,11 @@ public class ColorSchaffDeMarkerTrendCycleStrategy : Strategy
 		
 		_sellPosClose = Param(nameof(SellPosClose), true)
 		.SetDisplay("Close Short", "Allow closing shorts", "Trading");
+
+		_factor = Param(nameof(Factor), 0.5m)
+		.SetDisplay("Factor", "Smoothing factor", "Indicator")
+		.SetCanOptimize(true)
+		.SetOptimize(0.1m, 0.9m, 0.1m);
 	}
 	
 	/// <inheritdoc />
