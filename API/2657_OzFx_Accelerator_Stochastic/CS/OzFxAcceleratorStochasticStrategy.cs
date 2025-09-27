@@ -16,7 +16,7 @@ using StockSharp.Messages;
 /// </summary>
 public class OzFxAcceleratorStochasticStrategy : Strategy
 {
-	private const int MaxLayers = 5;
+	private readonly StrategyParam<int> _maxLayers;
 
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<decimal> _stopLossPips;
@@ -61,6 +61,15 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 		public decimal? StopPrice;
 		public decimal? TakeProfitPrice;
 		public int Layer;
+	}
+
+	/// <summary>
+	/// Maximum number of layered positions.
+	/// </summary>
+	public int MaxLayers
+	{
+		get => _maxLayers.Value;
+		set => _maxLayers.Value = value;
 	}
 
 	/// <summary>
@@ -158,6 +167,10 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 	/// </summary>
 	public OzFxAcceleratorStochasticStrategy()
 	{
+		_maxLayers = Param(nameof(MaxLayers), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Max Layers", "Maximum number of layered positions", "Risk");
+
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume", "Order volume for each layer", "Trading");

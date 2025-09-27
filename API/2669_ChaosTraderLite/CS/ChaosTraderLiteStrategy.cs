@@ -14,8 +14,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ChaosTraderLiteStrategy : Strategy
 {
-	private const int LipsShift = 3;
-	private const int TeethShift = 5;
+	private readonly StrategyParam<int> _lipsShift;
+	private readonly StrategyParam<int> _teethShift;
 
 	private readonly StrategyParam<int> _magnitudePips;
 	private readonly StrategyParam<bool> _useFirstWiseMan;
@@ -63,6 +63,24 @@ public class ChaosTraderLiteStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Number of candles used to shift the Alligator lips line.
+	/// </summary>
+	public int LipsShift
+	{
+		get => _lipsShift.Value;
+		set => _lipsShift.Value = value;
+	}
+
+	/// <summary>
+	/// Number of candles used to shift the Alligator teeth line.
+	/// </summary>
+	public int TeethShift
+	{
+		get => _teethShift.Value;
+		set => _teethShift.Value = value;
+	}
+
+	/// <summary>
 	/// Enable the first wise man divergent bar setup.
 	/// </summary>
 	public bool UseFirstWiseMan
@@ -107,6 +125,14 @@ public class ChaosTraderLiteStrategy : Strategy
 		_magnitudePips = Param(nameof(MagnitudePips), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Magnitude", "Distance from lips in pips", "General");
+
+		_lipsShift = Param(nameof(LipsShift), 3)
+			.SetNotNegative()
+			.SetDisplay("Lips Shift", "Shift applied to Alligator lips", "Alligator");
+
+		_teethShift = Param(nameof(TeethShift), 5)
+			.SetNotNegative()
+			.SetDisplay("Teeth Shift", "Shift applied to Alligator teeth", "Alligator");
 
 		_useFirstWiseMan = Param(nameof(UseFirstWiseMan), true)
 			.SetDisplay("First Wise Man", "Enable divergent bar setup", "General");

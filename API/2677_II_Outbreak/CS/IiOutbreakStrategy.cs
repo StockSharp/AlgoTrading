@@ -14,7 +14,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class IiOutbreakStrategy : Strategy
 {
-	private const decimal _epsilon = 0.0000000001m;
+	private readonly StrategyParam<decimal> _epsilonTolerance;
 
 	private readonly StrategyParam<decimal> _spreadThreshold;
 	private readonly StrategyParam<decimal> _trailStopPoints;
@@ -63,6 +63,15 @@ public class IiOutbreakStrategy : Strategy
 	{
 		get => _spreadThreshold.Value;
 		set => _spreadThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum acceleration threshold treated as zero when evaluating timing signals.
+	/// </summary>
+	public decimal EpsilonTolerance
+	{
+		get => _epsilonTolerance.Value;
+		set => _epsilonTolerance.Value = value;
 	}
 
 	/// <summary>
@@ -145,6 +154,10 @@ public class IiOutbreakStrategy : Strategy
 		_commission = Param(nameof(Commission), 4m)
 			.SetGreaterThanOrEqual(0m)
 			.SetDisplay("Commission", "Round lot commission used for stop offset", "Risk Management");
+
+		_epsilonTolerance = Param(nameof(EpsilonTolerance), 0.0000000001m)
+			.SetGreaterThanOrEqual(0m)
+			.SetDisplay("Epsilon", "Minimum acceleration threshold", "Filters");
 
 		_spreadThreshold = Param(nameof(SpreadThreshold), 6m)
 			.SetGreaterThanOrEqual(0m)
@@ -675,7 +688,7 @@ public class IiOutbreakStrategy : Strategy
 					j = 0;
 			}
 
-			if (j > 6 && amov > _epsilon)
+			if (j > 6 && amov > EpsilonTolerance)
 			{
 				tval = 50m * (dmov / amov + 1m);
 				if (tval > 100m)

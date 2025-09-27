@@ -13,7 +13,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class StopreversalTrailingStrategy : Strategy
 {
-	private const int AtrPeriod = 15;
+	private readonly StrategyParam<int> _atrPeriod;
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _stopLossSteps;
@@ -43,8 +43,11 @@ public class StopreversalTrailingStrategy : Strategy
 	public StopreversalTrailingStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-		.SetDisplay("Candle Type", "Stopreversal timeframe", "General");
+			.SetDisplay("Candle Type", "Stopreversal timeframe", "General");
 
+		_atrPeriod = Param(nameof(AtrPeriod), 15)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "ATR lookback for trailing stop", "Indicator");
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 1000)
 		.SetNotNegative()
@@ -91,6 +94,14 @@ public class StopreversalTrailingStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
+	/// <summary>
+	/// ATR period used for the trailing stop calculation.
+	/// </summary>
+	public int AtrPeriod
+	{
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
+	}
 
 	/// <summary>
 	/// Stop loss distance measured in price steps.
