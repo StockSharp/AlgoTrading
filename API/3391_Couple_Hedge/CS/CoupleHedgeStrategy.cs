@@ -441,9 +441,9 @@ public class CoupleHedgeStrategy : Strategy
 		.SetDisplay("Step Open Next", "Initial loss level that triggers averaging", "Risk Management")
 		.SetCanOptimize(true);
 
-_groupCount = Param(nameof(GroupCount), 3)
-		.SetGreaterOrEqual(1)
-		.SetDisplay("Group Count", "Number of hedge groups configured for trading", "Groups");
+		_groupCount = Param(nameof(GroupCount), 3)
+			.SetRange(1, int.MaxValue)
+			.SetDisplay("Group Count", "Number of hedge groups configured for trading", "Groups");
 
 		_groups = new GroupSlot[GroupCount];
 
@@ -881,7 +881,7 @@ _groupCount = Param(nameof(GroupCount), 3)
 			.SetDisplay($"{groupName} Enabled", "Allow trading for this pair", groupName);
 
 			_rangeEmaAlpha = owner.Param($"Group{index + 1}RangeAlpha", 0.2m)
-			.SetMinMax(0m, 1m)
+			.SetRange(0m, 1m)
 			.SetDisplay($"{groupName} Range EMA Alpha", "Smoothing factor for the range estimate", groupName);
 
 			_plusSecurity = owner.Param<Security>($"Group{index + 1}Plus", new Security { Id = plusId })

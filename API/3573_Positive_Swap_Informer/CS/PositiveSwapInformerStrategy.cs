@@ -7,6 +7,8 @@ using System.Globalization;
 using System.Text;
 using System.Threading;
 
+using Ecng.Common;
+
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>

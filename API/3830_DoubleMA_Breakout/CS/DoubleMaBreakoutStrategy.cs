@@ -323,7 +323,7 @@ public class DoubleMaBreakoutStrategy : Strategy
 				_buyStopOrder = null;
 				CancelOppositeStop(Sides.Buy);
 			}
-			else if (order.State is OrderStates.Failed or OrderStates.Cancelled)
+			else if (order.State == OrderStates.Failed || order.IsCanceled())
 			{
 				_buyStopOrder = null;
 			}

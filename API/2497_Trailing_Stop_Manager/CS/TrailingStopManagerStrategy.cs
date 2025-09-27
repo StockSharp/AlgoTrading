@@ -113,34 +113,33 @@ public class TrailingStopManagerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-		protected override void OnOwnTradeReceived(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+
+		if (trade.Trade == null)
+			return;
+
+		var tradePrice = trade.Trade.Price;
+
+		// Reset trailing state whenever a new position is opened.
+		if (Position > 0 && trade.Order.Side == Sides.Buy)
 		{
-			base.OnOwnTradeReceived(trade);
-
-			if (trade.Trade == null)
-				return;
-
-			var tradePrice = trade.Trade.Price;
-
-			// Reset trailing state whenever a new position is opened.
-			if (Position > 0 && trade.Order.Side == Sides.Buy)
-			{
-				_entryPrice = tradePrice;
-				_trailingActive = false;
-				_trailingStopPrice = 0m;
-				_currentDirection = InitialDirection.Long;
-			}
-			else if (Position < 0 && trade.Order.Side == Sides.Sell)
-			{
-				_entryPrice = tradePrice;
-				_trailingActive = false;
-				_trailingStopPrice = 0m;
-				_currentDirection = InitialDirection.Short;
-			}
-			else if (Position == 0)
-			{
-				ResetTrailing();
-			}
+			_entryPrice = tradePrice;
+			_trailingActive = false;
+			_trailingStopPrice = 0m;
+			_currentDirection = InitialDirection.Long;
+		}
+		else if (Position < 0 && trade.Order.Side == Sides.Sell)
+		{
+			_entryPrice = tradePrice;
+			_trailingActive = false;
+			_trailingStopPrice = 0m;
+			_currentDirection = InitialDirection.Short;
+		}
+		else if (Position == 0)
+		{
+			ResetTrailing();
 		}
 	}
 
@@ -153,9 +152,9 @@ public class TrailingStopManagerStrategy : Strategy
 			ResetTrailing();
 	}
 
-		private void ProcessTrade(ITickTradeMessage trade)
-		{
-			var price = trade.Price;
+	private void ProcessTrade(ITickTradeMessage trade)
+	{
+		var price = trade.Price;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
