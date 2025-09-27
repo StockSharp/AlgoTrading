@@ -15,8 +15,6 @@ using StockSharp.BusinessEntities;
 /// </summary>
 public class Get_Last_Nth_Open_TradeStrategy : Strategy
 {
-	private static readonly PropertyInfo StrategyIdProperty = typeof(Position).GetProperty("StrategyId");
-
 	private readonly StrategyParam<bool> _enableMagicNumber;
 	private readonly StrategyParam<bool> _enableSymbolFilter;
 	private readonly StrategyParam<string> _magicNumber;
@@ -202,10 +200,7 @@ public class Get_Last_Nth_Open_TradeStrategy : Strategy
 
 	private static string TryGetStrategyId(Position position)
 	{
-		if (StrategyIdProperty == null)
-			return null;
-
-		var value = StrategyIdProperty.GetValue(position);
+		var value = position.StrategyId;
 		return value?.ToString();
 	}
 

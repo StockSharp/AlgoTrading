@@ -13,9 +13,6 @@ using StockSharp.Messages;
 /// </summary>
 public class CloseDeleteEaStrategy : Strategy
 {
-	private static readonly PropertyInfo PositionStrategyIdProperty = typeof(Position).GetProperty("StrategyId");
-	private static readonly PropertyInfo OrderStrategyIdProperty = typeof(Order).GetProperty("StrategyId");
-
 	private readonly StrategyParam<bool> _closeBuyPositions;
 	private readonly StrategyParam<bool> _closeSellPositions;
 	private readonly StrategyParam<bool> _closeMarketPositions;
@@ -338,19 +335,13 @@ public class CloseDeleteEaStrategy : Strategy
 
 	private static string TryGetStrategyId(Position position)
 	{
-		if (PositionStrategyIdProperty == null)
-			return null;
-
-		var value = PositionStrategyIdProperty.GetValue(position);
+		var value = position.StrategyId;
 		return value?.ToString();
 	}
 
 	private static string TryGetStrategyId(Order order)
 	{
-		if (OrderStrategyIdProperty == null)
-			return null;
-
-		var value = OrderStrategyIdProperty.GetValue(order);
+		var value = order.StrategyId;
 		return value?.ToString();
 	}
 }

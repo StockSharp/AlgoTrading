@@ -59,8 +59,6 @@ public class ColorJfatlDigitTmStrategy : Strategy
 		0.0040364019m,
 	];
 
-	private static readonly PropertyInfo JurikPhaseProperty = typeof(JurikMovingAverage).GetProperty("Phase");
-
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<bool> _enableTimeFilter;
 	private readonly StrategyParam<int> _startHour;
@@ -365,7 +363,7 @@ public class ColorJfatlDigitTmStrategy : Strategy
 	private void ConfigureJma()
 	{
 		_jma.Length = JmaLength;
-		JurikPhaseProperty?.SetValue(_jma, JmaPhase);
+		_jma.Phase = JmaPhase;
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

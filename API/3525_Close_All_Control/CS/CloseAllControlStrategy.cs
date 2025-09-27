@@ -76,10 +76,6 @@ public enum CloseAllMode
 /// </summary>
 public class CloseAllControlStrategy : Strategy
 {
-	private static readonly PropertyInfo PositionCommentProperty = typeof(Position).GetProperty("Comment");
-	private static readonly PropertyInfo PositionStrategyIdProperty = typeof(Position).GetProperty("StrategyId");
-	private static readonly PropertyInfo OrderStrategyIdProperty = typeof(Order).GetProperty("StrategyId");
-
 	private readonly StrategyParam<string> _orderComment;
 	private readonly StrategyParam<CloseAllMode> _mode;
 	private readonly StrategyParam<string> _currencyId;
@@ -370,18 +366,13 @@ public class CloseAllControlStrategy : Strategy
 		}
 	}
 
-	private static string TryGetPositionComment(Position position)
-	{
-		return PositionCommentProperty?.GetValue(position) as string;
-	}
-
 	private static string TryGetStrategyId(Position position)
 	{
-		return PositionStrategyIdProperty?.GetValue(position)?.ToString();
+		return position.StrategyId?.ToString();
 	}
 
 	private static string TryGetStrategyId(Order order)
 	{
-		return OrderStrategyIdProperty?.GetValue(order)?.ToString();
+		return order.StrategyId?.ToString();
 	}
 }

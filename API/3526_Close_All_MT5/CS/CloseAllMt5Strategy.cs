@@ -19,8 +19,6 @@ using StockSharp.Messages;
 /// </summary>
 public class CloseAllMt5Strategy : Strategy
 {
-	private static readonly PropertyInfo StrategyIdProperty = typeof(Position).GetProperty("StrategyId");
-
 	private readonly StrategyParam<PositionSelection> _positionSelection;
 	private readonly StrategyParam<ProfitMeasure> _profitMeasure;
 	private readonly StrategyParam<decimal> _profitThreshold;
@@ -129,7 +127,7 @@ public class CloseAllMt5Strategy : Strategy
 		set
 		{
 			if (_manualTrigger.Value == value)
-			return;
+				return;
 
 			_manualTrigger.Value = value;
 
@@ -188,12 +186,12 @@ public class CloseAllMt5Strategy : Strategy
 			foreach (var position in portfolio.Positions)
 			{
 				if (position.Security != null)
-				yield return (position.Security, DataType.Ticks);
+					yield return (position.Security, DataType.Ticks);
 			}
 		}
 
 		if (Security != null)
-		yield return (Security, DataType.Ticks);
+			yield return (Security, DataType.Ticks);
 	}
 
 	/// <inheritdoc />
@@ -214,7 +212,7 @@ public class CloseAllMt5Strategy : Strategy
 
 		var orderSecurity = trade.Order.Security;
 		if (orderSecurity != null)
-		EnsureSubscription(orderSecurity);
+			EnsureSubscription(orderSecurity);
 
 		EvaluateAllPositions();
 	}
@@ -222,23 +220,23 @@ public class CloseAllMt5Strategy : Strategy
 	private void InitializeSubscriptions()
 	{
 		if (Security != null)
-		EnsureSubscription(Security);
+			EnsureSubscription(Security);
 
 		var portfolio = Portfolio;
 		if (portfolio == null)
-		return;
+			return;
 
 		foreach (var position in portfolio.Positions)
 		{
-		if (position.Security != null)
-		EnsureSubscription(position.Security);
+			if (position.Security != null)
+				EnsureSubscription(position.Security);
 		}
 	}
 
 	private void EnsureSubscription(Security security)
 	{
 		if (!_subscriptions.Add(security))
-		return;
+			return;
 
 		var subscription = SubscribeTrades(security);
 		subscription
@@ -249,309 +247,306 @@ public class CloseAllMt5Strategy : Strategy
 	private void ProcessTrade(Security security, ExecutionMessage trade)
 	{
 		if (trade.TradePrice is decimal price)
-		_lastPrices[security] = price;
+			_lastPrices[security] = price;
 
 		EvaluateAllPositions();
 	}
 
 	private void EvaluateAllPositions()
 	{
-	if (!IsFormedAndOnlineAndAllowTrading())
-	return;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-	var portfolio = Portfolio;
-	if (portfolio == null)
-	return;
+		var portfolio = Portfolio;
+		if (portfolio == null)
+			return;
 
-	var toClose = new List<Position>();
+		var toClose = new List<Position>();
 
-	foreach (var position in portfolio.Positions)
-	{
-	if (!MatchesSelection(position))
-	continue;
+		foreach (var position in portfolio.Positions)
+		{
+			if (!MatchesSelection(position))
+				continue;
 
-	if (!MatchesComment(position))
-	continue;
+			if (!MatchesComment(position))
+				continue;
 
-	if (!ShouldCloseByProfit(position))
-	continue;
+			if (!ShouldCloseByProfit(position))
+				continue;
 
-	toClose.Add(position);
-	}
+			toClose.Add(position);
+		}
 
-	foreach (var position in toClose)
-	ClosePosition(position);
+		foreach (var position in toClose)
+			ClosePosition(position);
 	}
 
 	private bool MatchesSelection(Position position)
 	{
-	var volume = position.CurrentValue ?? 0m;
+		var volume = position.CurrentValue ?? 0m;
 
-	return PositionFilter switch
-	{
-	PositionSelection.Buy => volume > 0m,
-	PositionSelection.Sell => volume < 0m,
-	_ => volume != 0m,
-	};
+		return PositionFilter switch
+		{
+			PositionSelection.Buy => volume > 0m,
+			PositionSelection.Sell => volume < 0m,
+			_ => volume != 0m,
+		};
 	}
 
 	private bool MatchesComment(Position position)
 	{
-	var filter = CommentFilter;
-	if (string.IsNullOrWhiteSpace(filter))
-	return true;
+		var filter = CommentFilter;
+		if (string.IsNullOrWhiteSpace(filter))
+			return true;
 
-	var strategyId = TryGetStrategyId(position);
-	if (!string.IsNullOrEmpty(strategyId) && strategyId.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0)
-	return true;
+		var strategyId = TryGetStrategyId(position);
+		if (!string.IsNullOrEmpty(strategyId) && strategyId.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0)
+			return true;
 
-	return false;
+		return false;
 	}
 
 	private bool ShouldCloseByProfit(Position position)
 	{
-	var threshold = ProfitThreshold;
-	if (threshold == 0m)
-	return false;
+		var threshold = ProfitThreshold;
+		if (threshold == 0m)
+			return false;
 
-	if (!TryGetMetricValue(position, out var metric))
-	return false;
+		if (!TryGetMetricValue(position, out var metric))
+			return false;
 
-	return threshold > 0m ? metric >= threshold : metric <= threshold;
+		return threshold > 0m ? metric >= threshold : metric <= threshold;
 	}
 
 	private bool TryGetMetricValue(Position position, out decimal metric)
 	{
-	metric = 0m;
+		metric = 0m;
 
-	var volume = position.CurrentValue ?? 0m;
-	if (volume == 0m)
-	return false;
+		var volume = position.CurrentValue ?? 0m;
+		if (volume == 0m)
+			return false;
 
-	var security = position.Security;
-	if (security == null)
-	return false;
+		var security = position.Security;
+		if (security == null)
+			return false;
 
-	var averagePrice = position.AveragePrice;
+		var averagePrice = position.AveragePrice;
 
-	if (!_lastPrices.TryGetValue(security, out var lastPrice) || lastPrice <= 0m)
-	{
-	var fallback = security.LastTrade?.Price ?? security.LastPrice;
-	if (fallback == null || fallback <= 0m)
-	return false;
+		if (!_lastPrices.TryGetValue(security, out var lastPrice) || lastPrice <= 0m)
+		{
+			var fallback = security.LastTick?.Price ?? security.LastPrice;
+			if (fallback == null || fallback <= 0m)
+				return false;
 
-	lastPrice = fallback.Value;
-	_lastPrices[security] = lastPrice;
-	}
+			lastPrice = fallback.Value;
+			_lastPrices[security] = lastPrice;
+		}
 
-	var priceDiff = volume > 0m ? lastPrice - averagePrice : averagePrice - lastPrice;
-	var absVolume = Math.Abs(volume);
+		var priceDiff = volume > 0m ? lastPrice - averagePrice : averagePrice - lastPrice;
+		var absVolume = Math.Abs(volume);
 
-	switch (ProfitMode)
-	{
-	case ProfitMeasure.Money:
-	{
-	var pnl = position.PnL;
-	if (pnl.HasValue)
-	{
-	metric = pnl.Value;
-	return true;
-	}
+		switch (ProfitMode)
+		{
+			case ProfitMeasure.Money:
+			{
+				var pnl = position.PnL;
+				if (pnl.HasValue)
+				{
+					metric = pnl.Value;
+					return true;
+				}
 
-	var step = security.PriceStep ?? 0m;
-	var cost = security.PriceStepCost ?? 0m;
+				var step = security.PriceStep ?? 0m;
+				var cost = security.PriceStepCost ?? 0m;
 
-	if (step <= 0m || cost <= 0m)
-	{
-	metric = priceDiff * absVolume;
-	return true;
-	}
+				if (step <= 0m || cost <= 0m)
+				{
+					metric = priceDiff * absVolume;
+					return true;
+				}
 
-	metric = priceDiff / step * cost * absVolume;
-	return true;
-	}
+				metric = priceDiff / step * cost * absVolume;
+				return true;
+			}
 
-	case ProfitMeasure.Points:
-	{
-	var step = security.PriceStep ?? 0m;
-	if (step <= 0m)
-	return false;
+			case ProfitMeasure.Points:
+			{
+				var step = security.PriceStep ?? 0m;
+				if (step <= 0m)
+					return false;
 
-	metric = priceDiff / step;
-	return true;
-	}
+				metric = priceDiff / step;
+				return true;
+			}
 
-	case ProfitMeasure.Pips:
-	{
-	var pipSize = GetPipSize(security);
-	if (pipSize <= 0m)
-	return false;
+			case ProfitMeasure.Pips:
+			{
+				var pipSize = GetPipSize(security);
+				if (pipSize <= 0m)
+					return false;
 
-	metric = priceDiff / pipSize;
-	return true;
-	}
+				metric = priceDiff / pipSize;
+				return true;
+			}
 
-	default:
-	return false;
-	}
+			default:
+				return false;
+		}
 	}
 
 	private static decimal GetPipSize(Security security)
 	{
-	var step = security.PriceStep ?? 0m;
-	if (step <= 0m)
-	return 0m;
+		var step = security.PriceStep ?? 0m;
+		if (step <= 0m)
+			return 0m;
 
-	var decimals = security.Decimals;
-	if (decimals == 3 || decimals == 5)
-	return step * 10m;
+		var decimals = security.Decimals;
+		if (decimals == 3 || decimals == 5)
+			return step * 10m;
 
-	return step;
+		return step;
 	}
 
 	private void ClosePosition(Position position)
 	{
-	var security = position.Security;
-	if (security == null)
-	return;
+		var security = position.Security;
+		if (security == null)
+			return;
 
-	var volume = position.CurrentValue ?? 0m;
-	if (volume > 0m)
-	{
-	SellMarket(volume, security);
-	}
-	else if (volume < 0m)
-	{
-	BuyMarket(-volume, security);
-	}
+		var volume = position.CurrentValue ?? 0m;
+		if (volume > 0m)
+		{
+			SellMarket(volume, security);
+		}
+		else if (volume < 0m)
+		{
+			BuyMarket(-volume, security);
+		}
 	}
 
 	private void ExecuteManualClose()
 	{
-	if (!IsFormedAndOnlineAndAllowTrading())
-	return;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-	var portfolio = Portfolio;
-	if (portfolio == null)
-	return;
+		var portfolio = Portfolio;
+		if (portfolio == null)
+			return;
 
-	var positions = portfolio.Positions.ToArray();
+		var positions = portfolio.Positions.ToArray();
 
-	foreach (var position in positions)
-	{
-	if (!MatchesComment(position))
-	continue;
+		foreach (var position in positions)
+		{
+			if (!MatchesComment(position))
+				continue;
 
-	if (!MatchesManualMode(position))
-	continue;
+			if (!MatchesManualMode(position))
+				continue;
 
-	ClosePosition(position);
-	}
+			ClosePosition(position);
+		}
 
-	if (CloseMode == CloseRequestMode.CloseAllAndPending)
-	{
-	var securities = positions
-	.Select(p => p.Security)
-	.Where(s => s != null)
-	.Distinct()!
-	.ToArray();
+		if (CloseMode == CloseRequestMode.CloseAllAndPending)
+		{
+			var securities = positions
+			.Select(p => p.Security)
+			.Where(s => s != null)
+			.Distinct()!
+			.ToArray();
 
-	foreach (var security in securities)
-	CancelOrdersForSecurity(security!);
-	}
+			foreach (var security in securities)
+				CancelOrdersForSecurity(security!);
+		}
 	}
 
 	private bool MatchesManualMode(Position position)
 	{
-	var volume = position.CurrentValue ?? 0m;
-	var security = position.Security;
+		var volume = position.CurrentValue ?? 0m;
+		var security = position.Security;
 
-	switch (CloseMode)
-	{
-	case CloseRequestMode.CloseAll:
-	case CloseRequestMode.CloseAllAndPending:
-	return true;
+		switch (CloseMode)
+		{
+			case CloseRequestMode.CloseAll:
+			case CloseRequestMode.CloseAllAndPending:
+				return true;
 
-	case CloseRequestMode.CloseBuy:
-	return volume > 0m;
+			case CloseRequestMode.CloseBuy:
+				return volume > 0m;
 
-	case CloseRequestMode.CloseSell:
-	return volume < 0m;
+			case CloseRequestMode.CloseSell:
+				return volume < 0m;
 
-	case CloseRequestMode.CloseCurrency:
-	{
-	var filter = CurrencyFilter;
-	if (string.IsNullOrWhiteSpace(filter))
-	filter = Security?.Id ?? string.Empty;
+			case CloseRequestMode.CloseCurrency:
+			{
+				var filter = CurrencyFilter;
+				if (string.IsNullOrWhiteSpace(filter))
+					filter = Security?.Id ?? string.Empty;
 
-	if (string.IsNullOrWhiteSpace(filter))
-	return true;
+				if (string.IsNullOrWhiteSpace(filter))
+					return true;
 
-	var symbol = security?.Id;
-	return symbol != null && string.Equals(symbol, filter, StringComparison.OrdinalIgnoreCase);
-	}
+				var symbol = security?.Id;
+				return symbol != null && string.Equals(symbol, filter, StringComparison.OrdinalIgnoreCase);
+			}
 
-	case CloseRequestMode.CloseMagic:
-	{
-	if (MagicNumber == 0L)
-	return false;
+			case CloseRequestMode.CloseMagic:
+			{
+				if (MagicNumber == 0L)
+					return false;
 
-	var strategyId = TryGetStrategyId(position);
-	if (string.IsNullOrEmpty(strategyId))
-	return false;
+				var strategyId = TryGetStrategyId(position);
+				if (string.IsNullOrEmpty(strategyId))
+					return false;
 
-	var magic = MagicNumber.ToString(CultureInfo.InvariantCulture);
-	return string.Equals(strategyId, magic, StringComparison.OrdinalIgnoreCase);
-	}
+				var magic = MagicNumber.ToString(CultureInfo.InvariantCulture);
+				return string.Equals(strategyId, magic, StringComparison.OrdinalIgnoreCase);
+			}
 
-	case CloseRequestMode.CloseTicket:
-	{
-	if (TicketNumber == 0L)
-	return false;
+			case CloseRequestMode.CloseTicket:
+			{
+				if (TicketNumber == 0L)
+					return false;
 
-	var positionId = position.Id?.ToString();
-	if (string.IsNullOrEmpty(positionId))
-	return false;
+				var positionId = position.Id?.ToString();
+				if (string.IsNullOrEmpty(positionId))
+					return false;
 
-	var ticket = TicketNumber.ToString(CultureInfo.InvariantCulture);
-	return string.Equals(positionId, ticket, StringComparison.OrdinalIgnoreCase);
-	}
+				var ticket = TicketNumber.ToString(CultureInfo.InvariantCulture);
+				return string.Equals(positionId, ticket, StringComparison.OrdinalIgnoreCase);
+			}
 
-	default:
-	return false;
-	}
+			default:
+				return false;
+		}
 	}
 
 	private void CancelOrdersForSecurity(Security security)
 	{
-	var filter = CommentFilter;
+		var filter = CommentFilter;
 
-	foreach (var order in Orders)
-	{
-	if (order.State != OrderStates.Active)
-	continue;
+		foreach (var order in Orders)
+		{
+			if (order.State != OrderStates.Active)
+				continue;
 
-	if (!Equals(order.Security, security))
-	continue;
+			if (!Equals(order.Security, security))
+				continue;
 
-	if (!string.IsNullOrWhiteSpace(filter))
-	{
-	var comment = order.Comment ?? string.Empty;
-	if (comment.IndexOf(filter, StringComparison.OrdinalIgnoreCase) < 0)
-	continue;
-	}
+			if (!string.IsNullOrWhiteSpace(filter))
+			{
+				var comment = order.Comment ?? string.Empty;
+				if (comment.IndexOf(filter, StringComparison.OrdinalIgnoreCase) < 0)
+					continue;
+			}
 
-	CancelOrder(order);
-	}
+			CancelOrder(order);
+		}
 	}
 
 	private static string TryGetStrategyId(Position position)
 	{
-	if (StrategyIdProperty == null)
-	return null;
-
-	var value = StrategyIdProperty.GetValue(position);
-	return value?.ToString();
+		var value = position.StrategyId;
+		return value?.ToString();
 	}
 
 	/// <summary>
@@ -559,12 +554,12 @@ public class CloseAllMt5Strategy : Strategy
 	/// </summary>
 	public enum PositionSelection
 	{
-	/// <summary>Process only long positions.</summary>
-	Buy = 0,
-	/// <summary>Process only short positions.</summary>
-	Sell = 1,
-	/// <summary>Process both long and short positions.</summary>
-	BuyAndSell = 2
+		/// <summary>Process only long positions.</summary>
+		Buy = 0,
+		/// <summary>Process only short positions.</summary>
+		Sell = 1,
+		/// <summary>Process both long and short positions.</summary>
+		BuyAndSell = 2
 	}
 
 	/// <summary>
@@ -572,12 +567,12 @@ public class CloseAllMt5Strategy : Strategy
 	/// </summary>
 	public enum ProfitMeasure
 	{
-	/// <summary>Use monetary profit reported by the portfolio.</summary>
-	Money = 0,
-	/// <summary>Use price steps (points) difference between entry and current price.</summary>
-	Points = 1,
-	/// <summary>Use pip distance (ten price steps on fractional symbols).</summary>
-	Pips = 2
+		/// <summary>Use monetary profit reported by the portfolio.</summary>
+		Money = 0,
+		/// <summary>Use price steps (points) difference between entry and current price.</summary>
+		Points = 1,
+		/// <summary>Use pip distance (ten price steps on fractional symbols).</summary>
+		Pips = 2
 	}
 
 	/// <summary>
@@ -585,19 +580,19 @@ public class CloseAllMt5Strategy : Strategy
 	/// </summary>
 	public enum CloseRequestMode
 	{
-	/// <summary>Close every matching position.</summary>
-	CloseAll = 0,
-	/// <summary>Close positions and cancel pending orders.</summary>
-	CloseAllAndPending = 1,
-	/// <summary>Close only long positions.</summary>
-	CloseBuy = 2,
-	/// <summary>Close only short positions.</summary>
-	CloseSell = 3,
-	/// <summary>Close positions belonging to a specific symbol.</summary>
-	CloseCurrency = 4,
-	/// <summary>Close positions opened by a specific strategy identifier.</summary>
-	CloseMagic = 5,
-	/// <summary>Close a single position by its identifier.</summary>
-	CloseTicket = 6
+		/// <summary>Close every matching position.</summary>
+		CloseAll = 0,
+		/// <summary>Close positions and cancel pending orders.</summary>
+		CloseAllAndPending = 1,
+		/// <summary>Close only long positions.</summary>
+		CloseBuy = 2,
+		/// <summary>Close only short positions.</summary>
+		CloseSell = 3,
+		/// <summary>Close positions belonging to a specific symbol.</summary>
+		CloseCurrency = 4,
+		/// <summary>Close positions opened by a specific strategy identifier.</summary>
+		CloseMagic = 5,
+		/// <summary>Close a single position by its identifier.</summary>
+		CloseTicket = 6
 	}
 }

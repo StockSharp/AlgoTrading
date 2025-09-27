@@ -341,8 +341,6 @@ public class ExpXFisherOrgV1Strategy : Strategy
 /// </summary>
 public sealed class XFisherOrgIndicator : Indicator<ICandleMessage>
 {
-	private static readonly PropertyInfo JurikPhaseProperty = typeof(JurikMovingAverage).GetProperty("Phase");
-
 	private readonly Highest _highest = new();
 	private readonly Lowest _lowest = new();
 
@@ -383,7 +381,7 @@ public sealed class XFisherOrgIndicator : Indicator<ICandleMessage>
 		if (input is not CandleIndicatorValue candleValue)
 			throw new ArgumentException("XFisherOrgIndicator expects candle input.", nameof(input));
 
-		var candle = (ICandleMessage)candleValue.Value;
+		var candle = candleValue.Value;
 
 		// Initialise smoothing helpers on the very first candle.
 		if (!_initialized)
@@ -472,10 +470,11 @@ public sealed class XFisherOrgIndicator : Indicator<ICandleMessage>
 
 	private IIndicator CreateJurik(int length)
 	{
-		var jurik = new JurikMovingAverage { Length = length };
-
-		if (JurikPhaseProperty != null)
-			JurikPhaseProperty.SetValue(jurik, Phase);
+		var jurik = new JurikMovingAverage
+		{
+			Length = length,
+			Phase = Phase,
+		};
 
 		return jurik;
 	}

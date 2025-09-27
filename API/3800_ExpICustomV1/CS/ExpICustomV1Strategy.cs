@@ -43,12 +43,6 @@ public class ExpICustomV1Strategy : Strategy
 
 			if (!value.IsFinal)
 				return;
-
-			var buffers = ExtractBufferValues(value);
-			if (buffers.Length == 0)
-				return;
-
-			_history.Add(buffers);
 		}
 
 		public decimal? GetValue(int bufferIndex, int shift)
@@ -758,68 +752,6 @@ public class ExpICustomV1Strategy : Strategy
 		return Security?.PriceStep ?? 1m;
 	}
 
-	private static decimal?[] ExtractBufferValues(IIndicatorValue value)
-	{
-		if (value == null)
-			return Array.Empty<decimal?>();
-
-		try
-		{
-			var single = value.GetValue<decimal>();
-			return new decimal?[] { single };
-		}
-		catch
-		{
-			// Continue with reflection for complex indicator values.
-		}
-
-		var type = value.GetType();
-		var properties = type.GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
-
-		var results = new List<decimal?>();
-		foreach (var property in properties)
-		{
-			if (!property.CanRead || property.GetIndexParameters().Length != 0)
-				continue;
-
-			object raw;
-			try
-			{
-				raw = property.GetValue(value);
-			}
-			catch
-			{
-				continue;
-			}
-
-			if (raw is decimal decimalValue)
-			{
-				results.Add(decimalValue);
-				continue;
-			}
-
-			if (raw is decimal? nullableDecimal)
-			{
-				results.Add(nullableDecimal);
-				continue;
-			}
-
-			if (raw is double doubleValue)
-			{
-				results.Add((decimal)doubleValue);
-				continue;
-			}
-
-			if (raw is double? nullableDouble)
-			{
-				results.Add(nullableDouble.HasValue ? (decimal?)nullableDouble.Value : null);
-				continue;
-			}
-		}
-
-		return results.ToArray();
-	}
-
 	private static IIndicator CreateIndicator(string name, string parameters)
 	{
 		if (string.IsNullOrWhiteSpace(name))
@@ -866,42 +798,6 @@ public class ExpICustomV1Strategy : Strategy
 			{
 				orderedValues.Add(trimmed);
 			}
-		}
-
-		var type = indicator.GetType();
-		var properties = type.GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
-
-		foreach (var pair in namedValues)
-		{
-			var property = Array.Find(properties, p => string.Equals(p.Name, pair.Key, StringComparison.InvariantCultureIgnoreCase));
-			if (property == null || !property.CanWrite)
-				continue;
-
-			var converted = ConvertString(pair.Value, property.PropertyType);
-			property.SetValue(indicator, converted);
-		}
-
-		if (orderedValues.Count == 0)
-			return;
-
-		var assignable = new List<System.Reflection.PropertyInfo>();
-		foreach (var property in properties)
-		{
-			if (!property.CanWrite)
-				continue;
-
-			if (namedValues.ContainsKey(property.Name))
-				continue;
-
-			var typeCode = Type.GetTypeCode(property.PropertyType);
-			if (typeCode == TypeCode.Int32 || typeCode == TypeCode.Decimal || typeCode == TypeCode.Double || typeCode == TypeCode.Boolean)
-				assignable.Add(property);
-		}
-
-		for (var i = 0; i < orderedValues.Count && i < assignable.Count; i++)
-		{
-			var value = ConvertString(orderedValues[i], assignable[i].PropertyType);
-			assignable[i].SetValue(indicator, value);
 		}
 	}
 

@@ -15,11 +15,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class GetLastNthOpenTradeStrategy : Strategy
 {
-	private static readonly PropertyInfo StrategyIdProperty = typeof(Position).GetProperty("StrategyId");
-	private static readonly PropertyInfo CommentProperty = typeof(Position).GetProperty("Comment");
-	private static readonly PropertyInfo OpenTimeProperty = typeof(Position).GetProperty("OpenTime");
-	private static readonly PropertyInfo CloseTimeProperty = typeof(Position).GetProperty("CloseTime");
-
 	private readonly StrategyParam<bool> _enableMagicNumber;
 	private readonly StrategyParam<bool> _enableSymbolFilter;
 	private readonly StrategyParam<int> _magicNumber;
@@ -95,7 +90,7 @@ public class GetLastNthOpenTradeStrategy : Strategy
 			.SetDisplay("Magic Number", "Strategy identifier used for filtering", "Filters");
 
 		_tradeIndex = Param(nameof(TradeIndex), 2)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trade Index", "Zero-based index of the trade to display", "General");
 
 		_refreshInterval = Param(nameof(RefreshInterval), TimeSpan.FromSeconds(1))
@@ -240,32 +235,11 @@ public class GetLastNthOpenTradeStrategy : Strategy
 
 	private static string TryGetStrategyId(Position position)
 	{
-		if (StrategyIdProperty == null)
-			return null;
-
-		return StrategyIdProperty.GetValue(position)?.ToString();
+		return position.StrategyId?.ToString();
 	}
 
 	private static string TryGetComment(Position position)
 	{
-		if (CommentProperty == null)
-			return null;
-
-		return CommentProperty.GetValue(position)?.ToString();
-	}
-
-	private static DateTimeOffset? TryGetDateTime(Position position, PropertyInfo property)
-	{
-		if (property == null)
-			return null;
-
-		var value = property.GetValue(position);
-
-		return value switch
-		{
-			DateTimeOffset dto => dto,
-			DateTime dt => new DateTimeOffset(dt),
-			_ => null,
-		};
+		return position.StrategyId?.ToString();
 	}
 }

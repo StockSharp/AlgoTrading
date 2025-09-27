@@ -29,8 +29,6 @@ public enum PositionSelectionMode
 /// </summary>
 public class ListPositionsStrategy : Strategy
 {
-	private static readonly PropertyInfo StrategyIdProperty = typeof(Position).GetProperty("StrategyId");
-
 	private readonly StrategyParam<string> _strategyIdFilter;
 	private readonly StrategyParam<PositionSelectionMode> _selectionMode;
 	private readonly StrategyParam<TimeSpan> _timerInterval;
@@ -172,10 +170,7 @@ public class ListPositionsStrategy : Strategy
 
 	private static string TryGetStrategyId(Position position)
 	{
-		if (StrategyIdProperty == null)
-			return null;
-
-		var value = StrategyIdProperty.GetValue(position);
+		var value = position.StrategyId;
 		return value?.ToString();
 	}
 }

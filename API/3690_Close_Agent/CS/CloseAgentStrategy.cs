@@ -58,8 +58,6 @@ public class CloseAgentStrategy : Strategy
 	private const decimal RsiOverbought = 70m;
 	private const decimal RsiOversold = 30m;
 
-	private static readonly PropertyInfo StrategyIdProperty = typeof(Position).GetProperty("StrategyId");
-
 	private readonly StrategyParam<CloseAgentMode> _closeMode;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<CloseAgentOperationMode> _operationMode;
@@ -196,51 +194,51 @@ public class CloseAgentStrategy : Strategy
 	private void ProcessLevel1(Level1ChangeMessage level1)
 	{
 		if (level1.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bidValue) && bidValue != null)
-		_bestBid = Convert.ToDecimal(bidValue);
+			_bestBid = Convert.ToDecimal(bidValue);
 
 		if (level1.Changes.TryGetValue(Level1Fields.BestAskPrice, out var askValue) && askValue != null)
-		_bestAsk = Convert.ToDecimal(askValue);
+			_bestAsk = Convert.ToDecimal(askValue);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal middle, decimal upper, decimal lower)
 	{
 		if (_rsi is null || _bands is null)
-		return;
+			return;
 
 		if (OperationMode == CloseAgentOperationMode.NewBar && candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		if (!_rsi.IsFormed || !_bands.IsFormed)
-		return;
+			return;
 
 		_history.Enqueue((candle.CloseTime, candle.ClosePrice, rsiValue, upper, lower));
 
 		var shift = OperationMode == CloseAgentOperationMode.NewBar ? 1 : 0;
 		var maxItems = Math.Max(shift + 2, 3);
 		while (_history.Count > maxItems)
-		_history.Dequeue();
+			_history.Dequeue();
 
 		if (!TryGetSnapshot(shift, out var snapshot))
-		return;
+			return;
 
 		_lastProcessedPrice = snapshot.close;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
 		var sourcePositions = Portfolio?.Positions;
 		if (sourcePositions == null)
-		return;
+			return;
 
 		var positions = new List<Position>();
 		foreach (var position in sourcePositions)
 		{
 			if (position.Security == Security)
-			positions.Add(position);
+				positions.Add(position);
 		}
 
 		if (positions.Count == 0)
-		return;
+			return;
 
 		var bidPrice = GetBidPrice(snapshot.close);
 		var askPrice = GetAskPrice(snapshot.close);
@@ -248,12 +246,12 @@ public class CloseAgentStrategy : Strategy
 		if (CloseAllTarget > 0m && PnL >= CloseAllTarget)
 		{
 			if (EnableAlerts)
-			LogInfo($"Closing all positions at {PnL:0.##} profit.");
+				LogInfo($"Closing all positions at {PnL:0.##} profit.");
 
 			foreach (var position in positions)
 			{
 				if (!ShouldProcessPosition(position))
-				continue;
+					continue;
 
 				ClosePosition(position, bidPrice, askPrice, "Total profit target reached");
 			}
@@ -264,18 +262,18 @@ public class CloseAgentStrategy : Strategy
 		foreach (var position in positions)
 		{
 			if (!ShouldProcessPosition(position))
-			continue;
+				continue;
 
 			var volume = position.CurrentValue;
 			if (volume > 0m)
 			{
 				if (bidPrice > snapshot.upper && snapshot.rsi > RsiOverbought && bidPrice > position.AveragePrice)
-				ClosePosition(position, bidPrice, askPrice, "Long exit triggered");
+					ClosePosition(position, bidPrice, askPrice, "Long exit triggered");
 			}
 			else if (volume < 0m)
 			{
 				if (askPrice < snapshot.lower && snapshot.rsi < RsiOversold && askPrice < position.AveragePrice)
-				ClosePosition(position, bidPrice, askPrice, "Short exit triggered");
+					ClosePosition(position, bidPrice, askPrice, "Short exit triggered");
 			}
 		}
 	}
@@ -319,29 +317,26 @@ public class CloseAgentStrategy : Strategy
 	{
 		switch (CloseMode)
 		{
-		case CloseAgentMode.Both:
-			return true;
-		case CloseAgentMode.Auto:
+			case CloseAgentMode.Both:
+				return true;
+			case CloseAgentMode.Auto:
 			{
 				var strategyId = TryGetStrategyId(position);
 				return !string.IsNullOrEmpty(strategyId) && string.Equals(strategyId, Id, StringComparison.OrdinalIgnoreCase);
 			}
-		case CloseAgentMode.Manual:
+			case CloseAgentMode.Manual:
 			{
 				var strategyId = TryGetStrategyId(position);
 				return string.IsNullOrEmpty(strategyId) || !string.Equals(strategyId, Id, StringComparison.OrdinalIgnoreCase);
 			}
-		default:
-			return true;
+			default:
+				return true;
 		}
 	}
 
 	private static string TryGetStrategyId(Position position)
 	{
-		if (StrategyIdProperty == null)
-		return null;
-
-		var value = StrategyIdProperty.GetValue(position);
+		var value = position.StrategyId;
 		return value?.ToString();
 	}
 
@@ -350,11 +345,11 @@ public class CloseAgentStrategy : Strategy
 		var volume = position.CurrentValue;
 		var absVolume = Math.Abs(volume);
 		if (absVolume <= 0m)
-		return;
+			return;
 
 		var exitPrice = volume > 0m ? bidPrice : askPrice;
 		if (exitPrice <= 0m)
-		exitPrice = _lastProcessedPrice;
+			exitPrice = _lastProcessedPrice;
 
 		if (EnableAlerts)
 		{
@@ -366,8 +361,8 @@ public class CloseAgentStrategy : Strategy
 		}
 
 		if (volume > 0m)
-		SellMarket(absVolume);
+			SellMarket(absVolume);
 		else
-		BuyMarket(absVolume);
+			BuyMarket(absVolume);
 	}
 }

@@ -10,8 +10,6 @@ using StockSharp.Messages;
 
 public class CloseOrdersStrategy : Strategy
 {
-	private static readonly PropertyInfo StrategyIdProperty = typeof(Position).GetProperty("StrategyId");
-
 	private readonly StrategyParam<decimal> _targetProfitMoney;
 	private readonly StrategyParam<decimal> _cutLossMoney;
 	private readonly StrategyParam<string> _magicNumber;
@@ -233,10 +231,7 @@ public class CloseOrdersStrategy : Strategy
 		if (string.IsNullOrEmpty(magicNumber))
 			return true;
 
-		if (StrategyIdProperty == null)
-			return true;
-
-		var value = StrategyIdProperty.GetValue(position);
+		var value = position.StrategyId;
 		return value != null && string.Equals(value.ToString(), magicNumber, StringComparison.Ordinal);
 	}
 }
