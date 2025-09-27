@@ -15,9 +15,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class AscvBrainTrendSignalStrategy : Strategy
 {
-	private const decimal AtrRangeDivisor = 2.3m;
-	private const decimal UpperThreshold = 53m;
-	private const decimal LowerThreshold = 47m;
 
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<int> _stochasticPeriod;
@@ -28,6 +25,9 @@ public class AscvBrainTrendSignalStrategy : Strategy
 	private readonly StrategyParam<int> _trailingStepPips;
 	private readonly StrategyParam<bool> _reverseSignals;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _atrRangeDivisor;
+	private readonly StrategyParam<decimal> _upperThreshold;
+	private readonly StrategyParam<decimal> _lowerThreshold;
 
 	private AverageTrueRange _atr;
 	private StochasticOscillator _stochastic;
@@ -97,6 +97,16 @@ public class AscvBrainTrendSignalStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Working timeframe for the strategy", "General");
 
+		_atrRangeDivisor = Param(nameof(AtrRangeDivisor), 2.3m)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Range Divisor", "Divisor applied to ATR to define neutral zone", "Indicators")
+
+		_upperThreshold = Param(nameof(UpperThreshold), 53m)
+			.SetDisplay("Upper Threshold", "Stochastic value marking bullish breakout", "Indicators")
+
+		_lowerThreshold = Param(nameof(LowerThreshold), 47m)
+			.SetDisplay("Lower Threshold", "Stochastic value marking bearish breakout", "Indicators")
+
 		Volume = 1m;
 	}
 
@@ -125,6 +135,33 @@ public class AscvBrainTrendSignalStrategy : Strategy
 	{
 		get => _jmaLength.Value;
 		set => _jmaLength.Value = value;
+	}
+
+	/// <summary>
+	/// Divisor applied to ATR to define neutral trading zone.
+	/// </summary>
+	public decimal AtrRangeDivisor
+	{
+		get => _atrRangeDivisor.Value;
+		set => _atrRangeDivisor.Value = value;
+	}
+
+	/// <summary>
+	/// Stochastic threshold above which bullish signals are considered.
+	/// </summary>
+	public decimal UpperThreshold
+	{
+		get => _upperThreshold.Value;
+		set => _upperThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Stochastic threshold below which bearish signals are considered.
+	/// </summary>
+	public decimal LowerThreshold
+	{
+		get => _lowerThreshold.Value;
+		set => _lowerThreshold.Value = value;
 	}
 
 	/// <summary>

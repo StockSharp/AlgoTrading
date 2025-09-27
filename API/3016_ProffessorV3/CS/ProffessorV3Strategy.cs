@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ProffessorV3Strategy : Strategy
 {
-	private const int AdxPeriod = 14;
 
 	private readonly StrategyParam<decimal> _volumeParam;
 	private readonly StrategyParam<decimal> _lotMultiplier;
@@ -25,6 +24,7 @@ public class ProffessorV3Strategy : Strategy
 	private readonly StrategyParam<decimal> _profitTarget;
 	private readonly StrategyParam<decimal> _lossLimit;
 	private readonly StrategyParam<decimal> _adxFlatLevel;
+	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<int> _barOffset;
 	private readonly StrategyParam<int> _startHour;
 	private readonly StrategyParam<int> _endHour;
@@ -122,6 +122,15 @@ public class ProffessorV3Strategy : Strategy
 	}
 
 	/// <summary>
+	/// Length of the Average Directional Index indicator.
+	/// </summary>
+	public int AdxPeriod
+	{
+		get => _adxPeriod.Value;
+		set => _adxPeriod.Value = value;
+	}
+
+	/// <summary>
 	/// Number of completed candles to look back when reading ADX values.
 	/// </summary>
 	public int BarOffset
@@ -203,6 +212,10 @@ public class ProffessorV3Strategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("ADX Flat Level", "ADX threshold distinguishing flat and trend regimes", "Indicators")
 		.SetCanOptimize(true);
+		_adxPeriod = Param(nameof(AdxPeriod), 14)
+			.SetRange(1, 100)
+			.SetDisplay("ADX Period", "Length of the Average Directional Index", "Indicators")
+			.SetCanOptimize(true);
 
 		_barOffset = Param(nameof(BarOffset), 2)
 		.SetRange(0, 10)

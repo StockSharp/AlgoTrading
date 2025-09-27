@@ -16,8 +16,6 @@ using StockSharp.Messages;
 /// </summary>
 public class ExpMaRoundingCandleMmrecStrategy : Strategy
 {
-	private const int BullishColor = 2;
-	private const int BearishColor = 0;
 
 	private readonly StrategyParam<DataType> _candleTypeParam;
 	private readonly StrategyParam<MaSmoothingMethod> _maMethodParam;
@@ -30,6 +28,8 @@ public class ExpMaRoundingCandleMmrecStrategy : Strategy
 	private readonly StrategyParam<bool> _enableShortEntriesParam;
 	private readonly StrategyParam<bool> _enableLongExitsParam;
 	private readonly StrategyParam<bool> _enableShortExitsParam;
+	private readonly StrategyParam<int> _bullishColorParam;
+	private readonly StrategyParam<int> _bearishColorParam;
 
 	private readonly List<int> _colorHistory = new();
 
@@ -78,8 +78,14 @@ public class ExpMaRoundingCandleMmrecStrategy : Strategy
 		.SetDisplay("Close longs", "Allow closing of existing long positions.", "Trading");
 
 		_enableShortExitsParam = Param(nameof(EnableShortExits), true)
-		.SetDisplay("Close shorts", "Allow closing of existing short positions.", "Trading");
-	}
+			.SetDisplay("Close shorts", "Allow closing of existing short positions.", "Trading");
+
+		_bullishColorParam = Param(nameof(BullishColor), 2)
+			.SetDisplay("Bullish Color", "Color index representing bullish candles.", "Signals");
+
+		_bearishColorParam = Param(nameof(BearishColor), 0)
+			.SetDisplay("Bearish Color", "Color index representing bearish candles.", "Signals");
+}
 
 	public DataType CandleType
 	{
@@ -149,6 +155,24 @@ public class ExpMaRoundingCandleMmrecStrategy : Strategy
 	{
 		get => _enableShortExitsParam.Value;
 		set => _enableShortExitsParam.Value = value;
+	}
+	/// <summary>
+	/// Candle color index treated as bullish.
+	/// </summary>
+
+	public int BullishColor
+	{
+		get => _bullishColorParam.Value;
+		set => _bullishColorParam.Value = value;
+	}
+	/// <summary>
+	/// Candle color index treated as bearish.
+	/// </summary>
+
+	public int BearishColor
+	{
+		get => _bearishColorParam.Value;
+		set => _bearishColorParam.Value = value;
 	}
 
 	/// <inheritdoc />
