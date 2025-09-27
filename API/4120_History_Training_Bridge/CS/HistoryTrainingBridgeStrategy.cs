@@ -23,7 +23,6 @@ public class HistoryTrainingBridgeStrategy : Strategy
 	private readonly StrategyParam<decimal> _lastTradePriceParam;
 
 	private readonly Dictionary<int, OrderRecord> _openOrders = new();
-	private readonly object _syncRoot = new();
 
 	private int _nextOrderNumber;
 	private decimal? _lastBid;
@@ -195,11 +194,8 @@ public class HistoryTrainingBridgeStrategy : Strategy
 	{
 		base.OnReseted();
 
-		lock (_syncRoot)
-		{
-			_openOrders.Clear();
-			_nextOrderNumber = 0;
-		}
+		_openOrders.Clear();
+		_nextOrderNumber = 0;
 
 		_lastBid = null;
 		_lastAsk = null;
@@ -304,21 +300,18 @@ public class HistoryTrainingBridgeStrategy : Strategy
 
 		int orderNumber;
 
-		lock (_syncRoot)
-		{
-			if (side == Sides.Buy && currentPosition < 0m)
-				RemoveRecordsInternal(Sides.Sell);
-			else if (side == Sides.Sell && currentPosition > 0m)
-				RemoveRecordsInternal(Sides.Buy);
+		if (side == Sides.Buy && currentPosition < 0m)
+			RemoveRecordsInternal(Sides.Sell);
+		else if (side == Sides.Sell && currentPosition > 0m)
+			RemoveRecordsInternal(Sides.Buy);
 
-			orderNumber = _nextOrderNumber++;
-			_openOrders[orderNumber] = new OrderRecord
-			{
-				Number = orderNumber,
-				Side = side,
-				Volume = baseVolume
-			};
-		}
+		orderNumber = _nextOrderNumber++;
+		_openOrders[orderNumber] = new OrderRecord
+		{
+			Number = orderNumber,
+			Side = side,
+			Volume = baseVolume
+		};
 
 		var comment = FormatEntryComment(orderNumber);
 		var order = CreateMarketOrder(side, totalVolume, comment);
@@ -346,19 +339,16 @@ public class HistoryTrainingBridgeStrategy : Strategy
 		var orderNumber = TargetOrderNumber;
 		OrderRecord record;
 
-		lock (_syncRoot)
+		if (!_openOrders.TryGetValue(orderNumber, out record))
 		{
-			if (!_openOrders.TryGetValue(orderNumber, out record))
-			{
-				LogWarning($"Order #{orderNumber} is not active.");
-				return true;
-			}
-
-			_openOrders.Remove(orderNumber);
-
-			if (_openOrders.Count == 0)
-				_nextOrderNumber = 0;
+			LogWarning($"Order #{orderNumber} is not active.");
+			return true;
 		}
+
+		_openOrders.Remove(orderNumber);
+
+		if (_openOrders.Count == 0)
+			_nextOrderNumber = 0;
 
 		var volumeToClose = record.Volume;
 		var longPosition = Math.Max(0m, Position);
@@ -413,11 +403,8 @@ public class HistoryTrainingBridgeStrategy : Strategy
 
 		if (position == 0m)
 		{
-			lock (_syncRoot)
-			{
-				_openOrders.Clear();
-				_nextOrderNumber = 0;
-			}
+			_openOrders.Clear();
+			_nextOrderNumber = 0;
 
 			LastOrderNumber = 0;
 			LastActionCode = 4;
@@ -443,11 +430,8 @@ public class HistoryTrainingBridgeStrategy : Strategy
 				LastTradePrice = ask;
 		}
 
-		lock (_syncRoot)
-		{
-			_openOrders.Clear();
-			_nextOrderNumber = 0;
-		}
+		_openOrders.Clear();
+		_nextOrderNumber = 0;
 
 		LastOrderNumber = 0;
 		LastActionCode = 4;

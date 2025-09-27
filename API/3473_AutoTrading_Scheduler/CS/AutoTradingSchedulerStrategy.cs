@@ -26,7 +26,6 @@ public class AutoTradingSchedulerStrategy : Strategy
 	private readonly StrategyParam<string> _saturdaySchedule;
 	private readonly StrategyParam<string> _sundaySchedule;
 
-	private readonly object _sync = new();
 	private Timer _timer;
 	private bool _autoTradingEnabled = true;
 	private string _scheduleSnapshot = string.Empty;
@@ -184,17 +183,14 @@ public class AutoTradingSchedulerStrategy : Strategy
 
 	private void OnTimer()
 	{
-		lock (_sync)
+		try
 		{
-			try
-			{
-				RefreshSchedule();
-				EvaluateAutoTradingState(GetReferenceTime());
-			}
-			catch (Exception ex)
-			{
-				LogError("Scheduler timer error: {0}", ex.Message);
-			}
+			RefreshSchedule();
+			EvaluateAutoTradingState(GetReferenceTime());
+		}
+		catch (Exception ex)
+		{
+			LogError("Scheduler timer error: {0}", ex.Message);
 		}
 	}
 

@@ -943,7 +943,7 @@ _groupCount = Param(nameof(GroupCount), 3)
 			return plus != 0m || minus != 0m;
 		}
 
-		public decimal GetPositionVolume(Security security, Portfolio? portfolio, Strategy strategy)
+		public decimal GetPositionVolume(Security security, Portfolio portfolio, Strategy strategy)
 		{
 			return security == null ? 0m : strategy.GetPositionValue(security, portfolio) ?? 0m;
 		}

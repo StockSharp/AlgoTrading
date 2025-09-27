@@ -468,7 +468,7 @@ public class CurrencyStrengthEaStrategy : Strategy
 		}
 	}
 
-	private IIndicatorValueSmoother? CreateSmoother()
+	private IIndicatorValueSmoother CreateSmoother()
 	{
 		if (!ApplySmoothing)
 		return null;
@@ -656,9 +656,9 @@ public class CurrencyStrengthEaStrategy : Strategy
 
 	private sealed class PairContext
 	{
-		private readonly IIndicatorValueSmoother? _smoother;
+		private readonly IIndicatorValueSmoother _smoother;
 
-		public PairContext(Security security, string baseCurrency, string quoteCurrency, Highest highest, Lowest lowest, IIndicatorValueSmoother? smoother)
+		public PairContext(Security security, string baseCurrency, string quoteCurrency, Highest highest, Lowest lowest, IIndicatorValueSmoother smoother)
 		{
 			Security = security;
 			BaseCurrency = baseCurrency;

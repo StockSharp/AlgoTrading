@@ -134,15 +134,12 @@ public class TradeCopierStrategy : Strategy
 
 		var tradeKey = BuildTradeKey(myTrade);
 
-		lock (_processedTrades)
-		{
-			CleanProcessedTrades(CurrentTime);
+		CleanProcessedTrades(CurrentTime);
 
-			if (!_processedTrades.Add(tradeKey))
+		if (!_processedTrades.Add(tradeKey))
 			return;
 
-			_processedHistory.Enqueue((tradeKey, CurrentTime));
-		}
+		_processedHistory.Enqueue((tradeKey, CurrentTime));
 
 		var signedVolume = myTrade.Trade.Volume;
 
@@ -168,33 +165,25 @@ public class TradeCopierStrategy : Strategy
 			return;
 		}
 
-		lock (_pendingManualTrades)
+		_pendingManualTrades[security] = new PendingManualTrade
 		{
-			_pendingManualTrades[security] = new PendingManualTrade
-			{
-				Time = myTrade.Trade.ServerTime,
-				Price = myTrade.Trade.Price
-			};
-		}
+			Time = myTrade.Trade.ServerTime,
+			Price = myTrade.Trade.Price
+		};
 
 		ProcessPendingTrades();
 	}
 
 	private void ProcessPendingTrades()
 	{
-		KeyValuePair<Security, PendingManualTrade>[] pending;
-
-		lock (_pendingManualTrades)
-		{
-			if (_pendingManualTrades.Count == 0)
+		if (_pendingManualTrades.Count == 0)
 			return;
 
-			pending = _pendingManualTrades.ToArray();
-			_pendingManualTrades.Clear();
-		}
+		var pending = _pendingManualTrades.ToArray();
+		_pendingManualTrades.Clear();
 
 		foreach (var pair in pending)
-		AlignCopiedPosition(pair.Key, pair.Value);
+			AlignCopiedPosition(pair.Key, pair.Value);
 	}
 
 	private void AlignCopiedPosition(Security security, PendingManualTrade manualTrade)

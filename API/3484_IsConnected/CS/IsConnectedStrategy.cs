@@ -14,8 +14,6 @@ public class IsConnectedStrategy : Strategy
 {
 	private readonly StrategyParam<int> _checkIntervalSeconds;
 
-	private readonly object _sync = new();
-
 	private Timer _checkTimer;
 	private bool _previousState;
 	private DateTimeOffset? _lastOnlineStart;
@@ -51,14 +49,11 @@ public class IsConnectedStrategy : Strategy
 
 		LogInfo("Connection monitor initialized.");
 
-		lock (_sync)
-		{
-			_previousState = Connector.IsConnected;
-			_lastOnlineStart = _previousState ? time : null;
-			_lastOfflineStart = _previousState ? null : time;
+		_previousState = Connector.IsConnected;
+		_lastOnlineStart = _previousState ? time : null;
+		_lastOfflineStart = _previousState ? null : time;
 
-			StartTimer();
-		}
+		StartTimer();
 
 		// Report the initial state immediately after startup.
 		LogCurrentState(_previousState, time, null);
@@ -83,12 +78,9 @@ public class IsConnectedStrategy : Strategy
 
 		StopTimer();
 
-		lock (_sync)
-		{
-			_previousState = false;
-			_lastOnlineStart = null;
-			_lastOfflineStart = null;
-		}
+		_previousState = false;
+		_lastOnlineStart = null;
+		_lastOfflineStart = null;
 	}
 
 	private void StartTimer()
@@ -102,12 +94,9 @@ public class IsConnectedStrategy : Strategy
 
 	private void StopTimer()
 	{
-		lock (_sync)
-		{
-			_checkTimer?.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
-			_checkTimer?.Dispose();
-			_checkTimer = null;
-		}
+		_checkTimer?.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+		_checkTimer?.Dispose();
+		_checkTimer = null;
 	}
 
 	private void CheckConnectionState(object state)
@@ -116,40 +105,37 @@ public class IsConnectedStrategy : Strategy
 		bool? newState = null;
 		TimeSpan? previousDuration = null;
 
-		lock (_sync)
+		// Skip processing if the connector reference disappeared.
+		if (Connector == null)
+			return;
+
+		now = GetCurrentTime();
+		var isConnected = Connector.IsConnected;
+
+		if (isConnected == _previousState)
+			return;
+
+		// Detect transitions to the online state and measure downtime.
+		if (isConnected)
 		{
-			// Skip processing if the connector reference disappeared.
-			if (Connector == null)
-			return;
-
-			now = GetCurrentTime();
-			var isConnected = Connector.IsConnected;
-
-			if (isConnected == _previousState)
-			return;
-
-			// Detect transitions to the online state and measure downtime.
-			if (isConnected)
-			{
-				if (_lastOfflineStart != null)
+			if (_lastOfflineStart != null)
 				previousDuration = now - _lastOfflineStart.Value;
 
-				_lastOnlineStart = now;
-				_lastOfflineStart = null;
-			}
-			// Detect transitions to the offline state and measure uptime.
-			else
-			{
-				if (_lastOnlineStart != null)
+			_lastOnlineStart = now;
+			_lastOfflineStart = null;
+		}
+		// Detect transitions to the offline state and measure uptime.
+		else
+		{
+			if (_lastOnlineStart != null)
 				previousDuration = now - _lastOnlineStart.Value;
 
-				_lastOfflineStart = now;
-				_lastOnlineStart = null;
-			}
-
-			_previousState = isConnected;
-			newState = isConnected;
+			_lastOfflineStart = now;
+			_lastOnlineStart = null;
 		}
+
+		_previousState = isConnected;
+		newState = isConnected;
 
 		if (newState.HasValue)
 		LogCurrentState(newState.Value, now, previousDuration);

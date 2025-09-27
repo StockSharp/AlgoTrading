@@ -1,12 +1,11 @@
+using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
+using StockSharp.Messages;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using System.Threading;
-
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -38,9 +37,7 @@ public class PositiveSwapInformerStrategy : Strategy
 
 	private readonly List<Security> _watchedSecurities = new();
 
-	private readonly object _sync = new();
-
-	private Timer? _timer;
+	private Timer _timer;
 	private bool _needsResolve = true;
 
 	/// <summary>
@@ -107,13 +104,10 @@ public class PositiveSwapInformerStrategy : Strategy
 	{
 		base.OnReseted();
 
-		lock (_sync)
-		{
-			_timer?.Dispose();
-			_timer = null;
-			_watchedSecurities.Clear();
-			_needsResolve = true;
-		}
+		_timer?.Dispose();
+		_timer = null;
+		_watchedSecurities.Clear();
+		_needsResolve = true;
 	}
 
 	/// <inheritdoc />
@@ -145,29 +139,23 @@ public class PositiveSwapInformerStrategy : Strategy
 
 	private void StartTimer()
 	{
-		lock (_sync)
+		_timer?.Dispose();
+
+		var interval = RefreshInterval;
+		if (interval <= TimeSpan.Zero)
 		{
-			_timer?.Dispose();
-
-			var interval = RefreshInterval;
-			if (interval <= TimeSpan.Zero)
-			{
-				LogWarning("Refresh interval must be positive. Falling back to one second.");
-				interval = TimeSpan.FromSeconds(1);
-			}
-
-			_timer = new Timer(OnTimer, null, TimeSpan.Zero, interval);
+			LogWarning("Refresh interval must be positive. Falling back to one second.");
+			interval = TimeSpan.FromSeconds(1);
 		}
+
+		_timer = new Timer(OnTimer, null, TimeSpan.Zero, interval);
 	}
 
 	private void StopTimer()
 	{
-		lock (_sync)
-		{
-			var timer = _timer;
-			_timer = null;
-			timer?.Dispose();
-		}
+		var timer = _timer;
+		_timer = null;
+		timer?.Dispose();
 	}
 
 	private void EnsureWatchListResolved()
@@ -175,68 +163,62 @@ public class PositiveSwapInformerStrategy : Strategy
 		if (!_needsResolve)
 			return;
 
-		lock (_sync)
+		_watchedSecurities.Clear();
+
+		void AddSecurity(Security sec)
 		{
-			_watchedSecurities.Clear();
+			if (sec == null)
+				return;
 
-			void AddSecurity(Security sec)
+			if (_watchedSecurities.Contains(sec))
+				return;
+
+			_watchedSecurities.Add(sec);
+		}
+
+		if (IncludePrimarySecurity)
+		{
+			AddSecurity(Security);
+		}
+
+		if (!SymbolsList.IsEmptyOrWhiteSpace())
+		{
+			var provider = SecurityProvider;
+			if (provider == null)
 			{
-				if (sec == null)
-					return;
-
-				if (_watchedSecurities.Contains(sec))
-					return;
-
-				_watchedSecurities.Add(sec);
+				LogWarning("Security provider is not assigned. Only the primary security will be scanned.");
 			}
-
-			if (IncludePrimarySecurity)
+			else
 			{
-				AddSecurity(Security);
-			}
+				var separators = new[] { ',', ';', '\n', '\r', '\t', ' ' };
+				var tokens = SymbolsList.Split(separators, StringSplitOptions.RemoveEmptyEntries);
 
-			if (!SymbolsList.IsEmptyOrWhiteSpace())
-			{
-				var provider = SecurityProvider;
-				if (provider == null)
+				foreach (var token in tokens)
 				{
-					LogWarning("Security provider is not assigned. Only the primary security will be scanned.");
-				}
-				else
-				{
-					var separators = new[] { ',', ';', '\n', '\r', '\t', ' ' };
-					var tokens = SymbolsList.Split(separators, StringSplitOptions.RemoveEmptyEntries);
+					var symbol = token.Trim();
+					if (symbol.Length == 0)
+						continue;
 
-					foreach (var token in tokens)
+					var security = provider.LookupById(symbol);
+					if (security != null)
 					{
-						var symbol = token.Trim();
-						if (symbol.Length == 0)
-							continue;
-
-						var security = provider.LookupById(symbol);
-						if (security != null)
-						{
-							AddSecurity(security);
-						}
-						else
-						{
-							LogWarning($"Security '{symbol}' not found in the security provider.");
-						}
+						AddSecurity(security);
+					}
+					else
+					{
+						LogWarning($"Security '{symbol}' not found in the security provider.");
 					}
 				}
 			}
-
-			_needsResolve = false;
 		}
+
+		_needsResolve = false;
 	}
 
 	private void OnTimer(object state)
 	{
 		Security[] securities;
-		lock (_sync)
-		{
-			securities = _watchedSecurities.ToArray();
-		}
+		securities = _watchedSecurities.ToArray();
 
 		if (securities.Length == 0)
 		{

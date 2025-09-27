@@ -421,9 +421,9 @@ public class DoubleMaBreakoutStrategy : Strategy
 		return true;
 	}
 
-	private bool TryProcessIndicator(LengthIndicator<decimal> ma, LinearRegression? lsma, decimal price, ICandleMessage candle, out decimal value)
+	private bool TryProcessIndicator(LengthIndicator<decimal> ma, LinearRegression lsma, decimal price, ICandleMessage candle, out decimal value)
 	{
-		IIndicatorValue? result = null;
+		IIndicatorValue result = null;
 
 		if (lsma != null)
 		{
@@ -576,7 +576,7 @@ public class DoubleMaBreakoutStrategy : Strategy
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMode mode, int length, out LinearRegression? lsma)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMode mode, int length, out LinearRegression lsma)
 	{
 		lsma = null;
 		return mode switch

@@ -514,7 +514,7 @@ public class AmaTraderV21Strategy : Strategy
 			_closeSmooth = CreateMovingAverage(secondMethod, secondLength);
 		}
 
-		public HeikenResult? Process(ICandleMessage candle)
+		public HeikenResult Process(ICandleMessage candle)
 		{
 			var openValue = _openMa.Process(candle.OpenPrice, candle.OpenTime, true);
 			var closeValue = _closeMa.Process(candle.ClosePrice, candle.OpenTime, true);

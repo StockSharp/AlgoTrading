@@ -19,7 +19,6 @@ public class MagicNumberWiseEaProfitLossDashboardStrategy : Strategy
 
 	private readonly Dictionary<string, Summary> _summaries = new(StringComparer.Ordinal);
 	private readonly Dictionary<string, Summary> _symbolMap = new(StringComparer.OrdinalIgnoreCase);
-	private readonly object _sync = new();
 
 	private Timer _timer;
 	private int _isProcessing;
@@ -71,11 +70,8 @@ public class MagicNumberWiseEaProfitLossDashboardStrategy : Strategy
 	{
 		base.OnReseted();
 
-		lock (_sync)
-		{
-			_summaries.Clear();
-			_symbolMap.Clear();
-		}
+		_summaries.Clear();
+		_symbolMap.Clear();
 	}
 
 	/// <inheritdoc />
@@ -128,15 +124,12 @@ public class MagicNumberWiseEaProfitLossDashboardStrategy : Strategy
 		var comment = order.Comment;
 		var symbol = order.Security?.Id;
 
-		lock (_sync)
-		{
-			var summary = GetOrCreateSummary(identifier);
+		var summary = GetOrCreateSummary(identifier);
 
-			if (!comment.IsEmpty() && summary.Comment.IsEmpty())
-				summary.Comment = comment;
+		if (!comment.IsEmpty() && summary.Comment.IsEmpty())
+			summary.Comment = comment;
 
-			UpdateSymbol(summary, symbol);
-		}
+		UpdateSymbol(summary, symbol);
 	}
 
 	private void RegisterTrade(MyTrade trade)
@@ -147,21 +140,18 @@ public class MagicNumberWiseEaProfitLossDashboardStrategy : Strategy
 		var orderSecurity = order?.Security?.Id;
 		var comment = order?.Comment;
 
-		lock (_sync)
-		{
-			var summary = GetOrCreateSummary(identifier);
+		var summary = GetOrCreateSummary(identifier);
 
-			summary.DealCount++;
-			summary.ClosedPnL += trade.PnL;
+		summary.DealCount++;
+		summary.ClosedPnL += trade.PnL;
 
-			if (GroupByComment && summary.Comment.IsEmpty())
-				summary.Comment = identifier;
-			else if (!comment.IsEmpty() && summary.Comment.IsEmpty())
-				summary.Comment = comment;
+		if (GroupByComment && summary.Comment.IsEmpty())
+			summary.Comment = identifier;
+		else if (!comment.IsEmpty() && summary.Comment.IsEmpty())
+			summary.Comment = comment;
 
-			UpdateSymbol(summary, tradeSecurity);
-			UpdateSymbol(summary, orderSecurity);
-		}
+		UpdateSymbol(summary, tradeSecurity);
+		UpdateSymbol(summary, orderSecurity);
 	}
 
 	private void RefreshDashboard()
@@ -215,27 +205,24 @@ public class MagicNumberWiseEaProfitLossDashboardStrategy : Strategy
 
 	private SummarySnapshot[] CreateSnapshots()
 	{
-		lock (_sync)
+		RefreshFloatingPnLLocked();
+
+		var result = new SummarySnapshot[_summaries.Count];
+		var index = 0;
+
+		foreach (var summary in _summaries.Values)
 		{
-			RefreshFloatingPnLLocked();
-
-			var result = new SummarySnapshot[_summaries.Count];
-			var index = 0;
-
-			foreach (var summary in _summaries.Values)
-			{
-				result[index++] = new SummarySnapshot(
-					summary.Identifier,
-					summary.DealCount,
-					summary.ClosedPnL,
-					summary.HasFloatingPnL,
-					summary.FloatingPnL,
-					summary.Symbol,
-					summary.Comment);
-			}
-
-			return result;
+			result[index++] = new SummarySnapshot(
+				summary.Identifier,
+				summary.DealCount,
+				summary.ClosedPnL,
+				summary.HasFloatingPnL,
+				summary.FloatingPnL,
+				summary.Symbol,
+				summary.Comment);
 		}
+
+		return result;
 	}
 
 	private void RefreshFloatingPnLLocked()
