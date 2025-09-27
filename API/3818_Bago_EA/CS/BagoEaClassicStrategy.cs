@@ -1095,72 +1095,68 @@ public decimal High { get; }
 public decimal Low { get; }
 public decimal Close { get; }
 }
+
+	public enum MovingAverageTypes
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Simple,
+
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Exponential,
+
+		/// <summary>
+		/// Smoothed moving average.
+		/// </summary>
+		Smoothed,
+
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		LinearWeighted
+	}
+
+	/// <summary>
+	/// Price extraction modes replicated from MetaTrader.
+	/// </summary>
+	public enum AppliedPriceTypes
+	{
+		/// <summary>
+		/// Closing price.
+		/// </summary>
+		Close,
+
+		/// <summary>
+		/// Opening price.
+		/// </summary>
+		Open,
+
+		/// <summary>
+		/// Highest price.
+		/// </summary>
+		High,
+
+		/// <summary>
+		/// Lowest price.
+		/// </summary>
+		Low,
+
+		/// <summary>
+		/// Median price (high + low) / 2.
+		/// </summary>
+		Median,
+
+		/// <summary>
+		/// Typical price (high + low + close) / 3.
+		/// </summary>
+		Typical,
+
+		/// <summary>
+		/// Weighted price (high + low + 2 * close) / 4.
+		/// </summary>
+		Weighted
+	}
 }
-
-/// <summary>
-/// Moving average calculation options supported by the strategy.
-/// </summary>
-public enum MovingAverageTypes
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Exponential,
-
-	/// <summary>
-	/// Smoothed moving average.
-	/// </summary>
-	Smoothed,
-
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	LinearWeighted
-}
-
-/// <summary>
-/// Price extraction modes replicated from MetaTrader.
-/// </summary>
-public enum AppliedPriceTypes
-{
-	/// <summary>
-	/// Closing price.
-	/// </summary>
-	Close,
-
-	/// <summary>
-	/// Opening price.
-	/// </summary>
-	Open,
-
-	/// <summary>
-	/// Highest price.
-	/// </summary>
-	High,
-
-	/// <summary>
-	/// Lowest price.
-	/// </summary>
-	Low,
-
-	/// <summary>
-	/// Median price (high + low) / 2.
-	/// </summary>
-	Median,
-
-	/// <summary>
-	/// Typical price (high + low + close) / 3.
-	/// </summary>
-	Typical,
-
-	/// <summary>
-	/// Weighted price (high + low + 2 * close) / 4.
-	/// </summary>
-	Weighted
-}
-

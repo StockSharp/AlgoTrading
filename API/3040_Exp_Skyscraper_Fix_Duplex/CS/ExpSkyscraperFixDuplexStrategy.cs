@@ -320,252 +320,248 @@ public class ExpSkyscraperFixDuplexStrategy : Strategy
 				SellMarket();
 		}
 	}
-}
 
-/// <summary>
-/// Calculation mode for the Skyscraper Fix indicator.
-/// </summary>
-public enum SkyscraperCalculationModes
-{
-	/// <summary>Use the bar high and low.</summary>
-	HighLow,
-
-	/// <summary>Use the bar close.</summary>
-	Close
-}
-
-/// <summary>
-/// Skyscraper Fix indicator translated from the original MQL version.
-/// </summary>
-public class SkyscraperFixIndicator : BaseIndicator<decimal>
-{
-	private readonly AverageTrueRange _atr = new();
-	private readonly Highest _atrHighest = new();
-	private readonly Lowest _atrLowest = new();
-
-	private decimal? _previousMin;
-	private decimal? _previousMax;
-	private decimal? _previousLine;
-	private decimal? _previousUpper;
-	private decimal? _previousLower;
-	private int _previousTrend;
-	private bool _initialized;
-
-	/// <summary>
-	/// ATR averaging period.
-	/// </summary>
-	public int AtrPeriod { get; set; } = 15;
-
-	/// <summary>
-	/// ATR lookback length used for trailing step calculation.
-	/// </summary>
-	public int Length { get; set; } = 10;
-
-	/// <summary>
-	/// Sensitivity multiplier applied to the ATR step.
-	/// </summary>
-	public decimal Kv { get; set; } = 0.9m;
-
-	/// <summary>
-	/// Percentage offset applied to the midline.
-	/// </summary>
-	public decimal Percentage { get; set; }
-
-	/// <summary>
-	/// Price mode used for envelope construction.
-	/// </summary>
-	public SkyscraperCalculationModes Mode { get; set; } = SkyscraperCalculationModes.HighLow;
-
-	/// <summary>
-	/// Instrument price step.
-	/// </summary>
-	public decimal PriceStep { get; set; }
-
-	/// <inheritdoc />
-	protected override IIndicatorValue OnProcess(IIndicatorValue input)
+	public enum SkyscraperCalculationModes
 	{
-		if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
-			return new SkyscraperFixValue(this, input, false, null, null, null, null, null, null);
+		/// <summary>Use the bar high and low.</summary>
+		HighLow,
 
-		if (PriceStep <= 0m || Length <= 0 || AtrPeriod <= 0)
-			return new SkyscraperFixValue(this, input, false, null, null, null, null, null, null);
+		/// <summary>Use the bar close.</summary>
+		Close
+	}
 
-		if (_atr.Length != AtrPeriod)
-			_atr.Length = AtrPeriod;
+	/// <summary>
+	/// Skyscraper Fix indicator translated from the original MQL version.
+	/// </summary>
+	public class SkyscraperFixIndicator : BaseIndicator<decimal>
+	{
+		private readonly AverageTrueRange _atr = new();
+		private readonly Highest _atrHighest = new();
+		private readonly Lowest _atrLowest = new();
 
-		if (_atrHighest.Length != Length)
-			_atrHighest.Length = Length;
+		private decimal? _previousMin;
+		private decimal? _previousMax;
+		private decimal? _previousLine;
+		private decimal? _previousUpper;
+		private decimal? _previousLower;
+		private int _previousTrend;
+		private bool _initialized;
 
-		if (_atrLowest.Length != Length)
-			_atrLowest.Length = Length;
+		/// <summary>
+		/// ATR averaging period.
+		/// </summary>
+		public int AtrPeriod { get; set; } = 15;
 
-		var atrValue = _atr.Process(input);
-		if (!_atr.IsFormed)
-			return new SkyscraperFixValue(this, input, false, null, null, null, null, null, null);
+		/// <summary>
+		/// ATR lookback length used for trailing step calculation.
+		/// </summary>
+		public int Length { get; set; } = 10;
 
-		var atr = atrValue.ToDecimal();
+		/// <summary>
+		/// Sensitivity multiplier applied to the ATR step.
+		/// </summary>
+		public decimal Kv { get; set; } = 0.9m;
 
-		var highest = _atrHighest.Process(new DecimalIndicatorValue(_atrHighest, atr, input.Time));
-		var lowest = _atrLowest.Process(new DecimalIndicatorValue(_atrLowest, atr, input.Time));
+		/// <summary>
+		/// Percentage offset applied to the midline.
+		/// </summary>
+		public decimal Percentage { get; set; }
 
-		if (!_atrHighest.IsFormed || !_atrLowest.IsFormed)
-			return new SkyscraperFixValue(this, input, false, null, null, null, null, null, null);
+		/// <summary>
+		/// Price mode used for envelope construction.
+		/// </summary>
+		public SkyscraperCalculationModes Mode { get; set; } = SkyscraperCalculationModes.HighLow;
 
-		var atrMax = highest.ToDecimal();
-		var atrMin = lowest.ToDecimal();
+		/// <summary>
+		/// Instrument price step.
+		/// </summary>
+		public decimal PriceStep { get; set; }
 
-		var stepDecimal = 0.5m * Kv * (atrMax + atrMin) / PriceStep;
-		if (stepDecimal <= 0m)
-			return new SkyscraperFixValue(this, input, false, null, null, null, null, null, null);
-
-		var step = Math.Max(1, (int)Math.Floor(stepDecimal));
-		var stepValue = step * PriceStep;
-		var doubleStep = stepValue * 2m;
-
-		decimal smax0;
-		decimal smin0;
-		switch (Mode)
+		/// <inheritdoc />
+		protected override IIndicatorValue OnProcess(IIndicatorValue input)
 		{
-			case SkyscraperCalculationModes.HighLow:
-				smax0 = candle.LowPrice + doubleStep;
-				smin0 = candle.HighPrice - doubleStep;
-				break;
-			case SkyscraperCalculationModes.Close:
-				smax0 = candle.ClosePrice + doubleStep;
-				smin0 = candle.ClosePrice - doubleStep;
-				break;
-			default:
-				smax0 = candle.LowPrice + doubleStep;
-				smin0 = candle.HighPrice - doubleStep;
-				break;
-		}
+			if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
+				return new SkyscraperFixValue(this, input, false, null, null, null, null, null, null);
 
-		if (!_initialized)
-		{
+			if (PriceStep <= 0m || Length <= 0 || AtrPeriod <= 0)
+				return new SkyscraperFixValue(this, input, false, null, null, null, null, null, null);
+
+			if (_atr.Length != AtrPeriod)
+				_atr.Length = AtrPeriod;
+
+			if (_atrHighest.Length != Length)
+				_atrHighest.Length = Length;
+
+			if (_atrLowest.Length != Length)
+				_atrLowest.Length = Length;
+
+			var atrValue = _atr.Process(input);
+			if (!_atr.IsFormed)
+				return new SkyscraperFixValue(this, input, false, null, null, null, null, null, null);
+
+			var atr = atrValue.ToDecimal();
+
+			var highest = _atrHighest.Process(new DecimalIndicatorValue(_atrHighest, atr, input.Time));
+			var lowest = _atrLowest.Process(new DecimalIndicatorValue(_atrLowest, atr, input.Time));
+
+			if (!_atrHighest.IsFormed || !_atrLowest.IsFormed)
+				return new SkyscraperFixValue(this, input, false, null, null, null, null, null, null);
+
+			var atrMax = highest.ToDecimal();
+			var atrMin = lowest.ToDecimal();
+
+			var stepDecimal = 0.5m * Kv * (atrMax + atrMin) / PriceStep;
+			if (stepDecimal <= 0m)
+				return new SkyscraperFixValue(this, input, false, null, null, null, null, null, null);
+
+			var step = Math.Max(1, (int)Math.Floor(stepDecimal));
+			var stepValue = step * PriceStep;
+			var doubleStep = stepValue * 2m;
+
+			decimal smax0;
+			decimal smin0;
+			switch (Mode)
+			{
+				case SkyscraperCalculationModes.HighLow:
+					smax0 = candle.LowPrice + doubleStep;
+					smin0 = candle.HighPrice - doubleStep;
+					break;
+				case SkyscraperCalculationModes.Close:
+					smax0 = candle.ClosePrice + doubleStep;
+					smin0 = candle.ClosePrice - doubleStep;
+					break;
+				default:
+					smax0 = candle.LowPrice + doubleStep;
+					smin0 = candle.HighPrice - doubleStep;
+					break;
+			}
+
+			if (!_initialized)
+			{
+				_previousMin = smin0;
+				_previousMax = smax0;
+				_previousLine = candle.ClosePrice;
+				_previousUpper = null;
+				_previousLower = null;
+				_previousTrend = 0;
+				_initialized = true;
+				return new SkyscraperFixValue(this, input, false, null, null, null, null, null, null);
+			}
+
+			var prevMin = _previousMin ?? smin0;
+			var prevMax = _previousMax ?? smax0;
+			var prevLine = _previousLine ?? candle.ClosePrice;
+			var trend = _previousTrend;
+
+			if (candle.ClosePrice > prevMax)
+				trend = 1;
+
+			if (candle.ClosePrice < prevMin)
+				trend = -1;
+
+			decimal? upper = null;
+			decimal? lower = null;
+			var middle = prevLine;
+			var percentOffset = Percentage / 100m * stepValue;
+
+			if (trend > 0)
+			{
+				smin0 = Math.Max(smin0, prevMin);
+				upper = smin0;
+				var line = smin0 + stepValue;
+				middle = Math.Max(line - percentOffset, prevLine);
+			}
+			else
+			{
+				smax0 = Math.Min(smax0, prevMax);
+				lower = smax0;
+				var line = smax0 - stepValue;
+				middle = Math.Min(line + percentOffset, prevLine);
+			}
+
+			var buy = upper.HasValue && _previousLower.HasValue ? upper : null;
+			var sell = lower.HasValue && _previousUpper.HasValue ? lower : null;
+
+			_previousTrend = trend;
 			_previousMin = smin0;
 			_previousMax = smax0;
-			_previousLine = candle.ClosePrice;
+			_previousLine = middle;
+			_previousUpper = upper;
+			_previousLower = lower;
+
+			return new SkyscraperFixValue(this, input, true, upper, lower, buy, sell, middle, trend);
+		}
+
+		/// <inheritdoc />
+		public override void Reset()
+		{
+			base.Reset();
+			_atr.Reset();
+			_atrHighest.Reset();
+			_atrLowest.Reset();
+			_previousMin = null;
+			_previousMax = null;
+			_previousLine = null;
 			_previousUpper = null;
 			_previousLower = null;
 			_previousTrend = 0;
-			_initialized = true;
-			return new SkyscraperFixValue(this, input, false, null, null, null, null, null, null);
+			_initialized = false;
 		}
-
-		var prevMin = _previousMin ?? smin0;
-		var prevMax = _previousMax ?? smax0;
-		var prevLine = _previousLine ?? candle.ClosePrice;
-		var trend = _previousTrend;
-
-		if (candle.ClosePrice > prevMax)
-			trend = 1;
-
-		if (candle.ClosePrice < prevMin)
-			trend = -1;
-
-		decimal? upper = null;
-		decimal? lower = null;
-		var middle = prevLine;
-		var percentOffset = Percentage / 100m * stepValue;
-
-		if (trend > 0)
-		{
-			smin0 = Math.Max(smin0, prevMin);
-			upper = smin0;
-			var line = smin0 + stepValue;
-			middle = Math.Max(line - percentOffset, prevLine);
-		}
-		else
-		{
-			smax0 = Math.Min(smax0, prevMax);
-			lower = smax0;
-			var line = smax0 - stepValue;
-			middle = Math.Min(line + percentOffset, prevLine);
-		}
-
-		var buy = upper.HasValue && _previousLower.HasValue ? upper : null;
-		var sell = lower.HasValue && _previousUpper.HasValue ? lower : null;
-
-		_previousTrend = trend;
-		_previousMin = smin0;
-		_previousMax = smax0;
-		_previousLine = middle;
-		_previousUpper = upper;
-		_previousLower = lower;
-
-		return new SkyscraperFixValue(this, input, true, upper, lower, buy, sell, middle, trend);
 	}
 
-	/// <inheritdoc />
-	public override void Reset()
+	/// <summary>
+	/// Indicator value for <see cref="SkyscraperFixIndicator"/>.
+	/// </summary>
+	public class SkyscraperFixValue : ComplexIndicatorValue
 	{
-		base.Reset();
-		_atr.Reset();
-		_atrHighest.Reset();
-		_atrLowest.Reset();
-		_previousMin = null;
-		_previousMax = null;
-		_previousLine = null;
-		_previousUpper = null;
-		_previousLower = null;
-		_previousTrend = 0;
-		_initialized = false;
+		/// <summary>
+		/// Initializes a new instance of the <see cref="SkyscraperFixValue"/> class.
+		/// </summary>
+		public SkyscraperFixValue(IIndicator indicator, IIndicatorValue input, bool hasValue, decimal? upper, decimal? lower, decimal? buy, decimal? sell, decimal? middle, int? trend)
+			: base(indicator, input,
+				(nameof(Upper), upper),
+				(nameof(Lower), lower),
+				(nameof(Buy), buy),
+				(nameof(Sell), sell),
+				(nameof(Middle), middle),
+				(nameof(Trend), trend))
+		{
+			HasValue = hasValue;
+		}
+
+		/// <summary>
+		/// True when the indicator has produced a valid output.
+		/// </summary>
+		public bool HasValue { get; }
+
+		/// <summary>
+		/// Upper trailing level.
+		/// </summary>
+		public decimal? Upper => (decimal?)GetValue(nameof(Upper));
+
+		/// <summary>
+		/// Lower trailing level.
+		/// </summary>
+		public decimal? Lower => (decimal?)GetValue(nameof(Lower));
+
+		/// <summary>
+		/// Long entry trigger level.
+		/// </summary>
+		public decimal? Buy => (decimal?)GetValue(nameof(Buy));
+
+		/// <summary>
+		/// Short entry trigger level.
+		/// </summary>
+		public decimal? Sell => (decimal?)GetValue(nameof(Sell));
+
+		/// <summary>
+		/// Midline used for visualization.
+		/// </summary>
+		public decimal? Middle => (decimal?)GetValue(nameof(Middle));
+
+		/// <summary>
+		/// Current trend direction.
+		/// </summary>
+		public int? Trend => (int?)GetValue(nameof(Trend));
 	}
 }
-
-/// <summary>
-/// Indicator value for <see cref="SkyscraperFixIndicator"/>.
-/// </summary>
-public class SkyscraperFixValue : ComplexIndicatorValue
-{
-	/// <summary>
-	/// Initializes a new instance of the <see cref="SkyscraperFixValue"/> class.
-	/// </summary>
-	public SkyscraperFixValue(IIndicator indicator, IIndicatorValue input, bool hasValue, decimal? upper, decimal? lower, decimal? buy, decimal? sell, decimal? middle, int? trend)
-		: base(indicator, input,
-			(nameof(Upper), upper),
-			(nameof(Lower), lower),
-			(nameof(Buy), buy),
-			(nameof(Sell), sell),
-			(nameof(Middle), middle),
-			(nameof(Trend), trend))
-	{
-		HasValue = hasValue;
-	}
-
-	/// <summary>
-	/// True when the indicator has produced a valid output.
-	/// </summary>
-	public bool HasValue { get; }
-
-	/// <summary>
-	/// Upper trailing level.
-	/// </summary>
-	public decimal? Upper => (decimal?)GetValue(nameof(Upper));
-
-	/// <summary>
-	/// Lower trailing level.
-	/// </summary>
-	public decimal? Lower => (decimal?)GetValue(nameof(Lower));
-
-	/// <summary>
-	/// Long entry trigger level.
-	/// </summary>
-	public decimal? Buy => (decimal?)GetValue(nameof(Buy));
-
-	/// <summary>
-	/// Short entry trigger level.
-	/// </summary>
-	public decimal? Sell => (decimal?)GetValue(nameof(Sell));
-
-	/// <summary>
-	/// Midline used for visualization.
-	/// </summary>
-	public decimal? Middle => (decimal?)GetValue(nameof(Middle));
-
-	/// <summary>
-	/// Current trend direction.
-	/// </summary>
-	public int? Trend => (int?)GetValue(nameof(Trend));
-}
-

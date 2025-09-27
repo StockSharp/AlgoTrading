@@ -1028,21 +1028,17 @@ public class ZoneRecoveryHedgeStrategy : Strategy
 	}
 
 	private readonly record struct TradeStep(bool IsBuy, decimal Price, decimal Volume);
+
+	public enum ZoneRecoveryModes
+	{
+		/// <summary>
+		/// Manual entries only. Use helper methods to start cycles.
+		/// </summary>
+		Manual,
+
+		/// <summary>
+		/// Automatically detect entries through multi-timeframe RSI filters.
+		/// </summary>
+		RsiMultiTimeframe
+	}
 }
-
-/// <summary>
-/// Available operating modes for the zone recovery hedge strategy.
-/// </summary>
-public enum ZoneRecoveryModes
-{
-	/// <summary>
-	/// Manual entries only. Use helper methods to start cycles.
-	/// </summary>
-	Manual,
-
-	/// <summary>
-	/// Automatically detect entries through multi-timeframe RSI filters.
-	/// </summary>
-	RsiMultiTimeframe
-}
-

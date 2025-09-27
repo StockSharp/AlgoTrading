@@ -618,57 +618,53 @@ public class RrsNonDirectionalStrategy : Strategy
 		var begin = Portfolio?.BeginValue ?? 0m;
 		return begin > 0m ? begin : current;
 	}
-}
 
-/// <summary>
-/// Entry modes reproduced from the MT4 enumerations.
-/// </summary>
-public enum RrsTradingModes
-{
-	HedgeStyle,
-	BuySellRandom,
-	BuySell,
-	AutoSwap,
-	BuyOrder,
-	SellOrder,
-}
+	public enum RrsTradingModes
+	{
+		HedgeStyle,
+		BuySellRandom,
+		BuySell,
+		AutoSwap,
+		BuyOrder,
+		SellOrder,
+	}
 
-/// <summary>
-/// Stop-loss handling options.
-/// </summary>
-public enum RrsStopModes
-{
-	Disabled,
-	Virtual,
-	Classic,
-}
+	/// <summary>
+	/// Stop-loss handling options.
+	/// </summary>
+	public enum RrsStopModes
+	{
+		Disabled,
+		Virtual,
+		Classic,
+	}
 
-/// <summary>
-/// Take-profit handling options.
-/// </summary>
-public enum RrsTakeModes
-{
-	Disabled,
-	Virtual,
-	Classic,
-}
+	/// <summary>
+	/// Take-profit handling options.
+	/// </summary>
+	public enum RrsTakeModes
+	{
+		Disabled,
+		Virtual,
+		Classic,
+	}
 
-/// <summary>
-/// Trailing management options.
-/// </summary>
-public enum RrsTrailingModes
-{
-	Disabled,
-	Virtual,
-	Classic,
-}
+	/// <summary>
+	/// Trailing management options.
+	/// </summary>
+	public enum RrsTrailingModes
+	{
+		Disabled,
+		Virtual,
+		Classic,
+	}
 
-/// <summary>
-/// Interpretation modes for the risk threshold.
-/// </summary>
-public enum RrsRiskModes
-{
-	BalancePercentage,
-	FixedMoney,
+	/// <summary>
+	/// Interpretation modes for the risk threshold.
+	/// </summary>
+	public enum RrsRiskModes
+	{
+		BalancePercentage,
+		FixedMoney,
+	}
 }
-

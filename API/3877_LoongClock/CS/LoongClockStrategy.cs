@@ -256,26 +256,22 @@ public class LoongClockStrategy : Strategy
 			_ => DateTimeOffset.Now,
 		};
 	}
+
+	public enum ClockTimeSources
+	{
+		/// <summary>
+		/// Uses the local machine time.
+		/// </summary>
+		Local,
+
+		/// <summary>
+		/// Uses the server time provided by the trading connection.
+		/// </summary>
+		Server,
+
+		/// <summary>
+		/// Uses Coordinated Universal Time.
+		/// </summary>
+		Utc
+	}
 }
-
-/// <summary>
-/// Defines available sources for the displayed clock time.
-/// </summary>
-public enum ClockTimeSources
-{
-	/// <summary>
-	/// Uses the local machine time.
-	/// </summary>
-	Local,
-
-	/// <summary>
-	/// Uses the server time provided by the trading connection.
-	/// </summary>
-	Server,
-
-	/// <summary>
-	/// Uses Coordinated Universal Time.
-	/// </summary>
-	Utc
-}
-

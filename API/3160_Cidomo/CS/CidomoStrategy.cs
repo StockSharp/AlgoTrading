@@ -620,21 +620,17 @@ public class CidomoStrategy : Strategy
 		if (Position == 0m)
 			ResetPositionTracking();
 	}
+
+	public enum CidomoMoneyManagementModes
+	{
+		/// <summary>
+		/// Always trade the fixed volume specified by <see cref="CidomoStrategy.TradeVolume"/>.
+		/// </summary>
+		FixedVolume,
+
+		/// <summary>
+		/// Scale the order size so that the configured risk percentage is lost when the stop-loss is hit.
+		/// </summary>
+		RiskPercent
+	}
 }
-
-/// <summary>
-/// Money management modes supported by <see cref="CidomoStrategy"/>.
-/// </summary>
-public enum CidomoMoneyManagementModes
-{
-	/// <summary>
-	/// Always trade the fixed volume specified by <see cref="CidomoStrategy.TradeVolume"/>.
-	/// </summary>
-	FixedVolume,
-
-	/// <summary>
-	/// Scale the order size so that the configured risk percentage is lost when the stop-loss is hit.
-	/// </summary>
-	RiskPercent
-}
-

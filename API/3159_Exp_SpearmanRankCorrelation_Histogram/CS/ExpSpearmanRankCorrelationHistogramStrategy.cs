@@ -16,27 +16,6 @@ using StockSharp.Algo;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Trading mode options from the original expert advisor.
-/// </summary>
-public enum ExpSpearmanTradeModes
-{
-	/// <summary>
-	/// Mode 1: close opposite positions and open when the histogram crosses neutral levels.
-	/// </summary>
-	Mode1 = 0,
-
-	/// <summary>
-	/// Mode 2: open only when the histogram leaves extreme zones.
-	/// </summary>
-	Mode2 = 1,
-
-	/// <summary>
-	/// Mode 3: open and close positions exclusively on extreme values.
-	/// </summary>
-	Mode3 = 2,
-}
-
-/// <summary>
 /// Conversion of the MetaTrader expert Exp_SpearmanRankCorrelation_Histogram.
 /// The strategy analyses the Spearman Rank Correlation histogram colours to open or close positions.
 /// </summary>
@@ -454,5 +433,25 @@ public class ExpSpearmanRankCorrelationHistogramStrategy : Strategy
 		SellMarket(volume);
 		}
 	}
-}
 
+	/// <summary>
+	/// Trading mode options from the original expert advisor.
+	/// </summary>
+	public enum ExpSpearmanTradeModes
+	{
+		/// <summary>
+		/// Mode 1: close opposite positions and open when the histogram crosses neutral levels.
+		/// </summary>
+		Mode1 = 0,
+
+		/// <summary>
+		/// Mode 2: open only when the histogram leaves extreme zones.
+		/// </summary>
+		Mode2 = 1,
+
+		/// <summary>
+		/// Mode 3: open and close positions exclusively on extreme values.
+		/// </summary>
+		Mode3 = 2,
+	}
+}

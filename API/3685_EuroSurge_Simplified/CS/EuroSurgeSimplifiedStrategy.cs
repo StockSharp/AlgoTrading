@@ -13,13 +13,6 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum TradeSizeTypes
-{
-	FixedSize,
-	BalancePercent,
-	EquityPercent,
-}
-
 /// <summary>
 /// High-level port of the "EuroSurge Simplified" MetaTrader strategy.
 /// Combines MA trend detection with optional RSI, MACD, Bollinger Bands, and Stochastic filters.
@@ -583,5 +576,11 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 
 		return volume > 0m ? volume : 0m;
 	}
-}
 
+	public enum TradeSizeTypes
+	{
+		FixedSize,
+		BalancePercent,
+		EquityPercent,
+	}
+}

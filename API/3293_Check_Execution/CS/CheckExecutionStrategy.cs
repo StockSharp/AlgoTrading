@@ -402,11 +402,10 @@ public class CheckExecutionStrategy : Strategy
 		_spreadAverage.Length = length;
 		_executionAverage.Length = length;
 	}
-}
 
-public enum CheckExecutionOrderTypes
-{
-	Pending,
-	Market
+	public enum CheckExecutionOrderTypes
+	{
+		Pending,
+		Market
+	}
 }
-

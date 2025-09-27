@@ -12,13 +12,6 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
-
-public enum TokyoSignalModes
-{
-	ContraryTrend,
-	AccordingTrend,
-}
-
 public class TokyoSessionStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
@@ -647,5 +640,10 @@ public class TokyoSessionStrategy : Strategy
 	{
 		return (time + TimeSpan.FromHours(BrokerOffset)).DateTime;
 	}
-}
 
+	public enum TokyoSignalModes
+	{
+		ContraryTrend,
+		AccordingTrend,
+	}
+}

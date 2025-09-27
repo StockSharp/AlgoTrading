@@ -15,14 +15,6 @@ using StockSharp.Messages;
 
 using System.Threading;
 using System.Threading.Tasks;
-
-public enum CheckOpenOrdersModes
-{
-	CheckAllTypes = 0,
-	CheckOnlyBuy = 1,
-	CheckOnlySell = 2,
-}
-
 /// <summary>
 /// Strategy that opens a few sample trades and reports whether orders matching the configured filter remain active.
 /// </summary>
@@ -396,5 +388,11 @@ public class CheckOpenOrdersStrategy : Strategy
 		_ordersCts.Dispose();
 		_ordersCts = null;
 	}
-}
 
+	public enum CheckOpenOrdersModes
+	{
+		CheckAllTypes = 0,
+		CheckOnlyBuy = 1,
+		CheckOnlySell = 2,
+	}
+}

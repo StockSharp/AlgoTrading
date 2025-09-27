@@ -15,12 +15,6 @@ using System.Globalization;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum TrailingManagementModes
-{
-	Classic,
-	Virtual
-}
-
 /// <summary>
 /// Trailing stop manager that replicates the behaviour of the "Classic &amp; Virtual Trailing" MetaTrader expert.
 /// The strategy itself does not open positions and simply manages the active one by shifting a trailing stop level
@@ -296,5 +290,10 @@ public class ClassicVirtualTrailingStrategy : Strategy
 			_ => null
 		};
 	}
-}
 
+	public enum TrailingManagementModes
+	{
+		Classic,
+		Virtual
+	}
+}

@@ -622,26 +622,22 @@ public class ZoneRecoveryButtonStrategy : Strategy
 	}
 
 	private sealed record TradeStep(bool IsBuy, decimal Price, decimal Volume);
+
+	public enum ZoneRecoveryStartDirections
+	{
+		/// <summary>
+		/// Do not open any trades automatically.
+		/// </summary>
+		None,
+
+		/// <summary>
+		/// Start with a BUY position.
+		/// </summary>
+		Buy,
+
+		/// <summary>
+		/// Start with a SELL position.
+		/// </summary>
+		Sell
+	}
 }
-
-/// <summary>
-/// Available start directions for the recovery cycle.
-/// </summary>
-public enum ZoneRecoveryStartDirections
-{
-	/// <summary>
-	/// Do not open any trades automatically.
-	/// </summary>
-	None,
-
-	/// <summary>
-	/// Start with a BUY position.
-	/// </summary>
-	Buy,
-
-	/// <summary>
-	/// Start with a SELL position.
-	/// </summary>
-	Sell
-}
-

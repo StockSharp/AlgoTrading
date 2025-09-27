@@ -13,19 +13,6 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum ManualTradingOrderTypes
-{
-	MarketExecution,
-	PendingLimit,
-	PendingStop
-}
-
-public enum ManualPriceModes
-{
-	Market,
-	Manual
-}
-
 /// <summary>
 /// Manual trading strategy that mirrors the Manual Trading Lightweight Utility expert advisor.
 /// </summary>
@@ -659,5 +646,17 @@ public class ManualTradingLightweightUtilityPanelStrategy : Strategy
 		if (Position == 0m)
 			_protectionTriggered = false;
 	}
-}
 
+	public enum ManualTradingOrderTypes
+	{
+		MarketExecution,
+		PendingLimit,
+		PendingStop
+	}
+
+	public enum ManualPriceModes
+	{
+		Market,
+		Manual
+	}
+}

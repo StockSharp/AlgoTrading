@@ -14,53 +14,6 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Trading modes supported by the CorrTime strategy.
-/// </summary>
-public enum CorrTimeTradeModes
-{
-	/// <summary>
-	/// Follow the direction of the correlation trend.
-	/// </summary>
-	TrendFollow = 1,
-
-	/// <summary>
-	/// Trade reversals when the correlation leaves extreme levels.
-	/// </summary>
-	Reverse = 2,
-
-	/// <summary>
-	/// Evaluate both the trend and the reversal conditions simultaneously.
-	/// </summary>
-	Both = 3,
-}
-
-/// <summary>
-/// Correlation estimators replicated from the original include file.
-/// </summary>
-public enum CorrTimeCorrelationTypes
-{
-	/// <summary>
-	/// Pearson correlation between price and time ranks.
-	/// </summary>
-	Pearson = 1,
-
-	/// <summary>
-	/// Spearman rank correlation between price and time ranks.
-	/// </summary>
-	Spearman = 2,
-
-	/// <summary>
-	/// Kendall tau correlation between price and time ranks.
-	/// </summary>
-	Kendall = 3,
-
-	/// <summary>
-	/// Fechner sign correlation between price and time ranks.
-	/// </summary>
-	Fechner = 4,
-}
-
-/// <summary>
 /// Conversion of the MetaTrader expert "CorrTime".
 /// The strategy filters volatility with Bollinger Bands, requires a strong ADX trend
 /// and reacts to changes in the correlation between price and time.
@@ -739,5 +692,51 @@ public class CorrTimeStrategy : Strategy
 		var pip = point * multiplier;
 		return pip > 0m ? pip : 1m;
 	}
-}
 
+	/// <summary>
+	/// Trading modes supported by the CorrTime strategy.
+	/// </summary>
+	public enum CorrTimeTradeModes
+	{
+		/// <summary>
+		/// Follow the direction of the correlation trend.
+		/// </summary>
+		TrendFollow = 1,
+
+		/// <summary>
+		/// Trade reversals when the correlation leaves extreme levels.
+		/// </summary>
+		Reverse = 2,
+
+		/// <summary>
+		/// Evaluate both the trend and the reversal conditions simultaneously.
+		/// </summary>
+		Both = 3,
+	}
+
+	/// <summary>
+	/// Correlation estimators replicated from the original include file.
+	/// </summary>
+	public enum CorrTimeCorrelationTypes
+	{
+		/// <summary>
+		/// Pearson correlation between price and time ranks.
+		/// </summary>
+		Pearson = 1,
+
+		/// <summary>
+		/// Spearman rank correlation between price and time ranks.
+		/// </summary>
+		Spearman = 2,
+
+		/// <summary>
+		/// Kendall tau correlation between price and time ranks.
+		/// </summary>
+		Kendall = 3,
+
+		/// <summary>
+		/// Fechner sign correlation between price and time ranks.
+		/// </summary>
+		Fechner = 4,
+	}
+}

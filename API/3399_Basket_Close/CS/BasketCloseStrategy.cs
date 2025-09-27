@@ -12,19 +12,6 @@ using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-public enum BasketCloseLossModes
-{
-	Percentage,
-	Currency,
-}
-
-public enum BasketCloseProfitModes
-{
-	Percentage,
-	Currency,
-}
-
 public class BasketCloseStrategy : Strategy
 {
 	private readonly StrategyParam<BasketCloseLossModes> _lossMode;
@@ -342,5 +329,16 @@ public class BasketCloseStrategy : Strategy
 
 		BuyMarket(volume);
 	}
-}
 
+	public enum BasketCloseLossModes
+	{
+		Percentage,
+		Currency,
+	}
+
+	public enum BasketCloseProfitModes
+	{
+		Percentage,
+		Currency,
+	}
+}

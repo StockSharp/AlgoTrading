@@ -534,310 +534,306 @@ public class ExpXwprHistogramVolStrategy : Strategy
 			_secondaryShortActive = false;
 		}
 	}
-}
 
-/// <summary>
-/// Volume aggregation used by <see cref="XwprHistogramVolIndicator"/>.
-/// </summary>
-public enum VolumeAggregations
-{
-	/// <summary>
-	/// Use the number of ticks traded inside the candle.
-	/// </summary>
-	Tick,
-
-	/// <summary>
-	/// Use the reported real volume of the candle.
-	/// </summary>
-	Real
-}
-
-/// <summary>
-/// Available smoothing methods.
-/// </summary>
-public enum SmoothMethods
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Sma,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Ema,
-
-	/// <summary>
-	/// Smoothed moving average (RMA).
-	/// </summary>
-	Smma,
-
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	Lwma,
-
-	/// <summary>
-	/// Jurik moving average.
-	/// </summary>
-	Jjma,
-
-	/// <summary>
-	/// JurX approximation (mapped to Jurik moving average).
-	/// </summary>
-	JurX,
-
-	/// <summary>
-	/// Parabolic moving average approximation.
-	/// </summary>
-	ParMa,
-
-	/// <summary>
-	/// Triple exponential moving average.
-	/// </summary>
-	T3,
-
-	/// <summary>
-	/// Variable index dynamic average approximation.
-	/// </summary>
-	Vidya,
-
-	/// <summary>
-	/// Kaufman adaptive moving average.
-	/// </summary>
-	Ama
-}
-
-/// <summary>
-/// Indicator replicating the XWPR Histogram Vol custom indicator.
-/// </summary>
-public class XwprHistogramVolIndicator : BaseIndicator<decimal>
-{
-	private WilliamsR _williams;
-	private IIndicator _valueSmoother;
-	private IIndicator _volumeSmoother;
-
-	private int _lastPeriod;
-	private SmoothMethods _lastMethod;
-	private int _lastLength;
-	private int _lastPhase;
-
-	/// <summary>
-	/// Williams %R period.
-	/// </summary>
-	public int Period { get; set; } = 14;
-
-	/// <summary>
-	/// Volume aggregation used in the histogram.
-	/// </summary>
-	public VolumeAggregations VolumeMode { get; set; } = VolumeAggregations.Tick;
-
-	/// <summary>
-	/// Upper histogram multiplier for strong bullish states.
-	/// </summary>
-	public decimal HighLevel2 { get; set; } = 17m;
-
-	/// <summary>
-	/// Upper histogram multiplier for moderate bullish states.
-	/// </summary>
-	public decimal HighLevel1 { get; set; } = 5m;
-
-	/// <summary>
-	/// Lower histogram multiplier for moderate bearish states.
-	/// </summary>
-	public decimal LowLevel1 { get; set; } = -5m;
-
-	/// <summary>
-	/// Lower histogram multiplier for strong bearish states.
-	/// </summary>
-	public decimal LowLevel2 { get; set; } = -17m;
-
-	/// <summary>
-	/// Smoothing method applied to both the histogram and the baseline volume.
-	/// </summary>
-	public SmoothMethods Method { get; set; } = SmoothMethods.Sma;
-
-	/// <summary>
-	/// Length used by the smoothing filters.
-	/// </summary>
-	public int Length { get; set; } = 12;
-
-	/// <summary>
-	/// Phase parameter forwarded to Jurik-based smoothers.
-	/// </summary>
-	public int Phase { get; set; } = 15;
-
-	/// <inheritdoc />
-	protected override IIndicatorValue OnProcess(IIndicatorValue input)
+	public enum VolumeAggregations
 	{
-		if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
-		return new XwprHistogramVolValue(this, input, null, null, null, null, null, null, null, false);
+		/// <summary>
+		/// Use the number of ticks traded inside the candle.
+		/// </summary>
+		Tick,
 
-		EnsureIndicators();
-
-		var wprValue = _williams!.Process(input);
-		if (!wprValue.IsFinal)
-		return new XwprHistogramVolValue(this, input, null, null, null, null, null, null, null, false);
-
-		var wpr = wprValue.ToDecimal();
-		var volume = GetVolume(candle);
-
-		var histogramRaw = (wpr + 50m) * volume;
-
-		var histogramValue = _valueSmoother!.Process(new DecimalIndicatorValue(_valueSmoother, histogramRaw, input.Time));
-		var volumeValue = _volumeSmoother!.Process(new DecimalIndicatorValue(_volumeSmoother, volume, input.Time));
-
-		if (!histogramValue.IsFinal || !volumeValue.IsFinal)
-		return new XwprHistogramVolValue(this, input, null, null, null, null, null, null, null, false);
-
-		var histogram = histogramValue.ToDecimal();
-		var baseline = volumeValue.ToDecimal();
-
-		var maxLevel = HighLevel2 * baseline;
-		var upperLevel = HighLevel1 * baseline;
-		var lowerLevel = LowLevel1 * baseline;
-		var minLevel = LowLevel2 * baseline;
-
-		var color = 2;
-		if (histogram > maxLevel)
-		color = 0;
-		else if (histogram > upperLevel)
-		color = 1;
-		else if (histogram < minLevel)
-		color = 4;
-		else if (histogram < lowerLevel)
-		color = 3;
-
-		IsFormed = true;
-
-		return new XwprHistogramVolValue(this, input, histogram, baseline, maxLevel, upperLevel, lowerLevel, minLevel, color, true);
+		/// <summary>
+		/// Use the reported real volume of the candle.
+		/// </summary>
+		Real
 	}
 
-	/// <inheritdoc />
-	public override void Reset()
+	/// <summary>
+	/// Available smoothing methods.
+	/// </summary>
+	public enum SmoothMethods
 	{
-		base.Reset();
-		_williams?.Reset();
-		_valueSmoother?.Reset();
-		_volumeSmoother?.Reset();
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Sma,
+
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Ema,
+
+		/// <summary>
+		/// Smoothed moving average (RMA).
+		/// </summary>
+		Smma,
+
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		Lwma,
+
+		/// <summary>
+		/// Jurik moving average.
+		/// </summary>
+		Jjma,
+
+		/// <summary>
+		/// JurX approximation (mapped to Jurik moving average).
+		/// </summary>
+		JurX,
+
+		/// <summary>
+		/// Parabolic moving average approximation.
+		/// </summary>
+		ParMa,
+
+		/// <summary>
+		/// Triple exponential moving average.
+		/// </summary>
+		T3,
+
+		/// <summary>
+		/// Variable index dynamic average approximation.
+		/// </summary>
+		Vidya,
+
+		/// <summary>
+		/// Kaufman adaptive moving average.
+		/// </summary>
+		Ama
 	}
 
-	private decimal GetVolume(ICandleMessage candle)
+	/// <summary>
+	/// Indicator replicating the XWPR Histogram Vol custom indicator.
+	/// </summary>
+	public class XwprHistogramVolIndicator : BaseIndicator<decimal>
 	{
-		return VolumeMode switch
+		private WilliamsR _williams;
+		private IIndicator _valueSmoother;
+		private IIndicator _volumeSmoother;
+
+		private int _lastPeriod;
+		private SmoothMethods _lastMethod;
+		private int _lastLength;
+		private int _lastPhase;
+
+		/// <summary>
+		/// Williams %R period.
+		/// </summary>
+		public int Period { get; set; } = 14;
+
+		/// <summary>
+		/// Volume aggregation used in the histogram.
+		/// </summary>
+		public VolumeAggregations VolumeMode { get; set; } = VolumeAggregations.Tick;
+
+		/// <summary>
+		/// Upper histogram multiplier for strong bullish states.
+		/// </summary>
+		public decimal HighLevel2 { get; set; } = 17m;
+
+		/// <summary>
+		/// Upper histogram multiplier for moderate bullish states.
+		/// </summary>
+		public decimal HighLevel1 { get; set; } = 5m;
+
+		/// <summary>
+		/// Lower histogram multiplier for moderate bearish states.
+		/// </summary>
+		public decimal LowLevel1 { get; set; } = -5m;
+
+		/// <summary>
+		/// Lower histogram multiplier for strong bearish states.
+		/// </summary>
+		public decimal LowLevel2 { get; set; } = -17m;
+
+		/// <summary>
+		/// Smoothing method applied to both the histogram and the baseline volume.
+		/// </summary>
+		public SmoothMethods Method { get; set; } = SmoothMethods.Sma;
+
+		/// <summary>
+		/// Length used by the smoothing filters.
+		/// </summary>
+		public int Length { get; set; } = 12;
+
+		/// <summary>
+		/// Phase parameter forwarded to Jurik-based smoothers.
+		/// </summary>
+		public int Phase { get; set; } = 15;
+
+		/// <inheritdoc />
+		protected override IIndicatorValue OnProcess(IIndicatorValue input)
 		{
-			VolumeAggregations.Tick => candle.TotalTicks.HasValue ? candle.TotalTicks.Value : candle.TotalVolume ?? 0m,
-			VolumeAggregations.Real => candle.TotalVolume ?? (candle.TotalTicks.HasValue ? candle.TotalTicks.Value : 0m),
-			_ => candle.TotalVolume ?? 0m,
-		};
-	}
+			if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
+			return new XwprHistogramVolValue(this, input, null, null, null, null, null, null, null, false);
 
-	private void EnsureIndicators()
-	{
-		if (_williams == null || _lastPeriod != Period)
-		{
-			_williams = new WilliamsR { Length = Math.Max(1, Period) };
-			_lastPeriod = Period;
+			EnsureIndicators();
+
+			var wprValue = _williams!.Process(input);
+			if (!wprValue.IsFinal)
+			return new XwprHistogramVolValue(this, input, null, null, null, null, null, null, null, false);
+
+			var wpr = wprValue.ToDecimal();
+			var volume = GetVolume(candle);
+
+			var histogramRaw = (wpr + 50m) * volume;
+
+			var histogramValue = _valueSmoother!.Process(new DecimalIndicatorValue(_valueSmoother, histogramRaw, input.Time));
+			var volumeValue = _volumeSmoother!.Process(new DecimalIndicatorValue(_volumeSmoother, volume, input.Time));
+
+			if (!histogramValue.IsFinal || !volumeValue.IsFinal)
+			return new XwprHistogramVolValue(this, input, null, null, null, null, null, null, null, false);
+
+			var histogram = histogramValue.ToDecimal();
+			var baseline = volumeValue.ToDecimal();
+
+			var maxLevel = HighLevel2 * baseline;
+			var upperLevel = HighLevel1 * baseline;
+			var lowerLevel = LowLevel1 * baseline;
+			var minLevel = LowLevel2 * baseline;
+
+			var color = 2;
+			if (histogram > maxLevel)
+			color = 0;
+			else if (histogram > upperLevel)
+			color = 1;
+			else if (histogram < minLevel)
+			color = 4;
+			else if (histogram < lowerLevel)
+			color = 3;
+
+			IsFormed = true;
+
+			return new XwprHistogramVolValue(this, input, histogram, baseline, maxLevel, upperLevel, lowerLevel, minLevel, color, true);
 		}
 
-		if (_valueSmoother == null || _volumeSmoother == null || _lastMethod != Method || _lastLength != Length || _lastPhase != Phase)
+		/// <inheritdoc />
+		public override void Reset()
 		{
-			_lastMethod = Method;
-			_lastLength = Length;
-			_lastPhase = Phase;
+			base.Reset();
+			_williams?.Reset();
+			_valueSmoother?.Reset();
+			_volumeSmoother?.Reset();
+		}
 
-			_valueSmoother = CreateSmoother();
-			_volumeSmoother = CreateSmoother();
+		private decimal GetVolume(ICandleMessage candle)
+		{
+			return VolumeMode switch
+			{
+				VolumeAggregations.Tick => candle.TotalTicks.HasValue ? candle.TotalTicks.Value : candle.TotalVolume ?? 0m,
+				VolumeAggregations.Real => candle.TotalVolume ?? (candle.TotalTicks.HasValue ? candle.TotalTicks.Value : 0m),
+				_ => candle.TotalVolume ?? 0m,
+			};
+		}
+
+		private void EnsureIndicators()
+		{
+			if (_williams == null || _lastPeriod != Period)
+			{
+				_williams = new WilliamsR { Length = Math.Max(1, Period) };
+				_lastPeriod = Period;
+			}
+
+			if (_valueSmoother == null || _volumeSmoother == null || _lastMethod != Method || _lastLength != Length || _lastPhase != Phase)
+			{
+				_lastMethod = Method;
+				_lastLength = Length;
+				_lastPhase = Phase;
+
+				_valueSmoother = CreateSmoother();
+				_volumeSmoother = CreateSmoother();
+			}
+		}
+
+		private IIndicator CreateSmoother()
+		{
+			var length = Math.Max(1, Length);
+			return Method switch
+			{
+				SmoothMethods.Sma => new SimpleMovingAverage { Length = length },
+				SmoothMethods.Ema => new ExponentialMovingAverage { Length = length },
+				SmoothMethods.Smma => new SmoothedMovingAverage { Length = length },
+				SmoothMethods.Lwma => new WeightedMovingAverage { Length = length },
+				SmoothMethods.Jjma => CreateJurik(length),
+				SmoothMethods.JurX => CreateJurik(length),
+				SmoothMethods.ParMa => new ExponentialMovingAverage { Length = length },
+				SmoothMethods.T3 => new TripleExponentialMovingAverage { Length = length },
+				SmoothMethods.Vidya => new ExponentialMovingAverage { Length = length },
+				SmoothMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = length },
+				_ => new SimpleMovingAverage { Length = length },
+			};
+		}
+
+		private IIndicator CreateJurik(int length)
+		{
+			var jurik = new JurikMovingAverage { Length = length };
+			jurik.Phase = Phase;
+			return jurik;
 		}
 	}
 
-	private IIndicator CreateSmoother()
+	/// <summary>
+	/// Indicator output describing the histogram and the derived colour.
+	/// </summary>
+	public class XwprHistogramVolValue : ComplexIndicatorValue
 	{
-		var length = Math.Max(1, Length);
-		return Method switch
+		/// <summary>
+		/// Creates a new instance of <see cref="XwprHistogramVolValue"/>.
+		/// </summary>
+		public XwprHistogramVolValue(IIndicator indicator, IIndicatorValue input, decimal? histogram, decimal? baseline, decimal? high2, decimal? high1, decimal? low1, decimal? low2, int? color, bool isFormed)
+		: base(indicator, input,
+		(nameof(Histogram), histogram),
+		(nameof(Baseline), baseline),
+		(nameof(HighLevel2), high2),
+		(nameof(HighLevel1), high1),
+		(nameof(LowLevel1), low1),
+		(nameof(LowLevel2), low2),
+		(nameof(Color), color))
 		{
-			SmoothMethods.Sma => new SimpleMovingAverage { Length = length },
-			SmoothMethods.Ema => new ExponentialMovingAverage { Length = length },
-			SmoothMethods.Smma => new SmoothedMovingAverage { Length = length },
-			SmoothMethods.Lwma => new WeightedMovingAverage { Length = length },
-			SmoothMethods.Jjma => CreateJurik(length),
-			SmoothMethods.JurX => CreateJurik(length),
-			SmoothMethods.ParMa => new ExponentialMovingAverage { Length = length },
-			SmoothMethods.T3 => new TripleExponentialMovingAverage { Length = length },
-			SmoothMethods.Vidya => new ExponentialMovingAverage { Length = length },
-			SmoothMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = length },
-			_ => new SimpleMovingAverage { Length = length },
-		};
-	}
+			IsFormed = isFormed;
+		}
 
-	private IIndicator CreateJurik(int length)
-	{
-		var jurik = new JurikMovingAverage { Length = length };
-		jurik.Phase = Phase;
-		return jurik;
-	}
-}
+		/// <summary>
+		/// Smoothed histogram value.
+		/// </summary>
+		public decimal? Histogram => GetNullableDecimal(nameof(Histogram));
 
-/// <summary>
-/// Indicator output describing the histogram and the derived colour.
-/// </summary>
-public class XwprHistogramVolValue : ComplexIndicatorValue
-{
-	/// <summary>
-	/// Creates a new instance of <see cref="XwprHistogramVolValue"/>.
-	/// </summary>
-	public XwprHistogramVolValue(IIndicator indicator, IIndicatorValue input, decimal? histogram, decimal? baseline, decimal? high2, decimal? high1, decimal? low1, decimal? low2, int? color, bool isFormed)
-	: base(indicator, input,
-	(nameof(Histogram), histogram),
-	(nameof(Baseline), baseline),
-	(nameof(HighLevel2), high2),
-	(nameof(HighLevel1), high1),
-	(nameof(LowLevel1), low1),
-	(nameof(LowLevel2), low2),
-	(nameof(Color), color))
-	{
-		IsFormed = isFormed;
-	}
+		/// <summary>
+		/// Smoothed baseline volume.
+		/// </summary>
+		public decimal? Baseline => GetNullableDecimal(nameof(Baseline));
 
-	/// <summary>
-	/// Smoothed histogram value.
-	/// </summary>
-	public decimal? Histogram => GetNullableDecimal(nameof(Histogram));
+		/// <summary>
+		/// Upper level associated with strong bullish signals.
+		/// </summary>
+		public decimal? HighLevel2 => GetNullableDecimal(nameof(HighLevel2));
 
-	/// <summary>
-	/// Smoothed baseline volume.
-	/// </summary>
-	public decimal? Baseline => GetNullableDecimal(nameof(Baseline));
+		/// <summary>
+		/// Upper level associated with moderate bullish signals.
+		/// </summary>
+		public decimal? HighLevel1 => GetNullableDecimal(nameof(HighLevel1));
 
-	/// <summary>
-	/// Upper level associated with strong bullish signals.
-	/// </summary>
-	public decimal? HighLevel2 => GetNullableDecimal(nameof(HighLevel2));
+		/// <summary>
+		/// Lower level associated with moderate bearish signals.
+		/// </summary>
+		public decimal? LowLevel1 => GetNullableDecimal(nameof(LowLevel1));
 
-	/// <summary>
-	/// Upper level associated with moderate bullish signals.
-	/// </summary>
-	public decimal? HighLevel1 => GetNullableDecimal(nameof(HighLevel1));
+		/// <summary>
+		/// Lower level associated with strong bearish signals.
+		/// </summary>
+		public decimal? LowLevel2 => GetNullableDecimal(nameof(LowLevel2));
 
-	/// <summary>
-	/// Lower level associated with moderate bearish signals.
-	/// </summary>
-	public decimal? LowLevel1 => GetNullableDecimal(nameof(LowLevel1));
+		/// <summary>
+		/// Colour index reproduced from the MetaTrader indicator (0-4).
+		/// </summary>
+		public int? Color => GetValue(nameof(Color)) as int?;
 
-	/// <summary>
-	/// Lower level associated with strong bearish signals.
-	/// </summary>
-	public decimal? LowLevel2 => GetNullableDecimal(nameof(LowLevel2));
-
-	/// <summary>
-	/// Colour index reproduced from the MetaTrader indicator (0-4).
-	/// </summary>
-	public int? Color => GetValue(nameof(Color)) as int?;
-
-	private decimal? GetNullableDecimal(string name)
-	{
-		var value = GetValue(name);
-		return value is decimal d ? d : null;
+		private decimal? GetNullableDecimal(string name)
+		{
+			var value = GetValue(name);
+			return value is decimal d ? d : null;
+		}
 	}
 }
-

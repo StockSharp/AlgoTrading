@@ -14,27 +14,6 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Determines how trades should be filtered before aggregating statistics.
-/// </summary>
-public enum HistoryInfoFilterTypes
-{
-	/// <summary>
-	/// Count trades whose <see cref="Order.UserOrderId"/> equals <see cref="HistoryInfoEaStrategy.MagicNumber"/>.
-	/// </summary>
-	CountByUserOrderId,
-
-	/// <summary>
-	/// Count trades whose <see cref="Order.Comment"/> starts with <see cref="HistoryInfoEaStrategy.OrderComment"/>.
-	/// </summary>
-	CountByComment,
-
-	/// <summary>
-	/// Count trades whose <see cref="Order.Security"/> identifier equals <see cref="HistoryInfoEaStrategy.SecurityId"/>.
-	/// </summary>
-	CountBySecurity
-}
-
-/// <summary>
 /// StockSharp port of the MT4 HistoryInfo utility that aggregates historical trade information.
 /// </summary>
 public class HistoryInfoEaStrategy : Strategy
@@ -247,6 +226,27 @@ public class HistoryInfoEaStrategy : Strategy
 		var multiplier = decimalsCount is 3 or 5 ? 10m : 1m;
 		return pointSize * multiplier;
 	}
+
+	/// <summary>
+	/// Determines how trades should be filtered before aggregating statistics.
+	/// </summary>
+	public enum HistoryInfoFilterTypes
+	{
+		/// <summary>
+		/// Count trades whose <see cref="Order.UserOrderId"/> equals <see cref="HistoryInfoEaStrategy.MagicNumber"/>.
+		/// </summary>
+		CountByUserOrderId,
+
+		/// <summary>
+		/// Count trades whose <see cref="Order.Comment"/> starts with <see cref="HistoryInfoEaStrategy.OrderComment"/>.
+		/// </summary>
+		CountByComment,
+
+		/// <summary>
+		/// Count trades whose <see cref="Order.Security"/> identifier equals <see cref="HistoryInfoEaStrategy.SecurityId"/>.
+		/// </summary>
+		CountBySecurity
+	}
 }
 
 /// <summary>
@@ -271,4 +271,3 @@ int TradeCount)
 	/// </summary>
 	public static readonly HistoryInfoSnapshot Empty = new(null, null, 0m, 0m, 0m, 0);
 }
-

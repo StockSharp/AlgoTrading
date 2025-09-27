@@ -410,163 +410,159 @@ public class ExpFisherCgOscillatorStrategy : Strategy
 		if (Position == 0)
 			_entryPrice = null;
 	}
-}
 
-/// <summary>
-/// Position sizing modes supported by the strategy.
-/// </summary>
-public enum PositionSizingModes
-{
-	/// <summary>Always trade the configured fixed volume.</summary>
-	FixedVolume,
+	public enum PositionSizingModes
+	{
+		/// <summary>Always trade the configured fixed volume.</summary>
+		FixedVolume,
 
-	/// <summary>Convert a share of the portfolio value into contracts.</summary>
-	PortfolioShare
-}
-
-/// <summary>
-/// Fisher Center of Gravity oscillator with trigger line output.
-/// </summary>
-public sealed class FisherCgOscillatorIndicator : BaseIndicator<decimal>
-{
-	private readonly List<decimal> _medianPrices = new();
-	private readonly List<decimal> _cgValues = new();
-	private readonly decimal[] _valueBuffer = new decimal[4];
-	private int _valueCount;
-	private decimal? _previousFisher;
-	private int _length = 10;
+		/// <summary>Convert a share of the portfolio value into contracts.</summary>
+		PortfolioShare
+	}
 
 	/// <summary>
-	/// Gets or sets the calculation length.
+	/// Fisher Center of Gravity oscillator with trigger line output.
 	/// </summary>
-	public int Length
+	public sealed class FisherCgOscillatorIndicator : BaseIndicator<decimal>
 	{
-		get => _length;
-		set => _length = Math.Max(1, value);
+		private readonly List<decimal> _medianPrices = new();
+		private readonly List<decimal> _cgValues = new();
+		private readonly decimal[] _valueBuffer = new decimal[4];
+		private int _valueCount;
+		private decimal? _previousFisher;
+		private int _length = 10;
+
+		/// <summary>
+		/// Gets or sets the calculation length.
+		/// </summary>
+		public int Length
+		{
+			get => _length;
+			set => _length = Math.Max(1, value);
+		}
+
+		/// <inheritdoc />
+		protected override IIndicatorValue OnProcess(IIndicatorValue input)
+		{
+			if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
+				return new FisherCgOscillatorValue(this, input, null, null);
+
+			var price = (candle.HighPrice + candle.LowPrice) / 2m;
+			_medianPrices.Add(price);
+			while (_medianPrices.Count > Length)
+				_medianPrices.RemoveAt(0);
+
+			if (_medianPrices.Count < Length)
+			{
+				IsFormed = false;
+				return new FisherCgOscillatorValue(this, input, null, null);
+			}
+
+			decimal num = 0m;
+			decimal denom = 0m;
+			var weight = 1;
+
+			for (var index = _medianPrices.Count - 1; index >= 0; index--)
+			{
+				var median = _medianPrices[index];
+				num += weight * median;
+				denom += median;
+				weight++;
+			}
+
+			decimal cg;
+			if (denom != 0m)
+				cg = -num / denom + (Length + 1m) / 2m;
+			else
+				cg = 0m;
+
+			_cgValues.Add(cg);
+			while (_cgValues.Count > Length)
+				_cgValues.RemoveAt(0);
+
+			var high = cg;
+			var low = cg;
+			for (var i = 0; i < _cgValues.Count; i++)
+			{
+				var value = _cgValues[i];
+				if (value > high)
+					high = value;
+				if (value < low)
+					low = value;
+			}
+
+			decimal normalized;
+			if (high != low)
+				normalized = (cg - low) / (high - low);
+			else
+				normalized = 0m;
+
+			var limit = Math.Min(_valueCount, 3);
+			for (var shift = limit; shift > 0; shift--)
+				_valueBuffer[shift] = _valueBuffer[shift - 1];
+
+			_valueBuffer[0] = normalized;
+			if (_valueCount < 4)
+				_valueCount++;
+
+			if (_valueCount < 4)
+			{
+				IsFormed = false;
+				return new FisherCgOscillatorValue(this, input, null, null);
+			}
+
+			var value2 = (4m * _valueBuffer[0] + 3m * _valueBuffer[1] + 2m * _valueBuffer[2] + _valueBuffer[3]) / 10m;
+			var x = 1.98m * (value2 - 0.5m);
+			if (x > 0.999m)
+				x = 0.999m;
+			else if (x < -0.999m)
+				x = -0.999m;
+
+			var numerator = 1m + x;
+			var denominator = 1m - x;
+			if (denominator == 0m)
+				denominator = 0.0000001m;
+
+			var ratio = numerator / denominator;
+			if (ratio <= 0m)
+				ratio = 0.0000001m;
+
+			var fisher = 0.5m * (decimal)Math.Log((double)ratio);
+			var trigger = _previousFisher ?? fisher;
+			_previousFisher = fisher;
+			IsFormed = true;
+
+			return new FisherCgOscillatorValue(this, input, fisher, trigger);
+		}
+
+		/// <inheritdoc />
+		protected override void OnReset()
+		{
+			base.OnReset();
+
+			_medianPrices.Clear();
+			_cgValues.Clear();
+			Array.Clear(_valueBuffer, 0, _valueBuffer.Length);
+			_valueCount = 0;
+			_previousFisher = null;
+			IsFormed = false;
+		}
 	}
 
-	/// <inheritdoc />
-	protected override IIndicatorValue OnProcess(IIndicatorValue input)
+	/// <summary>
+	/// Complex indicator value exposing both oscillator and trigger line.
+	/// </summary>
+	public sealed class FisherCgOscillatorValue : ComplexIndicatorValue
 	{
-		if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
-			return new FisherCgOscillatorValue(this, input, null, null);
-
-		var price = (candle.HighPrice + candle.LowPrice) / 2m;
-		_medianPrices.Add(price);
-		while (_medianPrices.Count > Length)
-			_medianPrices.RemoveAt(0);
-
-		if (_medianPrices.Count < Length)
+		public FisherCgOscillatorValue(IIndicator indicator, IIndicatorValue input, decimal? main, decimal? trigger)
+			: base(indicator, input, (nameof(Main), main), (nameof(Trigger), trigger))
 		{
-			IsFormed = false;
-			return new FisherCgOscillatorValue(this, input, null, null);
 		}
 
-		decimal num = 0m;
-		decimal denom = 0m;
-		var weight = 1;
+		/// <summary>Gets the oscillator main value.</summary>
+		public decimal? Main => (decimal?)GetValue(nameof(Main));
 
-		for (var index = _medianPrices.Count - 1; index >= 0; index--)
-		{
-			var median = _medianPrices[index];
-			num += weight * median;
-			denom += median;
-			weight++;
-		}
-
-		decimal cg;
-		if (denom != 0m)
-			cg = -num / denom + (Length + 1m) / 2m;
-		else
-			cg = 0m;
-
-		_cgValues.Add(cg);
-		while (_cgValues.Count > Length)
-			_cgValues.RemoveAt(0);
-
-		var high = cg;
-		var low = cg;
-		for (var i = 0; i < _cgValues.Count; i++)
-		{
-			var value = _cgValues[i];
-			if (value > high)
-				high = value;
-			if (value < low)
-				low = value;
-		}
-
-		decimal normalized;
-		if (high != low)
-			normalized = (cg - low) / (high - low);
-		else
-			normalized = 0m;
-
-		var limit = Math.Min(_valueCount, 3);
-		for (var shift = limit; shift > 0; shift--)
-			_valueBuffer[shift] = _valueBuffer[shift - 1];
-
-		_valueBuffer[0] = normalized;
-		if (_valueCount < 4)
-			_valueCount++;
-
-		if (_valueCount < 4)
-		{
-			IsFormed = false;
-			return new FisherCgOscillatorValue(this, input, null, null);
-		}
-
-		var value2 = (4m * _valueBuffer[0] + 3m * _valueBuffer[1] + 2m * _valueBuffer[2] + _valueBuffer[3]) / 10m;
-		var x = 1.98m * (value2 - 0.5m);
-		if (x > 0.999m)
-			x = 0.999m;
-		else if (x < -0.999m)
-			x = -0.999m;
-
-		var numerator = 1m + x;
-		var denominator = 1m - x;
-		if (denominator == 0m)
-			denominator = 0.0000001m;
-
-		var ratio = numerator / denominator;
-		if (ratio <= 0m)
-			ratio = 0.0000001m;
-
-		var fisher = 0.5m * (decimal)Math.Log((double)ratio);
-		var trigger = _previousFisher ?? fisher;
-		_previousFisher = fisher;
-		IsFormed = true;
-
-		return new FisherCgOscillatorValue(this, input, fisher, trigger);
-	}
-
-	/// <inheritdoc />
-	protected override void OnReset()
-	{
-		base.OnReset();
-
-		_medianPrices.Clear();
-		_cgValues.Clear();
-		Array.Clear(_valueBuffer, 0, _valueBuffer.Length);
-		_valueCount = 0;
-		_previousFisher = null;
-		IsFormed = false;
+		/// <summary>Gets the trigger line value.</summary>
+		public decimal? Trigger => (decimal?)GetValue(nameof(Trigger));
 	}
 }
-
-/// <summary>
-/// Complex indicator value exposing both oscillator and trigger line.
-/// </summary>
-public sealed class FisherCgOscillatorValue : ComplexIndicatorValue
-{
-	public FisherCgOscillatorValue(IIndicator indicator, IIndicatorValue input, decimal? main, decimal? trigger)
-		: base(indicator, input, (nameof(Main), main), (nameof(Trigger), trigger))
-	{
-	}
-
-	/// <summary>Gets the oscillator main value.</summary>
-	public decimal? Main => (decimal?)GetValue(nameof(Main));
-
-	/// <summary>Gets the trigger line value.</summary>
-	public decimal? Trigger => (decimal?)GetValue(nameof(Trigger));
-}
-

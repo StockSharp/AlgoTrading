@@ -15,69 +15,6 @@ using StockSharp.Messages;
 
 using System.Globalization;
 using System.Reflection;
-
-/// <summary>
-/// Strategy that replicates the MetaTrader "CloseAll" utility for managing existing orders.
-/// The strategy performs the configured bulk close action immediately when it starts.
-/// </summary>
-public enum CloseAllModes
-{
-	/// <summary>
-	/// Close all open positions that match the comment filter.
-	/// </summary>
-	CloseAll,
-
-	/// <summary>
-	/// Close only long positions that match the comment filter.
-	/// </summary>
-	CloseBuy,
-
-	/// <summary>
-	/// Close only short positions that match the comment filter.
-	/// </summary>
-	CloseSell,
-
-	/// <summary>
-	/// Close positions for the configured symbol.
-	/// </summary>
-	CloseCurrency,
-
-	/// <summary>
-	/// Close positions whose identifier matches the magic number.
-	/// </summary>
-	CloseMagic,
-
-	/// <summary>
-	/// Close a single position identified by its ticket number.
-	/// </summary>
-	CloseTicket,
-
-	/// <summary>
-	/// Cancel pending orders that match the magic number.
-	/// </summary>
-	ClosePendingByMagic,
-
-	/// <summary>
-	/// Cancel pending orders that match both the magic number and the target symbol.
-	/// </summary>
-	ClosePendingByMagicCurrency,
-
-	/// <summary>
-	/// Close positions and pending orders that match the magic number.
-	/// </summary>
-	CloseAllAndPendingByMagic,
-
-	/// <summary>
-	/// Cancel all pending orders that match the comment filter.
-	/// </summary>
-	ClosePending,
-
-	/// <summary>
-	/// Close all positions and cancel all pending orders that match the comment filter.
-	/// </summary>
-	CloseAllAndPending,
-}
-
 /// <summary>
 /// StockSharp conversion of the MQL "CloseAll" utility that bulk closes positions and pending orders.
 /// </summary>
@@ -382,5 +319,66 @@ public class CloseAllControlStrategy : Strategy
 	{
 		return order.StrategyId;
 	}
-}
 
+	/// <summary>
+	/// Strategy that replicates the MetaTrader "CloseAll" utility for managing existing orders.
+	/// The strategy performs the configured bulk close action immediately when it starts.
+	/// </summary>
+	public enum CloseAllModes
+	{
+		/// <summary>
+		/// Close all open positions that match the comment filter.
+		/// </summary>
+		CloseAll,
+
+		/// <summary>
+		/// Close only long positions that match the comment filter.
+		/// </summary>
+		CloseBuy,
+
+		/// <summary>
+		/// Close only short positions that match the comment filter.
+		/// </summary>
+		CloseSell,
+
+		/// <summary>
+		/// Close positions for the configured symbol.
+		/// </summary>
+		CloseCurrency,
+
+		/// <summary>
+		/// Close positions whose identifier matches the magic number.
+		/// </summary>
+		CloseMagic,
+
+		/// <summary>
+		/// Close a single position identified by its ticket number.
+		/// </summary>
+		CloseTicket,
+
+		/// <summary>
+		/// Cancel pending orders that match the magic number.
+		/// </summary>
+		ClosePendingByMagic,
+
+		/// <summary>
+		/// Cancel pending orders that match both the magic number and the target symbol.
+		/// </summary>
+		ClosePendingByMagicCurrency,
+
+		/// <summary>
+		/// Close positions and pending orders that match the magic number.
+		/// </summary>
+		CloseAllAndPendingByMagic,
+
+		/// <summary>
+		/// Cancel all pending orders that match the comment filter.
+		/// </summary>
+		ClosePending,
+
+		/// <summary>
+		/// Close all positions and cancel all pending orders that match the comment filter.
+		/// </summary>
+		CloseAllAndPending,
+	}
+}

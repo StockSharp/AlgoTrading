@@ -339,341 +339,337 @@ public class XDeMarkerHistogramVolDirectStrategy : Strategy
 			SellMarket(-difference);
 		}
 	}
-}
 
-/// <summary>
-/// Source of volume for the indicator calculations.
-/// </summary>
-public enum VolumeSources
-{
-	/// <summary>
-	/// Use tick count (number of trades).
-	/// </summary>
-	Tick,
-
-	/// <summary>
-	/// Use traded volume in units.
-	/// </summary>
-	Real
-}
-
-/// <summary>
-/// Moving average types supported by the custom indicator.
-/// </summary>
-public enum SmoothingMethods
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Sma,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Ema,
-
-	/// <summary>
-	/// Smoothed (RMA/SMMA) moving average.
-	/// </summary>
-	Smma,
-
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	Wma
-}
-
-/// <summary>
-/// Direction labels produced by the indicator.
-/// </summary>
-public enum DirectionColors
-{
-	/// <summary>
-	/// Histogram is rising compared to the previous bar.
-	/// </summary>
-	Up = 0,
-
-	/// <summary>
-	/// Histogram is falling compared to the previous bar.
-	/// </summary>
-	Down = 1
-}
-
-/// <summary>
-/// Custom indicator replicating XDeMarker_Histogram_Vol_Direct.
-/// </summary>
-public class XDeMarkerHistogramVolDirectIndicator : BaseIndicator<decimal>
-{
-	private readonly Queue<decimal> _deMax = new();
-	private readonly Queue<decimal> _deMin = new();
-	private decimal _sumDeMax;
-	private decimal _sumDeMin;
-	private decimal? _prevHigh;
-	private decimal? _prevLow;
-	private decimal? _prevSmoothedValue;
-	private int _prevDirection = (int)DirectionColors.Up;
-	private IIndicator _histogramMa = null!;
-	private IIndicator _volumeMa = null!;
-
-	/// <summary>
-	/// Period of the DeMarker oscillator.
-	/// </summary>
-	public int Period { get; set; } = 14;
-
-	/// <summary>
-	/// Source of volume used for scaling the histogram.
-	/// </summary>
-	public VolumeSources VolumeSources { get; set; } = VolumeSources.Tick;
-
-	/// <summary>
-	/// Upper extreme multiplier.
-	/// </summary>
-	public int HighLevel2 { get; set; }
-
-	/// <summary>
-	/// Upper warning multiplier.
-	/// </summary>
-	public int HighLevel1 { get; set; }
-
-	/// <summary>
-	/// Lower warning multiplier.
-	/// </summary>
-	public int LowLevel1 { get; set; }
-
-	/// <summary>
-	/// Lower extreme multiplier.
-	/// </summary>
-	public int LowLevel2 { get; set; }
-
-	/// <summary>
-	/// Moving average type for smoothing.
-	/// </summary>
-	public SmoothingMethods Method { get; set; } = SmoothingMethods.Sma;
-
-	/// <summary>
-	/// Length of the smoothing windows for histogram and volume.
-	/// </summary>
-	public int Length { get; set; } = 12;
-
-	/// <summary>
-	/// Placeholder parameter to keep parity with the original implementation.
-	/// </summary>
-	public int Phase { get; set; } = 15;
-
-	/// <inheritdoc />
-	public override void Reset()
+	public enum VolumeSources
 	{
-		base.Reset();
-		_deMax.Clear();
-		_deMin.Clear();
-		_sumDeMax = 0m;
-		_sumDeMin = 0m;
-		_prevHigh = null;
-		_prevLow = null;
-		_prevSmoothedValue = null;
-		_prevDirection = (int)DirectionColors.Up;
-		_histogramMa?.Reset();
-		_volumeMa?.Reset();
+		/// <summary>
+		/// Use tick count (number of trades).
+		/// </summary>
+		Tick,
+
+		/// <summary>
+		/// Use traded volume in units.
+		/// </summary>
+		Real
 	}
 
-	/// <inheritdoc />
-	protected override IIndicatorValue OnProcess(IIndicatorValue input)
+	/// <summary>
+	/// Moving average types supported by the custom indicator.
+	/// </summary>
+	public enum SmoothingMethods
 	{
-		if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Sma,
+
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Ema,
+
+		/// <summary>
+		/// Smoothed (RMA/SMMA) moving average.
+		/// </summary>
+		Smma,
+
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		Wma
+	}
+
+	/// <summary>
+	/// Direction labels produced by the indicator.
+	/// </summary>
+	public enum DirectionColors
+	{
+		/// <summary>
+		/// Histogram is rising compared to the previous bar.
+		/// </summary>
+		Up = 0,
+
+		/// <summary>
+		/// Histogram is falling compared to the previous bar.
+		/// </summary>
+		Down = 1
+	}
+
+	/// <summary>
+	/// Custom indicator replicating XDeMarker_Histogram_Vol_Direct.
+	/// </summary>
+	public class XDeMarkerHistogramVolDirectIndicator : BaseIndicator<decimal>
+	{
+		private readonly Queue<decimal> _deMax = new();
+		private readonly Queue<decimal> _deMin = new();
+		private decimal _sumDeMax;
+		private decimal _sumDeMin;
+		private decimal? _prevHigh;
+		private decimal? _prevLow;
+		private decimal? _prevSmoothedValue;
+		private int _prevDirection = (int)DirectionColors.Up;
+		private IIndicator _histogramMa = null!;
+		private IIndicator _volumeMa = null!;
+
+		/// <summary>
+		/// Period of the DeMarker oscillator.
+		/// </summary>
+		public int Period { get; set; } = 14;
+
+		/// <summary>
+		/// Source of volume used for scaling the histogram.
+		/// </summary>
+		public VolumeSources VolumeSources { get; set; } = VolumeSources.Tick;
+
+		/// <summary>
+		/// Upper extreme multiplier.
+		/// </summary>
+		public int HighLevel2 { get; set; }
+
+		/// <summary>
+		/// Upper warning multiplier.
+		/// </summary>
+		public int HighLevel1 { get; set; }
+
+		/// <summary>
+		/// Lower warning multiplier.
+		/// </summary>
+		public int LowLevel1 { get; set; }
+
+		/// <summary>
+		/// Lower extreme multiplier.
+		/// </summary>
+		public int LowLevel2 { get; set; }
+
+		/// <summary>
+		/// Moving average type for smoothing.
+		/// </summary>
+		public SmoothingMethods Method { get; set; } = SmoothingMethods.Sma;
+
+		/// <summary>
+		/// Length of the smoothing windows for histogram and volume.
+		/// </summary>
+		public int Length { get; set; } = 12;
+
+		/// <summary>
+		/// Placeholder parameter to keep parity with the original implementation.
+		/// </summary>
+		public int Phase { get; set; } = 15;
+
+		/// <inheritdoc />
+		public override void Reset()
 		{
-			return new XDeMarkerHistogramVolDirectValue(this, input, false, 0m, 0m, 0m, 0m, 0m, _prevDirection, _prevDirection);
+			base.Reset();
+			_deMax.Clear();
+			_deMin.Clear();
+			_sumDeMax = 0m;
+			_sumDeMin = 0m;
+			_prevHigh = null;
+			_prevLow = null;
+			_prevSmoothedValue = null;
+			_prevDirection = (int)DirectionColors.Up;
+			_histogramMa?.Reset();
+			_volumeMa?.Reset();
 		}
 
-		if (Period <= 0)
-		throw new InvalidOperationException("Period must be greater than zero.");
-
-		var high = candle.HighPrice;
-		var low = candle.LowPrice;
-
-		if (high == null || low == null)
+		/// <inheritdoc />
+		protected override IIndicatorValue OnProcess(IIndicatorValue input)
 		{
-			return new XDeMarkerHistogramVolDirectValue(this, input, false, 0m, 0m, 0m, 0m, 0m, _prevDirection, _prevDirection);
-		}
+			if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
+			{
+				return new XDeMarkerHistogramVolDirectValue(this, input, false, 0m, 0m, 0m, 0m, 0m, _prevDirection, _prevDirection);
+			}
 
-		if (_prevHigh is null || _prevLow is null)
-		{
+			if (Period <= 0)
+			throw new InvalidOperationException("Period must be greater than zero.");
+
+			var high = candle.HighPrice;
+			var low = candle.LowPrice;
+
+			if (high == null || low == null)
+			{
+				return new XDeMarkerHistogramVolDirectValue(this, input, false, 0m, 0m, 0m, 0m, 0m, _prevDirection, _prevDirection);
+			}
+
+			if (_prevHigh is null || _prevLow is null)
+			{
+				_prevHigh = high.Value;
+				_prevLow = low.Value;
+				return new XDeMarkerHistogramVolDirectValue(this, input, false, 0m, 0m, 0m, 0m, 0m, _prevDirection, _prevDirection);
+			}
+
+			var deMax = Math.Max(high.Value - _prevHigh.Value, 0m);
+			var deMin = Math.Max(_prevLow.Value - low.Value, 0m);
+
 			_prevHigh = high.Value;
 			_prevLow = low.Value;
-			return new XDeMarkerHistogramVolDirectValue(this, input, false, 0m, 0m, 0m, 0m, 0m, _prevDirection, _prevDirection);
+
+			_deMax.Enqueue(deMax);
+			_sumDeMax += deMax;
+			if (_deMax.Count > Period)
+			{
+				_sumDeMax -= _deMax.Dequeue();
+			}
+
+			_deMin.Enqueue(deMin);
+			_sumDeMin += deMin;
+			if (_deMin.Count > Period)
+			{
+				_sumDeMin -= _deMin.Dequeue();
+			}
+
+			var enoughHistory = _deMax.Count >= Period;
+			if (!enoughHistory)
+			{
+				return new XDeMarkerHistogramVolDirectValue(this, input, false, 0m, 0m, 0m, 0m, 0m, _prevDirection, _prevDirection);
+			}
+
+			var denom = _sumDeMax + _sumDeMin;
+			var demarker = denom == 0m ? 0m : _sumDeMax / denom;
+			var histogram = (demarker * 100m) - 50m;
+
+			var volume = VolumeSources switch
+			{
+				VolumeSources.Tick => candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : candle.TotalVolume ?? 0m,
+				_ => candle.TotalVolume ?? 0m
+			};
+
+			var scaledHistogram = histogram * volume;
+
+			_histogramMa ??= CreateMovingAverage(Method, Length);
+			_volumeMa ??= CreateMovingAverage(Method, Length);
+
+			var histogramValue = _histogramMa.Process(new DecimalIndicatorValue(_histogramMa, scaledHistogram, input.Time)).ToDecimal();
+			var volumeValue = _volumeMa.Process(new DecimalIndicatorValue(_volumeMa, volume, input.Time)).ToDecimal();
+
+			var upperExtreme = HighLevel2 * volumeValue;
+			var upperWarning = HighLevel1 * volumeValue;
+			var lowerWarning = LowLevel1 * volumeValue;
+			var lowerExtreme = LowLevel2 * volumeValue;
+
+			var histogramColor = 2;
+			if (histogramValue > upperExtreme)
+			{
+				histogramColor = 0;
+			}
+			else if (histogramValue > upperWarning)
+			{
+				histogramColor = 1;
+			}
+			else if (histogramValue < lowerExtreme)
+			{
+				histogramColor = 4;
+			}
+			else if (histogramValue < lowerWarning)
+			{
+				histogramColor = 3;
+			}
+
+			var direction = _prevSmoothedValue is null
+			? _prevDirection
+			: histogramValue > _prevSmoothedValue.Value
+			? (int)DirectionColors.Up
+			: histogramValue < _prevSmoothedValue.Value
+			? (int)DirectionColors.Down
+			: _prevDirection;
+
+			_prevSmoothedValue = histogramValue;
+			_prevDirection = direction;
+
+			var formed = _histogramMa.IsFormed && _volumeMa.IsFormed && enoughHistory;
+
+			return new XDeMarkerHistogramVolDirectValue(
+			this,
+			input,
+			formed,
+			histogramValue,
+			upperWarning,
+			upperExtreme,
+			lowerWarning,
+			lowerExtreme,
+			direction,
+			histogramColor);
 		}
 
-		var deMax = Math.Max(high.Value - _prevHigh.Value, 0m);
-		var deMin = Math.Max(_prevLow.Value - low.Value, 0m);
-
-		_prevHigh = high.Value;
-		_prevLow = low.Value;
-
-		_deMax.Enqueue(deMax);
-		_sumDeMax += deMax;
-		if (_deMax.Count > Period)
+		private static IIndicator CreateMovingAverage(SmoothingMethods method, int length)
 		{
-			_sumDeMax -= _deMax.Dequeue();
+			return method switch
+			{
+				SmoothingMethods.Sma => new SimpleMovingAverage { Length = length },
+				SmoothingMethods.Ema => new ExponentialMovingAverage { Length = length },
+				SmoothingMethods.Smma => new SmoothedMovingAverage { Length = length },
+				SmoothingMethods.Wma => new WeightedMovingAverage { Length = length },
+				_ => throw new ArgumentOutOfRangeException(nameof(method), method, null)
+			};
 		}
-
-		_deMin.Enqueue(deMin);
-		_sumDeMin += deMin;
-		if (_deMin.Count > Period)
-		{
-			_sumDeMin -= _deMin.Dequeue();
-		}
-
-		var enoughHistory = _deMax.Count >= Period;
-		if (!enoughHistory)
-		{
-			return new XDeMarkerHistogramVolDirectValue(this, input, false, 0m, 0m, 0m, 0m, 0m, _prevDirection, _prevDirection);
-		}
-
-		var denom = _sumDeMax + _sumDeMin;
-		var demarker = denom == 0m ? 0m : _sumDeMax / denom;
-		var histogram = (demarker * 100m) - 50m;
-
-		var volume = VolumeSources switch
-		{
-			VolumeSources.Tick => candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : candle.TotalVolume ?? 0m,
-			_ => candle.TotalVolume ?? 0m
-		};
-
-		var scaledHistogram = histogram * volume;
-
-		_histogramMa ??= CreateMovingAverage(Method, Length);
-		_volumeMa ??= CreateMovingAverage(Method, Length);
-
-		var histogramValue = _histogramMa.Process(new DecimalIndicatorValue(_histogramMa, scaledHistogram, input.Time)).ToDecimal();
-		var volumeValue = _volumeMa.Process(new DecimalIndicatorValue(_volumeMa, volume, input.Time)).ToDecimal();
-
-		var upperExtreme = HighLevel2 * volumeValue;
-		var upperWarning = HighLevel1 * volumeValue;
-		var lowerWarning = LowLevel1 * volumeValue;
-		var lowerExtreme = LowLevel2 * volumeValue;
-
-		var histogramColor = 2;
-		if (histogramValue > upperExtreme)
-		{
-			histogramColor = 0;
-		}
-		else if (histogramValue > upperWarning)
-		{
-			histogramColor = 1;
-		}
-		else if (histogramValue < lowerExtreme)
-		{
-			histogramColor = 4;
-		}
-		else if (histogramValue < lowerWarning)
-		{
-			histogramColor = 3;
-		}
-
-		var direction = _prevSmoothedValue is null
-		? _prevDirection
-		: histogramValue > _prevSmoothedValue.Value
-		? (int)DirectionColors.Up
-		: histogramValue < _prevSmoothedValue.Value
-		? (int)DirectionColors.Down
-		: _prevDirection;
-
-		_prevSmoothedValue = histogramValue;
-		_prevDirection = direction;
-
-		var formed = _histogramMa.IsFormed && _volumeMa.IsFormed && enoughHistory;
-
-		return new XDeMarkerHistogramVolDirectValue(
-		this,
-		input,
-		formed,
-		histogramValue,
-		upperWarning,
-		upperExtreme,
-		lowerWarning,
-		lowerExtreme,
-		direction,
-		histogramColor);
 	}
 
-	private static IIndicator CreateMovingAverage(SmoothingMethods method, int length)
+	/// <summary>
+	/// Complex indicator value containing histogram and directional information.
+	/// </summary>
+	public class XDeMarkerHistogramVolDirectValue : ComplexIndicatorValue
 	{
-		return method switch
+		public XDeMarkerHistogramVolDirectValue(
+		IIndicator indicator,
+		IIndicatorValue input,
+		bool isSignalFormed,
+		decimal histogram,
+		decimal upperWarning,
+		decimal upperExtreme,
+		decimal lowerWarning,
+		decimal lowerExtreme,
+		int direction,
+		int histogramColor)
+		: base(indicator, input,
+		(nameof(IsSignalFormed), isSignalFormed),
+		(nameof(Histogram), histogram),
+		(nameof(UpperWarning), upperWarning),
+		(nameof(UpperExtreme), upperExtreme),
+		(nameof(LowerWarning), lowerWarning),
+		(nameof(LowerExtreme), lowerExtreme),
+		(nameof(Direction), direction),
+		(nameof(HistogramColor), histogramColor))
 		{
-			SmoothingMethods.Sma => new SimpleMovingAverage { Length = length },
-			SmoothingMethods.Ema => new ExponentialMovingAverage { Length = length },
-			SmoothingMethods.Smma => new SmoothedMovingAverage { Length = length },
-			SmoothingMethods.Wma => new WeightedMovingAverage { Length = length },
-			_ => throw new ArgumentOutOfRangeException(nameof(method), method, null)
-		};
+		}
+
+		/// <summary>
+		/// Indicates whether the indicator has enough data for trading decisions.
+		/// </summary>
+		public bool IsSignalFormed => (bool)GetValue(nameof(IsSignalFormed));
+
+		/// <summary>
+		/// Current smoothed histogram value.
+		/// </summary>
+		public decimal Histogram => (decimal)GetValue(nameof(Histogram));
+
+		/// <summary>
+		/// First upper level.
+		/// </summary>
+		public decimal UpperWarning => (decimal)GetValue(nameof(UpperWarning));
+
+		/// <summary>
+		/// Second upper level.
+		/// </summary>
+		public decimal UpperExtreme => (decimal)GetValue(nameof(UpperExtreme));
+
+		/// <summary>
+		/// First lower level.
+		/// </summary>
+		public decimal LowerWarning => (decimal)GetValue(nameof(LowerWarning));
+
+		/// <summary>
+		/// Second lower level.
+		/// </summary>
+		public decimal LowerExtreme => (decimal)GetValue(nameof(LowerExtreme));
+
+		/// <summary>
+		/// Direction flag used for trading decisions.
+		/// </summary>
+		public int Direction => (int)GetValue(nameof(Direction));
+
+		/// <summary>
+		/// Histogram color index for plotting.
+		/// </summary>
+		public int HistogramColor => (int)GetValue(nameof(HistogramColor));
 	}
 }
-
-/// <summary>
-/// Complex indicator value containing histogram and directional information.
-/// </summary>
-public class XDeMarkerHistogramVolDirectValue : ComplexIndicatorValue
-{
-	public XDeMarkerHistogramVolDirectValue(
-	IIndicator indicator,
-	IIndicatorValue input,
-	bool isSignalFormed,
-	decimal histogram,
-	decimal upperWarning,
-	decimal upperExtreme,
-	decimal lowerWarning,
-	decimal lowerExtreme,
-	int direction,
-	int histogramColor)
-	: base(indicator, input,
-	(nameof(IsSignalFormed), isSignalFormed),
-	(nameof(Histogram), histogram),
-	(nameof(UpperWarning), upperWarning),
-	(nameof(UpperExtreme), upperExtreme),
-	(nameof(LowerWarning), lowerWarning),
-	(nameof(LowerExtreme), lowerExtreme),
-	(nameof(Direction), direction),
-	(nameof(HistogramColor), histogramColor))
-	{
-	}
-
-	/// <summary>
-	/// Indicates whether the indicator has enough data for trading decisions.
-	/// </summary>
-	public bool IsSignalFormed => (bool)GetValue(nameof(IsSignalFormed));
-
-	/// <summary>
-	/// Current smoothed histogram value.
-	/// </summary>
-	public decimal Histogram => (decimal)GetValue(nameof(Histogram));
-
-	/// <summary>
-	/// First upper level.
-	/// </summary>
-	public decimal UpperWarning => (decimal)GetValue(nameof(UpperWarning));
-
-	/// <summary>
-	/// Second upper level.
-	/// </summary>
-	public decimal UpperExtreme => (decimal)GetValue(nameof(UpperExtreme));
-
-	/// <summary>
-	/// First lower level.
-	/// </summary>
-	public decimal LowerWarning => (decimal)GetValue(nameof(LowerWarning));
-
-	/// <summary>
-	/// Second lower level.
-	/// </summary>
-	public decimal LowerExtreme => (decimal)GetValue(nameof(LowerExtreme));
-
-	/// <summary>
-	/// Direction flag used for trading decisions.
-	/// </summary>
-	public int Direction => (int)GetValue(nameof(Direction));
-
-	/// <summary>
-	/// Histogram color index for plotting.
-	/// </summary>
-	public int HistogramColor => (int)GetValue(nameof(HistogramColor));
-}
-

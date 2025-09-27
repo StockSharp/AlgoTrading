@@ -571,30 +571,26 @@ private static IIndicator CreateMovingAverage(MovingAverageMethods method, int l
 		_ => new SimpleMovingAverage { Length = length }
 	};
 }
-}
 
-/// <summary>
-/// Enumeration mirroring the MetaTrader applied price options.
-/// </summary>
-public enum IndicatorAppliedPrices
-{
-	Close,
-	Open,
-	High,
-	Low,
-	Median,
-	Typical,
-	Weighted
-}
+	public enum IndicatorAppliedPrices
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted
+	}
 
-/// <summary>
-/// Moving average methods corresponding to MetaTrader's ENUM_MA_METHOD values.
-/// </summary>
-public enum MovingAverageMethods
-{
-	Simple,
-	Exponential,
-	Smoothed,
-	LinearWeighted
+	/// <summary>
+	/// Moving average methods corresponding to MetaTrader's ENUM_MA_METHOD values.
+	/// </summary>
+	public enum MovingAverageMethods
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		LinearWeighted
+	}
 }
-

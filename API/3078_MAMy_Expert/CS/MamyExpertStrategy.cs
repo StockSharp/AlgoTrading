@@ -236,13 +236,12 @@ public class MamyExpertStrategy : Strategy
 			_ => new WeightedMovingAverage { Length = length },
 		};
 	}
-}
 
-public enum MaCalculationTypes
-{
-	Simple,
-	Exponential,
-	Smoothed,
-	Weighted
+	public enum MaCalculationTypes
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		Weighted
+	}
 }
-

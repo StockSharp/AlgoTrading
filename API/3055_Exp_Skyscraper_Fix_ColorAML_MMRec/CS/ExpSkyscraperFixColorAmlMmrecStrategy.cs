@@ -777,248 +777,244 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 				break;
 		}
 	}
-}
 
-/// <summary>
-/// Money management mode supported by the MMRec logic.
-/// </summary>
-public enum MoneyManagementModes
-{
-	/// <summary>Use a percentage of free margin.</summary>
-	FreeMargin,
-
-	/// <summary>Use a percentage of account balance.</summary>
-	Balance,
-
-	/// <summary>Risk a percentage of free margin based on the stop.</summary>
-	LossFreeMargin,
-
-	/// <summary>Risk a percentage of balance based on the stop.</summary>
-	LossBalance,
-
-	/// <summary>Specify the volume directly in lots.</summary>
-	Lot
-}
-
-/// <summary>
-/// Internal identifier for the module that opened the latest position.
-/// </summary>
-internal enum TradeModules
-{
-	None,
-	SkyscraperLong,
-	SkyscraperShort,
-	ColorAmlLong,
-	ColorAmlShort
-}
-
-/// <summary>
-/// Money manager that tracks consecutive losses.
-/// </summary>
-internal sealed class MoneyManager
-{
-	public int LossTrigger { get; set; }
-
-	public decimal NormalVolume { get; set; }
-
-	public decimal SmallVolume { get; set; }
-
-	private int _lossStreak;
-
-	public decimal SelectVolume(Func<decimal, decimal> normalize, MoneyManagementModes mode)
+	public enum MoneyManagementModes
 	{
-		var baseVolume = mode == MoneyManagementModes.Lot ? NormalVolume : NormalVolume;
-		var reducedVolume = mode == MoneyManagementModes.Lot ? SmallVolume : SmallVolume;
+		/// <summary>Use a percentage of free margin.</summary>
+		FreeMargin,
 
-		if (LossTrigger > 0 && _lossStreak >= LossTrigger)
-			baseVolume = reducedVolume;
+		/// <summary>Use a percentage of account balance.</summary>
+		Balance,
 
-		if (baseVolume <= 0m)
-			baseVolume = NormalVolume;
+		/// <summary>Risk a percentage of free margin based on the stop.</summary>
+		LossFreeMargin,
 
-		return normalize(baseVolume);
+		/// <summary>Risk a percentage of balance based on the stop.</summary>
+		LossBalance,
+
+		/// <summary>Specify the volume directly in lots.</summary>
+		Lot
 	}
 
-	public void RegisterResult(bool loss)
+	/// <summary>
+	/// Internal identifier for the module that opened the latest position.
+	/// </summary>
+	internal enum TradeModules
 	{
-		if (LossTrigger <= 0)
+		None,
+		SkyscraperLong,
+		SkyscraperShort,
+		ColorAmlLong,
+		ColorAmlShort
+	}
+
+	/// <summary>
+	/// Money manager that tracks consecutive losses.
+	/// </summary>
+	internal sealed class MoneyManager
+	{
+		public int LossTrigger { get; set; }
+
+		public decimal NormalVolume { get; set; }
+
+		public decimal SmallVolume { get; set; }
+
+		private int _lossStreak;
+
+		public decimal SelectVolume(Func<decimal, decimal> normalize, MoneyManagementModes mode)
+		{
+			var baseVolume = mode == MoneyManagementModes.Lot ? NormalVolume : NormalVolume;
+			var reducedVolume = mode == MoneyManagementModes.Lot ? SmallVolume : SmallVolume;
+
+			if (LossTrigger > 0 && _lossStreak >= LossTrigger)
+				baseVolume = reducedVolume;
+
+			if (baseVolume <= 0m)
+				baseVolume = NormalVolume;
+
+			return normalize(baseVolume);
+		}
+
+		public void RegisterResult(bool loss)
+		{
+			if (LossTrigger <= 0)
+			{
+				_lossStreak = 0;
+				return;
+			}
+
+			_lossStreak = loss ? Math.Min(_lossStreak + 1, LossTrigger) : 0;
+		}
+
+		public void Reset()
 		{
 			_lossStreak = 0;
-			return;
 		}
-
-		_lossStreak = loss ? Math.Min(_lossStreak + 1, LossTrigger) : 0;
 	}
 
-	public void Reset()
+	/// <summary>
+	/// Color AML indicator translated from the original MQ5 implementation.
+	/// </summary>
+	public class ColorAmlIndicator : BaseIndicator<decimal>
 	{
-		_lossStreak = 0;
+		private readonly List<ICandleMessage> _candles = new();
+		private readonly List<decimal> _smoothHistory = new();
+
+		private decimal? _previousAml;
+		private int? _previousColor;
+
+		/// <summary>
+		/// Fractal window used in the dimension calculation.
+		/// </summary>
+		public int Fractal { get; set; } = 6;
+
+		/// <summary>
+		/// Lag depth used for smoothing.
+		/// </summary>
+		public int Lag { get; set; } = 7;
+
+		/// <summary>
+		/// Price step used to translate ticks into absolute prices.
+		/// </summary>
+		public decimal PriceStep { get; set; } = 1m;
+
+		/// <inheritdoc />
+		protected override IIndicatorValue OnProcess(IIndicatorValue input)
+		{
+			if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
+				return new ColorAmlValue(this, input, false, null, null);
+
+			if (Fractal <= 0 || Lag <= 0 || PriceStep <= 0m)
+				return new ColorAmlValue(this, input, false, null, null);
+
+			_candles.Add(candle);
+			var maxCandles = Math.Max(Fractal * 2 + Lag + 5, 64);
+			if (_candles.Count > maxCandles)
+				_candles.RemoveAt(0);
+
+			if (_candles.Count < Fractal * 2)
+				return new ColorAmlValue(this, input, false, null, null);
+
+			var count = _candles.Count;
+			var range1 = GetRange(count - Fractal, Fractal);
+			var range2 = GetRange(count - 2 * Fractal, Fractal);
+			var range3 = GetRange(count - 2 * Fractal, 2 * Fractal);
+
+			var dim = 0d;
+			if (range1 + range2 > 0m && range3 > 0m)
+			{
+				dim = (Math.Log((double)(range1 + range2)) - Math.Log((double)range3)) * 1.44269504088896d;
+			}
+
+			var alpha = Math.Exp(-Lag * (dim - 1d));
+			if (alpha > 1d)
+				alpha = 1d;
+			if (alpha < 0.01d)
+				alpha = 0.01d;
+
+			var price = (candle.HighPrice + candle.LowPrice + 2m * candle.OpenPrice + 2m * candle.ClosePrice) / 6m;
+			var previousSmooth = _smoothHistory.Count > 0 ? _smoothHistory[^1] : price;
+			var smooth = (decimal)alpha * price + (1m - (decimal)alpha) * previousSmooth;
+
+			_smoothHistory.Add(smooth);
+			if (_smoothHistory.Count > Lag + 1)
+				_smoothHistory.RemoveAt(0);
+
+			if (_smoothHistory.Count <= Lag)
+				return new ColorAmlValue(this, input, false, null, null);
+
+			var lagIndex = _smoothHistory.Count - 1 - Lag;
+			if (lagIndex < 0)
+				return new ColorAmlValue(this, input, false, null, null);
+
+			var smoothLag = _smoothHistory[lagIndex];
+			var threshold = Lag * Lag * PriceStep;
+
+			var aml = Math.Abs(smooth - smoothLag) >= threshold
+				? smooth
+				: _previousAml ?? smooth;
+
+			var color = _previousColor ?? 1;
+			if (_previousAml.HasValue)
+			{
+				if (aml > _previousAml)
+					color = 2;
+				else if (aml < _previousAml)
+					color = 0;
+			}
+			else
+			{
+				color = 1;
+			}
+
+			_previousAml = aml;
+			_previousColor = color;
+
+			return new ColorAmlValue(this, input, true, aml, color);
+		}
+
+		/// <inheritdoc />
+		public override void Reset()
+		{
+			base.Reset();
+			_candles.Clear();
+			_smoothHistory.Clear();
+			_previousAml = null;
+			_previousColor = null;
+		}
+
+		private decimal GetRange(int start, int length)
+		{
+			if (start < 0)
+				start = 0;
+
+			var end = Math.Min(start + length, _candles.Count);
+			var max = decimal.MinValue;
+			var min = decimal.MaxValue;
+
+			for (var i = start; i < end; i++)
+			{
+				var candle = _candles[i];
+				if (candle.HighPrice > max)
+					max = candle.HighPrice;
+				if (candle.LowPrice < min)
+					min = candle.LowPrice;
+			}
+
+			if (max == decimal.MinValue || min == decimal.MaxValue)
+				return 0m;
+
+			return max - min;
+		}
+	}
+
+	/// <summary>
+	/// Indicator value returned by <see cref="ColorAmlIndicator"/>.
+	/// </summary>
+	public class ColorAmlValue : ComplexIndicatorValue
+	{
+		/// <summary>
+		/// Initializes a new instance of the <see cref="ColorAmlValue"/> class.
+		/// </summary>
+		public ColorAmlValue(IIndicator indicator, IIndicatorValue input, bool hasValue, decimal? aml, int? color)
+			: base(indicator, input, (nameof(Aml), aml), (nameof(Color), color))
+		{
+			HasValue = hasValue;
+		}
+
+		/// <summary>
+		/// Indicates whether the indicator output is ready for trading decisions.
+		/// </summary>
+		public bool HasValue { get; }
+
+		/// <summary>
+		/// Adaptive market level line value.
+		/// </summary>
+		public decimal? Aml => (decimal?)GetValue(nameof(Aml));
+
+		/// <summary>
+		/// Color code (0 = bearish, 1 = neutral, 2 = bullish).
+		/// </summary>
+		public int? Color => (int?)GetValue(nameof(Color));
 	}
 }
-
-/// <summary>
-/// Color AML indicator translated from the original MQ5 implementation.
-/// </summary>
-public class ColorAmlIndicator : BaseIndicator<decimal>
-{
-	private readonly List<ICandleMessage> _candles = new();
-	private readonly List<decimal> _smoothHistory = new();
-
-	private decimal? _previousAml;
-	private int? _previousColor;
-
-	/// <summary>
-	/// Fractal window used in the dimension calculation.
-	/// </summary>
-	public int Fractal { get; set; } = 6;
-
-	/// <summary>
-	/// Lag depth used for smoothing.
-	/// </summary>
-	public int Lag { get; set; } = 7;
-
-	/// <summary>
-	/// Price step used to translate ticks into absolute prices.
-	/// </summary>
-	public decimal PriceStep { get; set; } = 1m;
-
-	/// <inheritdoc />
-	protected override IIndicatorValue OnProcess(IIndicatorValue input)
-	{
-		if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
-			return new ColorAmlValue(this, input, false, null, null);
-
-		if (Fractal <= 0 || Lag <= 0 || PriceStep <= 0m)
-			return new ColorAmlValue(this, input, false, null, null);
-
-		_candles.Add(candle);
-		var maxCandles = Math.Max(Fractal * 2 + Lag + 5, 64);
-		if (_candles.Count > maxCandles)
-			_candles.RemoveAt(0);
-
-		if (_candles.Count < Fractal * 2)
-			return new ColorAmlValue(this, input, false, null, null);
-
-		var count = _candles.Count;
-		var range1 = GetRange(count - Fractal, Fractal);
-		var range2 = GetRange(count - 2 * Fractal, Fractal);
-		var range3 = GetRange(count - 2 * Fractal, 2 * Fractal);
-
-		var dim = 0d;
-		if (range1 + range2 > 0m && range3 > 0m)
-		{
-			dim = (Math.Log((double)(range1 + range2)) - Math.Log((double)range3)) * 1.44269504088896d;
-		}
-
-		var alpha = Math.Exp(-Lag * (dim - 1d));
-		if (alpha > 1d)
-			alpha = 1d;
-		if (alpha < 0.01d)
-			alpha = 0.01d;
-
-		var price = (candle.HighPrice + candle.LowPrice + 2m * candle.OpenPrice + 2m * candle.ClosePrice) / 6m;
-		var previousSmooth = _smoothHistory.Count > 0 ? _smoothHistory[^1] : price;
-		var smooth = (decimal)alpha * price + (1m - (decimal)alpha) * previousSmooth;
-
-		_smoothHistory.Add(smooth);
-		if (_smoothHistory.Count > Lag + 1)
-			_smoothHistory.RemoveAt(0);
-
-		if (_smoothHistory.Count <= Lag)
-			return new ColorAmlValue(this, input, false, null, null);
-
-		var lagIndex = _smoothHistory.Count - 1 - Lag;
-		if (lagIndex < 0)
-			return new ColorAmlValue(this, input, false, null, null);
-
-		var smoothLag = _smoothHistory[lagIndex];
-		var threshold = Lag * Lag * PriceStep;
-
-		var aml = Math.Abs(smooth - smoothLag) >= threshold
-			? smooth
-			: _previousAml ?? smooth;
-
-		var color = _previousColor ?? 1;
-		if (_previousAml.HasValue)
-		{
-			if (aml > _previousAml)
-				color = 2;
-			else if (aml < _previousAml)
-				color = 0;
-		}
-		else
-		{
-			color = 1;
-		}
-
-		_previousAml = aml;
-		_previousColor = color;
-
-		return new ColorAmlValue(this, input, true, aml, color);
-	}
-
-	/// <inheritdoc />
-	public override void Reset()
-	{
-		base.Reset();
-		_candles.Clear();
-		_smoothHistory.Clear();
-		_previousAml = null;
-		_previousColor = null;
-	}
-
-	private decimal GetRange(int start, int length)
-	{
-		if (start < 0)
-			start = 0;
-
-		var end = Math.Min(start + length, _candles.Count);
-		var max = decimal.MinValue;
-		var min = decimal.MaxValue;
-
-		for (var i = start; i < end; i++)
-		{
-			var candle = _candles[i];
-			if (candle.HighPrice > max)
-				max = candle.HighPrice;
-			if (candle.LowPrice < min)
-				min = candle.LowPrice;
-		}
-
-		if (max == decimal.MinValue || min == decimal.MaxValue)
-			return 0m;
-
-		return max - min;
-	}
-}
-
-/// <summary>
-/// Indicator value returned by <see cref="ColorAmlIndicator"/>.
-/// </summary>
-public class ColorAmlValue : ComplexIndicatorValue
-{
-	/// <summary>
-	/// Initializes a new instance of the <see cref="ColorAmlValue"/> class.
-	/// </summary>
-	public ColorAmlValue(IIndicator indicator, IIndicatorValue input, bool hasValue, decimal? aml, int? color)
-		: base(indicator, input, (nameof(Aml), aml), (nameof(Color), color))
-	{
-		HasValue = hasValue;
-	}
-
-	/// <summary>
-	/// Indicates whether the indicator output is ready for trading decisions.
-	/// </summary>
-	public bool HasValue { get; }
-
-	/// <summary>
-	/// Adaptive market level line value.
-	/// </summary>
-	public decimal? Aml => (decimal?)GetValue(nameof(Aml));
-
-	/// <summary>
-	/// Color code (0 = bearish, 1 = neutral, 2 = bullish).
-	/// </summary>
-	public int? Color => (int?)GetValue(nameof(Color));
-}
-

@@ -14,15 +14,6 @@ using StockSharp.Messages;
 using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
-
-public enum ArrowModes
-{
-	HideArrows,
-	SimpleArrows,
-	OpenCloseMedian,
-	HighLowOpenClose
-}
-
 public class FollowLineTrendStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
@@ -823,5 +814,12 @@ if (Position <= 0 && IsOrderSlotAvailable())
 		Buy,
 		Sell
 	}
-}
 
+	public enum ArrowModes
+	{
+		HideArrows,
+		SimpleArrows,
+		OpenCloseMedian,
+		HighLowOpenClose
+	}
+}

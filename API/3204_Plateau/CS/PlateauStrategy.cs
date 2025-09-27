@@ -14,64 +14,6 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Money management mode for Plateau strategy.
-/// </summary>
-public enum PlateauMoneyManagementModes
-{
-	/// <summary>Use fixed lot size for every order.</summary>
-	FixedLot,
-
-	/// <summary>Risk a percentage of the account per trade.</summary>
-	RiskPercent,
-}
-
-/// <summary>
-/// Price source used for moving averages and Bollinger Bands.
-/// Matches the input price options from the original MQL5 expert.
-/// </summary>
-public enum PlateauAppliedPrices
-{
-	/// <summary>Close price of the candle.</summary>
-	Close,
-
-	/// <summary>Open price of the candle.</summary>
-	Open,
-
-	/// <summary>High price of the candle.</summary>
-	High,
-
-	/// <summary>Low price of the candle.</summary>
-	Low,
-
-	/// <summary>Median price (high + low) / 2.</summary>
-	Median,
-
-	/// <summary>Typical price (high + low + close) / 3.</summary>
-	Typical,
-
-	/// <summary>Weighted price (high + low + close + close) / 4.</summary>
-	Weighted,
-}
-
-/// <summary>
-/// Moving average method equivalent to the MQL5 implementation.
-/// </summary>
-public enum PlateauMovingAverageMethods
-{
-	/// <summary>Simple moving average.</summary>
-	Simple,
-
-	/// <summary>Exponential moving average.</summary>
-	Exponential,
-
-	/// <summary>Smoothed moving average.</summary>
-	Smoothed,
-
-	/// <summary>Linear weighted moving average.</summary>
-	LinearWeighted,
-}
-
-/// <summary>
 /// Converted version of the Plateau expert advisor.
 /// The strategy monitors fast and slow moving averages together with the lower Bollinger Band.
 /// When a bullish crossover occurs below the lower band a long position is opened, while a bearish crossover above the lower band triggers a short entry.
@@ -767,5 +709,62 @@ public class PlateauStrategy : Strategy
 	_ => new WeightedMovingAverage { Length = Math.Max(1, period) },
 	};
 	}
-}
 
+	/// <summary>
+	/// Money management mode for Plateau strategy.
+	/// </summary>
+	public enum PlateauMoneyManagementModes
+	{
+		/// <summary>Use fixed lot size for every order.</summary>
+		FixedLot,
+
+		/// <summary>Risk a percentage of the account per trade.</summary>
+		RiskPercent,
+	}
+
+	/// <summary>
+	/// Price source used for moving averages and Bollinger Bands.
+	/// Matches the input price options from the original MQL5 expert.
+	/// </summary>
+	public enum PlateauAppliedPrices
+	{
+		/// <summary>Close price of the candle.</summary>
+		Close,
+
+		/// <summary>Open price of the candle.</summary>
+		Open,
+
+		/// <summary>High price of the candle.</summary>
+		High,
+
+		/// <summary>Low price of the candle.</summary>
+		Low,
+
+		/// <summary>Median price (high + low) / 2.</summary>
+		Median,
+
+		/// <summary>Typical price (high + low + close) / 3.</summary>
+		Typical,
+
+		/// <summary>Weighted price (high + low + close + close) / 4.</summary>
+		Weighted,
+	}
+
+	/// <summary>
+	/// Moving average method equivalent to the MQL5 implementation.
+	/// </summary>
+	public enum PlateauMovingAverageMethods
+	{
+		/// <summary>Simple moving average.</summary>
+		Simple,
+
+		/// <summary>Exponential moving average.</summary>
+		Exponential,
+
+		/// <summary>Smoothed moving average.</summary>
+		Smoothed,
+
+		/// <summary>Linear weighted moving average.</summary>
+		LinearWeighted,
+	}
+}
