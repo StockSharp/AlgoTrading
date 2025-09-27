@@ -36,6 +36,7 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 	private readonly StrategyParam<int> _shortTakeProfitPoints;
 	private readonly StrategyParam<bool> _enableShortOpen;
 	private readonly StrategyParam<bool> _enableShortClose;
+	private readonly StrategyParam<int> _fatlPeriod;
 
 	private decimal? _longStopPrice;
 	private decimal? _longTakePrice;
@@ -88,6 +89,11 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 		.SetDisplay("Enable Short Entries", "Allow opening new short positions", "Trading");
 		_enableShortClose = Param(nameof(EnableShortClose), true)
 		.SetDisplay("Enable Short Exits", "Allow closing short positions on signals", "Trading");
+
+		_fatlPeriod = Param(nameof(FatlPeriod), ColorJfatlDigitIndicator.MaxPeriod)
+			.SetRange(1, ColorJfatlDigitIndicator.MaxPeriod)
+			.SetDisplay("FATL Period", "Number of bars used for the FATL calculation", "Indicator")
+			.SetCanOptimize(true);
 	}
 
 	/// <summary>
@@ -270,6 +276,15 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 		set => _enableShortClose.Value = value;
 	}
 
+	/// <summary>
+	/// Number of bars required to calculate the FATL component.
+	/// </summary>
+	public int FatlPeriod
+	{
+		get => _fatlPeriod.Value;
+		set => _fatlPeriod.Value = value;
+	}
+
 	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
@@ -284,6 +299,8 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 			SignalBar = LongSignalBar
 		};
 
+		longIndicator.FatlPeriod = FatlPeriod;
+
 		var shortIndicator = new ColorJfatlDigitIndicator
 		{
 			Length = ShortJmaLength,
@@ -292,6 +309,8 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 			Digit = ShortDigit,
 			SignalBar = ShortSignalBar
 		};
+
+		shortIndicator.FatlPeriod = FatlPeriod;
 
 		var longSubscription = SubscribeCandles(LongCandleType);
 		longSubscription
@@ -545,8 +564,7 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 
 	private sealed class ColorJfatlDigitIndicator : Indicator<ICandleMessage>
 	{
-		private const int FatlPeriod = 39;
-		private static readonly decimal[] FatlWeights =
+			private static readonly decimal[] FatlWeights =
 		{
 			0.4360409450m, 0.3658689069m, 0.2460452079m, 0.1104506886m,
 			-0.0054034585m, -0.0760367731m, -0.0933058722m, -0.0670110374m,
@@ -559,6 +577,10 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 			-0.0067093714m, -0.0072003400m, -0.0047717710m, 0.0005541115m,
 			0.0007860160m, 0.0130129076m, 0.0040364019m
 		};
+
+		public static int MaxPeriod => FatlWeights.Length;
+
+		public int FatlPeriod { get; set; } = MaxPeriod;
 
 		private readonly List<decimal> _priceBuffer = new();
 		private readonly List<IndicatorEntry> _history = new();
@@ -596,17 +618,20 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 
 			var price = GetPrice(candle);
 			_priceBuffer.Add(price);
-			if (_priceBuffer.Count > FatlWeights.Length)
+
+			var fatlPeriod = Math.Max(1, Math.Min(FatlPeriod, MaxPeriod));
+
+			if (_priceBuffer.Count > MaxPeriod)
 			_priceBuffer.RemoveAt(0);
 
-			if (_priceBuffer.Count < FatlPeriod)
+			if (_priceBuffer.Count < fatlPeriod)
 			{
 				IsFormed = false;
 				return new ColorJfatlDigitValue(this, input, null, null, null, null);
 			}
 
 			decimal fatl = 0m;
-			for (var i = 0; i < FatlWeights.Length; i++)
+			for (var i = 0; i < fatlPeriod; i++)
 			{
 				var priceIndex = _priceBuffer.Count - 1 - i;
 				fatl += FatlWeights[i] * _priceBuffer[priceIndex];
