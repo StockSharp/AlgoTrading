@@ -10,5 +10,7 @@ global using global::Ecng.UnitTesting;
 
 global using global::Microsoft.VisualStudio.TestTools.UnitTesting;
 
-global using global::StockSharp.Algo.Strategies;
+global using global::StockSharp.Messages;
 global using global::StockSharp.BusinessEntities;
+global using global::StockSharp.Algo.Indicators;
+global using global::StockSharp.Algo.Strategies;
