@@ -21,7 +21,7 @@ public class KstSkyrexioStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _atrStopLoss;
 	private readonly StrategyParam<decimal> _atrTakeProfit;
-	private readonly StrategyParam<MaType> _filterMaType;
+	private readonly StrategyParam<MaTypes> _filterMaType;
 	private readonly StrategyParam<int> _filterMaLength;
 	private readonly StrategyParam<bool> _enableChopFilter;
 	private readonly StrategyParam<decimal> _chopThreshold;
@@ -45,7 +45,7 @@ public class KstSkyrexioStrategy : Strategy
 	/// <summary>
 	/// Moving average type for filter.
 	/// </summary>
-	public enum MaType
+	public enum MaTypes
 	{
 		SMA,
 		EMA,
@@ -70,7 +70,7 @@ public class KstSkyrexioStrategy : Strategy
 	/// <summary>
 	/// Filter moving average type.
 	/// </summary>
-	public MaType FilterMaType { get => _filterMaType.Value; set => _filterMaType.Value = value; }
+	public MaTypes FilterMaType { get => _filterMaType.Value; set => _filterMaType.Value = value; }
 
 	/// <summary>
 	/// Filter moving average length.
@@ -155,7 +155,7 @@ public class KstSkyrexioStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Take Profit", "ATR take-profit multiplier", "Stops");
 
-		_filterMaType = Param(nameof(FilterMaType), MaType.LSMA)
+		_filterMaType = Param(nameof(FilterMaType), MaTypes.LSMA)
 			.SetDisplay("Filter MA Type", "Type of trend filter", "Filter");
 
 		_filterMaLength = Param(nameof(FilterMaLength), 200)
@@ -305,14 +305,14 @@ public class KstSkyrexioStrategy : Strategy
 	{
 		return FilterMaType switch
 		{
-			MaType.SMA => new SimpleMovingAverage { Length = FilterMaLength },
-			MaType.EMA => new ExponentialMovingAverage { Length = FilterMaLength },
-			MaType.WMA => new WeightedMovingAverage { Length = FilterMaLength },
-			MaType.HMA => new HullMovingAverage { Length = FilterMaLength },
-			MaType.SMMA => new SmoothedMovingAverage { Length = FilterMaLength },
-			MaType.ALMA => new ArnaudLegouxMovingAverage { Length = FilterMaLength },
-			MaType.LSMA => new LinearRegression { Length = FilterMaLength },
-			MaType.VWMA => new VolumeWeightedMovingAverage { Length = FilterMaLength },
+			MaTypes.SMA => new SimpleMovingAverage { Length = FilterMaLength },
+			MaTypes.EMA => new ExponentialMovingAverage { Length = FilterMaLength },
+			MaTypes.WMA => new WeightedMovingAverage { Length = FilterMaLength },
+			MaTypes.HMA => new HullMovingAverage { Length = FilterMaLength },
+			MaTypes.SMMA => new SmoothedMovingAverage { Length = FilterMaLength },
+			MaTypes.ALMA => new ArnaudLegouxMovingAverage { Length = FilterMaLength },
+			MaTypes.LSMA => new LinearRegression { Length = FilterMaLength },
+			MaTypes.VWMA => new VolumeWeightedMovingAverage { Length = FilterMaLength },
 			_ => new SimpleMovingAverage { Length = FilterMaLength }
 		};
 	}

@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies;
 public class DaytradingESWickLengthStrategy : Strategy
 {
 	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<MovingAverageTypeEnum> _maType;
+	private readonly StrategyParam<MovingAverageTypes> _maType;
 	private readonly StrategyParam<decimal> _maOffset;
 	private readonly StrategyParam<int> _holdPeriods;
 	private readonly StrategyParam<DataType> _candleType;
@@ -41,7 +41,7 @@ public class DaytradingESWickLengthStrategy : Strategy
 	/// <summary>
 	/// Type of moving average.
 	/// </summary>
-	public MovingAverageTypeEnum MaType
+	public MovingAverageTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -85,7 +85,7 @@ public class DaytradingESWickLengthStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(10, 40, 5);
 
-		_maType = Param(nameof(MaType), MovingAverageTypeEnum.VolumeWeighted)
+		_maType = Param(nameof(MaType), MovingAverageTypes.VolumeWeighted)
 			.SetDisplay("MA Type", "Type of moving average", "General");
 
 		_maOffset = Param(nameof(MaOffset), 10m)
@@ -173,14 +173,14 @@ public class DaytradingESWickLengthStrategy : Strategy
 		}
 	}
 
-	private static IIndicator CreateMa(MovingAverageTypeEnum type, int length)
+	private static IIndicator CreateMa(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypeEnum.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageTypeEnum.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageTypeEnum.Weighted => new WeightedMovingAverage { Length = length },
-			MovingAverageTypeEnum.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
+			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -188,7 +188,7 @@ public class DaytradingESWickLengthStrategy : Strategy
 	/// <summary>
 	/// Available moving average types.
 	/// </summary>
-	public enum MovingAverageTypeEnum
+	public enum MovingAverageTypes
 	{
 		/// <summary>Simple moving average.</summary>
 		Simple,

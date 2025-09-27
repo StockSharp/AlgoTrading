@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class GapFillingStrategy : Strategy
 {
-	public enum CloseWhenOption
+	public enum CloseWhenOptions
 	{
 		NewSession,
 		NewGap,
@@ -27,7 +27,7 @@ public class GapFillingStrategy : Strategy
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<bool> _invert;
-	private readonly StrategyParam<CloseWhenOption> _closeWhen;
+	private readonly StrategyParam<CloseWhenOptions> _closeWhen;
 
 	private decimal _prevOpen;
 	private decimal _prevClose;
@@ -39,7 +39,7 @@ public class GapFillingStrategy : Strategy
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public bool Invert { get => _invert.Value; set => _invert.Value = value; }
-	public CloseWhenOption CloseWhen { get => _closeWhen.Value; set => _closeWhen.Value = value; }
+	public CloseWhenOptions CloseWhen { get => _closeWhen.Value; set => _closeWhen.Value = value; }
 
 	public GapFillingStrategy()
 	{
@@ -49,7 +49,7 @@ public class GapFillingStrategy : Strategy
 		_invert = Param(nameof(Invert), false)
 			.SetDisplay("Invert", "Trade with gap direction", "Strategy");
 
-		_closeWhen = Param(nameof(CloseWhen), CloseWhenOption.NewSession)
+		_closeWhen = Param(nameof(CloseWhen), CloseWhenOptions.NewSession)
 			.SetDisplay("Close when", "Condition to close open positions", "Strategy");
 	}
 
@@ -106,8 +106,8 @@ public class GapFillingStrategy : Strategy
 		if (isNewSession && (upGap || dnGap))
 			_limitPrice = upGap ? Math.Max(_prevClose, _prevOpen) : Math.Min(_prevClose, _prevOpen);
 
-		if (CloseWhen == CloseWhenOption.NewSession && isNewSession ||
-			CloseWhen == CloseWhenOption.NewGap && isNewSession && (upGap || dnGap))
+		if (CloseWhen == CloseWhenOptions.NewSession && isNewSession ||
+			CloseWhen == CloseWhenOptions.NewGap && isNewSession && (upGap || dnGap))
 		{
 			CloseAll();
 		}

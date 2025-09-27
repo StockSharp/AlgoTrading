@@ -27,7 +27,7 @@ public class BbtrendSupertrendDecisionStrategy : Strategy
 	private readonly StrategyParam<int> _supertrendLength;
 	private readonly StrategyParam<decimal> _supertrendMultiplier;
 	private readonly StrategyParam<Sides?> _tradeDirection;
-	private readonly StrategyParam<TpSlMode> _tpSlCondition;
+	private readonly StrategyParam<TpSlModes> _tpSlCondition;
 	private readonly StrategyParam<decimal> _takeProfitPerc;
 	private readonly StrategyParam<decimal> _stopLossPerc;
 	private readonly StrategyParam<DataType> _candleType;
@@ -95,7 +95,7 @@ public class BbtrendSupertrendDecisionStrategy : Strategy
 	/// <summary>
 	/// Take profit / stop loss mode.
 	/// </summary>
-	public TpSlMode TpSlCondition
+	public TpSlModes TpSlCondition
 	{
 		get => _tpSlCondition.Value;
 		set => _tpSlCondition.Value = value;
@@ -164,7 +164,7 @@ public class BbtrendSupertrendDecisionStrategy : Strategy
 		_tradeDirection = Param(nameof(TradeDirection), (Sides?)null)
 		.SetDisplay("Direction", "Allowed trading direction", "Trading");
 		
-		_tpSlCondition = Param(nameof(TpSlCondition), Strategies.TpSlMode.None)
+		_tpSlCondition = Param(nameof(TpSlCondition), Strategies.TpSlModes.None)
 		.SetDisplay("TP/SL Mode", "Protection mode", "Risk");
 		
 		_takeProfitPerc = Param(nameof(TakeProfitPerc), 30m)
@@ -209,9 +209,9 @@ public class BbtrendSupertrendDecisionStrategy : Strategy
 		
 		Unit tp = default;
 		Unit sl = default;
-		if (TpSlCondition == TpSlMode.TP || TpSlCondition == TpSlMode.Both)
+		if (TpSlCondition == TpSlModes.TP || TpSlCondition == TpSlModes.Both)
 		tp = TakeProfitPerc.Percents();
-		if (TpSlCondition == TpSlMode.SL || TpSlCondition == TpSlMode.Both)
+		if (TpSlCondition == TpSlModes.SL || TpSlCondition == TpSlModes.Both)
 		sl = StopLossPerc.Percents();
 		if (tp != default || sl != default)
 		StartProtection(tp, sl);
@@ -282,7 +282,7 @@ public class BbtrendSupertrendDecisionStrategy : Strategy
 /// <summary>
 /// Protection mode for take profit and stop loss.
 /// </summary>
-public enum TpSlMode
+public enum TpSlModes
 {
 	None,
 	TP,

@@ -23,7 +23,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ChandeKrollTrendStrategy : Strategy
 {
-	private readonly StrategyParam<CalcMode> _calcMode;
+	private readonly StrategyParam<CalcModes> _calcMode;
 	private readonly StrategyParam<decimal> _riskMultiplier;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
@@ -44,7 +44,7 @@ public class ChandeKrollTrendStrategy : Strategy
 	/// <summary>
 	/// Position size calculation mode.
 	/// </summary>
-	public CalcMode CalcMode { get => _calcMode.Value; set => _calcMode.Value = value; }
+	public CalcModes CalcMode { get => _calcMode.Value; set => _calcMode.Value = value; }
 
 	/// <summary>
 	/// Risk multiplier for position sizing.
@@ -81,7 +81,7 @@ public class ChandeKrollTrendStrategy : Strategy
 	/// </summary>
 	public ChandeKrollTrendStrategy()
 	{
-		_calcMode = Param(nameof(CalcMode), CalcMode.Exponential)
+		_calcMode = Param(nameof(CalcMode), CalcModes.Exponential)
 			.SetDisplay("Calc Mode", "Position size calculation mode", "General");
 
 		_riskMultiplier = Param(nameof(RiskMultiplier), 5m)
@@ -194,7 +194,7 @@ public class ChandeKrollTrendStrategy : Strategy
 		if (longCondition && Position <= 0)
 		{
 			var qty = RiskMultiplier / lowestClose * 1000m;
-			if (CalcMode == CalcMode.Exponential && _initialCapital > 0m)
+			if (CalcMode == CalcModes.Exponential && _initialCapital > 0m)
 			{
 				var equity = Portfolio.CurrentValue ?? 0m;
 				qty *= equity / _initialCapital;
@@ -215,7 +215,7 @@ public class ChandeKrollTrendStrategy : Strategy
 /// <summary>
 /// Position size calculation modes.
 /// </summary>
-public enum CalcMode
+public enum CalcModes
 {
 	/// <summary>
 	/// Use fixed multiplier.

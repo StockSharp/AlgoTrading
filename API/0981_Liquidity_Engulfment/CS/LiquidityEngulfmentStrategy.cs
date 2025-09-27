@@ -18,14 +18,14 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class LiquidityEngulfmentStrategy : Strategy
 {
-	public enum TradeMode
+	public enum TradeModes
 	{
 		Both,
 		BullishOnly,
 		BearishOnly
 	}
 
-	private readonly StrategyParam<TradeMode> _mode;
+	private readonly StrategyParam<TradeModes> _mode;
 	private readonly StrategyParam<int> _upperLookback;
 	private readonly StrategyParam<int> _lowerLookback;
 	private readonly StrategyParam<int> _stopLossPips;
@@ -53,7 +53,7 @@ public class LiquidityEngulfmentStrategy : Strategy
 	private DateTimeOffset _entryTime;
 	private int _index;
 
-	public TradeMode Mode { get => _mode.Value; set => _mode.Value = value; }
+	public TradeModes Mode { get => _mode.Value; set => _mode.Value = value; }
 	public int UpperLookback { get => _upperLookback.Value; set => _upperLookback.Value = value; }
 	public int LowerLookback { get => _lowerLookback.Value; set => _lowerLookback.Value = value; }
 	public int StopLossPips { get => _stopLossPips.Value; set => _stopLossPips.Value = value; }
@@ -65,7 +65,7 @@ public class LiquidityEngulfmentStrategy : Strategy
 
 	public LiquidityEngulfmentStrategy()
 	{
-		_mode = Param(nameof(Mode), TradeMode.Both).SetDisplay("Mode", "Trading mode", "General");
+		_mode = Param(nameof(Mode), TradeModes.Both).SetDisplay("Mode", "Trading mode", "General");
 		_upperLookback = Param(nameof(UpperLookback), 10).SetGreaterThanZero().SetDisplay("Upper Lookback", "Upper liquidity", "Indicators").SetCanOptimize(true).SetOptimize(5, 20, 1);
 		_lowerLookback = Param(nameof(LowerLookback), 10).SetGreaterThanZero().SetDisplay("Lower Lookback", "Lower liquidity", "Indicators").SetCanOptimize(true).SetOptimize(5, 20, 1);
 		_stopLossPips = Param(nameof(StopLossPips), 10).SetGreaterThanZero().SetDisplay("Stop Loss", "Stop in pips", "Risk");
@@ -189,8 +189,8 @@ public class LiquidityEngulfmentStrategy : Strategy
 
 		var inRange = candle.OpenTime >= StartDate && candle.OpenTime <= EndDate;
 		var step = Security.PriceStep ?? 1m;
-		var canLong = Mode != TradeMode.BearishOnly;
-		var canShort = Mode != TradeMode.BullishOnly;
+		var canLong = Mode != TradeModes.BearishOnly;
+		var canShort = Mode != TradeModes.BullishOnly;
 
 		if (inRange && canShort && bearSignal && Position >= 0)
 		{

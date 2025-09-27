@@ -34,13 +34,13 @@ public class AlmaOptimizedStrategy : Strategy
 	private int _barIndex;
 	private int _lastBuyBar;
 	private int _entryBar;
-	private SignalType _lastSignal;
+	private SignalTypes _lastSignal;
 	private decimal _stopPrice;
 	private decimal _takePrice;
 	private decimal _prevClose;
 	private decimal _prevFastEma;
 
-	private enum SignalType
+	private enum SignalTypes
 	{
 		None,
 		Buy,
@@ -243,7 +243,7 @@ public class AlmaOptimizedStrategy : Strategy
 		_barIndex = 0;
 		_lastBuyBar = int.MinValue;
 		_entryBar = 0;
-		_lastSignal = SignalType.None;
+		_lastSignal = SignalTypes.None;
 		_stopPrice = 0m;
 		_takePrice = 0m;
 		_prevClose = 0m;
@@ -294,10 +294,10 @@ public class AlmaOptimizedStrategy : Strategy
 
 		if (_prevClose != 0m || _prevFastEma != 0m)
 		{
-			var buyCond = volatility && candle.ClosePrice > slowEmaValue && candle.ClosePrice > almaValue && rsiValue > 30m && adxValue > 30m && candle.ClosePrice < upperBand && (_barIndex - _lastBuyBar > CooldownBars) && _lastSignal != SignalType.Buy;
+			var buyCond = volatility && candle.ClosePrice > slowEmaValue && candle.ClosePrice > almaValue && rsiValue > 30m && adxValue > 30m && candle.ClosePrice < upperBand && (_barIndex - _lastBuyBar > CooldownBars) && _lastSignal != SignalTypes.Buy;
 
 			var crossUnder = _prevClose >= _prevFastEma && candle.ClosePrice < fastEmaValue;
-			var sellCond = volatility && crossUnder && _lastSignal != SignalType.Sell;
+			var sellCond = volatility && crossUnder && _lastSignal != SignalTypes.Sell;
 
 			if (buyCond && Position <= 0)
 			{
@@ -305,7 +305,7 @@ public class AlmaOptimizedStrategy : Strategy
 				BuyMarket(volume);
 				_lastBuyBar = _barIndex;
 				_entryBar = _barIndex;
-				_lastSignal = SignalType.Buy;
+				_lastSignal = SignalTypes.Buy;
 				_stopPrice = candle.ClosePrice - atrValue * SlAtrMultiplier;
 				_takePrice = candle.ClosePrice + atrValue * TpAtrMultiplier;
 			}
@@ -314,7 +314,7 @@ public class AlmaOptimizedStrategy : Strategy
 				var volume = Volume + Math.Abs(Position);
 				SellMarket(volume);
 				_entryBar = _barIndex;
-				_lastSignal = SignalType.Sell;
+				_lastSignal = SignalTypes.Sell;
 				_stopPrice = candle.ClosePrice + atrValue * SlAtrMultiplier;
 				_takePrice = candle.ClosePrice - atrValue * TpAtrMultiplier;
 			}
@@ -325,14 +325,14 @@ public class AlmaOptimizedStrategy : Strategy
 			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice || (TimeBasedExit > 0 && _barIndex - _entryBar >= TimeBasedExit))
 			{
 				SellMarket(Position);
-				_lastSignal = SignalType.Sell;
+				_lastSignal = SignalTypes.Sell;
 			}
 			else if (Position < 0)
 			{
 				if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice || (TimeBasedExit > 0 && _barIndex - _entryBar >= TimeBasedExit))
 				{
 					BuyMarket(Math.Abs(Position));
-					_lastSignal = SignalType.Buy;
+					_lastSignal = SignalTypes.Buy;
 				}
 			}
 

@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class KaufmanAdaptiveMovingAverageStrategy : Strategy
 {
-	public enum TradeSide
+	public enum TradeSides
 	{
 		Long,
 		Short,
@@ -30,7 +30,7 @@ public class KaufmanAdaptiveMovingAverageStrategy : Strategy
 	private readonly StrategyParam<int> _slow;
 	private readonly StrategyParam<int> _risingPeriod;
 	private readonly StrategyParam<int> _fallingPeriod;
-	private readonly StrategyParam<TradeSide> _orderDirection;
+	private readonly StrategyParam<TradeSides> _orderDirection;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevKama;
@@ -43,7 +43,7 @@ public class KaufmanAdaptiveMovingAverageStrategy : Strategy
 	public int Slow { get => _slow.Value; set => _slow.Value = value; }
 	public int RisingPeriod { get => _risingPeriod.Value; set => _risingPeriod.Value = value; }
 	public int FallingPeriod { get => _fallingPeriod.Value; set => _fallingPeriod.Value = value; }
-	public TradeSide OrderDirection { get => _orderDirection.Value; set => _orderDirection.Value = value; }
+	public TradeSides OrderDirection { get => _orderDirection.Value; set => _orderDirection.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public KaufmanAdaptiveMovingAverageStrategy()
@@ -78,7 +78,7 @@ public class KaufmanAdaptiveMovingAverageStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(5, 20, 5);
 
-		_orderDirection = Param(nameof(OrderDirection), TradeSide.Long)
+		_orderDirection = Param(nameof(OrderDirection), TradeSides.Long)
 			.SetDisplay("Order direction", "Allowed trade direction", "Strategy");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -162,7 +162,7 @@ public class KaufmanAdaptiveMovingAverageStrategy : Strategy
 			if (Position < 0)
 				BuyMarket(Math.Abs(Position));
 
-			var allowLong = OrderDirection == TradeSide.Long || OrderDirection == TradeSide.Both;
+			var allowLong = OrderDirection == TradeSides.Long || OrderDirection == TradeSides.Both;
 			if (allowLong && Position == 0)
 				BuyMarket(Volume);
 		}
@@ -171,7 +171,7 @@ public class KaufmanAdaptiveMovingAverageStrategy : Strategy
 			if (Position > 0)
 				SellMarket(Math.Abs(Position));
 
-			var allowShort = OrderDirection == TradeSide.Short || OrderDirection == TradeSide.Both;
+			var allowShort = OrderDirection == TradeSides.Short || OrderDirection == TradeSides.Both;
 			if (allowShort && Position == 0)
 				SellMarket(Volume);
 		}
