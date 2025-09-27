@@ -11,7 +11,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Gold scalping strategy with precise entries.
 /// </summary>
-public class GoldScalpingStrategyWithPreciseEntriesStrategy : Strategy
+public class GoldScalpingWithPreciseEntriesStrategy : Strategy
 {
 	private readonly StrategyParam<int> _emaFastPeriod;
 	private readonly StrategyParam<int> _emaSlowPeriod;
@@ -101,9 +101,9 @@ public class GoldScalpingStrategyWithPreciseEntriesStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of <see cref="GoldScalpingStrategyWithPreciseEntriesStrategy"/>.
+	/// Initializes a new instance of <see cref="GoldScalpingWithPreciseEntriesStrategy"/>.
 	/// </summary>
-	public GoldScalpingStrategyWithPreciseEntriesStrategy()
+	public GoldScalpingWithPreciseEntriesStrategy()
 	{
 		_emaFastPeriod = Param(nameof(EmaFastPeriod), 50)
 			.SetGreaterThanZero()

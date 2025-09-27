@@ -11,7 +11,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Intraday combo strategy combining Stoch RSI, MACD, Supertrend, Bollinger Bands and ADX filters.
 /// </summary>
-public class IntradayComboStrategyHHStrategy : Strategy
+public class IntradayComboHHStrategy : Strategy
 {
 	private readonly StrategyParam<bool> _useStochRsi;
 	private readonly StrategyParam<bool> _useMacd;
@@ -179,7 +179,7 @@ public class IntradayComboStrategyHHStrategy : Strategy
 	/// <summary>
 	/// Constructor.
 	/// </summary>
-	public IntradayComboStrategyHHStrategy()
+	public IntradayComboHHStrategy()
 	{
 		_useStochRsi = Param(nameof(UseStochRsi), true)
 			.SetDisplay("Use Stoch RSI", "Enable Stochastic RSI condition", "Flags");
