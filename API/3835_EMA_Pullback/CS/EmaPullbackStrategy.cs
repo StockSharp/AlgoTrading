@@ -42,10 +42,10 @@ public class EmaPullbackStrategy : Strategy
 	private decimal? _shortStopPrice;
 	private decimal? _entryPrice;
 
-	private SignalDirection _pendingDirection = SignalDirection.None;
+	private SignalDirections _pendingDirection = SignalDirections.None;
 	private decimal _pointValue;
 
-	private enum SignalDirection
+	private enum SignalDirections
 	{
 		None,
 		Long,
@@ -178,7 +178,7 @@ public class EmaPullbackStrategy : Strategy
 		_shortTakePrice = null;
 		_shortStopPrice = null;
 		_entryPrice = null;
-		_pendingDirection = SignalDirection.None;
+		_pendingDirection = SignalDirections.None;
 	}
 
 	/// <inheritdoc />
@@ -253,12 +253,12 @@ public class EmaPullbackStrategy : Strategy
 
 			if (crossUp)
 			{
-				_pendingDirection = SignalDirection.Long;
+				_pendingDirection = SignalDirections.Long;
 				LogInfo($"Fast EMA crossed above slow EMA at {candle.OpenTime}. Awaiting long pullback entry.");
 			}
 			else if (crossDown)
 			{
-				_pendingDirection = SignalDirection.Short;
+				_pendingDirection = SignalDirections.Short;
 				LogInfo($"Fast EMA crossed below slow EMA at {candle.OpenTime}. Awaiting short pullback entry.");
 			}
 
@@ -267,7 +267,7 @@ public class EmaPullbackStrategy : Strategy
 		else
 		{
 			// While a position is open we do not wait for new entries.
-			_pendingDirection = SignalDirection.None;
+			_pendingDirection = SignalDirections.None;
 		}
 
 		_previousHigh = candle.HighPrice;
@@ -276,14 +276,14 @@ public class EmaPullbackStrategy : Strategy
 
 	private void TryExecuteEntry(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-		if (_pendingDirection == SignalDirection.None)
+		if (_pendingDirection == SignalDirections.None)
 			return;
 
 		var separationThreshold = 2m * _pointValue;
 		var moveBackOffset = GetPriceOffset(MoveBackPoints);
 		var tradeVolume = Volume > 0m ? Volume : 1m;
 
-		if (_pendingDirection == SignalDirection.Long)
+		if (_pendingDirection == SignalDirections.Long)
 		{
 			var emaGap = fastValue - slowValue;
 			var triggerPrice = (_previousHigh ?? candle.HighPrice) - moveBackOffset;
@@ -294,11 +294,11 @@ public class EmaPullbackStrategy : Strategy
 				BuyMarket(tradeVolume);
 				_entryPrice = candle.ClosePrice;
 				SetLongTargets();
-				_pendingDirection = SignalDirection.None;
+				_pendingDirection = SignalDirections.None;
 				LogInfo($"Opened long position at {candle.ClosePrice} on pullback after EMA crossover.");
 			}
 		}
-		else if (_pendingDirection == SignalDirection.Short)
+		else if (_pendingDirection == SignalDirections.Short)
 		{
 			var emaGap = slowValue - fastValue;
 			var triggerPrice = (_previousLow ?? candle.LowPrice) + moveBackOffset;
@@ -309,7 +309,7 @@ public class EmaPullbackStrategy : Strategy
 				SellMarket(tradeVolume);
 				_entryPrice = candle.ClosePrice;
 				SetShortTargets();
-				_pendingDirection = SignalDirection.None;
+				_pendingDirection = SignalDirections.None;
 				LogInfo($"Opened short position at {candle.ClosePrice} on pullback after EMA crossover.");
 			}
 		}

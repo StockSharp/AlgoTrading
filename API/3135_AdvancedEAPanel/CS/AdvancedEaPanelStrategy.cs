@@ -42,15 +42,15 @@ public class AdvancedEaPanelStrategy : Strategy
 	private readonly StrategyParam<DataType> _pivotCandleType;
 	private readonly StrategyParam<int> _directionalThreshold;
 	private readonly StrategyParam<bool> _autoTrading;
-	private readonly StrategyParam<PivotFormulaSet> _pivotFormulaSet;
+	private readonly StrategyParam<PivotFormulaSets> _pivotFormulaSet;
 
 	private AverageTrueRange _atr;
 	private decimal _pipSize;
 	private decimal _lastAtrValue;
 	private PivotLevels _pivotLevels;
-	private PanelAction _currentSignal = PanelAction.None;
-	private PanelAction _queuedAction = PanelAction.None;
-	private PanelAction _executedSignal = PanelAction.None;
+	private PanelActions _currentSignal = PanelActions.None;
+	private PanelActions _queuedAction = PanelActions.None;
+	private PanelActions _executedSignal = PanelActions.None;
 	private bool _isClosingPosition;
 	private int _lastDirectionalScore;
 	private decimal? _entryPrice;
@@ -63,7 +63,7 @@ public class AdvancedEaPanelStrategy : Strategy
 	/// <summary>
 	/// Available pivot formula presets.
 	/// </summary>
-	public enum PivotFormulaSet
+	public enum PivotFormulaSets
 	{
 		/// <summary>
 		/// Classic floor trader pivots.
@@ -81,7 +81,7 @@ public class AdvancedEaPanelStrategy : Strategy
 		Camarilla
 	}
 
-	private enum PanelAction
+	private enum PanelActions
 	{
 		None,
 		Buy,
@@ -155,7 +155,7 @@ public class AdvancedEaPanelStrategy : Strategy
 	/// <summary>
 	/// Pivot formula preset.
 	/// </summary>
-	public PivotFormulaSet PivotFormula
+	public PivotFormulaSets PivotFormula
 	{
 		get => _pivotFormulaSet.Value;
 		set => _pivotFormulaSet.Value = value;
@@ -202,7 +202,7 @@ public class AdvancedEaPanelStrategy : Strategy
 		_autoTrading = Param(nameof(AutoTradingEnabled), true)
 		.SetDisplay("Auto Trading", "Automatically execute signals", "Signals");
 
-		_pivotFormulaSet = Param(nameof(PivotFormula), PivotFormulaSet.Classic)
+		_pivotFormulaSet = Param(nameof(PivotFormula), PivotFormulaSets.Classic)
 		.SetDisplay("Pivot Formula", "Pivot calculation preset", "General");
 	}
 
@@ -242,9 +242,9 @@ public class AdvancedEaPanelStrategy : Strategy
 			state.Reset();
 		}
 
-		_currentSignal = PanelAction.None;
-		_executedSignal = PanelAction.None;
-		_queuedAction = PanelAction.None;
+		_currentSignal = PanelActions.None;
+		_executedSignal = PanelActions.None;
+		_queuedAction = PanelActions.None;
 		_isClosingPosition = false;
 		_lastDirectionalScore = 0;
 		_entryPrice = null;
@@ -364,18 +364,18 @@ public class AdvancedEaPanelStrategy : Strategy
 		if (readyCount == 0)
 		return;
 
-		var signal = PanelAction.None;
+		var signal = PanelActions.None;
 		if (score >= DirectionalThreshold)
-		signal = PanelAction.Buy;
+		signal = PanelActions.Buy;
 		else if (score <= -DirectionalThreshold)
-		signal = PanelAction.Sell;
+		signal = PanelActions.Sell;
 
 		if (signal != _currentSignal)
 		{
 			_currentSignal = signal;
 			_lastDirectionalScore = score;
 
-			if (signal == PanelAction.None)
+			if (signal == PanelActions.None)
 			{
 				LogInfo($"Directional score neutralized at {score} across {readyCount} timeframes.");
 			}
@@ -438,7 +438,7 @@ public class AdvancedEaPanelStrategy : Strategy
 		return 0;
 	}
 
-	private void RequestExecution(PanelAction action)
+	private void RequestExecution(PanelActions action)
 	{
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
@@ -455,7 +455,7 @@ public class AdvancedEaPanelStrategy : Strategy
 			return;
 		}
 
-		if ((action == PanelAction.Buy && Position > 0) || (action == PanelAction.Sell && Position < 0))
+		if ((action == PanelActions.Buy && Position > 0) || (action == PanelActions.Sell && Position < 0))
 		{
 			LogInfo("Position already aligned with signal direction.");
 			return;
@@ -467,7 +467,7 @@ public class AdvancedEaPanelStrategy : Strategy
 		ClosePosition();
 	}
 
-	private void SendOrder(PanelAction action)
+	private void SendOrder(PanelActions action)
 	{
 		var volume = AdjustVolume(Volume);
 		if (volume <= 0)
@@ -478,12 +478,12 @@ public class AdvancedEaPanelStrategy : Strategy
 
 		switch (action)
 		{
-			case PanelAction.Buy:
+			case PanelActions.Buy:
 				LogInfo($"Sending BUY market order for {volume}.");
 				BuyMarket(volume);
 				break;
 
-			case PanelAction.Sell:
+			case PanelActions.Sell:
 				LogInfo($"Sending SELL market order for {volume}.");
 				SellMarket(volume);
 				break;
@@ -493,7 +493,7 @@ public class AdvancedEaPanelStrategy : Strategy
 		}
 
 		_executedSignal = action;
-		_queuedAction = PanelAction.None;
+		_queuedAction = PanelActions.None;
 	}
 
 	private decimal AdjustVolume(decimal desiredVolume)
@@ -536,8 +536,8 @@ public class AdvancedEaPanelStrategy : Strategy
 
 		return PivotFormula switch
 		{
-			PivotFormulaSet.Woodie => CalculateWoodiePivots(open, high, low, range),
-			PivotFormulaSet.Camarilla => CalculateCamarillaPivots(close, range),
+			PivotFormulaSets.Woodie => CalculateWoodiePivots(open, high, low, range),
+			PivotFormulaSets.Camarilla => CalculateCamarillaPivots(close, range),
 			_ => CalculateClassicPivots(high, low, close, range)
 		};
 	}
@@ -683,13 +683,13 @@ public class AdvancedEaPanelStrategy : Strategy
 		if (_isClosingPosition)
 		{
 			_isClosingPosition = false;
-			if (_queuedAction != PanelAction.None && AutoTradingEnabled)
+			if (_queuedAction != PanelActions.None && AutoTradingEnabled)
 			{
 				SendOrder(_queuedAction);
 			}
 			else
 			{
-				_queuedAction = PanelAction.None;
+				_queuedAction = PanelActions.None;
 			}
 		}
 	}

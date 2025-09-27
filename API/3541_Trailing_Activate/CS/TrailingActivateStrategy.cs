@@ -13,7 +13,7 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum TrailingActivateMode
+public enum TrailingActivateModes
 {
 	EveryTick,
 	NewBar,
@@ -26,7 +26,7 @@ public enum TrailingActivateMode
 public class TrailingActivateStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<TrailingActivateMode> _trailingMode;
+	private readonly StrategyParam<TrailingActivateModes> _trailingMode;
 	private readonly StrategyParam<decimal> _trailingActivatePoints;
 	private readonly StrategyParam<decimal> _trailingStopPoints;
 	private readonly StrategyParam<decimal> _trailingStepPoints;
@@ -49,7 +49,7 @@ public class TrailingActivateStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used when trailing on new bars", "General");
 
-		_trailingMode = Param(nameof(TrailingMode), TrailingActivateMode.NewBar)
+		_trailingMode = Param(nameof(TrailingMode), TrailingActivateModes.NewBar)
 			.SetDisplay("Trailing Mode", "Choose between per-tick or per-bar trailing updates", "General");
 
 		_trailingActivatePoints = Param(nameof(TrailingActivatePoints), 70m)
@@ -77,7 +77,7 @@ public class TrailingActivateStrategy : Strategy
 	/// <summary>
 	/// Defines whether the trailing stop reacts to every tick or to finished candles only.
 	/// </summary>
-	public TrailingActivateMode TrailingMode
+	public TrailingActivateModes TrailingMode
 	{
 		get => _trailingMode.Value;
 		set => _trailingMode.Value = value;
@@ -146,7 +146,7 @@ public class TrailingActivateStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (TrailingMode != TrailingActivateMode.NewBar)
+		if (TrailingMode != TrailingActivateModes.NewBar)
 			return;
 
 		if (candle.State != CandleStates.Finished)
@@ -169,7 +169,7 @@ public class TrailingActivateStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (TrailingMode != TrailingActivateMode.EveryTick)
+		if (TrailingMode != TrailingActivateModes.EveryTick)
 			return;
 
 		UpdateOffsets();

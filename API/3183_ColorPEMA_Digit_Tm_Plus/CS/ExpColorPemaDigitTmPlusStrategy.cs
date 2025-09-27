@@ -16,7 +16,7 @@ using StockSharp.Messages;
 public class ExpColorPemaDigitTmPlusStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _moneyManagement;
-	private readonly StrategyParam<MoneyManagementMode> _moneyMode;
+	private readonly StrategyParam<MoneyManagementModes> _moneyMode;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<int> _deviationPoints;
@@ -28,13 +28,13 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 	private readonly StrategyParam<int> _holdingMinutes;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _emaLength;
-	private readonly StrategyParam<AppliedPrice> _appliedPrice;
+	private readonly StrategyParam<AppliedPrices> _appliedPrice;
 	private readonly StrategyParam<int> _digitPrecision;
 	private readonly StrategyParam<int> _signalBar;
 
 	private ExponentialMovingAverage[] _emaStages;
 	private readonly List<decimal> _pemaValues = new();
-	private readonly List<TrendState> _trendStates = new();
+	private readonly List<TrendStates> _trendStates = new();
 
 	private bool _pendingLongEntry;
 	private bool _pendingShortEntry;
@@ -61,7 +61,7 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetCanOptimize(true);
 
-		_moneyMode = Param(nameof(MoneyMode), MoneyManagementMode.Lot)
+		_moneyMode = Param(nameof(MoneyMode), MoneyManagementModes.Lot)
 			.SetDisplay("Money Mode", "Position sizing model replicated from the MetaTrader expert.", "Trading")
 			.SetCanOptimize(true);
 
@@ -107,7 +107,7 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetCanOptimize(true);
 
-		_appliedPrice = Param(nameof(PriceMode), AppliedPrice.Close)
+		_appliedPrice = Param(nameof(PriceMode), AppliedPrices.Close)
 			.SetDisplay("Applied Price", "Price source used to feed the Pentuple EMA calculation.", "Indicator");
 
 		_digitPrecision = Param(nameof(DigitPrecision), 2)
@@ -126,7 +126,7 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 		set => _moneyManagement.Value = value;
 	}
 
-	public MoneyManagementMode MoneyMode
+	public MoneyManagementModes MoneyMode
 	{
 		get => _moneyMode.Value;
 		set => _moneyMode.Value = value;
@@ -198,7 +198,7 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 		set => _emaLength.Value = value;
 	}
 
-	public AppliedPrice PriceMode
+	public AppliedPrices PriceMode
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -316,14 +316,14 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 		var maxHistory = Math.Max(SignalBar + 5, 20);
 		TrimHistory(_pemaValues, maxHistory);
 
-		var trend = TrendState.Flat;
+		var trend = TrendStates.Flat;
 		if (_pemaValues.Count > 1)
 		{
 			var previous = _pemaValues[^2];
 			if (rounded > previous)
-				trend = TrendState.Up;
+				trend = TrendStates.Up;
 			else if (rounded < previous)
-				trend = TrendState.Down;
+				trend = TrendStates.Down;
 			else if (_trendStates.Count > 0)
 				trend = _trendStates[^1];
 		}
@@ -349,7 +349,7 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 		var currentState = _trendStates[currentIndex];
 		var previousState = _trendStates[previousIndex];
 
-		if (currentState == TrendState.Up && previousState != TrendState.Up)
+		if (currentState == TrendStates.Up && previousState != TrendStates.Up)
 		{
 			if (BuyPosOpen)
 			{
@@ -362,7 +362,7 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 				_pendingShortExit = true;
 			}
 		}
-		else if (currentState == TrendState.Down && previousState != TrendState.Down)
+		else if (currentState == TrendStates.Down && previousState != TrendStates.Down)
 		{
 			if (SellPosOpen)
 			{
@@ -477,18 +477,18 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 	{
 		return PriceMode switch
 		{
-			AppliedPrice.Close => candle.ClosePrice,
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
-			AppliedPrice.Simplified => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			AppliedPrice.Quarter => (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
-			AppliedPrice.TrendFollow0 => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.TrendFollow1 => (2m * candle.ClosePrice + candle.OpenPrice + candle.HighPrice + candle.LowPrice) / 5m,
-			AppliedPrice.Demark =>
+			AppliedPrices.Close => candle.ClosePrice,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
+			AppliedPrices.Simplified => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			AppliedPrices.Quarter => (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
+			AppliedPrices.TrendFollow0 => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.TrendFollow1 => (2m * candle.ClosePrice + candle.OpenPrice + candle.HighPrice + candle.LowPrice) / 5m,
+			AppliedPrices.Demark =>
 				candle.OpenPrice <= candle.ClosePrice
 					? (2m * candle.LowPrice + candle.HighPrice + candle.ClosePrice) / 4m
 					: (2m * candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
@@ -522,13 +522,13 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 
 		switch (MoneyMode)
 		{
-			case MoneyManagementMode.Lot:
+			case MoneyManagementModes.Lot:
 				return mmValue;
-			case MoneyManagementMode.Balance:
-			case MoneyManagementMode.FreeMargin:
+			case MoneyManagementModes.Balance:
+			case MoneyManagementModes.FreeMargin:
 				return capital > 0m ? capital * mmValue / price : 0m;
-			case MoneyManagementMode.LossBalance:
-			case MoneyManagementMode.LossFreeMargin:
+			case MoneyManagementModes.LossBalance:
+			case MoneyManagementModes.LossFreeMargin:
 				if (stopDistance > 0m)
 					return capital > 0m ? capital * mmValue / stopDistance : 0m;
 
@@ -604,7 +604,7 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 		}
 	}
 
-	public enum MoneyManagementMode
+	public enum MoneyManagementModes
 	{
 		FreeMargin,
 		Balance,
@@ -613,7 +613,7 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 		Lot
 	}
 
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		Close,
 		Open,
@@ -629,7 +629,7 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 		Demark
 	}
 
-	private enum TrendState
+	private enum TrendStates
 	{
 		Down,
 		Flat,

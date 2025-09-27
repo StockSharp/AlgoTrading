@@ -31,8 +31,8 @@ public class VolatilityPivotStrategy : Strategy
 	private readonly StrategyParam<bool> _enableSellEntries;
 	private readonly StrategyParam<bool> _allowLongExits;
 	private readonly StrategyParam<bool> _allowShortExits;
-	private readonly StrategyParam<VolatilityPivotDirection> _tradeDirection;
-	private readonly StrategyParam<VolatilityPivotMode> _pivotMode;
+	private readonly StrategyParam<VolatilityPivotDirections> _tradeDirection;
+	private readonly StrategyParam<VolatilityPivotModes> _pivotMode;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
 
@@ -49,7 +49,7 @@ public class VolatilityPivotStrategy : Strategy
 	/// <summary>
 	/// Directional mode for interpreting pivot signals.
 	/// </summary>
-	public enum VolatilityPivotDirection
+	public enum VolatilityPivotDirections
 	{
 		/// <summary>
 		/// Trade in the same direction as the pivot breakout.
@@ -65,7 +65,7 @@ public class VolatilityPivotStrategy : Strategy
 	/// <summary>
 	/// Calculation mode for the pivot distance.
 	/// </summary>
-	public enum VolatilityPivotMode
+	public enum VolatilityPivotModes
 	{
 		/// <summary>
 		/// Use ATR multiplied by a smoothing EMA.
@@ -171,7 +171,7 @@ public class VolatilityPivotStrategy : Strategy
 	/// <summary>
 	/// Directional handling of pivot signals.
 	/// </summary>
-	public VolatilityPivotDirection TradeDirection
+	public VolatilityPivotDirections TradeDirection
 	{
 		get => _tradeDirection.Value;
 		set => _tradeDirection.Value = value;
@@ -180,7 +180,7 @@ public class VolatilityPivotStrategy : Strategy
 	/// <summary>
 	/// Pivot calculation mode.
 	/// </summary>
-	public VolatilityPivotMode PivotMode
+	public VolatilityPivotModes PivotMode
 	{
 		get => _pivotMode.Value;
 		set => _pivotMode.Value = value;
@@ -248,10 +248,10 @@ public class VolatilityPivotStrategy : Strategy
 		_allowShortExits = Param(nameof(AllowShortExits), true)
 			.SetDisplay("Allow Short Exits", "Permit closing existing short positions", "Trading Logic");
 
-		_tradeDirection = Param(nameof(TradeDirection), VolatilityPivotDirection.WithTrend)
+		_tradeDirection = Param(nameof(TradeDirection), VolatilityPivotDirections.WithTrend)
 			.SetDisplay("Trade Direction", "Follow or fade the pivot breakout", "Trading Logic");
 
-		_pivotMode = Param(nameof(PivotMode), VolatilityPivotMode.Atr)
+		_pivotMode = Param(nameof(PivotMode), VolatilityPivotModes.Atr)
 			.SetDisplay("Pivot Mode", "Choose ATR based or fixed deviation mode", "Indicator");
 
 		_stopLoss = Param(nameof(StopLoss), 0m)
@@ -342,7 +342,7 @@ public class VolatilityPivotStrategy : Strategy
 
 	private decimal? CalculateDeltaStop(IIndicatorValue atrValue)
 	{
-		if (PivotMode == VolatilityPivotMode.PriceDeviation)
+		if (PivotMode == VolatilityPivotModes.PriceDeviation)
 			return DeltaPrice;
 
 		if (!atrValue.IsFinal)
@@ -425,7 +425,7 @@ public class VolatilityPivotStrategy : Strategy
 		var upTrendPrice = pivot.UpTrendPrice;
 		var downTrendPrice = pivot.DownTrendPrice;
 
-		if (TradeDirection == VolatilityPivotDirection.CounterTrend)
+		if (TradeDirection == VolatilityPivotDirections.CounterTrend)
 		{
 			upSignal = pivot.DownSignal;
 			downSignal = pivot.UpSignal;

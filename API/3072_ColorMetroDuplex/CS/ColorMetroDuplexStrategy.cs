@@ -180,8 +180,8 @@ public class ColorMetroDuplexStrategy : Strategy
 		private readonly StrategyParam<decimal> _deviationTicks;
 		private readonly StrategyParam<bool> _openAllowed;
 		private readonly StrategyParam<bool> _closeAllowed;
-		private readonly StrategyParam<MarginMode> _marginMode;
-		private readonly StrategyParam<MetroAppliedPrice> _priceMode;
+		private readonly StrategyParam<MarginModes> _marginMode;
+		private readonly StrategyParam<MetroAppliedPrices> _priceMode;
 
 		private readonly List<decimal> _upHistory = new();
 		private readonly List<decimal> _downHistory = new();
@@ -250,10 +250,10 @@ public class ColorMetroDuplexStrategy : Strategy
 			_closeAllowed = strategy.Param(key + "_CloseAllowed", closeAllowed)
 				.SetDisplay(key + " Close Allowed", "Allow this module to close positions", key);
 
-			_marginMode = strategy.Param(key + "_MarginMode", MarginMode.Lot)
+			_marginMode = strategy.Param(key + "_MarginMode", MarginModes.Lot)
 				.SetDisplay(key + " Margin Mode", "Money management mode (not used in this port)", key);
 
-			_priceMode = strategy.Param(key + "_AppliedPrice", MetroAppliedPrice.Close)
+			_priceMode = strategy.Param(key + "_AppliedPrice", MetroAppliedPrices.Close)
 				.SetDisplay(key + " Price", "Price source for the ColorMETRO calculation", key);
 		}
 
@@ -277,9 +277,9 @@ public class ColorMetroDuplexStrategy : Strategy
 
 		public bool CloseAllowed => _closeAllowed.Value;
 
-		public MarginMode MarginMode => _marginMode.Value;
+		public MarginModes MarginModes => _marginMode.Value;
 
-		public MetroAppliedPrice PriceMode => _priceMode.Value;
+		public MetroAppliedPrices PriceMode => _priceMode.Value;
 
 		public decimal StopLossTicks => _stopLossTicks.Value;
 
@@ -391,7 +391,7 @@ public class ColorMetroDuplexStrategy : Strategy
 	/// <summary>
 	/// Money management modes replicated from the MT5 expert for compatibility.
 	/// </summary>
-	public enum MarginMode
+	public enum MarginModes
 	{
 		FreeMargin = 0,
 		Balance = 1,
@@ -403,7 +403,7 @@ public class ColorMetroDuplexStrategy : Strategy
 	/// <summary>
 	/// Price options supported by the ColorMETRO indicator.
 	/// </summary>
-	public enum MetroAppliedPrice
+	public enum MetroAppliedPrices
 	{
 		Close,
 		Open,
@@ -483,7 +483,7 @@ public sealed class ColorMetroDuplexIndicator : BaseIndicator<ColorMetroDuplexVa
 	/// <summary>
 	/// Price selection mode for RSI input.
 	/// </summary>
-	public ColorMetroDuplexStrategy.MetroAppliedPrice PriceMode { get; set; } = ColorMetroDuplexStrategy.MetroAppliedPrice.Close;
+	public ColorMetroDuplexStrategy.MetroAppliedPrices PriceMode { get; set; } = ColorMetroDuplexStrategy.MetroAppliedPrices.Close;
 
 	/// <inheritdoc />
 	protected override IIndicatorValue OnProcess(IIndicatorValue input)
@@ -582,16 +582,16 @@ public sealed class ColorMetroDuplexIndicator : BaseIndicator<ColorMetroDuplexVa
 		_slowTrend = 0;
 	}
 
-	private static decimal SelectPrice(ICandleMessage candle, ColorMetroDuplexStrategy.MetroAppliedPrice priceMode)
+	private static decimal SelectPrice(ICandleMessage candle, ColorMetroDuplexStrategy.MetroAppliedPrices priceMode)
 	{
 		return priceMode switch
 		{
-			ColorMetroDuplexStrategy.MetroAppliedPrice.Open => candle.OpenPrice,
-			ColorMetroDuplexStrategy.MetroAppliedPrice.High => candle.HighPrice,
-			ColorMetroDuplexStrategy.MetroAppliedPrice.Low => candle.LowPrice,
-			ColorMetroDuplexStrategy.MetroAppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			ColorMetroDuplexStrategy.MetroAppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			ColorMetroDuplexStrategy.MetroAppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			ColorMetroDuplexStrategy.MetroAppliedPrices.Open => candle.OpenPrice,
+			ColorMetroDuplexStrategy.MetroAppliedPrices.High => candle.HighPrice,
+			ColorMetroDuplexStrategy.MetroAppliedPrices.Low => candle.LowPrice,
+			ColorMetroDuplexStrategy.MetroAppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			ColorMetroDuplexStrategy.MetroAppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			ColorMetroDuplexStrategy.MetroAppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}

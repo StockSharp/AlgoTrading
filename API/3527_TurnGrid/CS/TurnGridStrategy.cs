@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TurnGridStrategy : Strategy
 {
-	private enum TradeDirection
+	private enum TradeDirections
 	{
 		Buy,
 		Sell,
@@ -338,7 +338,7 @@ public class TurnGridStrategy : Strategy
 		if (_buyCount + _sellCount >= GridShares)
 			return;
 
-		var volume = CalculateVolume(TradeDirection.Buy);
+		var volume = CalculateVolume(TradeDirections.Buy);
 		if (volume <= 0m)
 			return;
 
@@ -362,7 +362,7 @@ public class TurnGridStrategy : Strategy
 		if (_buyCount + _sellCount >= GridShares)
 			return;
 
-		var volume = CalculateVolume(TradeDirection.Sell);
+		var volume = CalculateVolume(TradeDirections.Sell);
 		if (volume <= 0m)
 			return;
 
@@ -378,7 +378,7 @@ public class TurnGridStrategy : Strategy
 		_sellCount++;
 	}
 
-	private decimal CalculateVolume(TradeDirection direction)
+	private decimal CalculateVolume(TradeDirections direction)
 	{
 		if (_lastPrice <= 0m)
 			return 0m;
@@ -390,10 +390,10 @@ public class TurnGridStrategy : Strategy
 		decimal money;
 		switch (direction)
 		{
-			case TradeDirection.Buy:
+			case TradeDirections.Buy:
 				money = firstMoney + _buyCount * _openMoneyIncrement;
 				break;
-			case TradeDirection.Sell:
+			case TradeDirections.Sell:
 				money = firstMoney + _sellCount * _openMoneyIncrement;
 				break;
 			default:

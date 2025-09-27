@@ -24,7 +24,7 @@ public class EnvelopeLimitLadderStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<DataType> _envelopeCandleType;
 	private readonly StrategyParam<int> _envelopePeriod;
-	private readonly StrategyParam<EnvelopeMaMethod> _maMethod;
+	private readonly StrategyParam<EnvelopeMaMethods> _maMethod;
 	private readonly StrategyParam<decimal> _envelopeDeviation;
 	private readonly StrategyParam<int> _tradingStartHour;
 	private readonly StrategyParam<int> _tradingEndHour;
@@ -73,7 +73,7 @@ public class EnvelopeLimitLadderStrategy : Strategy
 	/// <summary>
 	/// Moving average method matching the MetaTrader <c>MODE_*</c> options.
 	/// </summary>
-	public EnvelopeMaMethod MaMethod
+	public EnvelopeMaMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -166,7 +166,7 @@ public class EnvelopeLimitLadderStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Envelope period", "Moving average period of the envelope.", "Indicator");
 
-		_maMethod = Param(nameof(MaMethod), EnvelopeMaMethod.Ema)
+		_maMethod = Param(nameof(MaMethod), EnvelopeMaMethods.Ema)
 		.SetDisplay("MA method", "Moving average method for the envelope.", "Indicator");
 
 		_envelopeDeviation = Param(nameof(EnvelopeDeviation), 0.05m)
@@ -419,10 +419,10 @@ public class EnvelopeLimitLadderStrategy : Strategy
 	{
 		return MaMethod switch
 		{
-			EnvelopeMaMethod.Sma => new SimpleMovingAverage { Length = EnvelopePeriod },
-			EnvelopeMaMethod.Ema => new ExponentialMovingAverage { Length = EnvelopePeriod },
-			EnvelopeMaMethod.Smma => new SmoothedMovingAverage { Length = EnvelopePeriod },
-			EnvelopeMaMethod.Lwma => new WeightedMovingAverage { Length = EnvelopePeriod },
+			EnvelopeMaMethods.Sma => new SimpleMovingAverage { Length = EnvelopePeriod },
+			EnvelopeMaMethods.Ema => new ExponentialMovingAverage { Length = EnvelopePeriod },
+			EnvelopeMaMethods.Smma => new SmoothedMovingAverage { Length = EnvelopePeriod },
+			EnvelopeMaMethods.Lwma => new WeightedMovingAverage { Length = EnvelopePeriod },
 			_ => new SimpleMovingAverage { Length = EnvelopePeriod }
 		};
 	}
@@ -714,7 +714,7 @@ public class EnvelopeLimitLadderStrategy : Strategy
 		}
 	}
 
-	private enum EnvelopeMaMethod
+	private enum EnvelopeMaMethods
 	{
 		Sma = 0,
 		Ema = 1,

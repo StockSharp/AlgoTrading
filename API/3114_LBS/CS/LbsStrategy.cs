@@ -23,7 +23,7 @@ public class LbsStrategy : Strategy
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _trailingStopPips;
 	private readonly StrategyParam<int> _trailingStepPips;
-	private readonly StrategyParam<MoneyManagementMode> _moneyMode;
+	private readonly StrategyParam<MoneyManagementModes> _moneyMode;
 	private readonly StrategyParam<decimal> _volumeOrRisk;
 	private readonly StrategyParam<int> _hour1;
 	private readonly StrategyParam<int> _hour2;
@@ -71,7 +71,7 @@ public class LbsStrategy : Strategy
 	/// <summary>
 	/// Money management mode controlling how the volume parameter is interpreted.
 	/// </summary>
-	public MoneyManagementMode MoneyMode
+	public MoneyManagementModes MoneyMode
 	{
 		get => _moneyMode.Value;
 		set => _moneyMode.Value = value;
@@ -139,7 +139,7 @@ public class LbsStrategy : Strategy
 		.SetDisplay("Trailing Step (pips)", "Additional pips required before the trailing stop moves.", "Risk Management")
 		.SetCanOptimize(true);
 
-		_moneyMode = Param(nameof(MoneyMode), MoneyManagementMode.FixedLot)
+		_moneyMode = Param(nameof(MoneyMode), MoneyManagementModes.FixedLot)
 		.SetDisplay("Money Mode", "Use fixed lots or risk percentage for sizing.", "Money Management");
 
 		_volumeOrRisk = Param(nameof(VolumeOrRisk), 1m)
@@ -441,8 +441,8 @@ public class LbsStrategy : Strategy
 
 		return MoneyMode switch
 		{
-			MoneyManagementMode.FixedLot => NormalizeVolume(VolumeOrRisk),
-			MoneyManagementMode.RiskPercent => CalculateRiskVolume(entryPrice, stopPrice),
+			MoneyManagementModes.FixedLot => NormalizeVolume(VolumeOrRisk),
+			MoneyManagementModes.RiskPercent => CalculateRiskVolume(entryPrice, stopPrice),
 			_ => 0m
 		};
 	}
@@ -615,7 +615,7 @@ public class LbsStrategy : Strategy
 /// <summary>
 /// Money management options reproduced from the original MQL strategy.
 /// </summary>
-public enum MoneyManagementMode
+public enum MoneyManagementModes
 {
 	/// <summary>
 	/// Use a fixed trading volume.

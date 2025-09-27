@@ -26,7 +26,7 @@ public class ExpSkyscraperFixDuplexStrategy : Strategy
 	private readonly StrategyParam<int> _longLength;
 	private readonly StrategyParam<decimal> _longKv;
 	private readonly StrategyParam<decimal> _longPercentage;
-	private readonly StrategyParam<SkyscraperCalculationMode> _longMode;
+	private readonly StrategyParam<SkyscraperCalculationModes> _longMode;
 	private readonly StrategyParam<int> _longSignalBar;
 	private readonly StrategyParam<bool> _enableShortEntries;
 	private readonly StrategyParam<bool> _enableShortExits;
@@ -34,7 +34,7 @@ public class ExpSkyscraperFixDuplexStrategy : Strategy
 	private readonly StrategyParam<int> _shortLength;
 	private readonly StrategyParam<decimal> _shortKv;
 	private readonly StrategyParam<decimal> _shortPercentage;
-	private readonly StrategyParam<SkyscraperCalculationMode> _shortMode;
+	private readonly StrategyParam<SkyscraperCalculationModes> _shortMode;
 	private readonly StrategyParam<int> _shortSignalBar;
 
 	private SkyscraperFixIndicator _longIndicator;
@@ -83,7 +83,7 @@ public class ExpSkyscraperFixDuplexStrategy : Strategy
 	/// <summary>
 	/// Calculation mode for the long indicator.
 	/// </summary>
-	public SkyscraperCalculationMode LongMode { get => _longMode.Value; set => _longMode.Value = value; }
+	public SkyscraperCalculationModes LongMode { get => _longMode.Value; set => _longMode.Value = value; }
 
 	/// <summary>
 	/// Number of closed candles to delay long signals.
@@ -123,7 +123,7 @@ public class ExpSkyscraperFixDuplexStrategy : Strategy
 	/// <summary>
 	/// Calculation mode for the short indicator.
 	/// </summary>
-	public SkyscraperCalculationMode ShortMode { get => _shortMode.Value; set => _shortMode.Value = value; }
+	public SkyscraperCalculationModes ShortMode { get => _shortMode.Value; set => _shortMode.Value = value; }
 
 	/// <summary>
 	/// Number of closed candles to delay short signals.
@@ -159,7 +159,7 @@ public class ExpSkyscraperFixDuplexStrategy : Strategy
 		_longPercentage = Param(nameof(LongPercentage), 0m)
 			.SetDisplay("Long Percentage", "Offset percentage for long trailing line", "Long");
 
-		_longMode = Param(nameof(LongMode), SkyscraperCalculationMode.HighLow)
+		_longMode = Param(nameof(LongMode), SkyscraperCalculationModes.HighLow)
 			.SetDisplay("Long Mode", "Price source for the long indicator", "Long");
 
 		_longSignalBar = Param(nameof(LongSignalBar), 1)
@@ -186,7 +186,7 @@ public class ExpSkyscraperFixDuplexStrategy : Strategy
 		_shortPercentage = Param(nameof(ShortPercentage), 0m)
 			.SetDisplay("Short Percentage", "Offset percentage for short trailing line", "Short");
 
-		_shortMode = Param(nameof(ShortMode), SkyscraperCalculationMode.HighLow)
+		_shortMode = Param(nameof(ShortMode), SkyscraperCalculationModes.HighLow)
 			.SetDisplay("Short Mode", "Price source for the short indicator", "Short");
 
 		_shortSignalBar = Param(nameof(ShortSignalBar), 1)
@@ -325,7 +325,7 @@ public class ExpSkyscraperFixDuplexStrategy : Strategy
 /// <summary>
 /// Calculation mode for the Skyscraper Fix indicator.
 /// </summary>
-public enum SkyscraperCalculationMode
+public enum SkyscraperCalculationModes
 {
 	/// <summary>Use the bar high and low.</summary>
 	HighLow,
@@ -374,7 +374,7 @@ public class SkyscraperFixIndicator : BaseIndicator<decimal>
 	/// <summary>
 	/// Price mode used for envelope construction.
 	/// </summary>
-	public SkyscraperCalculationMode Mode { get; set; } = SkyscraperCalculationMode.HighLow;
+	public SkyscraperCalculationModes Mode { get; set; } = SkyscraperCalculationModes.HighLow;
 
 	/// <summary>
 	/// Instrument price step.
@@ -426,11 +426,11 @@ public class SkyscraperFixIndicator : BaseIndicator<decimal>
 		decimal smin0;
 		switch (Mode)
 		{
-			case SkyscraperCalculationMode.HighLow:
+			case SkyscraperCalculationModes.HighLow:
 				smax0 = candle.LowPrice + doubleStep;
 				smin0 = candle.HighPrice - doubleStep;
 				break;
-			case SkyscraperCalculationMode.Close:
+			case SkyscraperCalculationModes.Close:
 				smax0 = candle.ClosePrice + doubleStep;
 				smin0 = candle.ClosePrice - doubleStep;
 				break;

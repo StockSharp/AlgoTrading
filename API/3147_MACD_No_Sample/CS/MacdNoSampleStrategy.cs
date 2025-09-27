@@ -23,7 +23,7 @@ public class MacdNoSampleStrategy : Strategy
 	/// <summary>
 	/// Moving-average calculation options mirroring the original EA inputs.
 	/// </summary>
-	public enum MaMethodOption
+	public enum MaMethodOptions
 	{
 		Simple,
 		Exponential,
@@ -34,7 +34,7 @@ public class MacdNoSampleStrategy : Strategy
 	/// <summary>
 	/// Candle price used when feeding the indicators.
 	/// </summary>
-	public enum AppliedPriceOption
+	public enum AppliedPriceOptions
 	{
 		Close,
 		Open,
@@ -48,7 +48,7 @@ public class MacdNoSampleStrategy : Strategy
 	/// <summary>
 	/// Position sizing mode: fixed trade volume or percentage risk per trade.
 	/// </summary>
-	public enum PositionSizingMode
+	public enum PositionSizingModes
 	{
 		FixedVolume,
 		RiskPercent,
@@ -59,15 +59,15 @@ public class MacdNoSampleStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _trailingStopPips;
 	private readonly StrategyParam<decimal> _trailingStepPips;
-	private readonly StrategyParam<PositionSizingMode> _sizingMode;
+	private readonly StrategyParam<PositionSizingModes> _sizingMode;
 	private readonly StrategyParam<decimal> _riskPercent;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<MaMethodOption> _maMethod;
-	private readonly StrategyParam<AppliedPriceOption> _maPrice;
+	private readonly StrategyParam<MaMethodOptions> _maMethod;
+	private readonly StrategyParam<AppliedPriceOptions> _maPrice;
 	private readonly StrategyParam<int> _macdFastPeriod;
 	private readonly StrategyParam<int> _macdSlowPeriod;
 	private readonly StrategyParam<int> _macdSignalPeriod;
-	private readonly StrategyParam<AppliedPriceOption> _macdPrice;
+	private readonly StrategyParam<AppliedPriceOptions> _macdPrice;
 	private readonly StrategyParam<decimal> _macdLevelPips;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -112,7 +112,7 @@ public class MacdNoSampleStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Trailing Step (pips)", "Minimal pip improvement required before moving the trailing stop.", "Risk");
 
-		_sizingMode = Param(nameof(SizingMode), PositionSizingMode.FixedVolume)
+		_sizingMode = Param(nameof(SizingMode), PositionSizingModes.FixedVolume)
 		.SetDisplay("Position Sizing", "Select between fixed volume or risk percentage per trade.", "Trading");
 
 		_riskPercent = Param(nameof(RiskPercent), 1m)
@@ -123,10 +123,10 @@ public class MacdNoSampleStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Averaging period for the trend filter.", "Indicator");
 
-		_maMethod = Param(nameof(MaMethod), MaMethodOption.Weighted)
+		_maMethod = Param(nameof(MaMethod), MaMethodOptions.Weighted)
 		.SetDisplay("MA Method", "Moving-average smoothing algorithm.", "Indicator");
 
-		_maPrice = Param(nameof(MaPrice), AppliedPriceOption.Weighted)
+		_maPrice = Param(nameof(MaPrice), AppliedPriceOptions.Weighted)
 		.SetDisplay("MA Price", "Candle price used for the moving-average filter.", "Indicator");
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
@@ -141,7 +141,7 @@ public class MacdNoSampleStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Signal", "Signal-line EMA length.", "Indicator");
 
-		_macdPrice = Param(nameof(MacdPrice), AppliedPriceOption.Weighted)
+		_macdPrice = Param(nameof(MacdPrice), AppliedPriceOptions.Weighted)
 		.SetDisplay("MACD Price", "Candle price type fed into MACD.", "Indicator");
 
 		_macdLevelPips = Param(nameof(MacdLevelPips), 1m)
@@ -153,7 +153,7 @@ public class MacdNoSampleStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Fixed volume submitted with each market order when sizing mode is set to <see cref="PositionSizingMode.FixedVolume"/>.
+	/// Fixed volume submitted with each market order when sizing mode is set to <see cref="PositionSizingModes.FixedVolume"/>.
 	/// </summary>
 	public decimal TradeVolume
 	{
@@ -200,14 +200,14 @@ public class MacdNoSampleStrategy : Strategy
 	/// <summary>
 	/// Chooses between fixed volume and risk-based sizing.
 	/// </summary>
-	public PositionSizingMode SizingMode
+	public PositionSizingModes SizingMode
 	{
 		get => _sizingMode.Value;
 		set => _sizingMode.Value = value;
 	}
 
 	/// <summary>
-	/// Portfolio percentage used to size trades when <see cref="SizingMode"/> equals <see cref="PositionSizingMode.RiskPercent"/>.
+	/// Portfolio percentage used to size trades when <see cref="SizingMode"/> equals <see cref="PositionSizingModes.RiskPercent"/>.
 	/// </summary>
 	public decimal RiskPercent
 	{
@@ -227,7 +227,7 @@ public class MacdNoSampleStrategy : Strategy
 	/// <summary>
 	/// Moving-average smoothing method.
 	/// </summary>
-	public MaMethodOption MaMethod
+	public MaMethodOptions MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -236,7 +236,7 @@ public class MacdNoSampleStrategy : Strategy
 	/// <summary>
 	/// Applied price for the moving-average filter.
 	/// </summary>
-	public AppliedPriceOption MaPrice
+	public AppliedPriceOptions MaPrice
 	{
 		get => _maPrice.Value;
 		set => _maPrice.Value = value;
@@ -272,7 +272,7 @@ public class MacdNoSampleStrategy : Strategy
 	/// <summary>
 	/// Applied price for the MACD calculation.
 	/// </summary>
-	public AppliedPriceOption MacdPrice
+	public AppliedPriceOptions MacdPrice
 	{
 		get => _macdPrice.Value;
 		set => _macdPrice.Value = value;
@@ -618,7 +618,7 @@ public class MacdNoSampleStrategy : Strategy
 
 	private decimal GetOrderVolume(decimal price)
 	{
-		if (SizingMode == PositionSizingMode.FixedVolume)
+		if (SizingMode == PositionSizingModes.FixedVolume)
 		return TradeVolume;
 
 		if (Portfolio is null || price <= 0m)
@@ -681,27 +681,27 @@ public class MacdNoSampleStrategy : Strategy
 		return priceStep.Value;
 	}
 
-	private decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceOption priceOption)
+	private decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceOptions priceOption)
 	{
 		return priceOption switch
 		{
-		AppliedPriceOption.Open => candle.OpenPrice,
-		AppliedPriceOption.High => candle.HighPrice,
-		AppliedPriceOption.Low => candle.LowPrice,
-		AppliedPriceOption.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-		AppliedPriceOption.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-		AppliedPriceOption.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
+		AppliedPriceOptions.Open => candle.OpenPrice,
+		AppliedPriceOptions.High => candle.HighPrice,
+		AppliedPriceOptions.Low => candle.LowPrice,
+		AppliedPriceOptions.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+		AppliedPriceOptions.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+		AppliedPriceOptions.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
 		_ => candle.ClosePrice,
 		};
 	}
 
-	private MovingAverage CreateMovingAverage(MaMethodOption method)
+	private MovingAverage CreateMovingAverage(MaMethodOptions method)
 	{
 		return method switch
 		{
-		MaMethodOption.Exponential => new ExponentialMovingAverage(),
-		MaMethodOption.Smoothed => new SmoothedMovingAverage(),
-		MaMethodOption.Weighted => new WeightedMovingAverage(),
+		MaMethodOptions.Exponential => new ExponentialMovingAverage(),
+		MaMethodOptions.Smoothed => new SmoothedMovingAverage(),
+		MaMethodOptions.Weighted => new WeightedMovingAverage(),
 		_ => new SimpleMovingAverage(),
 		};
 	}

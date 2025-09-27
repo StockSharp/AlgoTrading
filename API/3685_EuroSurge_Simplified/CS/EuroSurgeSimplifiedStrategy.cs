@@ -13,7 +13,7 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum TradeSizeType
+public enum TradeSizeTypes
 {
 	FixedSize,
 	BalancePercent,
@@ -27,7 +27,7 @@ public enum TradeSizeType
 /// </summary>
 public class EuroSurgeSimplifiedStrategy : Strategy
 {
-	private readonly StrategyParam<TradeSizeType> _tradeSizeType;
+	private readonly StrategyParam<TradeSizeTypes> _tradeSizeType;
 	private readonly StrategyParam<decimal> _fixedVolume;
 	private readonly StrategyParam<decimal> _tradeSizePercent;
 	private readonly StrategyParam<int> _takeProfitPoints;
@@ -64,7 +64,7 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 	/// <summary>
 	/// Gets or sets the trade size calculation mode.
 	/// </summary>
-	public TradeSizeType TradeSizeType
+	public TradeSizeTypes TradeSizeTypes
 	{
 		get => _tradeSizeType.Value;
 		set => _tradeSizeType.Value = value;
@@ -282,12 +282,12 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 	/// </summary>
 	public EuroSurgeSimplifiedStrategy()
 	{
-		_tradeSizeType = Param(nameof(TradeSizeType), TradeSizeType.FixedSize)
+		_tradeSizeType = Param(nameof(TradeSizeTypes), TradeSizeTypes.FixedSize)
 		.SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management");
 
 		_fixedVolume = Param(nameof(FixedVolume), 1m)
 		.SetGreaterThanZero()
-		.SetDisplay("Fixed Volume", "Lot size used when TradeSizeType is FixedSize", "Money Management");
+		.SetDisplay("Fixed Volume", "Lot size used when TradeSizeTypes is FixedSize", "Money Management");
 
 		_tradeSizePercent = Param(nameof(TradeSizePercent), 1m)
 		.SetGreaterThanZero()
@@ -545,9 +545,9 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 	{
 		var volume = FixedVolume;
 
-		switch (TradeSizeType)
+		switch (TradeSizeTypes)
 		{
-			case TradeSizeType.BalancePercent when Portfolio?.BeginValue is decimal balance && balance > 0m && referencePrice > 0m:
+			case TradeSizeTypes.BalancePercent when Portfolio?.BeginValue is decimal balance && balance > 0m && referencePrice > 0m:
 			{
 				var moneyToUse = balance * TradeSizePercent / 100m;
 				var estimatedVolume = moneyToUse / referencePrice;
@@ -556,7 +556,7 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 				break;
 			}
 
-			case TradeSizeType.EquityPercent when Portfolio?.CurrentValue is decimal equity && equity > 0m && referencePrice > 0m:
+			case TradeSizeTypes.EquityPercent when Portfolio?.CurrentValue is decimal equity && equity > 0m && referencePrice > 0m:
 			{
 				var moneyToUse = equity * TradeSizePercent / 100m;
 				var estimatedVolume = moneyToUse / referencePrice;

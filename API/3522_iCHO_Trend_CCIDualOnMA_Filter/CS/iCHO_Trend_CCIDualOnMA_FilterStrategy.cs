@@ -21,17 +21,17 @@ public class iCHO_Trend_CCIDualOnMA_FilterStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastChaikinLength;
 	private readonly StrategyParam<int> _slowChaikinLength;
-	private readonly StrategyParam<MovingAverageMethod> _chaikinMethod;
+	private readonly StrategyParam<MovingAverageMethods> _chaikinMethod;
 	private readonly StrategyParam<int> _fastCciLength;
 	private readonly StrategyParam<int> _slowCciLength;
 	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<MovingAverageMethod> _maMethod;
-	private readonly StrategyParam<AppliedPrice> _maPrice;
+	private readonly StrategyParam<MovingAverageMethods> _maMethod;
+	private readonly StrategyParam<AppliedPrices> _maPrice;
 	private readonly StrategyParam<bool> _useClosedBar;
 	private readonly StrategyParam<bool> _reverseSignals;
 	private readonly StrategyParam<bool> _closeOpposite;
 	private readonly StrategyParam<bool> _onlyOnePosition;
-	private readonly StrategyParam<TradeModeOption> _tradeMode;
+	private readonly StrategyParam<TradeModeOptions> _tradeMode;
 	private readonly StrategyParam<bool> _useTimeFilter;
 	private readonly StrategyParam<int> _startHour;
 	private readonly StrategyParam<int> _startMinute;
@@ -65,7 +65,7 @@ public class iCHO_Trend_CCIDualOnMA_FilterStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Chaikin Slow", "Slow EMA length", "Chaikin");
 
-		_chaikinMethod = Param(nameof(ChaikinMethod), MovingAverageMethod.Exponential)
+		_chaikinMethod = Param(nameof(ChaikinMethod), MovingAverageMethods.Exponential)
 		.SetDisplay("Chaikin MA", "Averaging method", "Chaikin");
 
 		_fastCciLength = Param(nameof(FastCciLength), 14)
@@ -80,10 +80,10 @@ public class iCHO_Trend_CCIDualOnMA_FilterStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("MA Length", "MA length for price preprocessing", "Filter");
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.Simple)
+		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Simple)
 		.SetDisplay("MA Method", "MA method for price preprocessing", "Filter");
 
-		_maPrice = Param(nameof(MaPrice), AppliedPrice.Close)
+		_maPrice = Param(nameof(MaPrice), AppliedPrices.Close)
 		.SetDisplay("MA Price", "Price type sent into MA", "Filter");
 
 		_useClosedBar = Param(nameof(UseClosedBar), true)
@@ -98,7 +98,7 @@ public class iCHO_Trend_CCIDualOnMA_FilterStrategy : Strategy
 		_onlyOnePosition = Param(nameof(OnlyOnePosition), false)
 		.SetDisplay("Only One", "Allow only one open position", "Risk");
 
-		_tradeMode = Param(nameof(TradeMode), TradeModeOption.BuyAndSell)
+		_tradeMode = Param(nameof(TradeMode), TradeModeOptions.BuyAndSell)
 		.SetDisplay("Trade Mode", "Allowed trade direction", "Signals");
 
 		_useTimeFilter = Param(nameof(UseTimeFilter), true)
@@ -141,7 +141,7 @@ public class iCHO_Trend_CCIDualOnMA_FilterStrategy : Strategy
 	/// <summary>
 	/// Moving average method used inside the Chaikin oscillator.
 	/// </summary>
-	public MovingAverageMethod ChaikinMethod
+	public MovingAverageMethods ChaikinMethod
 	{
 		get => _chaikinMethod.Value;
 		set => _chaikinMethod.Value = value;
@@ -177,7 +177,7 @@ public class iCHO_Trend_CCIDualOnMA_FilterStrategy : Strategy
 	/// <summary>
 	/// Moving average method for preprocessing price.
 	/// </summary>
-	public MovingAverageMethod MaMethod
+	public MovingAverageMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -186,7 +186,7 @@ public class iCHO_Trend_CCIDualOnMA_FilterStrategy : Strategy
 	/// <summary>
 	/// Price type passed into the preprocessing MA.
 	/// </summary>
-	public AppliedPrice MaPrice
+	public AppliedPrices MaPrice
 	{
 		get => _maPrice.Value;
 		set => _maPrice.Value = value;
@@ -231,7 +231,7 @@ public class iCHO_Trend_CCIDualOnMA_FilterStrategy : Strategy
 	/// <summary>
 	/// Trade mode restriction.
 	/// </summary>
-	public TradeModeOption TradeMode
+	public TradeModeOptions TradeMode
 	{
 		get => _tradeMode.Value;
 		set => _tradeMode.Value = value;
@@ -409,20 +409,20 @@ public class iCHO_Trend_CCIDualOnMA_FilterStrategy : Strategy
 			if (zeroCrossUp)
 			{
 				closeShort = true;
-				if (TradeMode != TradeModeOption.SellOnly)
+				if (TradeMode != TradeModeOptions.SellOnly)
 				wantLong = true;
 			}
 
 			if (zeroCrossDown)
 			{
 				closeLong = true;
-				if (TradeMode != TradeModeOption.BuyOnly)
+				if (TradeMode != TradeModeOptions.BuyOnly)
 				wantShort = true;
 			}
 
 			if (choPositive && cciBullCross)
 			{
-				if (TradeMode != TradeModeOption.SellOnly)
+				if (TradeMode != TradeModeOptions.SellOnly)
 				wantLong = true;
 				else
 				closeShort = true;
@@ -430,7 +430,7 @@ public class iCHO_Trend_CCIDualOnMA_FilterStrategy : Strategy
 
 			if (choNegative && cciBearCross)
 			{
-				if (TradeMode != TradeModeOption.BuyOnly)
+				if (TradeMode != TradeModeOptions.BuyOnly)
 				wantShort = true;
 				else
 				closeLong = true;
@@ -441,20 +441,20 @@ public class iCHO_Trend_CCIDualOnMA_FilterStrategy : Strategy
 			if (zeroCrossUp)
 			{
 				closeLong = true;
-				if (TradeMode != TradeModeOption.BuyOnly)
+				if (TradeMode != TradeModeOptions.BuyOnly)
 				wantShort = true;
 			}
 
 			if (zeroCrossDown)
 			{
 				closeShort = true;
-				if (TradeMode != TradeModeOption.SellOnly)
+				if (TradeMode != TradeModeOptions.SellOnly)
 				wantLong = true;
 			}
 
 			if (choPositive && cciBullCross)
 			{
-				if (TradeMode != TradeModeOption.BuyOnly)
+				if (TradeMode != TradeModeOptions.BuyOnly)
 				wantShort = true;
 				else
 				closeLong = true;
@@ -462,7 +462,7 @@ public class iCHO_Trend_CCIDualOnMA_FilterStrategy : Strategy
 
 			if (choNegative && cciBearCross)
 			{
-				if (TradeMode != TradeModeOption.SellOnly)
+				if (TradeMode != TradeModeOptions.SellOnly)
 				wantLong = true;
 				else
 				closeShort = true;
@@ -540,17 +540,17 @@ public class iCHO_Trend_CCIDualOnMA_FilterStrategy : Strategy
 		_prevSlowCci = slowCci;
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrice price)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrices price)
 	{
 		return price switch
 		{
-			AppliedPrice.Close => candle.ClosePrice,
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
+			AppliedPrices.Close => candle.ClosePrice,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
@@ -571,14 +571,14 @@ public class iCHO_Trend_CCIDualOnMA_FilterStrategy : Strategy
 		: current >= start || current < end;
 	}
 
-	private static IIndicator CreateMovingAverage(MovingAverageMethod method, int length)
+	private static IIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		IIndicator indicator = method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.LinearWeighted => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 
@@ -588,7 +588,7 @@ public class iCHO_Trend_CCIDualOnMA_FilterStrategy : Strategy
 	/// <summary>
 	/// Available moving average methods.
 	/// </summary>
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		Simple,
 		Exponential,
@@ -599,7 +599,7 @@ public class iCHO_Trend_CCIDualOnMA_FilterStrategy : Strategy
 	/// <summary>
 	/// Price source used for preprocessing moving average.
 	/// </summary>
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		Close,
 		Open,
@@ -613,7 +613,7 @@ public class iCHO_Trend_CCIDualOnMA_FilterStrategy : Strategy
 	/// <summary>
 	/// Trade direction restriction.
 	/// </summary>
-	public enum TradeModeOption
+	public enum TradeModeOptions
 	{
 		BuyOnly,
 		SellOnly,

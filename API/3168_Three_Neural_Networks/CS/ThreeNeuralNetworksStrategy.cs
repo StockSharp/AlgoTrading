@@ -23,7 +23,7 @@ public class ThreeNeuralNetworksStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _trailingStopPips;
 	private readonly StrategyParam<decimal> _trailingStepPips;
-	private readonly StrategyParam<MoneyManagementMode> _moneyManagementMode;
+	private readonly StrategyParam<MoneyManagementModes> _moneyManagementMode;
 	private readonly StrategyParam<decimal> _volumeOrRisk;
 	private readonly StrategyParam<int> _h1Period;
 	private readonly StrategyParam<int> _h1Shift;
@@ -61,7 +61,7 @@ public class ThreeNeuralNetworksStrategy : Strategy
 	/// <summary>
 	/// Specifies how trade volume is calculated.
 	/// </summary>
-	public enum MoneyManagementMode
+	public enum MoneyManagementModes
 	{
 		/// <summary>
 		/// Uses the configured value as a fixed lot size.
@@ -97,7 +97,7 @@ public class ThreeNeuralNetworksStrategy : Strategy
 		.SetRange(0m, 10000m)
 		.SetDisplay("Trailing Step (pips)", "Minimum improvement before the trailing stop is moved", "Risk");
 
-		_moneyManagementMode = Param(nameof(ManagementMode), MoneyManagementMode.RiskPercent)
+		_moneyManagementMode = Param(nameof(ManagementMode), MoneyManagementModes.RiskPercent)
 		.SetDisplay("Money Management", "Select between fixed volume or risk-percentage sizing", "Money Management");
 
 		_volumeOrRisk = Param(nameof(VolumeOrRisk), 1m)
@@ -202,7 +202,7 @@ public class ThreeNeuralNetworksStrategy : Strategy
 	/// <summary>
 	/// Selected money management mode.
 	/// </summary>
-	public MoneyManagementMode ManagementMode
+	public MoneyManagementModes ManagementMode
 	{
 		get => _moneyManagementMode.Value;
 		set => _moneyManagementMode.Value = value;
@@ -706,7 +706,7 @@ public class ThreeNeuralNetworksStrategy : Strategy
 	{
 		var volume = VolumeOrRisk;
 
-		if (ManagementMode == MoneyManagementMode.RiskPercent && Portfolio is { CurrentValue: > 0m } portfolio && price > 0m)
+		if (ManagementMode == MoneyManagementModes.RiskPercent && Portfolio is { CurrentValue: > 0m } portfolio && price > 0m)
 		{
 			var riskAmount = portfolio.CurrentValue * VolumeOrRisk / 100m;
 			if (riskAmount > 0m)

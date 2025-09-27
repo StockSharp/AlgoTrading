@@ -18,21 +18,21 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SimpleOrderPanelStrategy : Strategy
 {
-	public enum RiskMode
+	public enum RiskModes
 	{
 		FixedVolume,
 		BalancePercent,
 	}
 
-	public enum StopTakeMode
+	public enum StopTakeModes
 	{
 		PriceLevels,
 		PointOffsets,
 	}
 
-	private readonly StrategyParam<RiskMode> _riskCalculationMode;
+	private readonly StrategyParam<RiskModes> _riskCalculationMode;
 	private readonly StrategyParam<decimal> _riskValue;
-	private readonly StrategyParam<StopTakeMode> _stopTakeMode;
+	private readonly StrategyParam<StopTakeModes> _stopTakeMode;
 	private readonly StrategyParam<decimal> _stopLossValue;
 	private readonly StrategyParam<decimal> _takeProfitValue;
 	private readonly StrategyParam<bool> _buyMarketRequest;
@@ -85,7 +85,7 @@ public class SimpleOrderPanelStrategy : Strategy
 	/// </summary>
 	public SimpleOrderPanelStrategy()
 	{
-		_riskCalculationMode = Param(nameof(RiskCalculation), RiskMode.FixedVolume)
+		_riskCalculationMode = Param(nameof(RiskCalculation), RiskModes.FixedVolume)
 		.SetDisplay("Risk Mode", "Choose between fixed lots or balance percentage sizing.", "Risk")
 		.SetCanOptimize(false);
 
@@ -94,7 +94,7 @@ public class SimpleOrderPanelStrategy : Strategy
 		.SetDisplay("Risk Value", "Lot size or balance percent depending on the selected mode.", "Risk")
 		.SetCanOptimize(false);
 
-		_stopTakeMode = Param(nameof(StopTakeCalculation), StopTakeMode.PointOffsets)
+		_stopTakeMode = Param(nameof(StopTakeCalculation), StopTakeModes.PointOffsets)
 		.SetDisplay("Stop/Take Mode", "Interpret stop-loss and take-profit values as absolute prices or MetaTrader points.", "Risk")
 		.SetCanOptimize(false);
 
@@ -173,7 +173,7 @@ public class SimpleOrderPanelStrategy : Strategy
 	/// <summary>
 	/// Determines whether the strategy sizes trades by fixed volume or balance percentage.
 	/// </summary>
-	public RiskMode RiskCalculation
+	public RiskModes RiskCalculation
 	{
 		get => _riskCalculationMode.Value;
 		set => _riskCalculationMode.Value = value;
@@ -191,7 +191,7 @@ public class SimpleOrderPanelStrategy : Strategy
 	/// <summary>
 	/// Defines how stop-loss and take-profit inputs are interpreted.
 	/// </summary>
-	public StopTakeMode StopTakeCalculation
+	public StopTakeModes StopTakeCalculation
 	{
 		get => _stopTakeMode.Value;
 		set => _stopTakeMode.Value = value;
@@ -737,7 +737,7 @@ public class SimpleOrderPanelStrategy : Strategy
 
 	private decimal CalculateVolume(Sides direction, decimal entryPrice)
 	{
-		var volume = RiskCalculation == RiskMode.FixedVolume
+		var volume = RiskCalculation == RiskModes.FixedVolume
 		? RiskValue
 		: CalculateRiskBasedVolume(direction, entryPrice);
 
@@ -785,7 +785,7 @@ public class SimpleOrderPanelStrategy : Strategy
 		if (StopLossValue <= 0m)
 		return 0m;
 
-		if (StopTakeCalculation == StopTakeMode.PriceLevels)
+		if (StopTakeCalculation == StopTakeModes.PriceLevels)
 		{
 			return Math.Abs(entryPrice - StopLossValue);
 		}
@@ -806,7 +806,7 @@ public class SimpleOrderPanelStrategy : Strategy
 		if (StopLossValue <= 0m)
 		return null;
 
-		if (StopTakeCalculation == StopTakeMode.PriceLevels)
+		if (StopTakeCalculation == StopTakeModes.PriceLevels)
 		return StopLossValue;
 
 		var distance = StopLossValue * (_pointSize > 0m ? _pointSize : CalculatePointSize());
@@ -822,7 +822,7 @@ public class SimpleOrderPanelStrategy : Strategy
 		if (TakeProfitValue <= 0m)
 		return null;
 
-		if (StopTakeCalculation == StopTakeMode.PriceLevels)
+		if (StopTakeCalculation == StopTakeModes.PriceLevels)
 		return TakeProfitValue;
 
 		var distance = TakeProfitValue * (_pointSize > 0m ? _pointSize : CalculatePointSize());

@@ -25,7 +25,7 @@ public class TunnelGen4Strategy : Strategy
 	private readonly StrategyParam<decimal> _startVolume;
 	private readonly StrategyParam<decimal> _stepPips;
 
-	private readonly Dictionary<Order, OrderIntent> _orderIntents = new();
+	private readonly Dictionary<Order, OrderIntents> _orderIntents = new();
 	private readonly HashSet<Order> _entryOrders = new();
 
 	private decimal _pipValue;
@@ -42,7 +42,7 @@ public class TunnelGen4Strategy : Strategy
 	private decimal _shortExposure;
 	private bool _isClosing;
 
-	private enum OrderIntent
+	private enum OrderIntents
 	{
 		OpenLong,
 		OpenShort,
@@ -159,25 +159,25 @@ public class TunnelGen4Strategy : Strategy
 
 		switch (intent)
 		{
-			case OrderIntent.OpenLong:
+			case OrderIntents.OpenLong:
 				_longExposure += volume;
 				if (_firstEntryPrice == 0m)
 				_firstEntryPrice = price;
 				break;
-			case OrderIntent.OpenShort:
+			case OrderIntents.OpenShort:
 				_shortExposure += volume;
 				if (_firstEntryPrice == 0m)
 				_firstEntryPrice = price;
 				break;
-			case OrderIntent.CloseLong:
+			case OrderIntents.CloseLong:
 				_longExposure = Math.Max(0m, _longExposure - volume);
 				break;
-			case OrderIntent.CloseShort:
+			case OrderIntents.CloseShort:
 				_shortExposure = Math.Max(0m, _shortExposure - volume);
 				break;
 		}
 
-		if (order == _secondEntryOrder && intent is OrderIntent.OpenLong or OrderIntent.OpenShort && _secondEntryPrice == 0m)
+		if (order == _secondEntryOrder && intent is OrderIntents.OpenLong or OrderIntents.OpenShort && _secondEntryPrice == 0m)
 		{
 			_secondEntryPrice = price;
 			_waitingForSecondEntry = false;
@@ -268,8 +268,8 @@ public class TunnelGen4Strategy : Strategy
 		if (volume <= 0m)
 		return;
 
-		RegisterOrder(BuyMarket(volume), OrderIntent.OpenLong, true);
-		RegisterOrder(SellMarket(volume), OrderIntent.OpenShort, true);
+		RegisterOrder(BuyMarket(volume), OrderIntents.OpenLong, true);
+		RegisterOrder(SellMarket(volume), OrderIntents.OpenShort, true);
 	}
 
 	private void OpenSecondStage(Sides side)
@@ -279,7 +279,7 @@ public class TunnelGen4Strategy : Strategy
 		return;
 
 		Order order = side == Sides.Buy ? BuyMarket(volume) : SellMarket(volume);
-		RegisterOrder(order, side == Sides.Buy ? OrderIntent.OpenLong : OrderIntent.OpenShort, true);
+		RegisterOrder(order, side == Sides.Buy ? OrderIntents.OpenLong : OrderIntents.OpenShort, true);
 
 		if (order != null)
 		{
@@ -297,16 +297,16 @@ public class TunnelGen4Strategy : Strategy
 		_isClosing = true;
 
 		if (_longExposure > VolumeTolerance)
-		RegisterOrder(SellMarket(_longExposure), OrderIntent.CloseLong, false);
+		RegisterOrder(SellMarket(_longExposure), OrderIntents.CloseLong, false);
 
 		if (_shortExposure > VolumeTolerance)
-		RegisterOrder(BuyMarket(_shortExposure), OrderIntent.CloseShort, false);
+		RegisterOrder(BuyMarket(_shortExposure), OrderIntents.CloseShort, false);
 
 		if (!HasActiveExitOrders() && !HasExposure())
 		ResetCycle();
 	}
 
-	private void RegisterOrder(Order order, OrderIntent intent, bool isEntry)
+	private void RegisterOrder(Order order, OrderIntents intent, bool isEntry)
 	{
 		if (order == null)
 		return;
@@ -351,7 +351,7 @@ public class TunnelGen4Strategy : Strategy
 	{
 		foreach (var pair in _orderIntents)
 		{
-			if ((pair.Value == OrderIntent.CloseLong || pair.Value == OrderIntent.CloseShort) && !IsOrderCompleted(pair.Key))
+			if ((pair.Value == OrderIntents.CloseLong || pair.Value == OrderIntents.CloseShort) && !IsOrderCompleted(pair.Key))
 			return true;
 		}
 

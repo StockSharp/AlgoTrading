@@ -22,7 +22,7 @@ public class TimerEaStrategy : Strategy
 	/// <summary>
 	/// Entry order type used at the scheduled moment.
 	/// </summary>
-	public enum TimerOrderMode
+	public enum TimerOrderModes
 	{
 		/// <summary>Place market orders.</summary>
 		Market,
@@ -35,7 +35,7 @@ public class TimerEaStrategy : Strategy
 	/// <summary>
 	/// Position sizing logic that mimics the original MQL configuration.
 	/// </summary>
-	public enum LotSizingMode
+	public enum LotSizingModes
 	{
 		/// <summary>Use fixed volume defined by the user.</summary>
 		ManualLot,
@@ -43,7 +43,7 @@ public class TimerEaStrategy : Strategy
 		BalanceRisk
 	}
 
-	private readonly StrategyParam<TimerOrderMode> _orderMode;
+	private readonly StrategyParam<TimerOrderModes> _orderMode;
 	private readonly StrategyParam<bool> _openBuy;
 	private readonly StrategyParam<bool> _openSell;
 	private readonly StrategyParam<decimal> _takeProfitSteps;
@@ -55,7 +55,7 @@ public class TimerEaStrategy : Strategy
 	private readonly StrategyParam<decimal> _pendingDistanceSteps;
 	private readonly StrategyParam<int> _expirationMinutes;
 	private readonly StrategyParam<bool> _cancelPendingOnClose;
-	private readonly StrategyParam<LotSizingMode> _lotSizing;
+	private readonly StrategyParam<LotSizingModes> _lotSizing;
 	private readonly StrategyParam<decimal> _riskFactor;
 	private readonly StrategyParam<decimal> _manualVolume;
 	private readonly StrategyParam<DateTimeOffset> _openTime;
@@ -77,7 +77,7 @@ public class TimerEaStrategy : Strategy
 	/// </summary>
 	public TimerEaStrategy()
 	{
-		_orderMode = Param(nameof(OrderMode), TimerOrderMode.Market)
+		_orderMode = Param(nameof(OrderMode), TimerOrderModes.Market)
 			.SetDisplay("Order Mode", "Type of order submitted at the scheduled moment", "Entries");
 
 		_openBuy = Param(nameof(OpenBuy), false)
@@ -113,7 +113,7 @@ public class TimerEaStrategy : Strategy
 		_cancelPendingOnClose = Param(nameof(CancelPendingOnClose), true)
 			.SetDisplay("Cancel Pending", "Cancel pending orders when the close time is reached", "Exits");
 
-		_lotSizing = Param(nameof(LotSizing), LotSizingMode.ManualLot)
+		_lotSizing = Param(nameof(LotSizing), LotSizingModes.ManualLot)
 			.SetDisplay("Lot Sizing", "How to derive order volume", "Money Management");
 
 		_riskFactor = Param(nameof(RiskFactor), 1m)
@@ -137,7 +137,7 @@ public class TimerEaStrategy : Strategy
 	/// <summary>
 	/// Selected order placement mode.
 	/// </summary>
-	public TimerOrderMode OrderMode
+	public TimerOrderModes OrderMode
 	{
 		get => _orderMode.Value;
 		set => _orderMode.Value = value;
@@ -245,7 +245,7 @@ public class TimerEaStrategy : Strategy
 	/// <summary>
 	/// Position sizing logic selector.
 	/// </summary>
-	public LotSizingMode LotSizing
+	public LotSizingModes LotSizing
 	{
 		get => _lotSizing.Value;
 		set => _lotSizing.Value = value;
@@ -261,7 +261,7 @@ public class TimerEaStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Fixed volume submitted when <see cref="LotSizingMode.ManualLot"/> is active.
+	/// Fixed volume submitted when <see cref="LotSizingModes.ManualLot"/> is active.
 	/// </summary>
 	public decimal ManualVolume
 	{
@@ -370,7 +370,7 @@ public class TimerEaStrategy : Strategy
 
 		switch (OrderMode)
 		{
-			case TimerOrderMode.Market:
+			case TimerOrderModes.Market:
 			{
 				if (OpenBuy)
 				{
@@ -387,7 +387,7 @@ public class TimerEaStrategy : Strategy
 				break;
 			}
 
-			case TimerOrderMode.PendingStop:
+			case TimerOrderModes.PendingStop:
 			{
 				if (OpenBuy && _buyPendingOrder == null)
 				{
@@ -416,7 +416,7 @@ public class TimerEaStrategy : Strategy
 				break;
 			}
 
-			case TimerOrderMode.PendingLimit:
+			case TimerOrderModes.PendingLimit:
 			{
 				if (OpenBuy && _buyPendingOrder == null)
 				{
@@ -553,8 +553,8 @@ public class TimerEaStrategy : Strategy
 	{
 		return LotSizing switch
 		{
-			LotSizingMode.ManualLot => Math.Max(0m, ManualVolume),
-			LotSizingMode.BalanceRisk => CalculateRiskVolume(),
+			LotSizingModes.ManualLot => Math.Max(0m, ManualVolume),
+			LotSizingModes.BalanceRisk => CalculateRiskVolume(),
 			_ => ManualVolume
 		};
 	}

@@ -29,7 +29,7 @@ public class ExpRjtxMatchesSmoothedDuplexStrategy : Strategy
 	private readonly StrategyParam<int> _longTakeProfitPoints;
 	private readonly StrategyParam<int> _longSignalBar;
 	private readonly StrategyParam<int> _longPeriod;
-	private readonly StrategyParam<SmoothingMethod> _longMethod;
+	private readonly StrategyParam<SmoothingMethods> _longMethod;
 	private readonly StrategyParam<int> _longLength;
 	private readonly StrategyParam<int> _longPhase;
 
@@ -41,7 +41,7 @@ public class ExpRjtxMatchesSmoothedDuplexStrategy : Strategy
 	private readonly StrategyParam<int> _shortTakeProfitPoints;
 	private readonly StrategyParam<int> _shortSignalBar;
 	private readonly StrategyParam<int> _shortPeriod;
-	private readonly StrategyParam<SmoothingMethod> _shortMethod;
+	private readonly StrategyParam<SmoothingMethods> _shortMethod;
 	private readonly StrategyParam<int> _shortLength;
 	private readonly StrategyParam<int> _shortPhase;
 
@@ -51,9 +51,9 @@ public class ExpRjtxMatchesSmoothedDuplexStrategy : Strategy
 	private IIndicator _shortCloseSmoother = null!;
 
 	private readonly List<decimal> _longOpenHistory = new();
-	private readonly List<RjtxSignal> _longSignalHistory = new();
+	private readonly List<RjtxSignals> _longSignalHistory = new();
 	private readonly List<decimal> _shortOpenHistory = new();
-	private readonly List<RjtxSignal> _shortSignalHistory = new();
+	private readonly List<RjtxSignals> _shortSignalHistory = new();
 
 	private decimal? _longEntryPrice;
 	private decimal? _shortEntryPrice;
@@ -91,7 +91,7 @@ public class ExpRjtxMatchesSmoothedDuplexStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Long Period", "Lookback used when comparing smoothed open prices", "Long Block");
 
-		_longMethod = Param(nameof(LongMethod), SmoothingMethod.Sma)
+		_longMethod = Param(nameof(LongMethod), SmoothingMethods.Sma)
 		.SetDisplay("Long Smooth Method", "Smoothing algorithm applied to open/close prices", "Long Block");
 
 		_longLength = Param(nameof(LongLength), 12)
@@ -130,7 +130,7 @@ public class ExpRjtxMatchesSmoothedDuplexStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Short Period", "Lookback used when comparing smoothed open prices", "Short Block");
 
-		_shortMethod = Param(nameof(ShortMethod), SmoothingMethod.Sma)
+		_shortMethod = Param(nameof(ShortMethod), SmoothingMethods.Sma)
 		.SetDisplay("Short Smooth Method", "Smoothing algorithm applied to open/close prices", "Short Block");
 
 		_shortLength = Param(nameof(ShortLength), 12)
@@ -217,7 +217,7 @@ public class ExpRjtxMatchesSmoothedDuplexStrategy : Strategy
 	/// <summary>
 	/// Smoothing algorithm used by the long block.
 	/// </summary>
-	public SmoothingMethod LongMethod
+	public SmoothingMethods LongMethod
 	{
 		get => _longMethod.Value;
 		set => _longMethod.Value = value;
@@ -316,7 +316,7 @@ public class ExpRjtxMatchesSmoothedDuplexStrategy : Strategy
 	/// <summary>
 	/// Smoothing algorithm used by the short block.
 	/// </summary>
-	public SmoothingMethod ShortMethod
+	public SmoothingMethods ShortMethod
 	{
 		get => _shortMethod.Value;
 		set => _shortMethod.Value = value;
@@ -421,12 +421,12 @@ public class ExpRjtxMatchesSmoothedDuplexStrategy : Strategy
 
 		if (_longOpenHistory.Count <= LongPeriod)
 		{
-			UpdateHistory(_longSignalHistory, RjtxSignal.None, Math.Max(2, LongSignalBar + 2));
+			UpdateHistory(_longSignalHistory, RjtxSignals.None, Math.Max(2, LongSignalBar + 2));
 			return;
 		}
 
 		var referenceOpen = _longOpenHistory[LongPeriod];
-		var signal = smoothedClose > referenceOpen ? RjtxSignal.Bullish : RjtxSignal.Bearish;
+		var signal = smoothedClose > referenceOpen ? RjtxSignals.Bullish : RjtxSignals.Bearish;
 
 		UpdateHistory(_longSignalHistory, signal, Math.Max(2, LongSignalBar + 2));
 
@@ -438,9 +438,9 @@ public class ExpRjtxMatchesSmoothedDuplexStrategy : Strategy
 
 		var executedSignal = _longSignalHistory[LongSignalBar];
 
-		if (executedSignal == RjtxSignal.Bullish)
+		if (executedSignal == RjtxSignals.Bullish)
 		TryOpenLong(candle.ClosePrice);
-		else if (executedSignal == RjtxSignal.Bearish && LongAllowClose)
+		else if (executedSignal == RjtxSignals.Bearish && LongAllowClose)
 		CloseLong();
 
 		UpdateRiskManagement(candle);
@@ -466,12 +466,12 @@ public class ExpRjtxMatchesSmoothedDuplexStrategy : Strategy
 
 		if (_shortOpenHistory.Count <= ShortPeriod)
 		{
-			UpdateHistory(_shortSignalHistory, RjtxSignal.None, Math.Max(2, ShortSignalBar + 2));
+			UpdateHistory(_shortSignalHistory, RjtxSignals.None, Math.Max(2, ShortSignalBar + 2));
 			return;
 		}
 
 		var referenceOpen = _shortOpenHistory[ShortPeriod];
-		var signal = smoothedClose > referenceOpen ? RjtxSignal.Bullish : RjtxSignal.Bearish;
+		var signal = smoothedClose > referenceOpen ? RjtxSignals.Bullish : RjtxSignals.Bearish;
 
 		UpdateHistory(_shortSignalHistory, signal, Math.Max(2, ShortSignalBar + 2));
 
@@ -483,9 +483,9 @@ public class ExpRjtxMatchesSmoothedDuplexStrategy : Strategy
 
 		var executedSignal = _shortSignalHistory[ShortSignalBar];
 
-		if (executedSignal == RjtxSignal.Bearish)
+		if (executedSignal == RjtxSignals.Bearish)
 		TryOpenShort(candle.ClosePrice);
-		else if (executedSignal == RjtxSignal.Bullish && ShortAllowClose)
+		else if (executedSignal == RjtxSignals.Bullish && ShortAllowClose)
 		CloseShort();
 
 		UpdateRiskManagement(candle);
@@ -603,7 +603,7 @@ public class ExpRjtxMatchesSmoothedDuplexStrategy : Strategy
 		history.RemoveAt(history.Count - 1);
 	}
 
-	private static IIndicator CreateSmoother(SmoothingMethod method, int length, int phase)
+	private static IIndicator CreateSmoother(SmoothingMethods method, int length, int phase)
 	{
 		var normalizedLength = Math.Max(1, length);
 		var offset = 0.5m + phase / 200m;
@@ -611,16 +611,16 @@ public class ExpRjtxMatchesSmoothedDuplexStrategy : Strategy
 
 		return method switch
 		{
-			SmoothingMethod.Sma => new SimpleMovingAverage { Length = normalizedLength },
-			SmoothingMethod.Ema => new ExponentialMovingAverage { Length = normalizedLength },
-			SmoothingMethod.Smma => new SmoothedMovingAverage { Length = normalizedLength },
-			SmoothingMethod.Lwma => new WeightedMovingAverage { Length = normalizedLength },
-			SmoothingMethod.Jjma => CreateJurik(normalizedLength, phase),
-			SmoothingMethod.Jurx => new ZeroLagExponentialMovingAverage { Length = normalizedLength },
-			SmoothingMethod.Parma => new ArnaudLegouxMovingAverage { Length = normalizedLength, Offset = offset, Sigma = 6m },
-			SmoothingMethod.T3 => new TripleExponentialMovingAverage { Length = normalizedLength },
-			SmoothingMethod.Vidya => new ExponentialMovingAverage { Length = normalizedLength },
-			SmoothingMethod.Ama => new KaufmanAdaptiveMovingAverage { Length = normalizedLength },
+			SmoothingMethods.Sma => new SimpleMovingAverage { Length = normalizedLength },
+			SmoothingMethods.Ema => new ExponentialMovingAverage { Length = normalizedLength },
+			SmoothingMethods.Smma => new SmoothedMovingAverage { Length = normalizedLength },
+			SmoothingMethods.Lwma => new WeightedMovingAverage { Length = normalizedLength },
+			SmoothingMethods.Jjma => CreateJurik(normalizedLength, phase),
+			SmoothingMethods.Jurx => new ZeroLagExponentialMovingAverage { Length = normalizedLength },
+			SmoothingMethods.Parma => new ArnaudLegouxMovingAverage { Length = normalizedLength, Offset = offset, Sigma = 6m },
+			SmoothingMethods.T3 => new TripleExponentialMovingAverage { Length = normalizedLength },
+			SmoothingMethods.Vidya => new ExponentialMovingAverage { Length = normalizedLength },
+			SmoothingMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = normalizedLength },
 			_ => new SimpleMovingAverage { Length = normalizedLength },
 		};
 	}
@@ -639,7 +639,7 @@ public class ExpRjtxMatchesSmoothedDuplexStrategy : Strategy
 		return jurik;
 	}
 
-	private enum RjtxSignal
+	private enum RjtxSignals
 	{
 		None,
 		Bullish,
@@ -649,7 +649,7 @@ public class ExpRjtxMatchesSmoothedDuplexStrategy : Strategy
 	/// <summary>
 	/// Supported smoothing algorithms mirroring the SmoothAlgorithms library.
 	/// </summary>
-	public enum SmoothingMethod
+	public enum SmoothingMethods
 	{
 		/// <summary>Simple moving average.</summary>
 		Sma,

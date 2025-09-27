@@ -23,7 +23,7 @@ namespace StockSharp.Samples.Strategies;
 public class AutoTradingSchedulerStrategy : Strategy
 {
 	private readonly StrategyParam<bool> _schedulerEnabled;
-	private readonly StrategyParam<TimeReference> _referenceClock;
+	private readonly StrategyParam<TimeReferences> _referenceClock;
 	private readonly StrategyParam<bool> _closePositions;
 	private readonly StrategyParam<string> _mondaySchedule;
 	private readonly StrategyParam<string> _tuesdaySchedule;
@@ -50,7 +50,7 @@ public class AutoTradingSchedulerStrategy : Strategy
 	/// <summary>
 	/// Selects whether local or exchange/server time should be used.
 	/// </summary>
-	public TimeReference ReferenceClock
+	public TimeReferences ReferenceClock
 	{
 		get => _referenceClock.Value;
 		set => _referenceClock.Value = value;
@@ -141,7 +141,7 @@ public class AutoTradingSchedulerStrategy : Strategy
 		_schedulerEnabled = Param(nameof(SchedulerEnabled), false)
 		.SetDisplay("Scheduler Enabled", "Turns the timetable module on or off", "General");
 
-		_referenceClock = Param(nameof(ReferenceClock), TimeReference.Local)
+		_referenceClock = Param(nameof(ReferenceClock), TimeReferences.Local)
 		.SetDisplay("Reference Clock", "Pick Local or Exchange time base", "General");
 
 		_closePositions = Param(nameof(ClosePositionsBeforeDisable), true)
@@ -348,7 +348,7 @@ public class AutoTradingSchedulerStrategy : Strategy
 
 	private DateTimeOffset GetReferenceTime()
 	{
-		var now = ReferenceClock == TimeReference.Local ? DateTimeOffset.Now : CurrentTime;
+		var now = ReferenceClock == TimeReferences.Local ? DateTimeOffset.Now : CurrentTime;
 		if (now == default)
 			now = DateTimeOffset.Now;
 		return now;
@@ -374,7 +374,7 @@ public class AutoTradingSchedulerStrategy : Strategy
 	/// <summary>
 	/// Type of time base used by the scheduler.
 	/// </summary>
-	public enum TimeReference
+	public enum TimeReferences
 	{
 		/// <summary>
 		/// Use the local machine time.

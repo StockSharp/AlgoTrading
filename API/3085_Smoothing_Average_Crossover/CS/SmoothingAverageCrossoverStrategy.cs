@@ -23,7 +23,7 @@ public class SmoothingAverageCrossoverStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageKind> _maType;
+	private readonly StrategyParam<MovingAverageKinds> _maType;
 	private readonly StrategyParam<CandlePrice> _priceSource;
 	private readonly StrategyParam<decimal> _entryDeltaPips;
 	private readonly StrategyParam<decimal> _closeDeltaCoefficient;
@@ -51,7 +51,7 @@ public class SmoothingAverageCrossoverStrategy : Strategy
 			.SetGreaterThanOrEqualToZero()
 			.SetDisplay("MA Shift", "Horizontal shift applied to the average", "Moving Average");
 
-		_maType = Param(nameof(MaType), MovingAverageKind.Simple)
+		_maType = Param(nameof(MaType), MovingAverageKinds.Simple)
 			.SetDisplay("MA Type", "Type of smoothing applied", "Moving Average");
 
 		_priceSource = Param(nameof(PriceSource), CandlePrice.Typical)
@@ -103,7 +103,7 @@ public class SmoothingAverageCrossoverStrategy : Strategy
 	/// <summary>
 	/// Moving average type.
 	/// </summary>
-	public MovingAverageKind MaType
+	public MovingAverageKinds MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -296,14 +296,14 @@ public class SmoothingAverageCrossoverStrategy : Strategy
 		return digits == 3 || digits == 5 ? step * 10m : step;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageKind type, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageKinds type, int length)
 	{
 		return type switch
 		{
-			MovingAverageKind.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageKind.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageKind.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageKind.LinearWeighted => new WeightedMovingAverage { Length = length },
+			MovingAverageKinds.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageKinds.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageKinds.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageKinds.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
@@ -345,7 +345,7 @@ public class SmoothingAverageCrossoverStrategy : Strategy
 	/// <summary>
 	/// Supported moving average types replicating the MQL5 enumeration.
 	/// </summary>
-	public enum MovingAverageKind
+	public enum MovingAverageKinds
 	{
 		Simple,
 		Exponential,

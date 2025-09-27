@@ -29,8 +29,8 @@ public class GridderEaStrategy : Strategy
 	private readonly StrategyParam<int> _maxOrdersPerSide;
 	private readonly StrategyParam<bool> _allowLong;
 	private readonly StrategyParam<bool> _allowShort;
-	private readonly StrategyParam<StepProgression> _stepMode;
-	private readonly StrategyParam<LotProgression> _lotMode;
+	private readonly StrategyParam<StepProgressions> _stepMode;
+	private readonly StrategyParam<LotProgressions> _lotMode;
 	private readonly StrategyParam<bool> _useEmergencyMode;
 	private readonly StrategyParam<int> _emergencyOrdersTrigger;
 	private readonly StrategyParam<decimal> _hedgeVolumeFactor;
@@ -93,10 +93,10 @@ public class GridderEaStrategy : Strategy
 		_allowShort = Param(nameof(AllowShort), true)
 		.SetDisplay("Allow Short", "Enable short side trading", "Trading");
 
-		_stepMode = Param(nameof(StepMode), StepProgression.Geometric)
+		_stepMode = Param(nameof(StepMode), StepProgressions.Geometric)
 		.SetDisplay("Step Mode", "Rule used to increase the grid spacing", "Grid");
 
-		_lotMode = Param(nameof(LotMode), LotProgression.Geometric)
+		_lotMode = Param(nameof(LotMode), LotProgressions.Geometric)
 		.SetDisplay("Lot Mode", "Rule used to increase the order volume", "Trading");
 
 		_useEmergencyMode = Param(nameof(UseEmergencyMode), true)
@@ -198,7 +198,7 @@ public class GridderEaStrategy : Strategy
 	/// <summary>
 	/// Step progression mode.
 	/// </summary>
-	public StepProgression StepMode
+	public StepProgressions StepMode
 	{
 		get => _stepMode.Value;
 		set => _stepMode.Value = value;
@@ -207,7 +207,7 @@ public class GridderEaStrategy : Strategy
 	/// <summary>
 	/// Volume progression mode.
 	/// </summary>
-	public LotProgression LotMode
+	public LotProgressions LotMode
 	{
 		get => _lotMode.Value;
 		set => _lotMode.Value = value;
@@ -517,11 +517,11 @@ public class GridderEaStrategy : Strategy
 	{
 		switch (LotMode)
 		{
-			case LotProgression.Static:
+			case LotProgressions.Static:
 				return 1m;
-			case LotProgression.Geometric:
+			case LotProgressions.Geometric:
 				return (decimal)Math.Pow((double)VolumeMultiplier, level);
-			case LotProgression.Exponential:
+			case LotProgressions.Exponential:
 				return (decimal)Math.Pow((double)VolumeMultiplier, level * (level + 1) / 2.0);
 			default:
 				return 1m;
@@ -532,11 +532,11 @@ public class GridderEaStrategy : Strategy
 	{
 		switch (StepMode)
 		{
-			case StepProgression.Static:
+			case StepProgressions.Static:
 				return baseStep;
-			case StepProgression.Geometric:
+			case StepProgressions.Geometric:
 				return baseStep * (decimal)Math.Pow((double)StepMultiplier, level - 1);
-			case StepProgression.Exponential:
+			case StepProgressions.Exponential:
 				return baseStep * (decimal)Math.Pow((double)StepMultiplier, level * (level - 1) / 2.0);
 			default:
 				return baseStep;
@@ -615,7 +615,7 @@ public class GridderEaStrategy : Strategy
 	/// <summary>
 	/// Step progression modes mirroring the MetaTrader implementation.
 	/// </summary>
-	public enum StepProgression
+	public enum StepProgressions
 	{
 		Static,
 		Geometric,
@@ -625,7 +625,7 @@ public class GridderEaStrategy : Strategy
 	/// <summary>
 	/// Lot progression modes mirroring the MetaTrader implementation.
 	/// </summary>
-	public enum LotProgression
+	public enum LotProgressions
 	{
 		Static,
 		Geometric,

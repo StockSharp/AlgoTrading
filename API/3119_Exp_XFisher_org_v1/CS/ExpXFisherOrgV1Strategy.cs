@@ -15,7 +15,7 @@ using System.Reflection;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum XfisherSmoothingMethod
+public enum XfisherSmoothingMethods
 {
 	Sma,
 	Ema,
@@ -29,7 +29,7 @@ public enum XfisherSmoothingMethod
 	Ama,
 }
 
-public enum XfisherAppliedPrice
+public enum XfisherAppliedPrices
 {
 	Close,
 	Open,
@@ -61,8 +61,8 @@ public class ExpXFisherOrgV1Strategy : Strategy
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<int> _smoothingLength;
 	private readonly StrategyParam<int> _phase;
-	private readonly StrategyParam<XfisherSmoothingMethod> _smoothingMethod;
-	private readonly StrategyParam<XfisherAppliedPrice> _priceType;
+	private readonly StrategyParam<XfisherSmoothingMethods> _smoothingMethod;
+	private readonly StrategyParam<XfisherAppliedPrices> _priceType;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _maxHistory;
 
@@ -153,7 +153,7 @@ public class ExpXFisherOrgV1Strategy : Strategy
 	/// <summary>
 	/// Smoothing method used for the Fisher output.
 	/// </summary>
-	public XfisherSmoothingMethod SmoothingMethod
+	public XfisherSmoothingMethods SmoothingMethod
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -162,7 +162,7 @@ public class ExpXFisherOrgV1Strategy : Strategy
 	/// <summary>
 	/// Price source used in the Fisher transform.
 	/// </summary>
-	public XfisherAppliedPrice PriceType
+	public XfisherAppliedPrices PriceType
 	{
 		get => _priceType.Value;
 		set => _priceType.Value = value;
@@ -228,10 +228,10 @@ public class ExpXFisherOrgV1Strategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(-50, 50, 5);
 
-		_smoothingMethod = Param(nameof(SmoothingMethod), XfisherSmoothingMethod.Jjma)
+		_smoothingMethod = Param(nameof(SmoothingMethod), XfisherSmoothingMethods.Jjma)
 			.SetDisplay("Smoothing Method", "Moving average applied to Fisher", "Indicators");
 
-		_priceType = Param(nameof(PriceType), XfisherAppliedPrice.Close)
+		_priceType = Param(nameof(PriceType), XfisherAppliedPrices.Close)
 			.SetDisplay("Applied Price", "Price source forwarded to the indicator", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -386,12 +386,12 @@ public sealed class XFisherOrgIndicator : Indicator<ICandleMessage>
 	/// <summary>
 	/// Type of moving average applied to the Fisher output.
 	/// </summary>
-	public XfisherSmoothingMethod SmoothingMethod { get; set; } = XfisherSmoothingMethod.Jjma;
+	public XfisherSmoothingMethods SmoothingMethod { get; set; } = XfisherSmoothingMethods.Jjma;
 
 	/// <summary>
 	/// Price selection mode.
 	/// </summary>
-	public XfisherAppliedPrice PriceType { get; set; } = XfisherAppliedPrice.Close;
+	public XfisherAppliedPrices PriceType { get; set; } = XfisherAppliedPrices.Close;
 
 	/// <inheritdoc />
 	protected override IIndicatorValue OnProcess(IIndicatorValue input)
@@ -475,13 +475,13 @@ public sealed class XFisherOrgIndicator : Indicator<ICandleMessage>
 		// Map the original smoothing options to StockSharp equivalents.
 		return SmoothingMethod switch
 		{
-			XfisherSmoothingMethod.Sma => new SimpleMovingAverage { Length = length },
-			XfisherSmoothingMethod.Ema => new ExponentialMovingAverage { Length = length },
-			XfisherSmoothingMethod.Smma => new SmoothedMovingAverage { Length = length },
-			XfisherSmoothingMethod.Lwma => new LinearWeightedMovingAverage { Length = length },
-			XfisherSmoothingMethod.Jjma or XfisherSmoothingMethod.Jurx or XfisherSmoothingMethod.T3 => CreateJurik(length),
-			XfisherSmoothingMethod.Vidya or XfisherSmoothingMethod.Ama => new KaufmanAdaptiveMovingAverage { Length = length },
-			XfisherSmoothingMethod.Parabolic => new ExponentialMovingAverage { Length = length },
+			XfisherSmoothingMethods.Sma => new SimpleMovingAverage { Length = length },
+			XfisherSmoothingMethods.Ema => new ExponentialMovingAverage { Length = length },
+			XfisherSmoothingMethods.Smma => new SmoothedMovingAverage { Length = length },
+			XfisherSmoothingMethods.Lwma => new LinearWeightedMovingAverage { Length = length },
+			XfisherSmoothingMethods.Jjma or XfisherSmoothingMethods.Jurx or XfisherSmoothingMethods.T3 => CreateJurik(length),
+			XfisherSmoothingMethods.Vidya or XfisherSmoothingMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = length },
+			XfisherSmoothingMethods.Parabolic => new ExponentialMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -502,20 +502,20 @@ public sealed class XFisherOrgIndicator : Indicator<ICandleMessage>
 		// Match the PriceSeries helper from SmoothAlgorithms.mqh.
 		return PriceType switch
 		{
-			XfisherAppliedPrice.Close => candle.ClosePrice,
-			XfisherAppliedPrice.Open => candle.OpenPrice,
-			XfisherAppliedPrice.High => candle.HighPrice,
-			XfisherAppliedPrice.Low => candle.LowPrice,
-			XfisherAppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			XfisherAppliedPrice.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-			XfisherAppliedPrice.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			XfisherAppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			XfisherAppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			XfisherAppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice :
+			XfisherAppliedPrices.Close => candle.ClosePrice,
+			XfisherAppliedPrices.Open => candle.OpenPrice,
+			XfisherAppliedPrices.High => candle.HighPrice,
+			XfisherAppliedPrices.Low => candle.LowPrice,
+			XfisherAppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			XfisherAppliedPrices.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+			XfisherAppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			XfisherAppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			XfisherAppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			XfisherAppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice :
 				candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
-			XfisherAppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m :
+			XfisherAppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m :
 				candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
-			XfisherAppliedPrice.Demark => CalculateDemarkPrice(candle),
+			XfisherAppliedPrices.Demark => CalculateDemarkPrice(candle),
 			_ => candle.ClosePrice,
 		};
 	}

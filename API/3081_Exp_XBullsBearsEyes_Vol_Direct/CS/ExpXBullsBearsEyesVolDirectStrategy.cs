@@ -25,8 +25,8 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<decimal> _gamma;
-	private readonly StrategyParam<VolumeSource> _volumeSource;
-	private readonly StrategyParam<SmoothingMethod> _smoothingMethod;
+	private readonly StrategyParam<VolumeSources> _volumeSource;
+	private readonly StrategyParam<SmoothingMethods> _smoothingMethod;
 	private readonly StrategyParam<int> _smoothingLength;
 	private readonly StrategyParam<int> _smoothingPhase;
 	private readonly StrategyParam<int> _signalBar;
@@ -80,7 +80,7 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 	/// <summary>
 	/// Volume source used to weight the oscillator.
 	/// </summary>
-	public VolumeSource VolumeMode
+	public VolumeSources VolumeMode
 	{
 		get => _volumeSource.Value;
 		set => _volumeSource.Value = value;
@@ -89,7 +89,7 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 	/// <summary>
 	/// Moving average type for smoothing histogram and volume.
 	/// </summary>
-	public SmoothingMethod Method
+	public SmoothingMethods Method
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -200,10 +200,10 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 		_gamma = Param(nameof(Gamma), 0.6m)
 		.SetDisplay("Gamma", "Adaptive filter smoothing factor", "Indicator");
 
-		_volumeSource = Param(nameof(VolumeMode), VolumeSource.Tick)
+		_volumeSource = Param(nameof(VolumeMode), VolumeSources.Tick)
 		.SetDisplay("Volume Source", "Volume applied to the histogram", "Indicator");
 
-		_smoothingMethod = Param(nameof(Method), SmoothingMethod.Sma)
+		_smoothingMethod = Param(nameof(Method), SmoothingMethods.Sma)
 		.SetDisplay("Smoothing Method", "Moving average type for histogram and volume", "Indicator");
 
 		_smoothingLength = Param(nameof(SmoothingLength), 12)
@@ -497,22 +497,22 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 	{
 		return VolumeMode switch
 		{
-			VolumeSource.Tick => candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : candle.TotalVolume ?? candle.Volume ?? 0m,
-			VolumeSource.Real => candle.TotalVolume ?? candle.Volume ?? 0m,
+			VolumeSources.Tick => candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : candle.TotalVolume ?? candle.Volume ?? 0m,
+			VolumeSources.Real => candle.TotalVolume ?? candle.Volume ?? 0m,
 			_ => candle.TotalVolume ?? candle.Volume ?? 0m,
 		};
 	}
 
-	private static IIndicator CreateMovingAverage(SmoothingMethod method, int length, int phase)
+	private static IIndicator CreateMovingAverage(SmoothingMethods method, int length, int phase)
 	{
 		var effectiveLength = Math.Max(1, length);
 		return method switch
 		{
-			SmoothingMethod.Sma => new SimpleMovingAverage { Length = effectiveLength },
-			SmoothingMethod.Ema => new ExponentialMovingAverage { Length = effectiveLength },
-			SmoothingMethod.Smma => new SmoothedMovingAverage { Length = effectiveLength },
-			SmoothingMethod.Lwma => new LinearWeightedMovingAverage { Length = effectiveLength },
-			SmoothingMethod.Jurik => CreateJurik(effectiveLength, phase),
+			SmoothingMethods.Sma => new SimpleMovingAverage { Length = effectiveLength },
+			SmoothingMethods.Ema => new ExponentialMovingAverage { Length = effectiveLength },
+			SmoothingMethods.Smma => new SmoothedMovingAverage { Length = effectiveLength },
+			SmoothingMethods.Lwma => new LinearWeightedMovingAverage { Length = effectiveLength },
+			SmoothingMethods.Jurik => CreateJurik(effectiveLength, phase),
 			_ => new SimpleMovingAverage { Length = effectiveLength },
 		};
 	}
@@ -537,7 +537,7 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 	/// <summary>
 	/// Supported volume sources.
 	/// </summary>
-	public enum VolumeSource
+	public enum VolumeSources
 	{
 		/// <summary>
 		/// Use tick count when available.
@@ -553,7 +553,7 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 	/// <summary>
 	/// Supported smoothing methods.
 	/// </summary>
-	public enum SmoothingMethod
+	public enum SmoothingMethods
 	{
 		/// <summary>
 		/// Simple moving average.

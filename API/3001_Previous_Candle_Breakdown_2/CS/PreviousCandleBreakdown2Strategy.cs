@@ -25,7 +25,7 @@ public class PreviousCandleBreakdown2Strategy : Strategy
 	private readonly StrategyParam<int> _fastShift;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _slowShift;
-	private readonly StrategyParam<MaMethod> _maMethod;
+	private readonly StrategyParam<MaMethods> _maMethod;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _trailingStopPips;
@@ -99,7 +99,7 @@ public class PreviousCandleBreakdown2Strategy : Strategy
 	/// <summary>
 	/// Moving average calculation method.
 	/// </summary>
-	public MaMethod MaMethod
+	public MaMethods MaMethods
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -231,7 +231,7 @@ public class PreviousCandleBreakdown2Strategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Slow Shift", "Shift for slow MA", "Filters");
 
-		_maMethod = Param(nameof(MaMethod), MaMethod.Simple)
+		_maMethod = Param(nameof(MaMethods), MaMethods.Simple)
 		.SetDisplay("MA Method", "Moving average calculation method", "Filters");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
@@ -602,12 +602,12 @@ public class PreviousCandleBreakdown2Strategy : Strategy
 
 	private IIndicator CreateMovingAverage(int period)
 	{
-		return MaMethod switch
+		return MaMethods switch
 		{
-			MaMethod.Simple => new SimpleMovingAverage { Length = period },
-			MaMethod.Exponential => new ExponentialMovingAverage { Length = period },
-			MaMethod.Smoothed => new SmoothedMovingAverage { Length = period },
-			MaMethod.Weighted => new WeightedMovingAverage { Length = period },
+			MaMethods.Simple => new SimpleMovingAverage { Length = period },
+			MaMethods.Exponential => new ExponentialMovingAverage { Length = period },
+			MaMethods.Smoothed => new SmoothedMovingAverage { Length = period },
+			MaMethods.Weighted => new WeightedMovingAverage { Length = period },
 			_ => new SimpleMovingAverage { Length = period }
 		};
 	}
@@ -663,7 +663,7 @@ public class PreviousCandleBreakdown2Strategy : Strategy
 	/// <summary>
 	/// Moving average method enumeration matching the original MQL parameters.
 	/// </summary>
-	public enum MaMethod
+	public enum MaMethods
 	{
 		Simple,
 		Exponential,

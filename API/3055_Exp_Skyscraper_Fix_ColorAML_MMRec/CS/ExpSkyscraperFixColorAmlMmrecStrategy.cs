@@ -35,7 +35,7 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 	private readonly StrategyParam<int> _skyscraperSellLossTrigger;
 	private readonly StrategyParam<decimal> _skyscraperSmallMm;
 	private readonly StrategyParam<decimal> _skyscraperMm;
-	private readonly StrategyParam<MoneyManagementMode> _skyscraperMmMode;
+	private readonly StrategyParam<MoneyManagementModes> _skyscraperMmMode;
 	private readonly StrategyParam<int> _skyscraperStopLossTicks;
 	private readonly StrategyParam<int> _skyscraperTakeProfitTicks;
 
@@ -51,7 +51,7 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 	private readonly StrategyParam<int> _colorAmlSellLossTrigger;
 	private readonly StrategyParam<decimal> _colorAmlSmallMm;
 	private readonly StrategyParam<decimal> _colorAmlMm;
-	private readonly StrategyParam<MoneyManagementMode> _colorAmlMmMode;
+	private readonly StrategyParam<MoneyManagementModes> _colorAmlMmMode;
 	private readonly StrategyParam<int> _colorAmlStopLossTicks;
 	private readonly StrategyParam<int> _colorAmlTakeProfitTicks;
 
@@ -77,8 +77,8 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 	private decimal _signedPosition;
 	private Sides? _lastEntrySide;
 	private decimal _lastEntryPrice;
-	private TradeModule _lastEntryModule = TradeModule.None;
-	private TradeModule? _pendingEntryModule;
+	private TradeModules _lastEntryModule = TradeModules.None;
+	private TradeModules? _pendingEntryModule;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ExpSkyscraperFixColorAmlMmrecStrategy"/> class.
@@ -135,7 +135,7 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 			.SetDisplay("Base Volume", "Standard order volume for Skyscraper signals", "Skyscraper Fix")
 			.SetGreaterThanZero();
 
-		_skyscraperMmMode = Param(nameof(SkyscraperMmMode), MoneyManagementMode.Lot)
+		_skyscraperMmMode = Param(nameof(SkyscraperMmMode), MoneyManagementModes.Lot)
 			.SetDisplay("Volume Mode", "Money management mode used by the original expert", "Skyscraper Fix");
 
 		_skyscraperStopLossTicks = Param(nameof(SkyscraperStopLossTicks), 1000)
@@ -189,7 +189,7 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 			.SetDisplay("Base Volume", "Standard order volume for Color AML signals", "Color AML")
 			.SetGreaterThanZero();
 
-		_colorAmlMmMode = Param(nameof(ColorAmlMmMode), MoneyManagementMode.Lot)
+		_colorAmlMmMode = Param(nameof(ColorAmlMmMode), MoneyManagementModes.Lot)
 			.SetDisplay("Volume Mode", "Money management mode used by the original expert", "Color AML");
 
 		_colorAmlStopLossTicks = Param(nameof(ColorAmlStopLossTicks), 1000)
@@ -274,7 +274,7 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 	/// <summary>
 	/// Money management mode for Skyscraper trades.
 	/// </summary>
-	public MoneyManagementMode SkyscraperMmMode { get => _skyscraperMmMode.Value; set => _skyscraperMmMode.Value = value; }
+	public MoneyManagementModes SkyscraperMmMode { get => _skyscraperMmMode.Value; set => _skyscraperMmMode.Value = value; }
 
 	/// <summary>
 	/// Stop-loss distance for Skyscraper trades expressed in price steps.
@@ -349,7 +349,7 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 	/// <summary>
 	/// Money management mode for Color AML trades.
 	/// </summary>
-	public MoneyManagementMode ColorAmlMmMode { get => _colorAmlMmMode.Value; set => _colorAmlMmMode.Value = value; }
+	public MoneyManagementModes ColorAmlMmMode { get => _colorAmlMmMode.Value; set => _colorAmlMmMode.Value = value; }
 
 	/// <summary>
 	/// Stop-loss distance for Color AML trades expressed in price steps.
@@ -396,7 +396,7 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 		_signedPosition = 0m;
 		_lastEntrySide = null;
 		_lastEntryPrice = 0m;
-		_lastEntryModule = TradeModule.None;
+		_lastEntryModule = TradeModules.None;
 		_pendingEntryModule = null;
 	}
 
@@ -470,7 +470,7 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 				CloseShortPosition();
 
 			if (SkyscraperEnableLongEntry && (previous is null || previous <= 0))
-				OpenLong(TradeModule.SkyscraperLong, candle, SkyscraperStopLossTicks, SkyscraperTakeProfitTicks);
+				OpenLong(TradeModules.SkyscraperLong, candle, SkyscraperStopLossTicks, SkyscraperTakeProfitTicks);
 		}
 		else if (trend < 0)
 		{
@@ -478,7 +478,7 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 				CloseLongPosition();
 
 			if (SkyscraperEnableShortEntry && (previous is null || previous >= 0))
-				OpenShort(TradeModule.SkyscraperShort, candle, SkyscraperStopLossTicks, SkyscraperTakeProfitTicks);
+				OpenShort(TradeModules.SkyscraperShort, candle, SkyscraperStopLossTicks, SkyscraperTakeProfitTicks);
 		}
 	}
 
@@ -514,7 +514,7 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 				CloseShortPosition();
 
 			if (ColorAmlEnableLongEntry && previous != 2)
-				OpenLong(TradeModule.ColorAmlLong, candle, ColorAmlStopLossTicks, ColorAmlTakeProfitTicks);
+				OpenLong(TradeModules.ColorAmlLong, candle, ColorAmlStopLossTicks, ColorAmlTakeProfitTicks);
 		}
 		else if (color == 0)
 		{
@@ -522,11 +522,11 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 				CloseLongPosition();
 
 			if (ColorAmlEnableShortEntry && previous != 0)
-				OpenShort(TradeModule.ColorAmlShort, candle, ColorAmlStopLossTicks, ColorAmlTakeProfitTicks);
+				OpenShort(TradeModules.ColorAmlShort, candle, ColorAmlStopLossTicks, ColorAmlTakeProfitTicks);
 		}
 	}
 
-	private void OpenLong(TradeModule module, ICandleMessage candle, int stopTicks, int takeTicks)
+	private void OpenLong(TradeModules module, ICandleMessage candle, int stopTicks, int takeTicks)
 	{
 		if (Position > 0)
 			return;
@@ -543,7 +543,7 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 		SetProtectiveLevels(module, candle.ClosePrice, true, stopTicks, takeTicks);
 	}
 
-	private void OpenShort(TradeModule module, ICandleMessage candle, int stopTicks, int takeTicks)
+	private void OpenShort(TradeModules module, ICandleMessage candle, int stopTicks, int takeTicks)
 	{
 		if (Position < 0)
 			return;
@@ -590,16 +590,16 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 		ResetRiskLevels();
 	}
 
-	private decimal SelectVolume(TradeModule module)
+	private decimal SelectVolume(TradeModules module)
 	{
 		UpdateMoneyManagers();
 
 		return module switch
 		{
-			TradeModule.SkyscraperLong => _skyscraperBuyManager.SelectVolume(NormalizeVolume, SkyscraperMmMode),
-			TradeModule.SkyscraperShort => _skyscraperSellManager.SelectVolume(NormalizeVolume, SkyscraperMmMode),
-			TradeModule.ColorAmlLong => _colorAmlBuyManager.SelectVolume(NormalizeVolume, ColorAmlMmMode),
-			TradeModule.ColorAmlShort => _colorAmlSellManager.SelectVolume(NormalizeVolume, ColorAmlMmMode),
+			TradeModules.SkyscraperLong => _skyscraperBuyManager.SelectVolume(NormalizeVolume, SkyscraperMmMode),
+			TradeModules.SkyscraperShort => _skyscraperSellManager.SelectVolume(NormalizeVolume, SkyscraperMmMode),
+			TradeModules.ColorAmlLong => _colorAmlBuyManager.SelectVolume(NormalizeVolume, ColorAmlMmMode),
+			TradeModules.ColorAmlShort => _colorAmlSellManager.SelectVolume(NormalizeVolume, ColorAmlMmMode),
 			_ => 0m
 		};
 	}
@@ -643,7 +643,7 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 		return steps * step;
 	}
 
-	private void SetProtectiveLevels(TradeModule module, decimal entryPrice, bool isLong, int stopTicks, int takeTicks)
+	private void SetProtectiveLevels(TradeModules module, decimal entryPrice, bool isLong, int stopTicks, int takeTicks)
 	{
 		var step = Security?.PriceStep ?? 1m;
 		if (step <= 0m)
@@ -739,13 +739,13 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 		{
 			_lastEntrySide = delta > 0m ? Sides.Buy : Sides.Sell;
 			_lastEntryPrice = trade.Trade.Price;
-			_lastEntryModule = _pendingEntryModule ?? TradeModule.None;
+			_lastEntryModule = _pendingEntryModule ?? TradeModules.None;
 			_pendingEntryModule = null;
 		}
 		else if (previous != 0m && _signedPosition == 0m)
 		{
 			var exitPrice = trade.Trade.Price;
-			if (_lastEntrySide != null && _lastEntryModule != TradeModule.None && _lastEntryPrice != 0m)
+			if (_lastEntrySide != null && _lastEntryModule != TradeModules.None && _lastEntryPrice != 0m)
 			{
 				var profit = _lastEntrySide == Sides.Buy
 					? exitPrice - _lastEntryPrice
@@ -754,25 +754,25 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 			}
 
 			_lastEntrySide = null;
-			_lastEntryModule = TradeModule.None;
+			_lastEntryModule = TradeModules.None;
 			_lastEntryPrice = 0m;
 		}
 	}
 
-	private void RegisterTradeResult(TradeModule module, bool loss)
+	private void RegisterTradeResult(TradeModules module, bool loss)
 	{
 		switch (module)
 		{
-			case TradeModule.SkyscraperLong:
+			case TradeModules.SkyscraperLong:
 				_skyscraperBuyManager.RegisterResult(loss);
 				break;
-			case TradeModule.SkyscraperShort:
+			case TradeModules.SkyscraperShort:
 				_skyscraperSellManager.RegisterResult(loss);
 				break;
-			case TradeModule.ColorAmlLong:
+			case TradeModules.ColorAmlLong:
 				_colorAmlBuyManager.RegisterResult(loss);
 				break;
-			case TradeModule.ColorAmlShort:
+			case TradeModules.ColorAmlShort:
 				_colorAmlSellManager.RegisterResult(loss);
 				break;
 		}
@@ -782,7 +782,7 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 /// <summary>
 /// Money management mode supported by the MMRec logic.
 /// </summary>
-public enum MoneyManagementMode
+public enum MoneyManagementModes
 {
 	/// <summary>Use a percentage of free margin.</summary>
 	FreeMargin,
@@ -803,7 +803,7 @@ public enum MoneyManagementMode
 /// <summary>
 /// Internal identifier for the module that opened the latest position.
 /// </summary>
-internal enum TradeModule
+internal enum TradeModules
 {
 	None,
 	SkyscraperLong,
@@ -825,10 +825,10 @@ internal sealed class MoneyManager
 
 	private int _lossStreak;
 
-	public decimal SelectVolume(Func<decimal, decimal> normalize, MoneyManagementMode mode)
+	public decimal SelectVolume(Func<decimal, decimal> normalize, MoneyManagementModes mode)
 	{
-		var baseVolume = mode == MoneyManagementMode.Lot ? NormalVolume : NormalVolume;
-		var reducedVolume = mode == MoneyManagementMode.Lot ? SmallVolume : SmallVolume;
+		var baseVolume = mode == MoneyManagementModes.Lot ? NormalVolume : NormalVolume;
+		var reducedVolume = mode == MoneyManagementModes.Lot ? SmallVolume : SmallVolume;
 
 		if (LossTrigger > 0 && _lossStreak >= LossTrigger)
 			baseVolume = reducedVolume;

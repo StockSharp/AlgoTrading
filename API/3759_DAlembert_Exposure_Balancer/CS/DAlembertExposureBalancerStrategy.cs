@@ -261,9 +261,9 @@ public class DAlembertExposureBalancerStrategy : Strategy
 		_states.Clear();
 		_currencyExposure.Clear();
 
-		CreateState(EurUsd, InvertSignals ? SymbolBias.Sell : SymbolBias.Buy);
-		CreateState(EurGbp, InvertSignals ? SymbolBias.Buy : SymbolBias.Sell);
-		CreateState(GbpUsd, InvertSignals ? SymbolBias.Buy : SymbolBias.Sell);
+		CreateState(EurUsd, InvertSignals ? SymbolBiases.Sell : SymbolBiases.Buy);
+		CreateState(EurGbp, InvertSignals ? SymbolBiases.Buy : SymbolBiases.Sell);
+		CreateState(GbpUsd, InvertSignals ? SymbolBiases.Buy : SymbolBiases.Sell);
 
 		foreach (var state in _states.Values)
 		{
@@ -272,7 +272,7 @@ public class DAlembertExposureBalancerStrategy : Strategy
 		}
 	}
 
-	private void CreateState(Security security, SymbolBias bias)
+	private void CreateState(Security security, SymbolBiases bias)
 	{
 		if (security == null)
 		return;
@@ -316,11 +316,11 @@ public class DAlembertExposureBalancerStrategy : Strategy
 		var bullish = state.IsBullish;
 		var bearish = state.IsBearish;
 
-		if (bias == SymbolBias.Neutral)
+		if (bias == SymbolBiases.Neutral)
 		return;
 
-		var openLong = (bias == SymbolBias.Buy && bullish) || (bias == SymbolBias.Sell && bearish);
-		var openShort = (bias == SymbolBias.Sell && bullish) || (bias == SymbolBias.Buy && bearish);
+		var openLong = (bias == SymbolBiases.Buy && bullish) || (bias == SymbolBiases.Sell && bearish);
+		var openShort = (bias == SymbolBiases.Sell && bullish) || (bias == SymbolBiases.Buy && bearish);
 
 		var volume = CalculateVolume(state, 0m);
 		if (volume <= 0m)
@@ -587,7 +587,7 @@ public class DAlembertExposureBalancerStrategy : Strategy
 
 	private sealed class SymbolState
 	{
-		public SymbolState(Security security, SymbolBias bias, int startLevel)
+		public SymbolState(Security security, SymbolBiases bias, int startLevel)
 		{
 			Security = security;
 			Bias = bias;
@@ -595,7 +595,7 @@ public class DAlembertExposureBalancerStrategy : Strategy
 		}
 
 		public Security Security { get; }
-		public SymbolBias Bias { get; }
+		public SymbolBiases Bias { get; }
 		public decimal Position { get; set; }
 		public decimal? AverageEntryPrice { get; set; }
 		public decimal LastClosedPnL { get; set; }
@@ -629,7 +629,7 @@ public class DAlembertExposureBalancerStrategy : Strategy
 		}
 	}
 
-	private enum SymbolBias
+	private enum SymbolBiases
 	{
 		Neutral,
 		Buy,

@@ -30,12 +30,12 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 	private readonly StrategyParam<int> _longRsiLongPeriod;
 	private readonly StrategyParam<int> _longMaPeriod;
 	private readonly StrategyParam<int> _longMaLongPeriod;
-	private readonly StrategyParam<AppliedPriceType> _longRsiPrice;
-	private readonly StrategyParam<AppliedPriceType> _longRsiLongPrice;
-	private readonly StrategyParam<AppliedPriceType> _longMaPrice;
-	private readonly StrategyParam<AppliedPriceType> _longMaLongPrice;
-	private readonly StrategyParam<MovingAverageMethod> _longMaType;
-	private readonly StrategyParam<MovingAverageMethod> _longMaLongType;
+	private readonly StrategyParam<AppliedPriceTypes> _longRsiPrice;
+	private readonly StrategyParam<AppliedPriceTypes> _longRsiLongPrice;
+	private readonly StrategyParam<AppliedPriceTypes> _longMaPrice;
+	private readonly StrategyParam<AppliedPriceTypes> _longMaLongPrice;
+	private readonly StrategyParam<MovingAverageMethods> _longMaType;
+	private readonly StrategyParam<MovingAverageMethods> _longMaLongType;
 	private readonly StrategyParam<decimal> _longNormalVolume;
 	private readonly StrategyParam<decimal> _longReducedVolume;
 	private readonly StrategyParam<int> _longHistoryDepth;
@@ -51,12 +51,12 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 	private readonly StrategyParam<int> _shortRsiLongPeriod;
 	private readonly StrategyParam<int> _shortMaPeriod;
 	private readonly StrategyParam<int> _shortMaLongPeriod;
-	private readonly StrategyParam<AppliedPriceType> _shortRsiPrice;
-	private readonly StrategyParam<AppliedPriceType> _shortRsiLongPrice;
-	private readonly StrategyParam<AppliedPriceType> _shortMaPrice;
-	private readonly StrategyParam<AppliedPriceType> _shortMaLongPrice;
-	private readonly StrategyParam<MovingAverageMethod> _shortMaType;
-	private readonly StrategyParam<MovingAverageMethod> _shortMaLongType;
+	private readonly StrategyParam<AppliedPriceTypes> _shortRsiPrice;
+	private readonly StrategyParam<AppliedPriceTypes> _shortRsiLongPrice;
+	private readonly StrategyParam<AppliedPriceTypes> _shortMaPrice;
+	private readonly StrategyParam<AppliedPriceTypes> _shortMaLongPrice;
+	private readonly StrategyParam<MovingAverageMethods> _shortMaType;
+	private readonly StrategyParam<MovingAverageMethods> _shortMaLongType;
 	private readonly StrategyParam<decimal> _shortNormalVolume;
 	private readonly StrategyParam<decimal> _shortReducedVolume;
 	private readonly StrategyParam<int> _shortHistoryDepth;
@@ -117,22 +117,22 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Long MA Slow", "Slow moving average length for the long block", "Long Block");
 
-		_longRsiPrice = Param(nameof(LongRsiPrice), AppliedPriceType.Weighted)
+		_longRsiPrice = Param(nameof(LongRsiPrice), AppliedPriceTypes.Weighted)
 			.SetDisplay("Long RSI Price", "Price mode for the fast RSI", "Long Block");
 
-		_longRsiLongPrice = Param(nameof(LongRsiLongPrice), AppliedPriceType.Median)
+		_longRsiLongPrice = Param(nameof(LongRsiLongPrice), AppliedPriceTypes.Median)
 			.SetDisplay("Long RSI Slow Price", "Price mode for the slow RSI", "Long Block");
 
-		_longMaPrice = Param(nameof(LongMaPrice), AppliedPriceType.Close)
+		_longMaPrice = Param(nameof(LongMaPrice), AppliedPriceTypes.Close)
 			.SetDisplay("Long MA Price", "Price mode for the fast moving average", "Long Block");
 
-		_longMaLongPrice = Param(nameof(LongMaLongPrice), AppliedPriceType.Close)
+		_longMaLongPrice = Param(nameof(LongMaLongPrice), AppliedPriceTypes.Close)
 			.SetDisplay("Long MA Slow Price", "Price mode for the slow moving average", "Long Block");
 
-		_longMaType = Param(nameof(LongMaType), MovingAverageMethod.Exponential)
+		_longMaType = Param(nameof(LongMaType), MovingAverageMethods.Exponential)
 			.SetDisplay("Long MA Method", "Smoothing algorithm for the fast moving average", "Long Block");
 
-		_longMaLongType = Param(nameof(LongMaLongType), MovingAverageMethod.Exponential)
+		_longMaLongType = Param(nameof(LongMaLongType), MovingAverageMethods.Exponential)
 			.SetDisplay("Long MA Slow Method", "Smoothing algorithm for the slow moving average", "Long Block");
 
 		_longNormalVolume = Param(nameof(LongNormalVolume), 0.1m)
@@ -188,22 +188,22 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Short MA Slow", "Slow moving average length for the short block", "Short Block");
 
-		_shortRsiPrice = Param(nameof(ShortRsiPrice), AppliedPriceType.Weighted)
+		_shortRsiPrice = Param(nameof(ShortRsiPrice), AppliedPriceTypes.Weighted)
 			.SetDisplay("Short RSI Price", "Price mode for the fast RSI", "Short Block");
 
-		_shortRsiLongPrice = Param(nameof(ShortRsiLongPrice), AppliedPriceType.Median)
+		_shortRsiLongPrice = Param(nameof(ShortRsiLongPrice), AppliedPriceTypes.Median)
 			.SetDisplay("Short RSI Slow Price", "Price mode for the slow RSI", "Short Block");
 
-		_shortMaPrice = Param(nameof(ShortMaPrice), AppliedPriceType.Close)
+		_shortMaPrice = Param(nameof(ShortMaPrice), AppliedPriceTypes.Close)
 			.SetDisplay("Short MA Price", "Price mode for the fast moving average", "Short Block");
 
-		_shortMaLongPrice = Param(nameof(ShortMaLongPrice), AppliedPriceType.Close)
+		_shortMaLongPrice = Param(nameof(ShortMaLongPrice), AppliedPriceTypes.Close)
 			.SetDisplay("Short MA Slow Price", "Price mode for the slow moving average", "Short Block");
 
-		_shortMaType = Param(nameof(ShortMaType), MovingAverageMethod.Exponential)
+		_shortMaType = Param(nameof(ShortMaType), MovingAverageMethods.Exponential)
 			.SetDisplay("Short MA Method", "Smoothing algorithm for the fast moving average", "Short Block");
 
-		_shortMaLongType = Param(nameof(ShortMaLongType), MovingAverageMethod.Exponential)
+		_shortMaLongType = Param(nameof(ShortMaLongType), MovingAverageMethods.Exponential)
 			.SetDisplay("Short MA Slow Method", "Smoothing algorithm for the slow moving average", "Short Block");
 
 		_shortNormalVolume = Param(nameof(ShortNormalVolume), 0.1m)
@@ -316,7 +316,7 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 	/// <summary>
 	/// Applied price used by the fast RSI in the long block.
 	/// </summary>
-	public AppliedPriceType LongRsiPrice
+	public AppliedPriceTypes LongRsiPrice
 	{
 		get => _longRsiPrice.Value;
 		set => _longRsiPrice.Value = value;
@@ -325,7 +325,7 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 	/// <summary>
 	/// Applied price used by the slow RSI in the long block.
 	/// </summary>
-	public AppliedPriceType LongRsiLongPrice
+	public AppliedPriceTypes LongRsiLongPrice
 	{
 		get => _longRsiLongPrice.Value;
 		set => _longRsiLongPrice.Value = value;
@@ -334,7 +334,7 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 	/// <summary>
 	/// Applied price used by the fast moving average in the long block.
 	/// </summary>
-	public AppliedPriceType LongMaPrice
+	public AppliedPriceTypes LongMaPrice
 	{
 		get => _longMaPrice.Value;
 		set => _longMaPrice.Value = value;
@@ -343,7 +343,7 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 	/// <summary>
 	/// Applied price used by the slow moving average in the long block.
 	/// </summary>
-	public AppliedPriceType LongMaLongPrice
+	public AppliedPriceTypes LongMaLongPrice
 	{
 		get => _longMaLongPrice.Value;
 		set => _longMaLongPrice.Value = value;
@@ -352,7 +352,7 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 	/// <summary>
 	/// Moving average method for the fast line in the long block.
 	/// </summary>
-	public MovingAverageMethod LongMaType
+	public MovingAverageMethods LongMaType
 	{
 		get => _longMaType.Value;
 		set => _longMaType.Value = value;
@@ -361,7 +361,7 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 	/// <summary>
 	/// Moving average method for the slow line in the long block.
 	/// </summary>
-	public MovingAverageMethod LongMaLongType
+	public MovingAverageMethods LongMaLongType
 	{
 		get => _longMaLongType.Value;
 		set => _longMaLongType.Value = value;
@@ -496,7 +496,7 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 	/// <summary>
 	/// Applied price used by the fast RSI in the short block.
 	/// </summary>
-	public AppliedPriceType ShortRsiPrice
+	public AppliedPriceTypes ShortRsiPrice
 	{
 		get => _shortRsiPrice.Value;
 		set => _shortRsiPrice.Value = value;
@@ -505,7 +505,7 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 	/// <summary>
 	/// Applied price used by the slow RSI in the short block.
 	/// </summary>
-	public AppliedPriceType ShortRsiLongPrice
+	public AppliedPriceTypes ShortRsiLongPrice
 	{
 		get => _shortRsiLongPrice.Value;
 		set => _shortRsiLongPrice.Value = value;
@@ -514,7 +514,7 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 	/// <summary>
 	/// Applied price used by the fast moving average in the short block.
 	/// </summary>
-	public AppliedPriceType ShortMaPrice
+	public AppliedPriceTypes ShortMaPrice
 	{
 		get => _shortMaPrice.Value;
 		set => _shortMaPrice.Value = value;
@@ -523,7 +523,7 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 	/// <summary>
 	/// Applied price used by the slow moving average in the short block.
 	/// </summary>
-	public AppliedPriceType ShortMaLongPrice
+	public AppliedPriceTypes ShortMaLongPrice
 	{
 		get => _shortMaLongPrice.Value;
 		set => _shortMaLongPrice.Value = value;
@@ -532,7 +532,7 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 	/// <summary>
 	/// Moving average method for the fast line in the short block.
 	/// </summary>
-	public MovingAverageMethod ShortMaType
+	public MovingAverageMethods ShortMaType
 	{
 		get => _shortMaType.Value;
 		set => _shortMaType.Value = value;
@@ -541,7 +541,7 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 	/// <summary>
 	/// Moving average method for the slow line in the short block.
 	/// </summary>
-	public MovingAverageMethod ShortMaLongType
+	public MovingAverageMethods ShortMaLongType
 	{
 		get => _shortMaLongType.Value;
 		set => _shortMaLongType.Value = value;
@@ -910,30 +910,30 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 			history.RemoveAt(history.Count - 1);
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethod method, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		var maLength = Math.Max(1, length);
 		return method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = maLength },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = maLength },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = maLength },
-			MovingAverageMethod.Weighted => new WeightedMovingAverage { Length = maLength },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = maLength },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = maLength },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = maLength },
+			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = maLength },
 			_ => new SimpleMovingAverage { Length = maLength },
 		};
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceType priceType)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceTypes priceType)
 	{
 		return priceType switch
 		{
-			AppliedPriceType.Close => candle.ClosePrice,
-			AppliedPriceType.Open => candle.OpenPrice,
-			AppliedPriceType.High => candle.HighPrice,
-			AppliedPriceType.Low => candle.LowPrice,
-			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceType.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
+			AppliedPriceTypes.Close => candle.ClosePrice,
+			AppliedPriceTypes.Open => candle.OpenPrice,
+			AppliedPriceTypes.High => candle.HighPrice,
+			AppliedPriceTypes.Low => candle.LowPrice,
+			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceTypes.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
@@ -941,7 +941,7 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 	/// <summary>
 	/// Supported moving average methods.
 	/// </summary>
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		/// <summary>Simple moving average.</summary>
 		Simple,
@@ -956,7 +956,7 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 	/// <summary>
 	/// Price selection modes matching MetaTrader's applied price enumeration.
 	/// </summary>
-	public enum AppliedPriceType
+	public enum AppliedPriceTypes
 	{
 		/// <summary>Use the candle close price.</summary>
 		Close,
@@ -980,20 +980,20 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 		private readonly LengthIndicator<decimal> _slowMa;
 		private readonly RelativeStrengthIndex _fastRsi;
 		private readonly RelativeStrengthIndex _slowRsi;
-		private readonly AppliedPriceType _fastMaPrice;
-		private readonly AppliedPriceType _slowMaPrice;
-		private readonly AppliedPriceType _fastRsiPrice;
-		private readonly AppliedPriceType _slowRsiPrice;
+		private readonly AppliedPriceTypes _fastMaPrice;
+		private readonly AppliedPriceTypes _slowMaPrice;
+		private readonly AppliedPriceTypes _fastRsiPrice;
+		private readonly AppliedPriceTypes _slowRsiPrice;
 
 		public ColorMaRsiTriggerCalculator(
 			LengthIndicator<decimal> fastMa,
 			LengthIndicator<decimal> slowMa,
 			RelativeStrengthIndex fastRsi,
 			RelativeStrengthIndex slowRsi,
-			AppliedPriceType fastMaPrice,
-			AppliedPriceType slowMaPrice,
-			AppliedPriceType fastRsiPrice,
-			AppliedPriceType slowRsiPrice)
+			AppliedPriceTypes fastMaPrice,
+			AppliedPriceTypes slowMaPrice,
+			AppliedPriceTypes fastRsiPrice,
+			AppliedPriceTypes slowRsiPrice)
 		{
 			_fastMa = fastMa ?? throw new ArgumentNullException(nameof(fastMa));
 			_slowMa = slowMa ?? throw new ArgumentNullException(nameof(slowMa));

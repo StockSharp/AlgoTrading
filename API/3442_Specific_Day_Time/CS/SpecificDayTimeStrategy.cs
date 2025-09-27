@@ -20,14 +20,14 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SpecificDayTimeStrategy : Strategy
 {
-	private enum OrderMode
+	private enum OrderModes
 	{
 		Market,
 		Stop,
 		Limit,
 	}
 
-	private enum LotSizingMode
+	private enum LotSizingModes
 	{
 		Manual,
 		Automatic,
@@ -48,7 +48,7 @@ public class SpecificDayTimeStrategy : Strategy
 
 	private readonly StrategyParam<DateTimeOffset> _openTime;
 	private readonly StrategyParam<DateTimeOffset> _closeTime;
-	private readonly StrategyParam<OrderMode> _orderMode;
+	private readonly StrategyParam<OrderModes> _orderMode;
 	private readonly StrategyParam<bool> _openBuy;
 	private readonly StrategyParam<bool> _openSell;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
@@ -59,7 +59,7 @@ public class SpecificDayTimeStrategy : Strategy
 	private readonly StrategyParam<decimal> _breakEvenAfterPoints;
 	private readonly StrategyParam<decimal> _orderDistancePoints;
 	private readonly StrategyParam<int> _pendingExpireMinutes;
-	private readonly StrategyParam<LotSizingMode> _lotSizing;
+	private readonly StrategyParam<LotSizingModes> _lotSizing;
 	private readonly StrategyParam<decimal> _riskFactor;
 	private readonly StrategyParam<decimal> _manualVolume;
 	private readonly StrategyParam<bool> _closeOwn;
@@ -93,7 +93,7 @@ public class SpecificDayTimeStrategy : Strategy
 		_closeTime = Param(nameof(CloseTime), new DateTimeOffset(new DateTime(2021, 11, 29, 12, 0, 0, DateTimeKind.Utc)))
 		.SetDisplay("Close Time", "Day and time to close orders.", "Scheduling");
 
-		_orderMode = Param(nameof(OrderPlacement), OrderMode.Market)
+		_orderMode = Param(nameof(OrderPlacement), OrderModes.Market)
 		.SetDisplay("Order Mode", "Type of orders to place.", "Trading");
 
 		_openBuy = Param(nameof(OpenBuyOrders), false)
@@ -132,7 +132,7 @@ public class SpecificDayTimeStrategy : Strategy
 		.SetDisplay("Pending Expiry", "Minutes until pending orders expire (0 keeps them).", "Trading")
 		.SetNotNegative();
 
-		_lotSizing = Param(nameof(LotSizing), LotSizingMode.Manual)
+		_lotSizing = Param(nameof(LotSizing), LotSizingModes.Manual)
 		.SetDisplay("Lot Sizing", "Manual size or automatic risk factor.", "Risk");
 
 		_riskFactor = Param(nameof(RiskFactor), 1m)
@@ -174,7 +174,7 @@ public class SpecificDayTimeStrategy : Strategy
 	/// <summary>
 	/// Order placement mode.
 	/// </summary>
-	public OrderMode OrderPlacement
+	public OrderModes OrderPlacement
 	{
 		get => _orderMode.Value;
 		set => _orderMode.Value = value;
@@ -273,7 +273,7 @@ public class SpecificDayTimeStrategy : Strategy
 	/// <summary>
 	/// Selects between manual or automatic lot sizing.
 	/// </summary>
-	public LotSizingMode LotSizing
+	public LotSizingModes LotSizing
 	{
 		get => _lotSizing.Value;
 		set => _lotSizing.Value = value;
@@ -412,13 +412,13 @@ public class SpecificDayTimeStrategy : Strategy
 
 		switch (OrderPlacement)
 		{
-			case OrderMode.Market:
+			case OrderModes.Market:
 			OpenMarketOrders(volume);
 			break;
-			case OrderMode.Stop:
+			case OrderModes.Stop:
 			OpenPendingOrders(volume, true);
 			break;
-			case OrderMode.Limit:
+			case OrderModes.Limit:
 			OpenPendingOrders(volume, false);
 			break;
 		}
@@ -753,7 +753,7 @@ public class SpecificDayTimeStrategy : Strategy
 
 	private decimal CalculateVolume()
 	{
-		if (LotSizing == LotSizingMode.Manual)
+		if (LotSizing == LotSizingModes.Manual)
 		return ManualVolume;
 
 		var portfolioValue = Portfolio?.CurrentValue ?? Portfolio?.BeginValue ?? 0m;

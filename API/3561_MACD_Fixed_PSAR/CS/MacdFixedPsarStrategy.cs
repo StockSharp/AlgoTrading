@@ -22,7 +22,7 @@ public class MacdFixedPsarStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _stopLossPips;
-	private readonly StrategyParam<TrailingMode> _trailingMode;
+	private readonly StrategyParam<TrailingModes> _trailingMode;
 	private readonly StrategyParam<decimal> _trailingStopPips;
 	private readonly StrategyParam<decimal> _psarStep;
 	private readonly StrategyParam<decimal> _psarMaximum;
@@ -61,7 +61,7 @@ public class MacdFixedPsarStrategy : Strategy
 	/// <summary>
 	/// Trailing modes matching the original expert advisor options.
 	/// </summary>
-	public enum TrailingMode
+	public enum TrailingModes
 	{
 		/// <summary>
 		/// Trailing is disabled and only the initial stop-loss is used.
@@ -101,14 +101,14 @@ public class MacdFixedPsarStrategy : Strategy
 	/// <summary>
 	/// Selected trailing stop mode.
 	/// </summary>
-	public TrailingMode TrailMode
+	public TrailingModes TrailMode
 	{
 		get => _trailingMode.Value;
 		set => _trailingMode.Value = value;
 	}
 
 	/// <summary>
-	/// Fixed trailing stop distance in pips (used when <see cref="TrailMode"/> equals <see cref="TrailingMode.Fixed"/>).
+	/// Fixed trailing stop distance in pips (used when <see cref="TrailMode"/> equals <see cref="TrailingModes.Fixed"/>).
 	/// </summary>
 	public decimal TrailingStopPips
 	{
@@ -184,7 +184,7 @@ public class MacdFixedPsarStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetDisplay("Stop Loss (pips)", "Stop-loss distance expressed in pips", "Risk");
 
-		_trailingMode = Param(nameof(TrailMode), TrailingMode.FixedPsar)
+		_trailingMode = Param(nameof(TrailMode), TrailingModes.FixedPsar)
 		.SetDisplay("Trailing Mode", "Trailing logic: None, Fixed, or Fixed PSAR", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 30m)
@@ -495,14 +495,14 @@ public class MacdFixedPsarStrategy : Strategy
 
 		switch (TrailMode)
 		{
-			case TrailingMode.None:
+			case TrailingModes.None:
 			return;
 
-			case TrailingMode.Fixed:
+			case TrailingModes.Fixed:
 			UpdateLongFixedTrailing(candle);
 			break;
 
-			case TrailingMode.FixedPsar:
+			case TrailingModes.FixedPsar:
 			UpdateLongPsarTrailing(candle);
 			break;
 		}
@@ -515,14 +515,14 @@ public class MacdFixedPsarStrategy : Strategy
 
 		switch (TrailMode)
 		{
-			case TrailingMode.None:
+			case TrailingModes.None:
 			return;
 
-			case TrailingMode.Fixed:
+			case TrailingModes.Fixed:
 			UpdateShortFixedTrailing(candle);
 			break;
 
-			case TrailingMode.FixedPsar:
+			case TrailingModes.FixedPsar:
 			UpdateShortPsarTrailing(candle);
 			break;
 		}

@@ -16,7 +16,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Trading modes supported by the CorrTime strategy.
 /// </summary>
-public enum CorrTimeTradeMode
+public enum CorrTimeTradeModes
 {
 	/// <summary>
 	/// Follow the direction of the correlation trend.
@@ -37,7 +37,7 @@ public enum CorrTimeTradeMode
 /// <summary>
 /// Correlation estimators replicated from the original include file.
 /// </summary>
-public enum CorrTimeCorrelationType
+public enum CorrTimeCorrelationTypes
 {
 	/// <summary>
 	/// Pearson correlation between price and time ranks.
@@ -77,10 +77,10 @@ public class CorrTimeStrategy : Strategy
 	private readonly StrategyParam<decimal> _bollingerSpreadMax;
 	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<decimal> _adxLevel;
-	private readonly StrategyParam<CorrTimeTradeMode> _tradeMode;
+	private readonly StrategyParam<CorrTimeTradeModes> _tradeMode;
 	private readonly StrategyParam<int> _correlationRangeTrend;
 	private readonly StrategyParam<int> _correlationRangeReverse;
-	private readonly StrategyParam<CorrTimeCorrelationType> _correlationType;
+	private readonly StrategyParam<CorrTimeCorrelationTypes> _correlationType;
 	private readonly StrategyParam<decimal> _corrLimitTrendBuy;
 	private readonly StrategyParam<decimal> _corrLimitTrendSell;
 	private readonly StrategyParam<decimal> _corrLimitReverseBuy;
@@ -136,7 +136,7 @@ public class CorrTimeStrategy : Strategy
 		_adxLevel = Param(nameof(AdxLevel), 22m)
 			.SetDisplay("ADX Level", "Minimal ADX value required to evaluate signals", "Filters");
 
-		_tradeMode = Param(nameof(TradeMode), CorrTimeTradeMode.Reverse)
+		_tradeMode = Param(nameof(TradeMode), CorrTimeTradeModes.Reverse)
 			.SetDisplay("Trade Mode", "Match the original Trend/Reverse/Both selector", "Signals");
 
 		_correlationRangeTrend = Param(nameof(CorrelationRangeTrend), 40)
@@ -147,7 +147,7 @@ public class CorrTimeStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Reverse Range", "Lookback for correlation based reversal signals", "Signals");
 
-		_correlationType = Param(nameof(CorrelationType), CorrTimeCorrelationType.Fechner)
+		_correlationType = Param(nameof(CorrelationType), CorrTimeCorrelationTypes.Fechner)
 			.SetDisplay("Correlation Type", "Estimator used to measure the price-time link", "Signals");
 
 		_corrLimitTrendBuy = Param(nameof(CorrLimitTrendBuy), 0.90m)
@@ -269,7 +269,7 @@ public class CorrTimeStrategy : Strategy
 	/// <summary>
 	/// Selected trading mode (trend, reverse or both).
 	/// </summary>
-	public CorrTimeTradeMode TradeMode
+	public CorrTimeTradeModes TradeMode
 	{
 		get => _tradeMode.Value;
 		set => _tradeMode.Value = value;
@@ -296,7 +296,7 @@ public class CorrTimeStrategy : Strategy
 	/// <summary>
 	/// Correlation estimator applied to the closing prices.
 	/// </summary>
-	public CorrTimeCorrelationType CorrelationType
+	public CorrTimeCorrelationTypes CorrelationType
 	{
 		get => _correlationType.Value;
 		set => _correlationType.Value = value;
@@ -455,7 +455,7 @@ public class CorrTimeStrategy : Strategy
 		var buySignal = false;
 		var sellSignal = false;
 
-		if ((TradeMode == CorrTimeTradeMode.TrendFollow || TradeMode == CorrTimeTradeMode.Both)
+		if ((TradeMode == CorrTimeTradeModes.TrendFollow || TradeMode == CorrTimeTradeModes.Both)
 			&& TryGetCorrelationTriplet(CorrelationRangeTrend, out var trendCurrent, out var trendPrevious, out var trendBefore))
 		{
 			if (trendBefore < trendPrevious && trendPrevious < CorrLimitTrendBuy && trendCurrent > CorrLimitTrendBuy)
@@ -465,7 +465,7 @@ public class CorrTimeStrategy : Strategy
 				sellSignal = true;
 		}
 
-		if ((TradeMode == CorrTimeTradeMode.Reverse || TradeMode == CorrTimeTradeMode.Both)
+		if ((TradeMode == CorrTimeTradeModes.Reverse || TradeMode == CorrTimeTradeModes.Both)
 			&& TryGetCorrelationTriplet(CorrelationRangeReverse, out var reverseCurrent, out var reversePrevious, out var reverseBefore))
 		{
 			if (reverseBefore < reversePrevious && reversePrevious < -CorrLimitReverseBuy && reverseCurrent > -CorrLimitReverseBuy)
@@ -558,10 +558,10 @@ public class CorrTimeStrategy : Strategy
 
 		return CorrelationType switch
 		{
-			CorrTimeCorrelationType.Pearson => CalculatePearson(buffer),
-			CorrTimeCorrelationType.Spearman => CalculateSpearman(buffer),
-			CorrTimeCorrelationType.Kendall => CalculateKendall(buffer),
-			CorrTimeCorrelationType.Fechner => CalculateFechner(buffer),
+			CorrTimeCorrelationTypes.Pearson => CalculatePearson(buffer),
+			CorrTimeCorrelationTypes.Spearman => CalculateSpearman(buffer),
+			CorrTimeCorrelationTypes.Kendall => CalculateKendall(buffer),
+			CorrTimeCorrelationTypes.Fechner => CalculateFechner(buffer),
 			_ => 0m,
 		};
 	}

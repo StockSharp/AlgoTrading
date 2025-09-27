@@ -23,7 +23,7 @@ public class TradingPanelBatchStrategy : Strategy
 	/// <summary>
 	/// Direction requested for the next batch of orders.
 	/// </summary>
-	public enum TradeDirection
+	public enum TradeDirections
 	{
 		/// <summary>
 		/// Do not execute any trades.
@@ -45,7 +45,7 @@ public class TradingPanelBatchStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _orderVolume;
-	private readonly StrategyParam<TradeDirection> _direction;
+	private readonly StrategyParam<TradeDirections> _direction;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _pipSize;
@@ -88,9 +88,9 @@ public class TradingPanelBatchStrategy : Strategy
 
 	/// <summary>
 	/// Trade direction to be executed on the next completed candle.
-	/// Automatically returns to <see cref="TradeDirection.None"/> after execution.
+	/// Automatically returns to <see cref="TradeDirections.None"/> after execution.
 	/// </summary>
-	public TradeDirection Direction
+	public TradeDirections Direction
 	{
 		get => _direction.Value;
 		set => _direction.Value = value;
@@ -132,7 +132,7 @@ public class TradingPanelBatchStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Volume of a single market order", "Execution");
 
-		_direction = Param(nameof(Direction), TradeDirection.None)
+		_direction = Param(nameof(Direction), TradeDirections.None)
 		.SetDisplay("Direction", "Trade direction for the next execution", "Execution");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -190,14 +190,14 @@ public class TradingPanelBatchStrategy : Strategy
 	private void ExecuteBatch(decimal referencePrice)
 	{
 		var direction = Direction;
-		if (direction == TradeDirection.None)
+		if (direction == TradeDirections.None)
 		return;
 
 		var volume = OrderVolume;
 		if (volume <= 0m)
 		{
 			LogWarning("Order volume must be positive to send trades.");
-			Direction = TradeDirection.None;
+			Direction = TradeDirections.None;
 			return;
 		}
 
@@ -205,7 +205,7 @@ public class TradingPanelBatchStrategy : Strategy
 		if (count <= 0)
 		{
 			LogWarning("Number of orders must be positive to send trades.");
-			Direction = TradeDirection.None;
+			Direction = TradeDirections.None;
 			return;
 		}
 
@@ -213,10 +213,10 @@ public class TradingPanelBatchStrategy : Strategy
 		{
 			switch (direction)
 			{
-			case TradeDirection.Buy:
+			case TradeDirections.Buy:
 				BuyMarket(volume);
 				break;
-			case TradeDirection.Sell:
+			case TradeDirections.Sell:
 				SellMarket(volume);
 				break;
 			}
@@ -224,7 +224,7 @@ public class TradingPanelBatchStrategy : Strategy
 
 		LogInfo($"Executed {count} {direction} market order(s) at reference price {referencePrice:F5} with volume {volume}.");
 
-		Direction = TradeDirection.None;
+		Direction = TradeDirections.None;
 	}
 
 	private decimal ConvertPipsToPrice(decimal pips)

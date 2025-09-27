@@ -67,14 +67,14 @@ public class CyberiaTraderAdaptiveStrategy : Strategy
 	private decimal? _lastCciValue;
 	private decimal? _lastPlusDi;
 	private decimal? _lastMinusDi;
-	private FractalDirection _fractalDirection = FractalDirection.None;
+	private FractalDirections _fractalDirection = FractalDirections.None;
 
 	private bool _disableBuy;
 	private bool _disableSell;
 	private bool _blockBuyFlag;
 	private bool _blockSellFlag;
 
-	private DecisionType _currentDecision = DecisionType.Unknown;
+	private DecisionTypes _currentDecision = DecisionTypes.Unknown;
 	private decimal _buyPossibility;
 	private decimal _sellPossibility;
 	private decimal _undefinedPossibility;
@@ -544,7 +544,7 @@ public class CyberiaTraderAdaptiveStrategy : Strategy
 		var allowBuy = !_disableBuy && !_blockBuyFlag;
 		var allowSell = !_disableSell && !_blockSellFlag;
 
-		if (_currentDecision == DecisionType.Buy && allowBuy)
+		if (_currentDecision == DecisionTypes.Buy && allowBuy)
 		{
 			if (Position < 0)
 			BuyMarket(Math.Abs(Position));
@@ -552,7 +552,7 @@ public class CyberiaTraderAdaptiveStrategy : Strategy
 			if (Position <= 0)
 			BuyMarket(Volume);
 		}
-		else if (_currentDecision == DecisionType.Sell && allowSell)
+		else if (_currentDecision == DecisionTypes.Sell && allowSell)
 		{
 			if (Position > 0)
 			SellMarket(Position);
@@ -560,7 +560,7 @@ public class CyberiaTraderAdaptiveStrategy : Strategy
 			if (Position >= 0)
 			SellMarket(Volume);
 		}
-		else if (_currentDecision == DecisionType.Unknown)
+		else if (_currentDecision == DecisionTypes.Unknown)
 		{
 			if (_possibilityQuality < 0.5m)
 			ClosePosition();
@@ -692,12 +692,12 @@ public class CyberiaTraderAdaptiveStrategy : Strategy
 
 	private void ApplyFractalFilter()
 	{
-		if (_fractalDirection == FractalDirection.Up)
+		if (_fractalDirection == FractalDirections.Up)
 		{
 			_blockBuyFlag = true;
 			_blockSellFlag = false;
 		}
-		else if (_fractalDirection == FractalDirection.Down)
+		else if (_fractalDirection == FractalDirections.Down)
 		{
 			_blockSellFlag = true;
 			_blockBuyFlag = false;
@@ -769,11 +769,11 @@ public class CyberiaTraderAdaptiveStrategy : Strategy
 
 		if (isUpper)
 		{
-			_fractalDirection = FractalDirection.Up;
+			_fractalDirection = FractalDirections.Up;
 		}
 		else if (isLower)
 		{
-			_fractalDirection = FractalDirection.Down;
+			_fractalDirection = FractalDirections.Down;
 		}
 	}
 
@@ -855,7 +855,7 @@ public class CyberiaTraderAdaptiveStrategy : Strategy
 		var sellSuccessQuality = 0m;
 		var undefinedSuccessQuality = 0m;
 
-		DecisionType currentDecision = DecisionType.Unknown;
+		DecisionTypes currentDecision = DecisionTypes.Unknown;
 		decimal currentBuy = 0m;
 		decimal currentSell = 0m;
 		decimal currentUndefined = 0m;
@@ -877,9 +877,9 @@ public class CyberiaTraderAdaptiveStrategy : Strategy
 				previousDecisionValue = result.PreviousDecisionValue;
 			}
 
-			if (result.Decision == DecisionType.Buy)
+			if (result.Decision == DecisionTypes.Buy)
 			buyQuality += 1m;
-			else if (result.Decision == DecisionType.Sell)
+			else if (result.Decision == DecisionTypes.Sell)
 			sellQuality += 1m;
 			else
 			undefinedQuality += 1m;
@@ -983,18 +983,18 @@ public class CyberiaTraderAdaptiveStrategy : Strategy
 		decimal buyPossibility = 0m;
 		decimal sellPossibility = 0m;
 		decimal undefinedPossibility = 0m;
-		var decision = DecisionType.Unknown;
+		var decision = DecisionTypes.Unknown;
 
 		if (decisionValue > 0m)
 		{
 			if (previousDecisionValue < 0m)
 			{
-				decision = DecisionType.Sell;
+				decision = DecisionTypes.Sell;
 				sellPossibility = decisionValue;
 			}
 			else
 			{
-				decision = DecisionType.Unknown;
+				decision = DecisionTypes.Unknown;
 				undefinedPossibility = decisionValue;
 			}
 		}
@@ -1002,12 +1002,12 @@ public class CyberiaTraderAdaptiveStrategy : Strategy
 		{
 			if (previousDecisionValue > 0m)
 			{
-				decision = DecisionType.Buy;
+				decision = DecisionTypes.Buy;
 				buyPossibility = -decisionValue;
 			}
 			else
 			{
-				decision = DecisionType.Unknown;
+				decision = DecisionTypes.Unknown;
 				undefinedPossibility = -decisionValue;
 			}
 		}
@@ -1026,24 +1026,24 @@ public class CyberiaTraderAdaptiveStrategy : Strategy
 
 	private readonly record struct CandleSnapshot(decimal Open, decimal High, decimal Low, decimal Close);
 
-	private enum DecisionType
+	private enum DecisionTypes
 	{
 		Sell,
 		Buy,
 		Unknown,
 	}
 
-	private enum FractalDirection
+	private enum FractalDirections
 	{
 		None,
 		Up,
 		Down,
 	}
 
-	private readonly record struct PossibilityResult(DecisionType Decision, decimal BuyPossibility, decimal SellPossibility, decimal UndefinedPossibility, decimal DecisionValue, decimal PreviousDecisionValue);
+	private readonly record struct PossibilityResult(DecisionTypes Decision, decimal BuyPossibility, decimal SellPossibility, decimal UndefinedPossibility, decimal DecisionValue, decimal PreviousDecisionValue);
 
 	private readonly record struct PossibilityStats(
-	DecisionType Decision,
+	DecisionTypes Decision,
 	decimal BuyPossibility,
 	decimal SellPossibility,
 	decimal UndefinedPossibility,
@@ -1065,7 +1065,7 @@ public class CyberiaTraderAdaptiveStrategy : Strategy
 	decimal PossibilitySuccessQuality,
 	bool HasValue)
 	{
-		public static PossibilityStats Invalid { get; } = new PossibilityStats(DecisionType.Unknown, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, false);
+		public static PossibilityStats Invalid { get; } = new PossibilityStats(DecisionTypes.Unknown, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, false);
 
 		public bool IsValid => HasValue;
 	}

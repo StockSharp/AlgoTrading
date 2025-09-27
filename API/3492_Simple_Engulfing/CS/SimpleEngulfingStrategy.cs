@@ -26,7 +26,7 @@ public class SimpleEngulfingStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _minBodyPips;
 	private readonly StrategyParam<decimal> _maxBodyPips;
-	private readonly StrategyParam<EngulfingTradeDirection> _direction;
+	private readonly StrategyParam<EngulfingTradeDirections> _direction;
 
 	private decimal _pipSize;
 	private CandleSnapshot? _previousCandle;
@@ -59,7 +59,7 @@ public class SimpleEngulfingStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Max Body (pips)", "Maximum candle body size accepted by the pattern. Set to zero to disable the filter.", "Pattern");
 
-		_direction = Param(nameof(Direction), EngulfingTradeDirection.BuyOnly)
+		_direction = Param(nameof(Direction), EngulfingTradeDirections.BuyOnly)
 			.SetDisplay("Direction", "Defines which side of the original MetaTrader robots should be executed.", "Trading");
 	}
 
@@ -120,7 +120,7 @@ public class SimpleEngulfingStrategy : Strategy
 	/// <summary>
 	/// Defines whether the strategy trades buy setups, sell setups, or both.
 	/// </summary>
-	public EngulfingTradeDirection Direction
+	public EngulfingTradeDirections Direction
 	{
 		get => _direction.Value;
 		set => _direction.Value = value;
@@ -252,9 +252,9 @@ public class SimpleEngulfingStrategy : Strategy
 	{
 		return Direction switch
 		{
-			EngulfingTradeDirection.BuyOnly => side == Sides.Buy,
-			EngulfingTradeDirection.SellOnly => side == Sides.Sell,
-			EngulfingTradeDirection.Both => true,
+			EngulfingTradeDirections.BuyOnly => side == Sides.Buy,
+			EngulfingTradeDirections.SellOnly => side == Sides.Sell,
+			EngulfingTradeDirections.Both => true,
 			_ => false
 		};
 	}
@@ -282,7 +282,7 @@ public class SimpleEngulfingStrategy : Strategy
 	/// <summary>
 	/// Specifies which signals of the MetaTrader robots should be executed.
 	/// </summary>
-	public enum EngulfingTradeDirection
+	public enum EngulfingTradeDirections
 	{
 		BuyOnly,
 		SellOnly,

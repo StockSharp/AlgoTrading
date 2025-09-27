@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BasicAtrStopTakeStrategy : Strategy
 {
-	private readonly StrategyParam<TradeDirection> _tradeDirection;
+	private readonly StrategyParam<TradeDirections> _tradeDirection;
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _stopLossFactor;
@@ -37,7 +37,7 @@ public class BasicAtrStopTakeStrategy : Strategy
 	/// <summary>
 	/// Trading direction copied from the original expert advisor.
 	/// </summary>
-	public enum TradeDirection
+	public enum TradeDirections
 	{
 		/// <summary>
 		/// Do not open new positions.
@@ -58,7 +58,7 @@ public class BasicAtrStopTakeStrategy : Strategy
 	/// <summary>
 	/// Selected market side for the ATR-protected trade.
 	/// </summary>
-	public TradeDirection Direction
+	public TradeDirections Direction
 	{
 		get => _tradeDirection.Value;
 		set => _tradeDirection.Value = value;
@@ -114,7 +114,7 @@ public class BasicAtrStopTakeStrategy : Strategy
 	/// </summary>
 	public BasicAtrStopTakeStrategy()
 	{
-		_tradeDirection = Param(nameof(Direction), TradeDirection.Buy)
+		_tradeDirection = Param(nameof(Direction), TradeDirections.Buy)
 			.SetDisplay("Trade Direction", "Market side used for the ATR trade", "Trading");
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -231,7 +231,7 @@ public class BasicAtrStopTakeStrategy : Strategy
 		{
 			ResetTradeLevels();
 
-			if (Direction == TradeDirection.None)
+			if (Direction == TradeDirections.None)
 				return;
 
 			if (atrValue <= 0m)
@@ -243,7 +243,7 @@ public class BasicAtrStopTakeStrategy : Strategy
 
 			switch (Direction)
 			{
-				case TradeDirection.Buy:
+				case TradeDirections.Buy:
 				{
 					BuyMarket(volume);
 					_entryPrice = candle.ClosePrice;
@@ -252,7 +252,7 @@ public class BasicAtrStopTakeStrategy : Strategy
 					break;
 				}
 
-				case TradeDirection.Sell:
+				case TradeDirections.Sell:
 				{
 					SellMarket(volume);
 					_entryPrice = candle.ClosePrice;

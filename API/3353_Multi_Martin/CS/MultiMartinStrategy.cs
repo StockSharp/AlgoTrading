@@ -26,9 +26,9 @@ public class MultiMartinStrategy : Strategy
 	private readonly StrategyParam<int> _limit;
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
-	private readonly StrategyParam<StartDirectionOption> _startDirection;
-	private readonly StrategyParam<BadTimeInterval> _skipBadTime;
-	private readonly StrategyParam<TrailMode> _trailMode;
+	private readonly StrategyParam<StartDirectionOptions> _startDirection;
+	private readonly StrategyParam<BadTimeIntervals> _skipBadTime;
+	private readonly StrategyParam<TrailModes> _trailMode;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private Sides? _activeSide;
@@ -81,13 +81,13 @@ public class MultiMartinStrategy : Strategy
 		.SetDisplay("Take Profit (points)", "Target profit distance expressed in price points", "Risk")
 		.SetCanOptimize(true);
 
-		_startDirection = Param(nameof(StartDirection), StartDirectionOption.Buy)
+		_startDirection = Param(nameof(StartDirection), StartDirectionOptions.Buy)
 		.SetDisplay("Start Direction", "Direction of the very first position", "Trading");
 
-		_skipBadTime = Param(nameof(SkipBadTime), BadTimeInterval.Second)
+		_skipBadTime = Param(nameof(SkipBadTime), BadTimeIntervals.Second)
 		.SetDisplay("Skip Bad Time", "Cooldown interval applied after a rejected market order", "Timing");
 
-		_trailMode = Param(nameof(TrailMode), TrailMode.None)
+		_trailMode = Param(nameof(TrailModes), TrailModes.None)
 		.SetDisplay("Trailing Mode", "Optional trailing stop behaviour", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -161,7 +161,7 @@ public class MultiMartinStrategy : Strategy
 	/// <summary>
 	/// Direction of the very first position.
 	/// </summary>
-	public StartDirectionOption StartDirection
+	public StartDirectionOptions StartDirection
 	{
 		get => _startDirection.Value;
 		set => _startDirection.Value = value;
@@ -170,7 +170,7 @@ public class MultiMartinStrategy : Strategy
 	/// <summary>
 	/// Cooldown interval applied after a rejected market order.
 	/// </summary>
-	public BadTimeInterval SkipBadTime
+	public BadTimeIntervals SkipBadTime
 	{
 		get => _skipBadTime.Value;
 		set => _skipBadTime.Value = value;
@@ -179,7 +179,7 @@ public class MultiMartinStrategy : Strategy
 	/// <summary>
 	/// Trailing stop behaviour applied while a position is open.
 	/// </summary>
-	public TrailMode TrailMode
+	public TrailModes TrailModes
 	{
 		get => _trailMode.Value;
 		set => _trailMode.Value = value;
@@ -206,7 +206,7 @@ public class MultiMartinStrategy : Strategy
 		base.OnReseted();
 
 		_activeSide = null;
-		_nextEntrySide = StartDirection == StartDirectionOption.Buy ? Sides.Buy : Sides.Sell;
+		_nextEntrySide = StartDirection == StartDirectionOptions.Buy ? Sides.Buy : Sides.Sell;
 		_lastEntryVolume = Volume;
 		_entryPrice = null;
 		_trailingStopPrice = null;
@@ -224,7 +224,7 @@ public class MultiMartinStrategy : Strategy
 
 		_maxVolume = CalculateMaxVolume();
 		_lastEntryVolume = Volume;
-		_nextEntrySide = StartDirection == StartDirectionOption.Buy ? Sides.Buy : Sides.Sell;
+		_nextEntrySide = StartDirection == StartDirectionOptions.Buy ? Sides.Buy : Sides.Sell;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -343,7 +343,7 @@ public class MultiMartinStrategy : Strategy
 
 	private void UpdateTrailingForLong(decimal currentClose, decimal stopDistance)
 	{
-		if (TrailMode == TrailMode.None || stopDistance <= 0m || _entryPrice == null)
+		if (TrailModes == TrailModes.None || stopDistance <= 0m || _entryPrice == null)
 		{
 			if (stopDistance > 0m && _entryPrice != null)
 				_trailingStopPrice = _entryPrice.Value - stopDistance;
@@ -353,7 +353,7 @@ public class MultiMartinStrategy : Strategy
 		var entry = _entryPrice.Value;
 		var baseStop = entry - stopDistance;
 
-		if (TrailMode == TrailMode.Breakeven)
+		if (TrailModes == TrailModes.Breakeven)
 		{
 			var profit = currentClose - entry;
 			var newStop = profit >= stopDistance ? entry : baseStop;
@@ -361,7 +361,7 @@ public class MultiMartinStrategy : Strategy
 			return;
 		}
 
-		if (TrailMode == TrailMode.Straight)
+		if (TrailModes == TrailModes.Straight)
 		{
 			var candidate = Math.Max(baseStop, currentClose - stopDistance);
 			_trailingStopPrice = _trailingStopPrice == null ? candidate : Math.Max(_trailingStopPrice.Value, candidate);
@@ -370,7 +370,7 @@ public class MultiMartinStrategy : Strategy
 
 	private void UpdateTrailingForShort(decimal currentClose, decimal stopDistance)
 	{
-		if (TrailMode == TrailMode.None || stopDistance <= 0m || _entryPrice == null)
+		if (TrailModes == TrailModes.None || stopDistance <= 0m || _entryPrice == null)
 		{
 			if (stopDistance > 0m && _entryPrice != null)
 				_trailingStopPrice = _entryPrice.Value + stopDistance;
@@ -380,7 +380,7 @@ public class MultiMartinStrategy : Strategy
 		var entry = _entryPrice.Value;
 		var baseStop = entry + stopDistance;
 
-		if (TrailMode == TrailMode.Breakeven)
+		if (TrailModes == TrailModes.Breakeven)
 		{
 			var profit = entry - currentClose;
 			var newStop = profit >= stopDistance ? entry : baseStop;
@@ -388,7 +388,7 @@ public class MultiMartinStrategy : Strategy
 			return;
 		}
 
-		if (TrailMode == TrailMode.Straight)
+		if (TrailModes == TrailModes.Straight)
 		{
 			var candidate = Math.Min(baseStop, currentClose + stopDistance);
 			_trailingStopPrice = _trailingStopPrice == null ? candidate : Math.Min(_trailingStopPrice.Value, candidate);
@@ -525,7 +525,7 @@ public class MultiMartinStrategy : Strategy
 	private void ApplyCooldown(OrderFail fail)
 	{
 		var interval = SkipBadTime;
-		if (interval == BadTimeInterval.None)
+		if (interval == BadTimeIntervals.None)
 			return;
 
 		var time = fail.ServerTime != default ? fail.ServerTime : CurrentTime;
@@ -540,19 +540,19 @@ public class MultiMartinStrategy : Strategy
 		_blockedUntil = time + duration.Value;
 	}
 
-	private static TimeSpan? GetCooldown(BadTimeInterval interval)
+	private static TimeSpan? GetCooldown(BadTimeIntervals interval)
 	{
 		return interval switch
 		{
-			BadTimeInterval.None => TimeSpan.Zero,
-			BadTimeInterval.Second => TimeSpan.FromSeconds(1),
-			BadTimeInterval.Minute => TimeSpan.FromMinutes(1),
-			BadTimeInterval.Hour => TimeSpan.FromHours(1),
-			BadTimeInterval.Session => TimeSpan.FromHours(4),
-			BadTimeInterval.Day => TimeSpan.FromDays(1),
-			BadTimeInterval.Month => TimeSpan.FromDays(30),
-			BadTimeInterval.Year => TimeSpan.FromDays(365),
-			BadTimeInterval.Forever => null,
+			BadTimeIntervals.None => TimeSpan.Zero,
+			BadTimeIntervals.Second => TimeSpan.FromSeconds(1),
+			BadTimeIntervals.Minute => TimeSpan.FromMinutes(1),
+			BadTimeIntervals.Hour => TimeSpan.FromHours(1),
+			BadTimeIntervals.Session => TimeSpan.FromHours(4),
+			BadTimeIntervals.Day => TimeSpan.FromDays(1),
+			BadTimeIntervals.Month => TimeSpan.FromDays(30),
+			BadTimeIntervals.Year => TimeSpan.FromDays(365),
+			BadTimeIntervals.Forever => null,
 			_ => TimeSpan.Zero,
 		};
 	}
@@ -588,7 +588,7 @@ public class MultiMartinStrategy : Strategy
 	/// <summary>
 	/// Available start directions.
 	/// </summary>
-	public enum StartDirectionOption
+	public enum StartDirectionOptions
 	{
 		/// <summary>
 		/// Begin the cycle with a long position.
@@ -604,7 +604,7 @@ public class MultiMartinStrategy : Strategy
 	/// <summary>
 	/// Cooldown intervals used after rejected orders.
 	/// </summary>
-	public enum BadTimeInterval
+	public enum BadTimeIntervals
 	{
 		/// <summary>
 		/// Do not apply any cooldown.
@@ -655,7 +655,7 @@ public class MultiMartinStrategy : Strategy
 	/// <summary>
 	/// Trailing stop configuration.
 	/// </summary>
-	public enum TrailMode
+	public enum TrailModes
 	{
 		/// <summary>
 		/// Trailing is disabled; a fixed stop-loss is used.

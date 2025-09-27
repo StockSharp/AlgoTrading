@@ -34,9 +34,9 @@ public class RrsImpulseStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _trailingStartPips;
 	private readonly StrategyParam<int> _trailingGapPips;
-	private readonly StrategyParam<RrsIndicatorMode> _indicatorMode;
-	private readonly StrategyParam<TradeDirectionMode> _tradeDirection;
-	private readonly StrategyParam<SignalStrengthMode> _signalStrength;
+	private readonly StrategyParam<RrsIndicatorModes> _indicatorMode;
+	private readonly StrategyParam<TradeDirectionModes> _tradeDirection;
+	private readonly StrategyParam<SignalStrengthModes> _signalStrength;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<decimal> _rsiUpperLevel;
 	private readonly StrategyParam<decimal> _rsiLowerLevel;
@@ -56,7 +56,7 @@ public class RrsImpulseStrategy : Strategy
 	/// <summary>
 	/// Available indicator combinations from the original robot.
 	/// </summary>
-	public enum RrsIndicatorMode
+	public enum RrsIndicatorModes
 	{
 		Rsi,
 		Stochastic,
@@ -67,7 +67,7 @@ public class RrsImpulseStrategy : Strategy
 	/// <summary>
 	/// Trade with the indicator direction or counter to it.
 	/// </summary>
-	public enum TradeDirectionMode
+	public enum TradeDirectionModes
 	{
 		Trend,
 		CounterTrend
@@ -76,7 +76,7 @@ public class RrsImpulseStrategy : Strategy
 	/// <summary>
 	/// Strength filter that requires additional timeframes to align.
 	/// </summary>
-	public enum SignalStrengthMode
+	public enum SignalStrengthModes
 	{
 		SingleTimeFrame,
 		MultiTimeFrame,
@@ -84,7 +84,7 @@ public class RrsImpulseStrategy : Strategy
 		VeryStrong
 	}
 
-	private enum SignalDirection
+	private enum SignalDirections
 	{
 		None,
 		Up,
@@ -121,13 +121,13 @@ public class RrsImpulseStrategy : Strategy
 		.SetDisplay("Trailing Gap", "Distance in pips between price and trailing stop", "Risk")
 		.SetRange(0, 5000);
 
-		_indicatorMode = Param(nameof(IndicatorMode), RrsIndicatorMode.Rsi)
+		_indicatorMode = Param(nameof(IndicatorMode), RrsIndicatorModes.Rsi)
 		.SetDisplay("Indicator Mode", "Select indicator combination", "Signals");
 
-		_tradeDirection = Param(nameof(TradeDirection), TradeDirectionMode.CounterTrend)
+		_tradeDirection = Param(nameof(TradeDirection), TradeDirectionModes.CounterTrend)
 		.SetDisplay("Trade Direction", "Follow or fade indicator direction", "Signals");
 
-		_signalStrength = Param(nameof(SignalStrength), SignalStrengthMode.SingleTimeFrame)
+		_signalStrength = Param(nameof(SignalStrength), SignalStrengthModes.SingleTimeFrame)
 		.SetDisplay("Signal Strength", "Required timeframe confirmation", "Signals");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -228,7 +228,7 @@ public class RrsImpulseStrategy : Strategy
 	/// <summary>
 	/// Indicator combination that produces trading signals.
 	/// </summary>
-	public RrsIndicatorMode IndicatorMode
+	public RrsIndicatorModes IndicatorMode
 	{
 		get => _indicatorMode.Value;
 		set => _indicatorMode.Value = value;
@@ -237,7 +237,7 @@ public class RrsImpulseStrategy : Strategy
 	/// <summary>
 	/// Directional mode: follow or fade indicator suggestions.
 	/// </summary>
-	public TradeDirectionMode TradeDirection
+	public TradeDirectionModes TradeDirection
 	{
 		get => _tradeDirection.Value;
 		set => _tradeDirection.Value = value;
@@ -246,7 +246,7 @@ public class RrsImpulseStrategy : Strategy
 	/// <summary>
 	/// How many timeframes must agree before a trade is executed.
 	/// </summary>
-	public SignalStrengthMode SignalStrength
+	public SignalStrengthModes SignalStrength
 	{
 		get => _signalStrength.Value;
 		set => _signalStrength.Value = value;
@@ -429,10 +429,10 @@ public class RrsImpulseStrategy : Strategy
 	{
 		return SignalStrength switch
 		{
-			SignalStrengthMode.SingleTimeFrame => new[] { CandleType },
-			SignalStrengthMode.MultiTimeFrame => new[] { Minute1, Minute5, Minute15, Minute30, Hour1, Hour4 },
-			SignalStrengthMode.Strong => new[] { Minute1, Minute5, Minute15, Minute30 },
-			SignalStrengthMode.VeryStrong => new[] { Minute1, Minute5, Minute15, Minute30, Hour1, Hour4 },
+			SignalStrengthModes.SingleTimeFrame => new[] { CandleType },
+			SignalStrengthModes.MultiTimeFrame => new[] { Minute1, Minute5, Minute15, Minute30, Hour1, Hour4 },
+			SignalStrengthModes.Strong => new[] { Minute1, Minute5, Minute15, Minute30 },
+			SignalStrengthModes.VeryStrong => new[] { Minute1, Minute5, Minute15, Minute30, Hour1, Hour4 },
 			_ => new[] { CandleType }
 		};
 	}
@@ -628,7 +628,7 @@ public class RrsImpulseStrategy : Strategy
 	private void ExecuteTrading()
 	{
 		var signal = AggregateSignal();
-		if (signal == SignalDirection.None)
+		if (signal == SignalDirections.None)
 		return;
 
 		var desiredSide = GetDesiredSide(signal);
@@ -668,17 +668,17 @@ public class RrsImpulseStrategy : Strategy
 		}
 	}
 
-	private SignalDirection AggregateSignal()
+	private SignalDirections AggregateSignal()
 	{
-		SignalDirection? direction = null;
+		SignalDirections? direction = null;
 
 		foreach (var type in GetConfirmationTypes())
 		{
 			if (!_timeFrames.TryGetValue(type, out var state))
-			return SignalDirection.None;
+			return SignalDirections.None;
 
-			if (state.Signal == SignalDirection.None)
-			return SignalDirection.None;
+			if (state.Signal == SignalDirections.None)
+			return SignalDirections.None;
 
 			if (direction == null)
 			{
@@ -687,68 +687,68 @@ public class RrsImpulseStrategy : Strategy
 			}
 
 			if (direction != state.Signal)
-			return SignalDirection.None;
+			return SignalDirections.None;
 		}
 
-		return direction ?? SignalDirection.None;
+		return direction ?? SignalDirections.None;
 	}
 
-	private Sides? GetDesiredSide(SignalDirection signal)
+	private Sides? GetDesiredSide(SignalDirections signal)
 	{
 		return (TradeDirection, signal) switch
 		{
-			(TradeDirectionMode.Trend, SignalDirection.Up) => Sides.Buy,
-			(TradeDirectionMode.Trend, SignalDirection.Down) => Sides.Sell,
-			(TradeDirectionMode.CounterTrend, SignalDirection.Up) => Sides.Sell,
-			(TradeDirectionMode.CounterTrend, SignalDirection.Down) => Sides.Buy,
+			(TradeDirectionModes.Trend, SignalDirections.Up) => Sides.Buy,
+			(TradeDirectionModes.Trend, SignalDirections.Down) => Sides.Sell,
+			(TradeDirectionModes.CounterTrend, SignalDirections.Up) => Sides.Sell,
+			(TradeDirectionModes.CounterTrend, SignalDirections.Down) => Sides.Buy,
 			_ => null
 		};
 	}
 
-	private SignalDirection DetermineSignal(TimeFrameState state, decimal closePrice)
+	private SignalDirections DetermineSignal(TimeFrameState state, decimal closePrice)
 	{
 		switch (IndicatorMode)
 		{
-			case RrsIndicatorMode.Rsi:
+			case RrsIndicatorModes.Rsi:
 				{
 					if (state.RsiValue is not decimal rsi)
-					return SignalDirection.None;
+					return SignalDirections.None;
 
 					if (rsi >= RsiUpperLevel && rsi > RsiLowerLevel)
-					return SignalDirection.Up;
+					return SignalDirections.Up;
 
 					if (rsi <= RsiLowerLevel && rsi < RsiUpperLevel)
-					return SignalDirection.Down;
+					return SignalDirections.Down;
 
 					break;
 				}
-				case RrsIndicatorMode.Stochastic:
+				case RrsIndicatorModes.Stochastic:
 					{
 						if (state.StochasticMain is not decimal k || state.StochasticSignal is not decimal d)
-						return SignalDirection.None;
+						return SignalDirections.None;
 
 						var up = k >= StochasticUpperLevel && d >= StochasticUpperLevel;
 						var down = k <= StochasticLowerLevel && d <= StochasticLowerLevel;
 
 						if (up == down)
-						return SignalDirection.None;
+						return SignalDirections.None;
 
-						return up ? SignalDirection.Up : SignalDirection.Down;
+						return up ? SignalDirections.Up : SignalDirections.Down;
 					}
-					case RrsIndicatorMode.BollingerBands:
+					case RrsIndicatorModes.BollingerBands:
 						{
 							if (state.BollingerUpper is not decimal upper || state.BollingerLower is not decimal lower)
-							return SignalDirection.None;
+							return SignalDirections.None;
 
 							if (closePrice >= upper && closePrice > lower)
-							return SignalDirection.Up;
+							return SignalDirections.Up;
 
 							if (closePrice <= lower && closePrice < upper)
-							return SignalDirection.Down;
+							return SignalDirections.Down;
 
 							break;
 						}
-						case RrsIndicatorMode.RsiStochasticBollinger:
+						case RrsIndicatorModes.RsiStochasticBollinger:
 							{
 								if (state.RsiValue is not decimal rsi ||
 								state.StochasticMain is not decimal k ||
@@ -756,7 +756,7 @@ public class RrsImpulseStrategy : Strategy
 								state.BollingerUpper is not decimal upper ||
 								state.BollingerLower is not decimal lower)
 								{
-									return SignalDirection.None;
+									return SignalDirections.None;
 								}
 
 								var comboUp = rsi >= RsiUpperLevel &&
@@ -770,13 +770,13 @@ public class RrsImpulseStrategy : Strategy
 								closePrice <= lower;
 
 								if (comboUp == comboDown)
-								return SignalDirection.None;
+								return SignalDirections.None;
 
-								return comboUp ? SignalDirection.Up : SignalDirection.Down;
+								return comboUp ? SignalDirections.Up : SignalDirections.Down;
 							}
 						}
 
-						return SignalDirection.None;
+						return SignalDirections.None;
 					}
 
 					private decimal GetPipSize()
@@ -811,7 +811,7 @@ public class RrsImpulseStrategy : Strategy
 						public decimal? BollingerLower { get; set; }
 						public decimal? LastClosePrice { get; set; }
 						public DateTimeOffset? LastUpdateTime { get; set; }
-						public SignalDirection Signal { get; set; }
+						public SignalDirections Signal { get; set; }
 					}
 				}
 

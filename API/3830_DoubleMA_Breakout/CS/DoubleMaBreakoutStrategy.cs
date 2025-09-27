@@ -22,10 +22,10 @@ public class DoubleMaBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastMaPeriod;
 	private readonly StrategyParam<int> _slowMaPeriod;
-	private readonly StrategyParam<MovingAverageMode> _fastMaMode;
-	private readonly StrategyParam<MovingAverageMode> _slowMaMode;
-	private readonly StrategyParam<AppliedPriceMode> _fastAppliedPrice;
-	private readonly StrategyParam<AppliedPriceMode> _slowAppliedPrice;
+	private readonly StrategyParam<MovingAverageModes> _fastMaMode;
+	private readonly StrategyParam<MovingAverageModes> _slowMaMode;
+	private readonly StrategyParam<AppliedPriceModes> _fastAppliedPrice;
+	private readonly StrategyParam<AppliedPriceModes> _slowAppliedPrice;
 	private readonly StrategyParam<int> _signalShift;
 	private readonly StrategyParam<decimal> _breakoutDistancePoints;
 	private readonly StrategyParam<bool> _useTimeWindow;
@@ -69,7 +69,7 @@ public class DoubleMaBreakoutStrategy : Strategy
 	/// <summary>
 	/// Fast moving average calculation mode.
 	/// </summary>
-	public MovingAverageMode FastMaMode
+	public MovingAverageModes FastMaMode
 	{
 		get => _fastMaMode.Value;
 		set => _fastMaMode.Value = value;
@@ -78,7 +78,7 @@ public class DoubleMaBreakoutStrategy : Strategy
 	/// <summary>
 	/// Slow moving average calculation mode.
 	/// </summary>
-	public MovingAverageMode SlowMaMode
+	public MovingAverageModes SlowMaMode
 	{
 		get => _slowMaMode.Value;
 		set => _slowMaMode.Value = value;
@@ -87,7 +87,7 @@ public class DoubleMaBreakoutStrategy : Strategy
 	/// <summary>
 	/// Price source for the fast moving average.
 	/// </summary>
-	public AppliedPriceMode FastAppliedPrice
+	public AppliedPriceModes FastAppliedPrice
 	{
 		get => _fastAppliedPrice.Value;
 		set => _fastAppliedPrice.Value = value;
@@ -96,7 +96,7 @@ public class DoubleMaBreakoutStrategy : Strategy
 	/// <summary>
 	/// Price source for the slow moving average.
 	/// </summary>
-	public AppliedPriceMode SlowAppliedPrice
+	public AppliedPriceModes SlowAppliedPrice
 	{
 		get => _slowAppliedPrice.Value;
 		set => _slowAppliedPrice.Value = value;
@@ -209,16 +209,16 @@ public class DoubleMaBreakoutStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(5, 60, 5);
 
-		_fastMaMode = Param(nameof(FastMaMode), MovingAverageMode.Simple)
+		_fastMaMode = Param(nameof(FastMaMode), MovingAverageModes.Simple)
 			.SetDisplay("Fast MA Mode", "Type of the fast moving average", "Moving Averages");
 
-		_slowMaMode = Param(nameof(SlowMaMode), MovingAverageMode.Simple)
+		_slowMaMode = Param(nameof(SlowMaMode), MovingAverageModes.Simple)
 			.SetDisplay("Slow MA Mode", "Type of the slow moving average", "Moving Averages");
 
-		_fastAppliedPrice = Param(nameof(FastAppliedPrice), AppliedPriceMode.Close)
+		_fastAppliedPrice = Param(nameof(FastAppliedPrice), AppliedPriceModes.Close)
 			.SetDisplay("Fast Price", "Applied price for the fast MA", "Moving Averages");
 
-		_slowAppliedPrice = Param(nameof(SlowAppliedPrice), AppliedPriceMode.Close)
+		_slowAppliedPrice = Param(nameof(SlowAppliedPrice), AppliedPriceModes.Close)
 			.SetDisplay("Slow Price", "Applied price for the slow MA", "Moving Averages");
 
 		_signalShift = Param(nameof(SignalShift), 1)
@@ -411,16 +411,16 @@ public class DoubleMaBreakoutStrategy : Strategy
 
 	private bool ValidateIndicators()
 	{
-		if (FastMaMode == MovingAverageMode.LeastSquares && _fastLsma == null)
+		if (FastMaMode == MovingAverageModes.LeastSquares && _fastLsma == null)
 			return false;
 
-		if (FastMaMode != MovingAverageMode.LeastSquares && _fastMa == null)
+		if (FastMaMode != MovingAverageModes.LeastSquares && _fastMa == null)
 			return false;
 
-		if (SlowMaMode == MovingAverageMode.LeastSquares && _slowLsma == null)
+		if (SlowMaMode == MovingAverageModes.LeastSquares && _slowLsma == null)
 			return false;
 
-		if (SlowMaMode != MovingAverageMode.LeastSquares && _slowMa == null)
+		if (SlowMaMode != MovingAverageModes.LeastSquares && _slowMa == null)
 			return false;
 
 		return true;
@@ -567,30 +567,30 @@ public class DoubleMaBreakoutStrategy : Strategy
 		return values[^required];
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceMode mode)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceModes mode)
 	{
 		return mode switch
 		{
-			AppliedPriceMode.Open => candle.OpenPrice,
-			AppliedPriceMode.High => candle.HighPrice,
-			AppliedPriceMode.Low => candle.LowPrice,
-			AppliedPriceMode.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceMode.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceMode.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			AppliedPriceModes.Open => candle.OpenPrice,
+			AppliedPriceModes.High => candle.HighPrice,
+			AppliedPriceModes.Low => candle.LowPrice,
+			AppliedPriceModes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceModes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceModes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMode mode, int length, out LinearRegression lsma)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageModes mode, int length, out LinearRegression lsma)
 	{
 		lsma = null;
 		return mode switch
 		{
-			MovingAverageMode.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMode.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMode.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMode.LinearWeighted => new WeightedMovingAverage { Length = length },
-			MovingAverageMode.LeastSquares => lsma = new LinearRegression { Length = length },
+			MovingAverageModes.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageModes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageModes.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageModes.LinearWeighted => new WeightedMovingAverage { Length = length },
+			MovingAverageModes.LeastSquares => lsma = new LinearRegression { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -598,7 +598,7 @@ public class DoubleMaBreakoutStrategy : Strategy
 	/// <summary>
 	/// Available moving average types matching the original EA modes.
 	/// </summary>
-	public enum MovingAverageMode
+	public enum MovingAverageModes
 	{
 		Simple = 0,
 		Exponential = 1,
@@ -610,7 +610,7 @@ public class DoubleMaBreakoutStrategy : Strategy
 	/// <summary>
 	/// Applied price selection options.
 	/// </summary>
-	public enum AppliedPriceMode
+	public enum AppliedPriceModes
 	{
 		Close = 0,
 		Open = 1,

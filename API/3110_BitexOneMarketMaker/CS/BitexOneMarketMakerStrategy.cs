@@ -21,7 +21,7 @@ public class BitexOneMarketMakerStrategy : Strategy
 	private readonly StrategyParam<decimal> _maxVolumePerLevel;
 	private readonly StrategyParam<decimal> _shiftCoefficient;
 	private readonly StrategyParam<int> _levelCount;
-	private readonly StrategyParam<LeadPriceSource> _priceSource;
+	private readonly StrategyParam<LeadPriceSources> _priceSource;
 	private readonly StrategyParam<Security> _leadSecurityParam;
 	private readonly StrategyParam<decimal> _priceToleranceRatio;
 	private readonly StrategyParam<decimal> _volumeTolerance;
@@ -71,7 +71,7 @@ public class BitexOneMarketMakerStrategy : Strategy
 	/// <summary>
 	/// Source that supplies the reference price for the quoting ladder.
 	/// </summary>
-	public LeadPriceSource PriceSource
+	public LeadPriceSources PriceSource
 	{
 		get => _priceSource.Value;
 		set => _priceSource.Value = value;
@@ -125,7 +125,7 @@ public class BitexOneMarketMakerStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Level Count", "Number of price levels quoted above and below the reference.", "Orders");
 
-		_priceSource = Param(nameof(PriceSource), LeadPriceSource.MarkPrice)
+		_priceSource = Param(nameof(PriceSource), LeadPriceSources.MarkPrice)
 		.SetDisplay("Price Source", "Defines where the reference quote is taken from.", "General");
 
 		_leadSecurityParam = Param<Security>(nameof(LeadSecurity))
@@ -191,7 +191,7 @@ public class BitexOneMarketMakerStrategy : Strategy
 		_volumeStep = Security.VolumeStep ?? 0m;
 		_minVolume = Security.MinVolume ?? 0m;
 
-		_leadSecurity = PriceSource == LeadPriceSource.OrderBook ? Security : LeadSecurity ?? Security;
+		_leadSecurity = PriceSource == LeadPriceSources.OrderBook ? Security : LeadSecurity ?? Security;
 
 		var initialLeadBid = _leadSecurity?.BestBid?.Price ?? Security.BestBid?.Price;
 		if (initialLeadBid is decimal bid && bid > 0m)
@@ -530,7 +530,7 @@ public class BitexOneMarketMakerStrategy : Strategy
 /// <summary>
 /// Defines available sources of reference prices for the market-making grid.
 /// </summary>
-public enum LeadPriceSource
+public enum LeadPriceSources
 {
 	/// <summary>
 	/// Use the strategy security order book as the reference.

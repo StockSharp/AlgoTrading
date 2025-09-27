@@ -23,7 +23,7 @@ public class BasicMaTemplateStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _movingAveragePeriod;
 	private readonly StrategyParam<int> _movingAverageShift;
-	private readonly StrategyParam<MovingAverageMethod> _movingAverageMethod;
+	private readonly StrategyParam<MovingAverageMethods> _movingAverageMethod;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _stopLossPips;
 
@@ -63,7 +63,7 @@ public class BasicMaTemplateStrategy : Strategy
 	/// <summary>
 	/// Moving average calculation mode.
 	/// </summary>
-	public MovingAverageMethod MovingAverageMethod
+	public MovingAverageMethods MovingAverageMethods
 	{
 		get => _movingAverageMethod.Value;
 		set => _movingAverageMethod.Value = value;
@@ -104,7 +104,7 @@ public class BasicMaTemplateStrategy : Strategy
 		_movingAverageShift = Param(nameof(MovingAverageShift), 0)
 			.SetDisplay("MA Shift", "Forward shift applied to the moving average", "Indicator");
 
-		_movingAverageMethod = Param(nameof(MovingAverageMethod), MovingAverageMethod.Simple)
+		_movingAverageMethod = Param(nameof(MovingAverageMethods), MovingAverageMethods.Simple)
 			.SetDisplay("MA Method", "Moving average calculation mode", "Indicator");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 38.5m)
@@ -139,7 +139,7 @@ public class BasicMaTemplateStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		var movingAverage = CreateMovingAverage(MovingAverageMethod, MovingAveragePeriod);
+		var movingAverage = CreateMovingAverage(MovingAverageMethods, MovingAveragePeriod);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -237,14 +237,14 @@ public class BasicMaTemplateStrategy : Strategy
 		return step * multiplier;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethod method, int period)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int period)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Simple => new SMA { Length = period },
-			MovingAverageMethod.Exponential => new EMA { Length = period },
-			MovingAverageMethod.Smoothed => new SMMA { Length = period },
-			MovingAverageMethod.LinearWeighted => new WMA { Length = period },
+			MovingAverageMethods.Simple => new SMA { Length = period },
+			MovingAverageMethods.Exponential => new EMA { Length = period },
+			MovingAverageMethods.Smoothed => new SMMA { Length = period },
+			MovingAverageMethods.LinearWeighted => new WMA { Length = period },
 			_ => new SMA { Length = period }
 		};
 	}
@@ -252,7 +252,7 @@ public class BasicMaTemplateStrategy : Strategy
 	/// <summary>
 	/// Available moving average methods corresponding to the original MQL inputs.
 	/// </summary>
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		/// <summary>
 		/// Simple moving average (MODE_SMA in MetaTrader).

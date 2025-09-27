@@ -16,7 +16,7 @@ using StockSharp.Messages;
 /// <summary>
 /// Exit modes for Compass Line strategy.
 /// </summary>
-public enum CompassLineExitMode
+public enum CompassLineExitModes
 {
 	/// <summary>
 	/// Do not close positions on indicator signals.
@@ -122,9 +122,9 @@ public class CompassLineStrategy : Strategy
 	/// <summary>
 	/// Close logic selection.
 	/// </summary>
-	public CompassLineExitMode CloseMode
+	public CompassLineExitModes CloseMode
 	{
-		get => (CompassLineExitMode)_closeMode.Value;
+		get => (CompassLineExitModes)_closeMode.Value;
 		set => _closeMode.Value = (int)value;
 	}
 
@@ -197,7 +197,7 @@ public class CompassLineStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Compass MA Period", "SMA period for Compass", "Compass");
 
-		_closeMode = Param(nameof(CloseMode), (int)CompassLineExitMode.None)
+		_closeMode = Param(nameof(CloseMode), (int)CompassLineExitModes.None)
 			.SetDisplay("Close Mode", "Signal based exit mode", "Risk");
 
 		_useTimeFilter = Param(nameof(UseTimeFilter), false)
@@ -417,9 +417,9 @@ public class CompassLineStrategy : Strategy
 	{
 		return CloseMode switch
 		{
-			CompassLineExitMode.BothIndicators => _followTrend < 0 && _compassTrend < 0,
-			CompassLineExitMode.FollowLineOnly => _followTrend < 0,
-			CompassLineExitMode.CompassOnly => _compassTrend < 0,
+			CompassLineExitModes.BothIndicators => _followTrend < 0 && _compassTrend < 0,
+			CompassLineExitModes.FollowLineOnly => _followTrend < 0,
+			CompassLineExitModes.CompassOnly => _compassTrend < 0,
 			_ => false,
 		};
 	}
@@ -428,9 +428,9 @@ public class CompassLineStrategy : Strategy
 	{
 		return CloseMode switch
 		{
-			CompassLineExitMode.BothIndicators => _followTrend > 0 && _compassTrend > 0,
-			CompassLineExitMode.FollowLineOnly => _followTrend > 0,
-			CompassLineExitMode.CompassOnly => _compassTrend > 0,
+			CompassLineExitModes.BothIndicators => _followTrend > 0 && _compassTrend > 0,
+			CompassLineExitModes.FollowLineOnly => _followTrend > 0,
+			CompassLineExitModes.CompassOnly => _compassTrend > 0,
 			_ => false,
 		};
 	}

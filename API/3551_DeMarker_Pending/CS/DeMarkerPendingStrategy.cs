@@ -23,7 +23,7 @@ public class DeMarkerPendingStrategy : Strategy
 	/// <summary>
 	/// Type of pending order created after a signal.
 	/// </summary>
-	public enum PendingMode
+	public enum PendingModes
 	{
 		/// <summary>
 		/// Place stop orders beyond the current market price.
@@ -40,7 +40,7 @@ public class DeMarkerPendingStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _pendingIndentPoints;
 	private readonly StrategyParam<int> _pendingExpirationMinutes;
-	private readonly StrategyParam<PendingMode> _pendingMode;
+	private readonly StrategyParam<PendingModes> _pendingMode;
 	private readonly StrategyParam<bool> _singlePendingOnly;
 	private readonly StrategyParam<bool> _replacePreviousPending;
 	private readonly StrategyParam<int> _demarkerPeriod;
@@ -82,7 +82,7 @@ public class DeMarkerPendingStrategy : Strategy
 		.SetDisplay("Pending Expiration", "Lifetime of pending orders in minutes (0 disables expiration).", "Trading")
 		.SetCanOptimize(true);
 
-		_pendingMode = Param(nameof(Mode), PendingMode.Stop)
+		_pendingMode = Param(nameof(Mode), PendingModes.Stop)
 		.SetDisplay("Pending Mode", "Choose stop or limit pending orders.", "Trading");
 
 		_singlePendingOnly = Param(nameof(SinglePendingOnly), false)
@@ -157,7 +157,7 @@ public class DeMarkerPendingStrategy : Strategy
 	/// <summary>
 	/// Pending order mode (stop or limit).
 	/// </summary>
-	public PendingMode Mode
+	public PendingModes Mode
 	{
 		get => _pendingMode.Value;
 		set => _pendingMode.Value = value;
@@ -338,9 +338,9 @@ public class DeMarkerPendingStrategy : Strategy
 
 		decimal price;
 		if (direction == Sides.Buy)
-			price = Mode == PendingMode.Stop ? referencePrice + indent : referencePrice - indent;
+			price = Mode == PendingModes.Stop ? referencePrice + indent : referencePrice - indent;
 		else
-			price = Mode == PendingMode.Stop ? referencePrice - indent : referencePrice + indent;
+			price = Mode == PendingModes.Stop ? referencePrice - indent : referencePrice + indent;
 
 		price = RoundPrice(price);
 		if (price <= 0m)
@@ -359,10 +359,10 @@ public class DeMarkerPendingStrategy : Strategy
 			takeProfit = direction == Sides.Buy ? price + takeDistance : price - takeDistance;
 
 		Order order = direction == Sides.Buy
-		? (Mode == PendingMode.Stop
+		? (Mode == PendingModes.Stop
 		? BuyStop(Volume, price, stopLoss: stopLoss, takeProfit: takeProfit)
 		: BuyLimit(Volume, price, stopLoss: stopLoss, takeProfit: takeProfit))
-		: (Mode == PendingMode.Stop
+		: (Mode == PendingModes.Stop
 		? SellStop(Volume, price, stopLoss: stopLoss, takeProfit: takeProfit)
 		: SellLimit(Volume, price, stopLoss: stopLoss, takeProfit: takeProfit));
 

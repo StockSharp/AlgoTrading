@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SmartForexSystemStrategy : Strategy
 {
-	private readonly StrategyParam<StartMode> _mode;
+	private readonly StrategyParam<StartModes> _mode;
 	private readonly StrategyParam<decimal> _percentThreshold;
 	private readonly StrategyParam<decimal> _startVolume;
 	private readonly StrategyParam<decimal> _maxVolume;
@@ -42,7 +42,7 @@ public class SmartForexSystemStrategy : Strategy
 	/// </summary>
 	public SmartForexSystemStrategy()
 	{
-		_mode = Param(nameof(Mode), StartMode.LongAndShort)
+		_mode = Param(nameof(Mode), StartModes.LongAndShort)
 			.SetDisplay("Trading Mode", "Directional filter for opening baskets", "Trading")
 			.SetCanOptimize(true);
 
@@ -107,7 +107,7 @@ public class SmartForexSystemStrategy : Strategy
 	/// <summary>
 	/// Determines which market directions the strategy is allowed to trade.
 	/// </summary>
-	public StartMode Mode
+	public StartModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -234,15 +234,15 @@ public class SmartForexSystemStrategy : Strategy
 
 		ManageOpenBaskets(candle.ClosePrice, point);
 
-		if (Mode != StartMode.Off)
+		if (Mode != StartModes.Off)
 		{
 			var signal = DetermineSignal(candle);
 
-			if (signal == TradeDirection.Buy && AllowsLongs() && _buyEntries.Count == 0)
+			if (signal == TradeDirections.Buy && AllowsLongs() && _buyEntries.Count == 0)
 			{
 				OpenBuy(candle.ClosePrice, StartVolume);
 			}
-			else if (signal == TradeDirection.Sell && AllowsShorts() && _sellEntries.Count == 0)
+			else if (signal == TradeDirections.Sell && AllowsShorts() && _sellEntries.Count == 0)
 			{
 				OpenSell(candle.ClosePrice, StartVolume);
 			}
@@ -255,22 +255,22 @@ public class SmartForexSystemStrategy : Strategy
 		_referenceClose = candle.ClosePrice;
 	}
 
-	private TradeDirection DetermineSignal(ICandleMessage candle)
+	private TradeDirections DetermineSignal(ICandleMessage candle)
 	{
 		if (_previousCandle == null || _referenceClose == null || _referenceClose.Value == 0m)
-			return TradeDirection.None;
+			return TradeDirections.None;
 
 		var previousOpen = _previousCandle.OpenPrice;
 		var previousClose = _previousCandle.ClosePrice;
 		var force = (candle.ClosePrice - _referenceClose.Value) / _referenceClose.Value * 10000m;
 
 		if (previousClose < previousOpen && force <= -PercentThreshold)
-			return TradeDirection.Buy;
+			return TradeDirections.Buy;
 
 		if (previousClose > previousOpen && force >= PercentThreshold)
-			return TradeDirection.Sell;
+			return TradeDirections.Sell;
 
-		return TradeDirection.None;
+		return TradeDirections.None;
 	}
 
 	private void ManageOpenBaskets(decimal price, decimal point)
@@ -469,18 +469,18 @@ public class SmartForexSystemStrategy : Strategy
 
 	private bool AllowsLongs()
 	{
-		return Mode == StartMode.LongOnly || Mode == StartMode.LongAndShort;
+		return Mode == StartModes.LongOnly || Mode == StartModes.LongAndShort;
 	}
 
 	private bool AllowsShorts()
 	{
-		return Mode == StartMode.ShortOnly || Mode == StartMode.LongAndShort;
+		return Mode == StartModes.ShortOnly || Mode == StartModes.LongAndShort;
 	}
 
 	/// <summary>
 	/// Directional trading modes supported by the strategy.
 	/// </summary>
-	public enum StartMode
+	public enum StartModes
 	{
 		ShortOnly = 1,
 		LongOnly = 2,
@@ -488,7 +488,7 @@ public class SmartForexSystemStrategy : Strategy
 		Off = 4,
 	}
 
-	private enum TradeDirection
+	private enum TradeDirections
 	{
 		None,
 		Buy,

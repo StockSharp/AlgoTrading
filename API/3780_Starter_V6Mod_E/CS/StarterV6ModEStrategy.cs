@@ -433,8 +433,8 @@ public class StarterV6ModEStrategy : Strategy
 			return;
 
 		var trendBias = EvaluateTrendBias(slope.Value);
-		var allowLong = trendBias == TrendBias.Bullish;
-		var allowShort = trendBias == TrendBias.Bearish;
+		var allowLong = trendBias == TrendBiases.Bullish;
+		var allowShort = trendBias == TrendBiases.Bearish;
 
 		var laguerreOkLong = prevLaguerre <= LaguerreOversold && laguerre <= LaguerreOversold;
 		var laguerreOkShort = prevLaguerre >= LaguerreOverbought && laguerre >= LaguerreOverbought;
@@ -610,13 +610,13 @@ public class StarterV6ModEStrategy : Strategy
 		return Orders.Any(o => o.State.IsActive());
 	}
 
-	private static TrendBias EvaluateTrendBias(decimal slope)
+	private static TrendBiases EvaluateTrendBias(decimal slope)
 	{
 		if (slope > 0)
-			return TrendBias.Bullish;
+			return TrendBiases.Bullish;
 		if (slope < 0)
-			return TrendBias.Bearish;
-		return TrendBias.Flat;
+			return TrendBiases.Bearish;
+		return TrendBiases.Flat;
 	}
 
 	/// <inheritdoc />
@@ -662,7 +662,7 @@ public class StarterV6ModEStrategy : Strategy
 		}
 	}
 
-	private enum TrendBias
+	private enum TrendBiases
 	{
 		Flat,
 		Bullish,

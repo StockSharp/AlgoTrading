@@ -31,9 +31,9 @@ public class RsiBoosterStrategy : Strategy
 	private readonly StrategyParam<bool> _returnOrderEnabled;
 	private readonly StrategyParam<int> _returnOrdersMax;
 	private readonly StrategyParam<int> _firstRsiPeriod;
-	private readonly StrategyParam<AppliedPriceType> _firstRsiPrice;
+	private readonly StrategyParam<AppliedPriceTypes> _firstRsiPrice;
 	private readonly StrategyParam<int> _secondRsiPeriod;
-	private readonly StrategyParam<AppliedPriceType> _secondRsiPrice;
+	private readonly StrategyParam<AppliedPriceTypes> _secondRsiPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private RelativeStrengthIndex _firstRsi = null!;
@@ -92,13 +92,13 @@ public class RsiBoosterStrategy : Strategy
 		_firstRsiPeriod = Param(nameof(FirstRsiPeriod), 14)
 		.SetDisplay("Fast RSI Period", "Calculation period for the fast RSI", LocalizedStrings.StrIndicators);
 
-		_firstRsiPrice = Param(nameof(FirstRsiPrice), AppliedPriceType.Close)
+		_firstRsiPrice = Param(nameof(FirstRsiPrice), AppliedPriceTypes.Close)
 		.SetDisplay("Fast RSI Price", "Price source for the fast RSI", LocalizedStrings.StrIndicators);
 
 		_secondRsiPeriod = Param(nameof(SecondRsiPeriod), 14)
 		.SetDisplay("Delayed RSI Period", "Calculation period for the delayed RSI", LocalizedStrings.StrIndicators);
 
-		_secondRsiPrice = Param(nameof(SecondRsiPrice), AppliedPriceType.Close)
+		_secondRsiPrice = Param(nameof(SecondRsiPrice), AppliedPriceTypes.Close)
 		.SetDisplay("Delayed RSI Price", "Price source for the delayed RSI", LocalizedStrings.StrIndicators);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -190,7 +190,7 @@ public class RsiBoosterStrategy : Strategy
 	/// <summary>
 	/// Price source for the fast RSI.
 	/// </summary>
-	public AppliedPriceType FirstRsiPrice
+	public AppliedPriceTypes FirstRsiPrice
 	{
 		get => _firstRsiPrice.Value;
 		set => _firstRsiPrice.Value = value;
@@ -208,7 +208,7 @@ public class RsiBoosterStrategy : Strategy
 	/// <summary>
 	/// Price source for the delayed RSI.
 	/// </summary>
-	public AppliedPriceType SecondRsiPrice
+	public AppliedPriceTypes SecondRsiPrice
 	{
 		get => _secondRsiPrice.Value;
 		set => _secondRsiPrice.Value = value;
@@ -555,17 +555,17 @@ public class RsiBoosterStrategy : Strategy
 		return 0.0001m;
 	}
 
-	private static decimal GetPrice(ICandleMessage candle, AppliedPriceType type)
+	private static decimal GetPrice(ICandleMessage candle, AppliedPriceTypes type)
 	{
 		return type switch
 		{
-			AppliedPriceType.Close => candle.ClosePrice,
-			AppliedPriceType.Open => candle.OpenPrice,
-			AppliedPriceType.High => candle.HighPrice,
-			AppliedPriceType.Low => candle.LowPrice,
-			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			AppliedPriceTypes.Close => candle.ClosePrice,
+			AppliedPriceTypes.Open => candle.OpenPrice,
+			AppliedPriceTypes.High => candle.HighPrice,
+			AppliedPriceTypes.Low => candle.LowPrice,
+			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}
@@ -573,7 +573,7 @@ public class RsiBoosterStrategy : Strategy
 	/// <summary>
 	/// Price sources compatible with MetaTrader applied price modes.
 	/// </summary>
-	public enum AppliedPriceType
+	public enum AppliedPriceTypes
 	{
 		/// <summary>
 		/// Close price of the candle.

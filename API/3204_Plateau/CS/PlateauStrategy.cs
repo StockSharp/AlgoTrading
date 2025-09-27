@@ -16,7 +16,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Money management mode for Plateau strategy.
 /// </summary>
-public enum PlateauMoneyManagementMode
+public enum PlateauMoneyManagementModes
 {
 	/// <summary>Use fixed lot size for every order.</summary>
 	FixedLot,
@@ -29,7 +29,7 @@ public enum PlateauMoneyManagementMode
 /// Price source used for moving averages and Bollinger Bands.
 /// Matches the input price options from the original MQL5 expert.
 /// </summary>
-public enum PlateauAppliedPrice
+public enum PlateauAppliedPrices
 {
 	/// <summary>Close price of the candle.</summary>
 	Close,
@@ -56,7 +56,7 @@ public enum PlateauAppliedPrice
 /// <summary>
 /// Moving average method equivalent to the MQL5 implementation.
 /// </summary>
-public enum PlateauMovingAverageMethod
+public enum PlateauMovingAverageMethods
 {
 	/// <summary>Simple moving average.</summary>
 	Simple,
@@ -83,17 +83,17 @@ public class PlateauStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _trailingStopPips;
 	private readonly StrategyParam<decimal> _trailingStepPips;
-	private readonly StrategyParam<PlateauMoneyManagementMode> _moneyMode;
+	private readonly StrategyParam<PlateauMoneyManagementModes> _moneyMode;
 	private readonly StrategyParam<decimal> _moneyValue;
 	private readonly StrategyParam<int> _fastMaPeriod;
 	private readonly StrategyParam<int> _slowMaPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<PlateauMovingAverageMethod> _maMethod;
-	private readonly StrategyParam<PlateauAppliedPrice> _maAppliedPrice;
+	private readonly StrategyParam<PlateauMovingAverageMethods> _maMethod;
+	private readonly StrategyParam<PlateauAppliedPrices> _maAppliedPrice;
 	private readonly StrategyParam<int> _bandsPeriod;
 	private readonly StrategyParam<int> _bandsShift;
 	private readonly StrategyParam<decimal> _bandsDeviation;
-	private readonly StrategyParam<PlateauAppliedPrice> _bandsAppliedPrice;
+	private readonly StrategyParam<PlateauAppliedPrices> _bandsAppliedPrice;
 	private readonly StrategyParam<bool> _reverseSignals;
 	private readonly StrategyParam<bool> _closeOpposite;
 	private readonly StrategyParam<bool> _printLog;
@@ -158,7 +158,7 @@ public class PlateauStrategy : Strategy
 	/// <summary>
 	/// Money management mode (fixed lot or risk percentage).
 	/// </summary>
-	public PlateauMoneyManagementMode MoneyMode
+	public PlateauMoneyManagementModes MoneyMode
 	{
 		get => _moneyMode.Value;
 		set => _moneyMode.Value = value;
@@ -203,7 +203,7 @@ public class PlateauStrategy : Strategy
 	/// <summary>
 	/// Method used to calculate the moving averages.
 	/// </summary>
-	public PlateauMovingAverageMethod MaMethod
+	public PlateauMovingAverageMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -212,7 +212,7 @@ public class PlateauStrategy : Strategy
 	/// <summary>
 	/// Applied price for the moving averages.
 	/// </summary>
-	public PlateauAppliedPrice MaAppliedPrice
+	public PlateauAppliedPrices MaAppliedPrice
 	{
 		get => _maAppliedPrice.Value;
 		set => _maAppliedPrice.Value = value;
@@ -248,7 +248,7 @@ public class PlateauStrategy : Strategy
 	/// <summary>
 	/// Applied price used for Bollinger Bands calculations.
 	/// </summary>
-	public PlateauAppliedPrice BandsAppliedPrice
+	public PlateauAppliedPrices BandsAppliedPrice
 	{
 		get => _bandsAppliedPrice.Value;
 		set => _bandsAppliedPrice.Value = value;
@@ -320,7 +320,7 @@ public class PlateauStrategy : Strategy
 			.SetDisplay("Trailing Step", "Minimal trailing step in pips", "Risk")
 			.SetCanOptimize(true);
 
-		_moneyMode = Param(nameof(MoneyMode), PlateauMoneyManagementMode.RiskPercent)
+		_moneyMode = Param(nameof(MoneyMode), PlateauMoneyManagementModes.RiskPercent)
 			.SetDisplay("Money Mode", "Choose between fixed lot or risk percent", "Money Management");
 
 		_moneyValue = Param(nameof(MoneyValue), 3m)
@@ -338,10 +338,10 @@ public class PlateauStrategy : Strategy
 		_maShift = Param(nameof(MaShift), 0)
 			.SetDisplay("MA Shift", "Horizontal shift applied to moving averages", "Indicators");
 
-		_maMethod = Param(nameof(MaMethod), PlateauMovingAverageMethod.LinearWeighted)
+		_maMethod = Param(nameof(MaMethod), PlateauMovingAverageMethods.LinearWeighted)
 			.SetDisplay("MA Method", "Moving average smoothing method", "Indicators");
 
-		_maAppliedPrice = Param(nameof(MaAppliedPrice), PlateauAppliedPrice.Typical)
+		_maAppliedPrice = Param(nameof(MaAppliedPrice), PlateauAppliedPrices.Typical)
 			.SetDisplay("MA Price", "Applied price for moving averages", "Indicators");
 
 		_bandsPeriod = Param(nameof(BandsPeriod), 150)
@@ -355,7 +355,7 @@ public class PlateauStrategy : Strategy
 			.SetDisplay("Bands Deviation", "Bollinger Bands deviation multiplier", "Indicators")
 			.SetCanOptimize(true);
 
-		_bandsAppliedPrice = Param(nameof(BandsAppliedPrice), PlateauAppliedPrice.Typical)
+		_bandsAppliedPrice = Param(nameof(BandsAppliedPrice), PlateauAppliedPrices.Typical)
 			.SetDisplay("Bands Price", "Applied price for Bollinger Bands", "Indicators");
 
 		_reverseSignals = Param(nameof(ReverseSignals), false)
@@ -414,7 +414,7 @@ public class PlateauStrategy : Strategy
 		_trailingStopOffset = TrailingStopPips * _pipSize;
 		_trailingStepOffset = TrailingStepPips * _pipSize;
 
-		if (MoneyMode == PlateauMoneyManagementMode.FixedLot && MoneyValue > 0m)
+		if (MoneyMode == PlateauMoneyManagementModes.FixedLot && MoneyValue > 0m)
 			Volume = MoneyValue;
 
 		StartProtection();
@@ -644,10 +644,10 @@ public class PlateauStrategy : Strategy
 
 	private decimal CalculateOrderVolume()
 	{
-	if (MoneyMode == PlateauMoneyManagementMode.FixedLot)
+	if (MoneyMode == PlateauMoneyManagementModes.FixedLot)
 	return MoneyValue;
 
-	if (MoneyMode != PlateauMoneyManagementMode.RiskPercent)
+	if (MoneyMode != PlateauMoneyManagementModes.RiskPercent)
 	return Volume;
 
 	if (MoneyValue <= 0m || _stopLossOffset <= 0m)
@@ -741,29 +741,29 @@ public class PlateauStrategy : Strategy
 	return (bits[3] >> 16) & 0xFF;
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, PlateauAppliedPrice price)
+	private static decimal GetAppliedPrice(ICandleMessage candle, PlateauAppliedPrices price)
 	{
 	return price switch
 	{
-	PlateauAppliedPrice.Close => candle.ClosePrice,
-	PlateauAppliedPrice.Open => candle.OpenPrice,
-	PlateauAppliedPrice.High => candle.HighPrice,
-	PlateauAppliedPrice.Low => candle.LowPrice,
-	PlateauAppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-	PlateauAppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-	PlateauAppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
+	PlateauAppliedPrices.Close => candle.ClosePrice,
+	PlateauAppliedPrices.Open => candle.OpenPrice,
+	PlateauAppliedPrices.High => candle.HighPrice,
+	PlateauAppliedPrices.Low => candle.LowPrice,
+	PlateauAppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+	PlateauAppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+	PlateauAppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
 	_ => candle.ClosePrice,
 	};
 	}
 
-	private static IIndicator CreateMovingAverage(PlateauMovingAverageMethod method, int period)
+	private static IIndicator CreateMovingAverage(PlateauMovingAverageMethods method, int period)
 	{
 	return method switch
 	{
-	PlateauMovingAverageMethod.Simple => new SimpleMovingAverage { Length = Math.Max(1, period) },
-	PlateauMovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = Math.Max(1, period) },
-	PlateauMovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = Math.Max(1, period) },
-	PlateauMovingAverageMethod.LinearWeighted => new WeightedMovingAverage { Length = Math.Max(1, period) },
+	PlateauMovingAverageMethods.Simple => new SimpleMovingAverage { Length = Math.Max(1, period) },
+	PlateauMovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = Math.Max(1, period) },
+	PlateauMovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = Math.Max(1, period) },
+	PlateauMovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = Math.Max(1, period) },
 	_ => new WeightedMovingAverage { Length = Math.Max(1, period) },
 	};
 	}

@@ -16,14 +16,14 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// XD-RangeSwitch strategy converted from the MetaTrader 5 expert advisor.
 /// The logic monitors channel breakouts identified by the XD-RangeSwitch indicator
-/// and optionally flips the trading direction based on the <see cref="XdRangeSwitchTradeDirection"/> parameter.
+/// and optionally flips the trading direction based on the <see cref="XdRangeSwitchTradeDirections"/> parameter.
 /// </summary>
 public class XdRangeSwitchStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _peaks;
 	private readonly StrategyParam<int> _signalBar;
-	private readonly StrategyParam<XdRangeSwitchTradeDirection> _tradeDirection;
+	private readonly StrategyParam<XdRangeSwitchTradeDirections> _tradeDirection;
 	private readonly StrategyParam<bool> _allowBuyEntry;
 	private readonly StrategyParam<bool> _allowSellEntry;
 	private readonly StrategyParam<bool> _allowBuyExit;
@@ -58,7 +58,7 @@ public class XdRangeSwitchStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Signal Bar", "How many completed bars back to read the indicator buffers", "Indicator");
 
-		_tradeDirection = Param(nameof(TradeDirection), XdRangeSwitchTradeDirection.AgainstSignal)
+		_tradeDirection = Param(nameof(TradeDirection), XdRangeSwitchTradeDirections.AgainstSignal)
 		.SetDisplay("Trade Direction", "Trade with or against the XD-RangeSwitch signals", "Trading");
 
 		_allowBuyEntry = Param(nameof(AllowBuyEntry), true)
@@ -118,7 +118,7 @@ public class XdRangeSwitchStrategy : Strategy
 	/// <summary>
 	/// Determines whether trades follow or fade the indicator signals.
 	/// </summary>
-	public XdRangeSwitchTradeDirection TradeDirection
+	public XdRangeSwitchTradeDirections TradeDirection
 	{
 		get => _tradeDirection.Value;
 		set => _tradeDirection.Value = value;
@@ -260,7 +260,7 @@ public class XdRangeSwitchStrategy : Strategy
 		decimal? downTrend;
 		decimal? downSignal;
 
-		if (TradeDirection == XdRangeSwitchTradeDirection.WithSignal)
+		if (TradeDirection == XdRangeSwitchTradeDirections.WithSignal)
 		{
 		upTrend = reference.LowerBand;
 		upSignal = reference.DownSignal;
@@ -504,7 +504,7 @@ public class XdRangeSwitchStrategy : Strategy
 /// <summary>
 /// Trade direction selection matching the MT5 expert advisor input.
 /// </summary>
-public enum XdRangeSwitchTradeDirection
+public enum XdRangeSwitchTradeDirections
 {
 	/// <summary>
 	/// Counter-trend logic: buy on downward channel breaks and sell on upward breaks.

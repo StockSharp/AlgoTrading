@@ -18,7 +18,7 @@ using StockSharp.Messages;
 /// </summary>
 public class VirtualProfitCloseStrategy : Strategy
 {
-	private enum DemoDirection
+	private enum DemoDirections
 	{
 		Sell,
 		Buy
@@ -29,7 +29,7 @@ public class VirtualProfitCloseStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingOffsetPips;
 	private readonly StrategyParam<decimal> _trailingActivationPips;
 	private readonly StrategyParam<bool> _enableDemoMode;
-	private readonly StrategyParam<DemoDirection> _demoDirection;
+	private readonly StrategyParam<DemoDirections> _demoDirection;
 	private readonly StrategyParam<decimal> _demoVolume;
 	private readonly StrategyParam<decimal> _demoStopPips;
 
@@ -71,7 +71,7 @@ public class VirtualProfitCloseStrategy : Strategy
 		_enableDemoMode = Param(nameof(EnableDemoMode), false)
 			.SetDisplay("Demo Mode", "Automatically open showcase positions", "Testing");
 
-		_demoDirection = Param(nameof(DemoOrderDirection), DemoDirection.Sell)
+		_demoDirection = Param(nameof(DemoOrderDirection), DemoDirections.Sell)
 			.SetDisplay("Demo Direction", "Order side used in demo mode", "Testing");
 
 		_demoVolume = Param(nameof(DemoOrderVolume), 1m)
@@ -131,7 +131,7 @@ public class VirtualProfitCloseStrategy : Strategy
 	/// <summary>
 	/// Direction used for demo orders.
 	/// </summary>
-	public DemoDirection DemoOrderDirection
+	public DemoDirections DemoOrderDirection
 	{
 		get => _demoDirection.Value;
 		set => _demoDirection.Value = value;
@@ -329,13 +329,13 @@ public class VirtualProfitCloseStrategy : Strategy
 
 		switch (DemoOrderDirection)
 		{
-			case DemoDirection.Buy:
+			case DemoDirections.Buy:
 			{
 			BuyMarket(volume);
 			ApplyDemoStop(true);
 			break;
 			}
-			case DemoDirection.Sell:
+			case DemoDirections.Sell:
 			{
 			SellMarket(volume);
 			ApplyDemoStop(false);

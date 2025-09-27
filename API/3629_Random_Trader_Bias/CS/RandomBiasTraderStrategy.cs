@@ -21,7 +21,7 @@ public class RandomBiasTraderStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _rewardRiskRatio;
-	private readonly StrategyParam<LossMode> _lossMode;
+	private readonly StrategyParam<LossModes> _lossMode;
 	private readonly StrategyParam<decimal> _lossAtrMultiplier;
 	private readonly StrategyParam<decimal> _lossPipDistance;
 	private readonly StrategyParam<decimal> _riskPercentPerTrade;
@@ -56,7 +56,7 @@ public class RandomBiasTraderStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(1m, 5m, 0.5m);
 
-		_lossMode = Param(nameof(LossType), LossMode.Pip)
+		_lossMode = Param(nameof(LossType), LossModes.Pip)
 		.SetDisplay("Stop Mode", "Select between fixed pip or ATR based stop calculation.", "Risk");
 
 		_lossAtrMultiplier = Param(nameof(LossAtrMultiplier), 5m)
@@ -111,14 +111,14 @@ public class RandomBiasTraderStrategy : Strategy
 	/// <summary>
 	/// Stop loss calculation mode.
 	/// </summary>
-	public LossMode LossType
+	public LossModes LossType
 	{
 		get => _lossMode.Value;
 		set => _lossMode.Value = value;
 	}
 
 	/// <summary>
-	/// ATR multiplier used when <see cref="LossType"/> equals <see cref="LossMode.Atr"/>.
+	/// ATR multiplier used when <see cref="LossType"/> equals <see cref="LossModes.Atr"/>.
 	/// </summary>
 	public decimal LossAtrMultiplier
 	{
@@ -260,7 +260,7 @@ public class RandomBiasTraderStrategy : Strategy
 
 	private decimal GetStopDistance(IIndicatorValue atrValue)
 	{
-		if (LossType == LossMode.Pip)
+		if (LossType == LossModes.Pip)
 		{
 			var pip = _pipSize;
 			if (pip <= 0m)
@@ -498,7 +498,7 @@ public class RandomBiasTraderStrategy : Strategy
 /// <summary>
 /// Stop loss calculation modes supported by <see cref="RandomBiasTraderStrategy"/>.
 /// </summary>
-public enum LossMode
+public enum LossModes
 {
 	/// <summary>
 	/// Calculate stop distance from the ATR(10) indicator.

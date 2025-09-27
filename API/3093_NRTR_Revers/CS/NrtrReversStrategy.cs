@@ -43,8 +43,8 @@ public class NrtrReversStrategy : Strategy
 	private decimal _reverseDistance;
 	private int _historyCapacity;
 
-	private TradeDirection _currentTrend = TradeDirection.Long;
-	private TradeDirection _desiredTrend = TradeDirection.Long;
+	private TradeDirections _currentTrend = TradeDirections.Long;
+	private TradeDirections _desiredTrend = TradeDirections.Long;
 	private bool _waitForFlat;
 
 	private decimal? _longStopPrice;
@@ -52,7 +52,7 @@ public class NrtrReversStrategy : Strategy
 	private decimal? _shortStopPrice;
 	private decimal? _shortTakeProfit;
 
-	private enum TradeDirection
+	private enum TradeDirections
 	{
 		Long,
 		Short
@@ -201,8 +201,8 @@ public class NrtrReversStrategy : Strategy
 		_reverseDistance = 0m;
 		_historyCapacity = 0;
 
-		_currentTrend = TradeDirection.Long;
-		_desiredTrend = TradeDirection.Long;
+		_currentTrend = TradeDirections.Long;
+		_desiredTrend = TradeDirections.Long;
 		_waitForFlat = false;
 
 		_longStopPrice = null;
@@ -248,7 +248,7 @@ public class NrtrReversStrategy : Strategy
 		{
 			_waitForFlat = false;
 
-			if (_desiredTrend == TradeDirection.Long)
+			if (_desiredTrend == TradeDirections.Long)
 			{
 				EnterLong(candle);
 			}
@@ -283,7 +283,7 @@ public class NrtrReversStrategy : Strategy
 		if (halfPeriod <= 0)
 		halfPeriod = 1;
 
-		if (_currentTrend == TradeDirection.Long)
+		if (_currentTrend == TradeDirections.Long)
 		{
 			var primaryLow = GetLowest(2, AtrPeriod - 1);
 			if (!primaryLow.HasValue)
@@ -303,8 +303,8 @@ public class NrtrReversStrategy : Strategy
 			if (shouldReverse)
 			{
 				LogInfo("Change the trend. Now 'SELL'.");
-				_currentTrend = TradeDirection.Short;
-				_desiredTrend = TradeDirection.Short;
+				_currentTrend = TradeDirections.Short;
+				_desiredTrend = TradeDirections.Short;
 
 				if (Position > 0)
 				{
@@ -338,8 +338,8 @@ public class NrtrReversStrategy : Strategy
 			if (shouldReverse)
 			{
 				LogInfo("Change the trend. Now 'BUY'.");
-				_currentTrend = TradeDirection.Long;
-				_desiredTrend = TradeDirection.Long;
+				_currentTrend = TradeDirections.Long;
+				_desiredTrend = TradeDirections.Long;
 
 				if (Position < 0)
 				{

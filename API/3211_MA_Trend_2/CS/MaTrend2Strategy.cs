@@ -25,14 +25,14 @@ public class MaTrend2Strategy : Strategy
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _trailingStopPips;
 	private readonly StrategyParam<int> _trailingStepPips;
-	private readonly StrategyParam<LotManagementMode> _lotMode;
+	private readonly StrategyParam<LotManagementModes> _lotMode;
 	private readonly StrategyParam<decimal> _lotOrRiskValue;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageMethod> _maMethod;
+	private readonly StrategyParam<MovingAverageMethods> _maMethod;
 	private readonly StrategyParam<CandlePrice> _maPrice;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<TradingDirection> _tradingDirection;
+	private readonly StrategyParam<TradingDirections> _tradingDirection;
 	private readonly StrategyParam<bool> _onlyOnePosition;
 	private readonly StrategyParam<bool> _reverseSignals;
 	private readonly StrategyParam<bool> _closeOpposite;
@@ -82,7 +82,7 @@ public class MaTrend2Strategy : Strategy
 	/// <summary>
 	/// Lot sizing mode used by the strategy.
 	/// </summary>
-	public LotManagementMode LotMode
+	public LotManagementModes LotMode
 	{
 		get => _lotMode.Value;
 		set => _lotMode.Value = value;
@@ -118,7 +118,7 @@ public class MaTrend2Strategy : Strategy
 	/// <summary>
 	/// Moving average smoothing method.
 	/// </summary>
-	public MovingAverageMethod MaMethod
+	public MovingAverageMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -145,7 +145,7 @@ public class MaTrend2Strategy : Strategy
 	/// <summary>
 	/// Allowed trade direction.
 	/// </summary>
-	public TradingDirection Direction
+	public TradingDirections Direction
 	{
 		get => _tradingDirection.Value;
 		set => _tradingDirection.Value = value;
@@ -199,7 +199,7 @@ public class MaTrend2Strategy : Strategy
 			.SetDisplay("Trailing Step (pips)", "Minimal improvement before adjusting the trailing stop", "Risk")
 			.SetNotNegative();
 
-		_lotMode = Param(nameof(LotMode), LotManagementMode.RiskPercent)
+		_lotMode = Param(nameof(LotMode), LotManagementModes.RiskPercent)
 			.SetDisplay("Lot Mode", "Fixed lot or percent risk sizing", "Risk");
 
 		_lotOrRiskValue = Param(nameof(LotOrRiskValue), 3m)
@@ -214,7 +214,7 @@ public class MaTrend2Strategy : Strategy
 			.SetDisplay("MA Shift", "Bars between the current candle and the MA sample", "Indicators")
 			.SetNotNegative();
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.LinearWeighted)
+		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.LinearWeighted)
 			.SetDisplay("MA Method", "Moving average smoothing method", "Indicators");
 
 		_maPrice = Param(nameof(MaPrice), CandlePrice.Weighted)
@@ -223,7 +223,7 @@ public class MaTrend2Strategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series", "General");
 
-		_tradingDirection = Param(nameof(Direction), TradingDirection.Both)
+		_tradingDirection = Param(nameof(Direction), TradingDirections.Both)
 			.SetDisplay("Direction", "Allowed trade direction", "Execution");
 
 		_onlyOnePosition = Param(nameof(OnlyOnePosition), false)
@@ -318,8 +318,8 @@ public class MaTrend2Strategy : Strategy
 		var reference = _maHistory[referenceIndex];
 		var closePrice = candle.ClosePrice;
 
-		var allowLong = Direction is TradingDirection.Both or TradingDirection.BuyOnly;
-		var allowShort = Direction is TradingDirection.Both or TradingDirection.SellOnly;
+		var allowLong = Direction is TradingDirections.Both or TradingDirections.BuyOnly;
+		var allowShort = Direction is TradingDirections.Both or TradingDirections.SellOnly;
 
 		var buySignal = !ReverseSignals ? closePrice > reference : closePrice < reference;
 		var sellSignal = !ReverseSignals ? closePrice < reference : closePrice > reference;
@@ -393,7 +393,7 @@ public class MaTrend2Strategy : Strategy
 	private decimal CalculateOrderVolume(decimal entryPrice, bool isLong)
 	{
 		var mode = LotMode;
-		if (mode == LotManagementMode.FixedVolume)
+		if (mode == LotManagementModes.FixedVolume)
 			return NormalizeVolume(LotOrRiskValue);
 
 		var stopDistance = StopLossPips * _pipSize;
@@ -540,14 +540,14 @@ public class MaTrend2Strategy : Strategy
 		return digits;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethod method, int length, CandlePrice price)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length, CandlePrice price)
 	{
 		LengthIndicator<decimal> indicator = method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage(),
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage(),
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage(),
-			MovingAverageMethod.LinearWeighted => new WeightedMovingAverage(),
+			MovingAverageMethods.Simple => new SimpleMovingAverage(),
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage(),
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage(),
+			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage(),
 			_ => new SimpleMovingAverage(),
 		};
 
@@ -575,7 +575,7 @@ public class MaTrend2Strategy : Strategy
 	/// <summary>
 	/// Defines the lot sizing modes supported by the strategy.
 	/// </summary>
-	public enum LotManagementMode
+	public enum LotManagementModes
 	{
 		/// <summary>
 		/// Use the parameter value as a direct volume.
@@ -591,7 +591,7 @@ public class MaTrend2Strategy : Strategy
 	/// <summary>
 	/// Trade direction filters.
 	/// </summary>
-	public enum TradingDirection
+	public enum TradingDirections
 	{
 		/// <summary>
 		/// Long trades only.
@@ -612,7 +612,7 @@ public class MaTrend2Strategy : Strategy
 	/// <summary>
 	/// Supported moving average smoothing methods.
 	/// </summary>
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		/// <summary>
 		/// Simple moving average.

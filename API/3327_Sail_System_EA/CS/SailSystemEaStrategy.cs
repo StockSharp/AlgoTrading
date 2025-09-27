@@ -33,7 +33,7 @@ public class SailSystemEaStrategy : Strategy
 	private readonly StrategyParam<bool> _useTimeFilter;
 	private readonly StrategyParam<TimeSpan> _startTime;
 	private readonly StrategyParam<TimeSpan> _stopTime;
-	private readonly StrategyParam<ExistingOrdersAction> _manageExistingOrders;
+	private readonly StrategyParam<ExistingOrdersActions> _manageExistingOrders;
 	private readonly StrategyParam<bool> _autoLotSize;
 	private readonly StrategyParam<decimal> _riskFactor;
 	private readonly StrategyParam<decimal> _manualLotSize;
@@ -41,8 +41,8 @@ public class SailSystemEaStrategy : Strategy
 	private readonly StrategyParam<int> _slippagePoints;
 	private readonly StrategyParam<int> _ordersId;
 	private readonly StrategyParam<decimal> _maxSpreadPips;
-	private readonly StrategyParam<SpreadUsageMode> _spreadUsageMode;
-	private readonly StrategyParam<SpreadAction> _highSpreadAction;
+	private readonly StrategyParam<SpreadUsageModes> _spreadUsageMode;
+	private readonly StrategyParam<SpreadActions> _highSpreadAction;
 	private readonly StrategyParam<decimal> _increaseMultiplier;
 	private readonly StrategyParam<decimal> _commissionPips;
 	private readonly StrategyParam<bool> _countAverageSpread;
@@ -80,7 +80,7 @@ public class SailSystemEaStrategy : Strategy
 	/// <summary>
 	/// Spread usage mode taken from the original MQL enumeration.
 	/// </summary>
-	public enum SpreadUsageMode
+	public enum SpreadUsageModes
 	{
 		UseAverage,
 		UseCurrent
@@ -89,7 +89,7 @@ public class SailSystemEaStrategy : Strategy
 	/// <summary>
 	/// Action to take when spread is above the configured limit.
 	/// </summary>
-	public enum SpreadAction
+	public enum SpreadActions
 	{
 		IncreaseLevels,
 		CloseOrders
@@ -98,7 +98,7 @@ public class SailSystemEaStrategy : Strategy
 	/// <summary>
 	/// Behaviour applied when trading is paused by the time filter.
 	/// </summary>
-	public enum ExistingOrdersAction
+	public enum ExistingOrdersActions
 	{
 		KeepAll,
 		DeletePending,
@@ -159,7 +159,7 @@ public class SailSystemEaStrategy : Strategy
 		_stopTime = Param(nameof(TimeStopTrade), TimeSpan.Zero)
 		.SetDisplay("Stop Time", "Session end in exchange time", "Session");
 
-		_manageExistingOrders = Param(nameof(ManageExistingOrders), ExistingOrdersAction.DeletePendingAndCloseMarket)
+		_manageExistingOrders = Param(nameof(ManageExistingOrders), ExistingOrdersActions.DeletePendingAndCloseMarket)
 		.SetDisplay("Manage Existing", "Action applied to open exposure when the session closes", "Session");
 
 		_autoLotSize = Param(nameof(AutoLotSize), false)
@@ -186,10 +186,10 @@ public class SailSystemEaStrategy : Strategy
 		_maxSpreadPips = Param(nameof(MaxSpread), 1m)
 		.SetDisplay("Max Spread (pips)", "Spread ceiling including commissions", "Filters");
 
-		_spreadUsageMode = Param(nameof(TypeOfSpreadUse), SpreadUsageMode.UseAverage)
+		_spreadUsageMode = Param(nameof(TypeOfSpreadUse), SpreadUsageModes.UseAverage)
 		.SetDisplay("Spread Mode", "Use average or current spread for filtering", "Filters");
 
-		_highSpreadAction = Param(nameof(HighSpreadAction), SpreadAction.IncreaseLevels)
+		_highSpreadAction = Param(nameof(HighSpreadAction), SpreadActions.IncreaseLevels)
 		.SetDisplay("High Spread Action", "Behaviour when spread exceeds the limit", "Filters");
 
 		_increaseMultiplier = Param(nameof(MultiplierIncrease), 2m)
@@ -387,7 +387,7 @@ public class SailSystemEaStrategy : Strategy
 
 		UpdateSpreadAverage(spread);
 
-		var spreadToUse = _spreadUsageMode.Value == SpreadUsageMode.UseAverage && _countAverageSpread.Value
+		var spreadToUse = _spreadUsageMode.Value == SpreadUsageModes.UseAverage && _countAverageSpread.Value
 		? _averageSpread
 		: spread;
 
@@ -403,7 +403,7 @@ public class SailSystemEaStrategy : Strategy
 			HandleHighSpread();
 
 			if (_closeOnHighSpread.Value)
-			FlattenPositions(CloseReason.SpreadLimit);
+			FlattenPositions(CloseReasons.SpreadLimit);
 
 			return;
 		}
@@ -530,13 +530,13 @@ public class SailSystemEaStrategy : Strategy
 
 		if (position.StopPrice is decimal stop && price <= stop)
 		{
-			ClosePosition(position, CloseReason.StopLoss);
+			ClosePosition(position, CloseReasons.StopLoss);
 			return;
 		}
 
 		if (position.TakePrice is decimal take && price >= take)
 		{
-			ClosePosition(position, CloseReason.TakeProfit);
+			ClosePosition(position, CloseReasons.TakeProfit);
 		}
 	}
 
@@ -555,13 +555,13 @@ public class SailSystemEaStrategy : Strategy
 
 		if (position.StopPrice is decimal stop && price >= stop)
 		{
-			ClosePosition(position, CloseReason.StopLoss);
+			ClosePosition(position, CloseReasons.StopLoss);
 			return;
 		}
 
 		if (position.TakePrice is decimal take && price <= take)
 		{
-			ClosePosition(position, CloseReason.TakeProfit);
+			ClosePosition(position, CloseReasons.TakeProfit);
 		}
 	}
 
@@ -610,11 +610,11 @@ public class SailSystemEaStrategy : Strategy
 	{
 		switch (_highSpreadAction.Value)
 		{
-		case SpreadAction.IncreaseLevels:
+		case SpreadActions.IncreaseLevels:
 			_currentEntryMultiplier = _increaseMultiplier.Value > 1m ? _increaseMultiplier.Value : 1m;
 			break;
 
-		case SpreadAction.CloseOrders:
+		case SpreadActions.CloseOrders:
 			CancelPendingEntries();
 			break;
 		}
@@ -624,20 +624,20 @@ public class SailSystemEaStrategy : Strategy
 	{
 		switch (_manageExistingOrders.Value)
 		{
-		case ExistingOrdersAction.KeepAll:
+		case ExistingOrdersActions.KeepAll:
 			return;
 
-		case ExistingOrdersAction.DeletePending:
+		case ExistingOrdersActions.DeletePending:
 			CancelPendingEntries();
 			break;
 
-		case ExistingOrdersAction.CloseMarket:
-			FlattenPositions(CloseReason.SessionEnd);
+		case ExistingOrdersActions.CloseMarket:
+			FlattenPositions(CloseReasons.SessionEnd);
 			break;
 
-		case ExistingOrdersAction.DeletePendingAndCloseMarket:
+		case ExistingOrdersActions.DeletePendingAndCloseMarket:
 			CancelPendingEntries();
-			FlattenPositions(CloseReason.SessionEnd);
+			FlattenPositions(CloseReasons.SessionEnd);
 			break;
 		}
 	}
@@ -651,7 +651,7 @@ public class SailSystemEaStrategy : Strategy
 		}
 	}
 
-	private void FlattenPositions(CloseReason reason)
+	private void FlattenPositions(CloseReasons reason)
 	{
 		if (_longPosition is { IsActive: true })
 		{
@@ -664,7 +664,7 @@ public class SailSystemEaStrategy : Strategy
 		}
 	}
 
-	private void ClosePosition(PositionState position, CloseReason reason)
+	private void ClosePosition(PositionState position, CloseReasons reason)
 	{
 		if (position.IsClosing)
 		return;
@@ -679,10 +679,10 @@ public class SailSystemEaStrategy : Strategy
 		var exitSide = position.Side == Sides.Buy ? Sides.Sell : Sides.Buy;
 		var comment = reason switch
 		{
-			CloseReason.StopLoss => "SailSystemEA:StopLoss",
-			CloseReason.TakeProfit => "SailSystemEA:TakeProfit",
-			CloseReason.SessionEnd => "SailSystemEA:SessionExit",
-			CloseReason.SpreadLimit => "SailSystemEA:SpreadExit",
+			CloseReasons.StopLoss => "SailSystemEA:StopLoss",
+			CloseReasons.TakeProfit => "SailSystemEA:TakeProfit",
+			CloseReasons.SessionEnd => "SailSystemEA:SessionExit",
+			CloseReasons.SpreadLimit => "SailSystemEA:SpreadExit",
 			_ => "SailSystemEA:Exit"
 		};
 
@@ -698,20 +698,20 @@ public class SailSystemEaStrategy : Strategy
 			Position = position,
 			IsEntry = true,
 			RemainingVolume = order.Volume,
-			CloseReason = CloseReason.None
+			CloseReasons = CloseReasons.None
 		};
 
 		RegisterOrder(order);
 	}
 
-	private void RegisterExitOrder(Order order, PositionState position, CloseReason reason)
+	private void RegisterExitOrder(Order order, PositionState position, CloseReasons reason)
 	{
 		_pendingOrders[order] = new PendingOrderInfo
 		{
 			Position = position,
 			IsEntry = false,
 			RemainingVolume = order.Volume,
-			CloseReason = reason
+			CloseReasons = reason
 		};
 
 		RegisterOrder(order);
@@ -790,7 +790,7 @@ public class SailSystemEaStrategy : Strategy
 		}
 		else
 		{
-			this.LogInfo("{0} exit filled at {1} for {2} ({3})", position.Side, averagePrice, info.FilledVolume, info.CloseReason);
+			this.LogInfo("{0} exit filled at {1} for {2} ({3})", position.Side, averagePrice, info.FilledVolume, info.CloseReasons);
 			ReleasePosition(position);
 		}
 	}
@@ -1007,10 +1007,10 @@ public class SailSystemEaStrategy : Strategy
 		public decimal RemainingVolume { get; set; }
 		public decimal FilledVolume { get; set; }
 		public decimal WeightedPrice { get; set; }
-		public CloseReason CloseReason { get; init; }
+		public CloseReasons CloseReasons { get; init; }
 	}
 
-	private enum CloseReason
+	private enum CloseReasons
 	{
 		None,
 		StopLoss,

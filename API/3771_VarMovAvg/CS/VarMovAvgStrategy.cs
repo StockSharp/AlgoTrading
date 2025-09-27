@@ -23,7 +23,7 @@ public class VarMovAvgStrategy : Strategy
 	/// <summary>
 	/// MetaTrader moving average methods supported by the stop calculation.
 	/// </summary>
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		Simple,
 		Exponential,
@@ -42,7 +42,7 @@ public class VarMovAvgStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopPipsDiff;
 	private readonly StrategyParam<int> _stopMaPeriod;
 	private readonly StrategyParam<int> _stopMaShift;
-	private readonly StrategyParam<MovingAverageMethod> _stopMaMethod;
+	private readonly StrategyParam<MovingAverageMethods> _stopMaMethod;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private VariableMovingAverage _vma = null!;
@@ -155,7 +155,7 @@ public class VarMovAvgStrategy : Strategy
 	/// <summary>
 	/// Moving average method used for trailing stop calculation.
 	/// </summary>
-	public MovingAverageMethod StopMaMethod
+	public MovingAverageMethods StopMaMethod
 	{
 		get => _stopMaMethod.Value;
 		set => _stopMaMethod.Value = value;
@@ -225,7 +225,7 @@ public class VarMovAvgStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Stop MA Shift", "Bars shift applied to the stop moving average", "Risk");
 
-		_stopMaMethod = Param(nameof(StopMaMethod), MovingAverageMethod.Exponential)
+		_stopMaMethod = Param(nameof(StopMaMethod), MovingAverageMethods.Exponential)
 			.SetDisplay("Stop MA Method", "Moving average type used for stops", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -399,20 +399,20 @@ public class VarMovAvgStrategy : Strategy
 		return value;
 	}
 
-	private static IIndicator CreateMovingAverage(MovingAverageMethod method, int length)
+	private static IIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new ExponentialMovingAverage { Length = length }
 		};
 	}
 
 	private sealed class SignalTracker
 	{
-		private enum SignalState
+		private enum SignalStates
 		{
 			Neutral,
 			BarA,
@@ -420,7 +420,7 @@ public class VarMovAvgStrategy : Strategy
 		}
 
 		private readonly bool _isLong;
-		private SignalState _state = SignalState.Neutral;
+		private SignalStates _state = SignalStates.Neutral;
 		private decimal _barAReference;
 		private decimal _entryPrice;
 
@@ -431,7 +431,7 @@ public class VarMovAvgStrategy : Strategy
 
 		public void Reset()
 		{
-			_state = SignalState.Neutral;
+			_state = SignalStates.Neutral;
 			_barAReference = 0m;
 			_entryPrice = 0m;
 		}
@@ -452,14 +452,14 @@ public class VarMovAvgStrategy : Strategy
 
 				switch (_state)
 				{
-					case SignalState.Neutral:
+					case SignalStates.Neutral:
 						if (close >= vma + barAOffset)
 						{
-							_state = SignalState.BarA;
+							_state = SignalStates.BarA;
 							_barAReference = close;
 						}
 						break;
-					case SignalState.BarA:
+					case SignalStates.BarA:
 						if (close <= vma - barAOffset)
 						{
 							Reset();
@@ -468,11 +468,11 @@ public class VarMovAvgStrategy : Strategy
 
 						if (close >= _barAReference + barBOffset)
 						{
-							_state = SignalState.BarB;
+							_state = SignalStates.BarB;
 							_entryPrice = high + tradeOffset;
 						}
 						break;
-					case SignalState.BarB:
+					case SignalStates.BarB:
 						if (close <= vma - barAOffset)
 							Reset();
 						break;
@@ -488,14 +488,14 @@ public class VarMovAvgStrategy : Strategy
 
 				switch (_state)
 				{
-					case SignalState.Neutral:
+					case SignalStates.Neutral:
 						if (close <= vma - barAOffset)
 						{
-							_state = SignalState.BarA;
+							_state = SignalStates.BarA;
 							_barAReference = close;
 						}
 						break;
-					case SignalState.BarA:
+					case SignalStates.BarA:
 						if (close >= vma + barAOffset)
 						{
 							Reset();
@@ -504,11 +504,11 @@ public class VarMovAvgStrategy : Strategy
 
 						if (close <= _barAReference - barBOffset)
 						{
-							_state = SignalState.BarB;
+							_state = SignalStates.BarB;
 							_entryPrice = low - tradeOffset;
 						}
 						break;
-					case SignalState.BarB:
+					case SignalStates.BarB:
 						if (close >= vma + barAOffset)
 							Reset();
 						break;
@@ -518,7 +518,7 @@ public class VarMovAvgStrategy : Strategy
 
 		public bool TryEnter(ICandleMessage candle, decimal entryBand)
 		{
-			if (_state != SignalState.BarB)
+			if (_state != SignalStates.BarB)
 				return false;
 
 			var close = candle.ClosePrice;

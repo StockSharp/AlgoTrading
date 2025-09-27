@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies;
 public class StraddleTrailV240Strategy : Strategy
 {
 	private readonly StrategyParam<bool> _shutdownNow;
-	private readonly StrategyParam<ShutdownMode> _shutdownMode;
+	private readonly StrategyParam<ShutdownModes> _shutdownMode;
 	private readonly StrategyParam<decimal> _distanceFromPrice;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
@@ -56,7 +56,7 @@ public class StraddleTrailV240Strategy : Strategy
 	private bool _straddleFilled;
 
 	public bool ShutdownNow { get => _shutdownNow.Value; set => _shutdownNow.Value = value; }
-	public ShutdownMode ShutdownOption { get => _shutdownMode.Value; set => _shutdownMode.Value = value; }
+	public ShutdownModes ShutdownOption { get => _shutdownMode.Value; set => _shutdownMode.Value = value; }
 	public decimal DistanceFromPrice { get => _distanceFromPrice.Value; set => _distanceFromPrice.Value = value; }
 	public decimal StopLossPips { get => _stopLossPips.Value; set => _stopLossPips.Value = value; }
 	public decimal TakeProfitPips { get => _takeProfitPips.Value; set => _takeProfitPips.Value = value; }
@@ -81,7 +81,7 @@ public class StraddleTrailV240Strategy : Strategy
 		_shutdownNow = Param(nameof(ShutdownNow), false)
 			.SetDisplay("Shutdown", "Force closing and cancelling", "Risk");
 
-		_shutdownMode = Param(nameof(ShutdownOption), ShutdownMode.All)
+		_shutdownMode = Param(nameof(ShutdownOption), ShutdownModes.All)
 			.SetDisplay("Shutdown Mode", "What to close or cancel", "Risk");
 
 		_distanceFromPrice = Param(nameof(DistanceFromPrice), 30m)
@@ -465,32 +465,32 @@ public class StraddleTrailV240Strategy : Strategy
 	{
 		switch (ShutdownOption)
 		{
-			case ShutdownMode.All:
+			case ShutdownModes.All:
 				CancelActiveStraddle();
 				if (Position != 0)
 					ClosePosition();
 				return true;
-			case ShutdownMode.TriggeredPositions:
+			case ShutdownModes.TriggeredPositions:
 				if (Position != 0)
 					ClosePosition();
 				return true;
-			case ShutdownMode.TriggeredLong:
+			case ShutdownModes.TriggeredLong:
 				if (Position > 0)
 					ClosePosition();
 				return true;
-			case ShutdownMode.TriggeredShort:
+			case ShutdownModes.TriggeredShort:
 				if (Position < 0)
 					ClosePosition();
 				return true;
-			case ShutdownMode.PendingOrders:
+			case ShutdownModes.PendingOrders:
 				CancelActiveStraddle();
 				return true;
-			case ShutdownMode.PendingLong:
+			case ShutdownModes.PendingLong:
 				if (_buyStopOrder != null && !_buyStopOrder.State.IsFinal())
 					CancelOrder(_buyStopOrder);
 				_buyStopOrder = null;
 				return true;
-			case ShutdownMode.PendingShort:
+			case ShutdownModes.PendingShort:
 				if (_sellStopOrder != null && !_sellStopOrder.State.IsFinal())
 					CancelOrder(_sellStopOrder);
 				_sellStopOrder = null;
@@ -610,7 +610,7 @@ public class StraddleTrailV240Strategy : Strategy
 		return rounded;
 	}
 
-	public enum ShutdownMode
+	public enum ShutdownModes
 	{
 		All = 0,
 		TriggeredPositions = 1,

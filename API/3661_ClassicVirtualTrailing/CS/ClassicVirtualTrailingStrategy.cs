@@ -15,7 +15,7 @@ using System.Globalization;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum TrailingManagementMode
+public enum TrailingManagementModes
 {
 	Classic,
 	Virtual
@@ -33,7 +33,7 @@ public class ClassicVirtualTrailingStrategy : Strategy
 	?? TryResolveField("StopPrice")
 	?? TryResolveField("StopDistance");
 
-	private readonly StrategyParam<TrailingManagementMode> _trailingMode;
+	private readonly StrategyParam<TrailingManagementModes> _trailingMode;
 	private readonly StrategyParam<decimal> _trailingStartPips;
 	private readonly StrategyParam<decimal> _trailingGapPips;
 
@@ -46,7 +46,7 @@ public class ClassicVirtualTrailingStrategy : Strategy
 	/// <summary>
 	/// Specifies whether classic or virtual trailing management is applied.
 	/// </summary>
-	public TrailingManagementMode TrailingMode
+	public TrailingManagementModes TrailingMode
 	{
 		get => _trailingMode.Value;
 		set => _trailingMode.Value = value;
@@ -75,7 +75,7 @@ public class ClassicVirtualTrailingStrategy : Strategy
 	/// </summary>
 	public ClassicVirtualTrailingStrategy()
 	{
-		_trailingMode = Param(nameof(TrailingMode), TrailingManagementMode.Virtual)
+		_trailingMode = Param(nameof(TrailingMode), TrailingManagementModes.Virtual)
 		.SetDisplay("Trailing Mode", "Classic updates stop orders, Virtual closes at the trail", "Risk Management");
 
 		_trailingStartPips = Param(nameof(TrailingStartPips), 30m)
@@ -185,7 +185,7 @@ public class ClassicVirtualTrailingStrategy : Strategy
 		var startDistance = Math.Max(0m, TrailingStartPips) * pipSize;
 		var gapDistance = Math.Max(0m, TrailingGapPips) * pipSize;
 
-		if (TrailingMode == TrailingManagementMode.Classic)
+		if (TrailingMode == TrailingManagementModes.Classic)
 		{
 			var minimalGap = GetMinimalClassicGap(pipSize);
 			if (gapDistance < minimalGap)
@@ -225,7 +225,7 @@ public class ClassicVirtualTrailingStrategy : Strategy
 		var startDistance = Math.Max(0m, TrailingStartPips) * pipSize;
 		var gapDistance = Math.Max(0m, TrailingGapPips) * pipSize;
 
-		if (TrailingMode == TrailingManagementMode.Classic)
+		if (TrailingMode == TrailingManagementModes.Classic)
 		{
 			var minimalGap = GetMinimalClassicGap(pipSize);
 			if (gapDistance < minimalGap)

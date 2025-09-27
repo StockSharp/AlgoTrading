@@ -28,7 +28,7 @@ public class CidomoStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStepPips;
 	private readonly StrategyParam<decimal> _indentPips;
 	private readonly StrategyParam<int> _barsCount;
-	private readonly StrategyParam<CidomoMoneyManagementMode> _moneyManagementMode;
+	private readonly StrategyParam<CidomoMoneyManagementModes> _moneyManagementMode;
 	private readonly StrategyParam<decimal> _riskPercent;
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<bool> _useTimeFilter;
@@ -90,7 +90,7 @@ public class CidomoStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Bars", "Number of completed candles used for the breakout range", "General");
 
-		_moneyManagementMode = Param(nameof(MoneyManagement), CidomoMoneyManagementMode.RiskPercent)
+		_moneyManagementMode = Param(nameof(MoneyManagement), CidomoMoneyManagementModes.RiskPercent)
 			.SetDisplay("Money Management", "Volume calculation mode", "Trading");
 
 		_riskPercent = Param(nameof(RiskPercent), 1m)
@@ -183,7 +183,7 @@ public class CidomoStrategy : Strategy
 	/// <summary>
 	/// Money management mode.
 	/// </summary>
-	public CidomoMoneyManagementMode MoneyManagement
+	public CidomoMoneyManagementModes MoneyManagement
 	{
 		get => _moneyManagementMode.Value;
 		set => _moneyManagementMode.Value = value;
@@ -487,7 +487,7 @@ public class CidomoStrategy : Strategy
 
 	private decimal CalculateEntryVolume(decimal stopDistance)
 	{
-		if (MoneyManagement == CidomoMoneyManagementMode.RiskPercent)
+		if (MoneyManagement == CidomoMoneyManagementModes.RiskPercent)
 		{
 			if (stopDistance <= 0m)
 				return TradeVolume;
@@ -625,7 +625,7 @@ public class CidomoStrategy : Strategy
 /// <summary>
 /// Money management modes supported by <see cref="CidomoStrategy"/>.
 /// </summary>
-public enum CidomoMoneyManagementMode
+public enum CidomoMoneyManagementModes
 {
 	/// <summary>
 	/// Always trade the fixed volume specified by <see cref="CidomoStrategy.TradeVolume"/>.

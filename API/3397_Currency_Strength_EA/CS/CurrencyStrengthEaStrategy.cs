@@ -31,14 +31,14 @@ public class CurrencyStrengthEaStrategy : Strategy
 	private readonly StrategyParam<decimal> _upperLimit;
 	private readonly StrategyParam<decimal> _lowerLimit;
 	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<StepMode> _stopMode;
+	private readonly StrategyParam<StepModes> _stopMode;
 	private readonly StrategyParam<decimal> _stopLossFactor;
 	private readonly StrategyParam<decimal> _takeProfitFactor;
 	private readonly StrategyParam<decimal> _trailingStop;
 	private readonly StrategyParam<decimal> _trailingStep;
 	private readonly StrategyParam<string> _startTime;
 	private readonly StrategyParam<string> _endTime;
-	private readonly StrategyParam<TimeModes> _timeMode;
+	private readonly StrategyParam<TimeModeses> _timeMode;
 	private readonly StrategyParam<string> _baseCurrency;
 	private readonly StrategyParam<string> _quoteCurrency;
 
@@ -92,7 +92,7 @@ public class CurrencyStrengthEaStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "ATR lookback used for stop and target", "Risk Management");
 
-		_stopMode = Param(nameof(StopMode), StepMode.InAtr)
+		_stopMode = Param(nameof(StopMode), StepModes.InAtr)
 		.SetDisplay("Stop Mode", "Select whether stops are based on ATR or absolute points", "Risk Management");
 
 		_stopLossFactor = Param(nameof(StopLossFactor), 0m)
@@ -113,7 +113,7 @@ public class CurrencyStrengthEaStrategy : Strategy
 		_endTime = Param(nameof(EndTime), "16:00")
 		.SetDisplay("End Time", "Trading session end (HH:mm)", "Session");
 
-		_timeMode = Param(nameof(TimeMode), TimeModes.Server)
+		_timeMode = Param(nameof(TimeMode), TimeModeses.Server)
 		.SetDisplay("Time Mode", "Select which clock is used for the session filter", "Session");
 
 		_baseCurrency = Param(nameof(BaseCurrency), "EUR")
@@ -207,7 +207,7 @@ public class CurrencyStrengthEaStrategy : Strategy
 	/// <summary>
 	/// Defines whether stop distances are in ATR units or raw points.
 	/// </summary>
-	public StepMode StopMode
+	public StepModes StopMode
 	{
 		get => _stopMode.Value;
 		set => _stopMode.Value = value;
@@ -270,7 +270,7 @@ public class CurrencyStrengthEaStrategy : Strategy
 	/// <summary>
 	/// Selects which clock is used for the session filter.
 	/// </summary>
-	public TimeModes TimeMode
+	public TimeModeses TimeMode
 	{
 		get => _timeMode.Value;
 		set => _timeMode.Value = value;
@@ -525,8 +525,8 @@ public class CurrencyStrengthEaStrategy : Strategy
 
 		return StopMode switch
 		{
-			StepMode.InAtr => _currentAtr is decimal atr ? atr * StopLossFactor : 0m,
-			StepMode.InPips => Security?.PriceStep is decimal step ? step * StopLossFactor : 0m,
+			StepModes.InAtr => _currentAtr is decimal atr ? atr * StopLossFactor : 0m,
+			StepModes.InPips => Security?.PriceStep is decimal step ? step * StopLossFactor : 0m,
 			_ => 0m,
 		};
 	}
@@ -538,8 +538,8 @@ public class CurrencyStrengthEaStrategy : Strategy
 
 		return StopMode switch
 		{
-			StepMode.InAtr => _currentAtr is decimal atr ? atr * TakeProfitFactor : 0m,
-			StepMode.InPips => Security?.PriceStep is decimal step ? step * TakeProfitFactor : 0m,
+			StepModes.InAtr => _currentAtr is decimal atr ? atr * TakeProfitFactor : 0m,
+			StepModes.InPips => Security?.PriceStep is decimal step ? step * TakeProfitFactor : 0m,
 			_ => 0m,
 		};
 	}
@@ -617,9 +617,9 @@ public class CurrencyStrengthEaStrategy : Strategy
 
 		var reference = TimeMode switch
 		{
-			TimeModes.Server => time,
-			TimeModes.Gmt => time.ToUniversalTime(),
-			TimeModes.Local => time.ToLocalTime(),
+			TimeModeses.Server => time,
+			TimeModeses.Gmt => time.ToUniversalTime(),
+			TimeModeses.Local => time.ToLocalTime(),
 			_ => time,
 		};
 
@@ -710,7 +710,7 @@ public class CurrencyStrengthEaStrategy : Strategy
 	/// <summary>
 	/// Session clock modes.
 	/// </summary>
-	public enum TimeModes
+	public enum TimeModeses
 	{
 		Server,
 		Gmt,
@@ -720,7 +720,7 @@ public class CurrencyStrengthEaStrategy : Strategy
 	/// <summary>
 	/// Distance mode for protective orders.
 	/// </summary>
-	public enum StepMode
+	public enum StepModes
 	{
 		InAtr,
 		InPips,

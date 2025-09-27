@@ -27,7 +27,7 @@ public class RrsChaoticStrategy : Strategy
 	private readonly StrategyParam<int> _maxOpenTrades;
 	private readonly StrategyParam<int> _maxSpreadPoints;
 	private readonly StrategyParam<int> _slippagePoints;
-	private readonly StrategyParam<RiskMode> _riskMode;
+	private readonly StrategyParam<RiskModes> _riskMode;
 	private readonly StrategyParam<decimal> _riskValue;
 	private readonly StrategyParam<string> _tradeComment;
 
@@ -42,7 +42,7 @@ public class RrsChaoticStrategy : Strategy
 	/// <summary>
 	/// Trade direction for risk sizing.
 	/// </summary>
-	public enum RiskMode
+	public enum RiskModes
 	{
 		/// <summary>
 		/// Risk a fixed cash amount.
@@ -85,7 +85,7 @@ public class RrsChaoticStrategy : Strategy
 			.SetDisplay("Slippage", "Slippage tolerance in points (informational only).", "Trading")
 			.SetCanOptimize(false);
 
-		_riskMode = Param(nameof(RiskMode), RiskMode.BalancePercentage)
+		_riskMode = Param(nameof(RiskModes), RiskModes.BalancePercentage)
 			.SetDisplay("Risk Mode", "Choose between fixed cash or balance percentage drawdown control.", "Risk");
 
 		_riskValue = Param(nameof(RiskValue), 5m)
@@ -171,7 +171,7 @@ public class RrsChaoticStrategy : Strategy
 	/// <summary>
 	/// Selected risk control mode.
 	/// </summary>
-	public RiskMode RiskControlMode
+	public RiskModes RiskControlMode
 	{
 		get => _riskMode.Value;
 		set => _riskMode.Value = value;
@@ -367,8 +367,8 @@ public class RrsChaoticStrategy : Strategy
 	{
 		return RiskControlMode switch
 		{
-			RiskMode.BalancePercentage => CalculatePercentageThreshold(),
-			RiskMode.FixedMoney => -Math.Abs(RiskValue),
+			RiskModes.BalancePercentage => CalculatePercentageThreshold(),
+			RiskModes.FixedMoney => -Math.Abs(RiskValue),
 			_ => null
 		};
 	}

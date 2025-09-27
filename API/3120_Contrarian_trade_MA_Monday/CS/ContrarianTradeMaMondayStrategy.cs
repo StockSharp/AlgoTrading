@@ -22,8 +22,8 @@ public class ContrarianTradeMaMondayStrategy : Strategy
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageMethod> _maMethod;
-	private readonly StrategyParam<AppliedPriceType> _appliedPrice;
+	private readonly StrategyParam<MovingAverageMethods> _maMethod;
+	private readonly StrategyParam<AppliedPriceTypes> _appliedPrice;
 	private readonly StrategyParam<DataType> _tradeCandleType;
 	private readonly StrategyParam<DataType> _maCandleType;
 
@@ -82,7 +82,7 @@ public class ContrarianTradeMaMondayStrategy : Strategy
 	/// <summary>
 	/// Moving average smoothing method.
 	/// </summary>
-	public MovingAverageMethod MaMethod
+	public MovingAverageMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -91,7 +91,7 @@ public class ContrarianTradeMaMondayStrategy : Strategy
 	/// <summary>
 	/// Price source used in the moving average calculation.
 	/// </summary>
-	public AppliedPriceType AppliedPrice
+	public AppliedPriceTypes AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -142,10 +142,10 @@ public class ContrarianTradeMaMondayStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("MA Shift", "Horizontal shift applied to the moving average", "Moving Average");
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.LinearWeighted)
+		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.LinearWeighted)
 			.SetDisplay("MA Method", "Moving average smoothing method", "Moving Average");
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceType.Weighted)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Weighted)
 			.SetDisplay("Applied Price", "Price source fed into the moving average", "Moving Average");
 
 		_tradeCandleType = Param(nameof(TradeCandleType), TimeSpan.FromDays(1).TimeFrame())
@@ -389,28 +389,28 @@ public class ContrarianTradeMaMondayStrategy : Strategy
 		return step.Value * StopLossPips;
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceType type)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceTypes type)
 	{
 		return type switch
 		{
-			AppliedPriceType.Open => candle.OpenPrice,
-			AppliedPriceType.High => candle.HighPrice,
-			AppliedPriceType.Low => candle.LowPrice,
-			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + (2m * candle.ClosePrice)) / 4m,
+			AppliedPriceTypes.Open => candle.OpenPrice,
+			AppliedPriceTypes.High => candle.HighPrice,
+			AppliedPriceTypes.Low => candle.LowPrice,
+			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + (2m * candle.ClosePrice)) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethod method, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.LinearWeighted => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new ExponentialMovingAverage { Length = length },
 		};
 	}
@@ -418,7 +418,7 @@ public class ContrarianTradeMaMondayStrategy : Strategy
 	/// <summary>
 	/// Moving average methods supported by the strategy.
 	/// </summary>
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		Simple,
 		Exponential,
@@ -429,7 +429,7 @@ public class ContrarianTradeMaMondayStrategy : Strategy
 	/// <summary>
 	/// Price sources that can be fed into the moving average.
 	/// </summary>
-	public enum AppliedPriceType
+	public enum AppliedPriceTypes
 	{
 		Close,
 		Open,

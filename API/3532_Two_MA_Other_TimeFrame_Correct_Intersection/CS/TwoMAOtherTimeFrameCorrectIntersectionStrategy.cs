@@ -25,11 +25,11 @@ private readonly StrategyParam<DataType> _fastTimeFrame;
 private readonly StrategyParam<DataType> _slowTimeFrame;
 private readonly StrategyParam<int> _fastLength;
 private readonly StrategyParam<int> _fastShift;
-private readonly StrategyParam<MovingAverageKind> _fastMethod;
+private readonly StrategyParam<MovingAverageKinds> _fastMethod;
 private readonly StrategyParam<CandlePrice> _fastAppliedPrice;
 private readonly StrategyParam<int> _slowLength;
 private readonly StrategyParam<int> _slowShift;
-private readonly StrategyParam<MovingAverageKind> _slowMethod;
+private readonly StrategyParam<MovingAverageKinds> _slowMethod;
 private readonly StrategyParam<CandlePrice> _slowAppliedPrice;
 
 private readonly Queue<decimal> _fastShiftBuffer = new();
@@ -68,7 +68,7 @@ _fastShift = Param(nameof(FastShift), 0)
 .SetDisplay("Fast MA Shift", "Horizontal shift applied to the fast moving average", "Indicators")
 .SetNotNegative();
 
-_fastMethod = Param(nameof(FastMethod), MovingAverageKind.Simple)
+_fastMethod = Param(nameof(FastMethod), MovingAverageKinds.Simple)
 .SetDisplay("Fast MA Method", "Smoothing method for the fast moving average", "Indicators");
 
 _fastAppliedPrice = Param(nameof(FastAppliedPrice), CandlePrice.Close)
@@ -82,7 +82,7 @@ _slowShift = Param(nameof(SlowShift), 0)
 .SetDisplay("Slow MA Shift", "Horizontal shift applied to the slow moving average", "Indicators")
 .SetNotNegative();
 
-_slowMethod = Param(nameof(SlowMethod), MovingAverageKind.Simple)
+_slowMethod = Param(nameof(SlowMethod), MovingAverageKinds.Simple)
 .SetDisplay("Slow MA Method", "Smoothing method for the slow moving average", "Indicators");
 
 _slowAppliedPrice = Param(nameof(SlowAppliedPrice), CandlePrice.Close)
@@ -164,7 +164,7 @@ set => _slowShift.Value = value;
 /// <summary>
 /// Smoothing method used for the fast moving average.
 /// </summary>
-public MovingAverageKind FastMethod
+public MovingAverageKinds FastMethod
 {
 get => _fastMethod.Value;
 set => _fastMethod.Value = value;
@@ -173,7 +173,7 @@ set => _fastMethod.Value = value;
 /// <summary>
 /// Smoothing method used for the slow moving average.
 /// </summary>
-public MovingAverageKind SlowMethod
+public MovingAverageKinds SlowMethod
 {
 get => _slowMethod.Value;
 set => _slowMethod.Value = value;
@@ -361,14 +361,14 @@ buffer.Dequeue();
 return shiftedValue;
 }
 
-private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageKind kind, int length, CandlePrice price)
+private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageKinds kind, int length, CandlePrice price)
 {
 return kind switch
 {
-MovingAverageKind.Simple => new SimpleMovingAverage { Length = length, CandlePrice = price },
-MovingAverageKind.Exponential => new ExponentialMovingAverage { Length = length, CandlePrice = price },
-MovingAverageKind.Smoothed => new SmoothedMovingAverage { Length = length, CandlePrice = price },
-MovingAverageKind.LinearWeighted => new WeightedMovingAverage { Length = length, CandlePrice = price },
+MovingAverageKinds.Simple => new SimpleMovingAverage { Length = length, CandlePrice = price },
+MovingAverageKinds.Exponential => new ExponentialMovingAverage { Length = length, CandlePrice = price },
+MovingAverageKinds.Smoothed => new SmoothedMovingAverage { Length = length, CandlePrice = price },
+MovingAverageKinds.LinearWeighted => new WeightedMovingAverage { Length = length, CandlePrice = price },
 _ => new SimpleMovingAverage { Length = length, CandlePrice = price }
 };
 }
@@ -377,7 +377,7 @@ _ => new SimpleMovingAverage { Length = length, CandlePrice = price }
 /// Moving average types supported by the strategy.
 /// Matches the available options in the original MQL5 expert advisor.
 /// </summary>
-public enum MovingAverageKind
+public enum MovingAverageKinds
 {
 Simple,
 Exponential,

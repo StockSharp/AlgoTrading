@@ -267,11 +267,11 @@ public class DayTradingTrendPullbackStrategy : Strategy
 
 		if (IsFormedAndOnlineAndAllowTrading())
 		{
-			if (macdRelation == MacdRelation.Bullish && hasBullTrend && structureBullish && hasBullPullback && hasMomentumImpulse)
+			if (macdRelation == MacdRelations.Bullish && hasBullTrend && structureBullish && hasBullPullback && hasMomentumImpulse)
 			{
 				TryEnterLong(candle);
 			}
-			else if (macdRelation == MacdRelation.Bearish && hasBearTrend && structureBearish && hasBearPullback && hasMomentumImpulse)
+			else if (macdRelation == MacdRelations.Bearish && hasBearTrend && structureBearish && hasBearPullback && hasMomentumImpulse)
 			{
 				TryEnterShort(candle);
 			}
@@ -545,21 +545,21 @@ public class DayTradingTrendPullbackStrategy : Strategy
 		}
 	}
 
-	private MacdRelation GetMacdRelation()
+	private MacdRelations GetMacdRelation()
 	{
 		if (_macdMain is not decimal macd || _macdSignal is not decimal signal)
-			return MacdRelation.None;
+			return MacdRelations.None;
 
 		if (macd > signal)
-			return MacdRelation.Bullish;
+			return MacdRelations.Bullish;
 
 		if (macd < signal)
-			return MacdRelation.Bearish;
+			return MacdRelations.Bearish;
 
-		return MacdRelation.None;
+		return MacdRelations.None;
 	}
 
-	private enum MacdRelation
+	private enum MacdRelations
 	{
 		None,
 		Bullish,

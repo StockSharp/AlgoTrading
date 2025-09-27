@@ -30,8 +30,8 @@ public class JsMaSarTradesStrategy : Strategy
 	private readonly StrategyParam<int> _fastMaShift;
 	private readonly StrategyParam<int> _slowMaPeriod;
 	private readonly StrategyParam<int> _slowMaShift;
-	private readonly StrategyParam<MovingAverageTypeEnum> _maType;
-	private readonly StrategyParam<AppliedPriceType> _appliedPrice;
+	private readonly StrategyParam<MovingAverageTypes> _maType;
+	private readonly StrategyParam<AppliedPriceTypes> _appliedPrice;
 	private readonly StrategyParam<decimal> _sarStep;
 	private readonly StrategyParam<decimal> _sarMaxStep;
 	private readonly StrategyParam<int> _zigZagDepth;
@@ -170,7 +170,7 @@ public class JsMaSarTradesStrategy : Strategy
 	/// <summary>
 	/// Moving average type used by both averages.
 	/// </summary>
-	public MovingAverageTypeEnum MaType
+	public MovingAverageTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -179,7 +179,7 @@ public class JsMaSarTradesStrategy : Strategy
 	/// <summary>
 	/// Candle price source for moving averages.
 	/// </summary>
-	public AppliedPriceType AppliedPrice
+	public AppliedPriceTypes AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -285,10 +285,10 @@ public class JsMaSarTradesStrategy : Strategy
 		_slowMaShift = Param(nameof(SlowMaShift), 0)
 		.SetDisplay("Slow MA Shift", "Shift for slow average", "Moving Averages");
 
-		_maType = Param(nameof(MaType), MovingAverageTypeEnum.Smoothed)
+		_maType = Param(nameof(MaType), MovingAverageTypes.Smoothed)
 		.SetDisplay("MA Type", "Moving average smoothing method", "Moving Averages");
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceType.Median)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Median)
 		.SetDisplay("Applied Price", "Price source for MAs", "Moving Averages");
 
 		_sarStep = Param(nameof(SarStep), 0.02m)
@@ -626,12 +626,12 @@ public class JsMaSarTradesStrategy : Strategy
 	{
 		return AppliedPrice switch
 		{
-			AppliedPriceType.Open => candle.OpenPrice,
-			AppliedPriceType.High => candle.HighPrice,
-			AppliedPriceType.Low => candle.LowPrice,
-			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
+			AppliedPriceTypes.Open => candle.OpenPrice,
+			AppliedPriceTypes.High => candle.HighPrice,
+			AppliedPriceTypes.Low => candle.LowPrice,
+			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
@@ -660,13 +660,13 @@ public class JsMaSarTradesStrategy : Strategy
 		_entryPrice = null;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypeEnum type, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypeEnum.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageTypeEnum.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageTypeEnum.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new SmoothedMovingAverage { Length = length },
 		};
 	}
@@ -674,7 +674,7 @@ public class JsMaSarTradesStrategy : Strategy
 	/// <summary>
 	/// Moving average smoothing options.
 	/// </summary>
-	public enum MovingAverageTypeEnum
+	public enum MovingAverageTypes
 	{
 		Simple,
 		Exponential,
@@ -685,7 +685,7 @@ public class JsMaSarTradesStrategy : Strategy
 	/// <summary>
 	/// Price source for moving averages.
 	/// </summary>
-	public enum AppliedPriceType
+	public enum AppliedPriceTypes
 	{
 		Close,
 		Open,

@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MultiCurrencyTemplateStrategy : Strategy
 {
-	private readonly StrategyParam<OrderMethodType> _orderMethod;
+	private readonly StrategyParam<OrderMethodTypes> _orderMethod;
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _takeProfitPips;
@@ -47,7 +47,7 @@ public class MultiCurrencyTemplateStrategy : Strategy
 	/// <summary>
 	/// Supported order directions.
 	/// </summary>
-	public enum OrderMethodType
+	public enum OrderMethodTypes
 	{
 		/// <summary>
 		/// Allow both long and short signals.
@@ -70,7 +70,7 @@ public class MultiCurrencyTemplateStrategy : Strategy
 	/// </summary>
 	public MultiCurrencyTemplateStrategy()
 	{
-		_orderMethod = Param(nameof(OrderMethod), OrderMethodType.BuyAndSell)
+		_orderMethod = Param(nameof(OrderMethod), OrderMethodTypes.BuyAndSell)
 			.SetDisplay("Order Method", "Choose whether the strategy trades long, short or both directions.", "Trading")
 			.SetCanOptimize(true);
 
@@ -129,7 +129,7 @@ public class MultiCurrencyTemplateStrategy : Strategy
 	/// <summary>
 	/// Defines which direction the strategy may trade.
 	/// </summary>
-	public OrderMethodType OrderMethod
+	public OrderMethodTypes OrderMethod
 	{
 		get => _orderMethod.Value;
 		set => _orderMethod.Value = value;
@@ -292,9 +292,9 @@ public class MultiCurrencyTemplateStrategy : Strategy
 
 		var signal = fastEma > slowEma ? 1 : fastEma < slowEma ? -1 : 0;
 
-		if (signal > 0 && OrderMethod != OrderMethodType.SellOnly)
+		if (signal > 0 && OrderMethod != OrderMethodTypes.SellOnly)
 			TryEnterLong(candle);
-		else if (signal < 0 && OrderMethod != OrderMethodType.BuyOnly)
+		else if (signal < 0 && OrderMethod != OrderMethodTypes.BuyOnly)
 			TryEnterShort(candle);
 
 		if (EnableMartingale)
@@ -474,7 +474,7 @@ public class MultiCurrencyTemplateStrategy : Strategy
 
 		var price = candle.ClosePrice;
 
-		if (Position > 0m && OrderMethod != OrderMethodType.SellOnly)
+		if (Position > 0m && OrderMethod != OrderMethodTypes.SellOnly)
 		{
 			var reference = _longReferencePrice ?? PositionPrice ?? price;
 			if (price <= reference - step)
@@ -490,7 +490,7 @@ public class MultiCurrencyTemplateStrategy : Strategy
 				}
 			}
 		}
-		else if (Position < 0m && OrderMethod != OrderMethodType.BuyOnly)
+		else if (Position < 0m && OrderMethod != OrderMethodTypes.BuyOnly)
 		{
 			var reference = _shortReferencePrice ?? PositionPrice ?? price;
 			if (price >= reference + step)

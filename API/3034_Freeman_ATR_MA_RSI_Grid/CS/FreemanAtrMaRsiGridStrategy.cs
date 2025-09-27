@@ -28,13 +28,13 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 	private readonly StrategyParam<decimal> _distanceFromMaPips;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageMethod> _maMethod;
-	private readonly StrategyParam<AppliedPrice> _maPriceType;
+	private readonly StrategyParam<MovingAverageMethods> _maMethod;
+	private readonly StrategyParam<AppliedPrices> _maPriceType;
 	private readonly StrategyParam<bool> _useRsiFilter;
 	private readonly StrategyParam<decimal> _rsiLevelUp;
 	private readonly StrategyParam<decimal> _rsiLevelDown;
 	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<AppliedPrice> _rsiPriceType;
+	private readonly StrategyParam<AppliedPrices> _rsiPriceType;
 	private readonly StrategyParam<decimal> _trailingStopPips;
 	private readonly StrategyParam<decimal> _trailingStepPips;
 	private readonly StrategyParam<int> _currentBarOffset;
@@ -103,10 +103,10 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 		.SetDisplay("MA Shift", "Horizontal shift applied when reading MA values", "Indicators")
 		.SetCanOptimize(true);
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.Simple)
+		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Simple)
 		.SetDisplay("MA Method", "Moving average calculation method", "Indicators");
 
-		_maPriceType = Param(nameof(MaPriceType), AppliedPrice.Median)
+		_maPriceType = Param(nameof(MaPriceType), AppliedPrices.Median)
 		.SetDisplay("MA Price", "Price source used by the moving average", "Indicators");
 
 		_useRsiFilter = Param(nameof(UseRsiFilter), true)
@@ -125,7 +125,7 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 		.SetDisplay("RSI Period", "Number of bars for RSI calculation", "Indicators")
 		.SetCanOptimize(true);
 
-		_rsiPriceType = Param(nameof(RsiPriceType), AppliedPrice.Median)
+		_rsiPriceType = Param(nameof(RsiPriceType), AppliedPrices.Median)
 		.SetDisplay("RSI Price", "Price source used by RSI", "Indicators");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
@@ -237,7 +237,7 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 	/// <summary>
 	/// Moving average calculation method.
 	/// </summary>
-	public MovingAverageMethod MaMethod
+	public MovingAverageMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -246,7 +246,7 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 	/// <summary>
 	/// Price source used by the moving average.
 	/// </summary>
-	public AppliedPrice MaPriceType
+	public AppliedPrices MaPriceType
 	{
 		get => _maPriceType.Value;
 		set => _maPriceType.Value = value;
@@ -291,7 +291,7 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 	/// <summary>
 	/// Price source used by RSI.
 	/// </summary>
-	public AppliedPrice RsiPriceType
+	public AppliedPrices RsiPriceType
 	{
 		get => _rsiPriceType.Value;
 		set => _rsiPriceType.Value = value;
@@ -632,17 +632,17 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 		_pipSize = priceStep;
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrice priceType)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrices priceType)
 	{
 		return priceType switch
 		{
-			AppliedPrice.Close => candle.ClosePrice,
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
+			AppliedPrices.Close => candle.ClosePrice,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}
@@ -668,14 +668,14 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 			values.RemoveAt(0);
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethod method, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
@@ -692,7 +692,7 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 	/// <summary>
 	/// Moving average calculation methods supported by the strategy.
 	/// </summary>
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		Simple,
 		Exponential,
@@ -703,7 +703,7 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 	/// <summary>
 	/// Price sources that mimic MetaTrader applied price constants.
 	/// </summary>
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		Close,
 		Open,

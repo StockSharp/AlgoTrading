@@ -30,17 +30,17 @@ public class PuriaMethodStrategy : Strategy
 
 	private readonly StrategyParam<int> _ma0Period;
 	private readonly StrategyParam<int> _ma0Shift;
-	private readonly StrategyParam<MaMethod> _ma0Method;
+	private readonly StrategyParam<MaMethods> _ma0Method;
 	private readonly StrategyParam<CandlePrice> _ma0Price;
 
 	private readonly StrategyParam<int> _ma1Period;
 	private readonly StrategyParam<int> _ma1Shift;
-	private readonly StrategyParam<MaMethod> _ma1Method;
+	private readonly StrategyParam<MaMethods> _ma1Method;
 	private readonly StrategyParam<CandlePrice> _ma1Price;
 
 	private readonly StrategyParam<int> _ma2Period;
 	private readonly StrategyParam<int> _ma2Shift;
-	private readonly StrategyParam<MaMethod> _ma2Method;
+	private readonly StrategyParam<MaMethods> _ma2Method;
 	private readonly StrategyParam<CandlePrice> _ma2Price;
 
 	private readonly StrategyParam<int> _macdFastPeriod;
@@ -118,7 +118,7 @@ public class PuriaMethodStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("MA 0 Shift", "Bars to shift the first MA", "Indicators");
 
-		_ma0Method = Param(nameof(Ma0Method), MaMethod.Smoothed)
+		_ma0Method = Param(nameof(Ma0Method), MaMethods.Smoothed)
 			.SetDisplay("MA 0 Method", "Smoothing for first MA", "Indicators");
 
 		_ma0Price = Param(nameof(Ma0Price), CandlePrice.High)
@@ -132,7 +132,7 @@ public class PuriaMethodStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("MA 1 Shift", "Bars to shift the second MA", "Indicators");
 
-		_ma1Method = Param(nameof(Ma1Method), MaMethod.Smoothed)
+		_ma1Method = Param(nameof(Ma1Method), MaMethods.Smoothed)
 			.SetDisplay("MA 1 Method", "Smoothing for second MA", "Indicators");
 
 		_ma1Price = Param(nameof(Ma1Price), CandlePrice.High)
@@ -146,7 +146,7 @@ public class PuriaMethodStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("MA 2 Shift", "Bars to shift the third MA", "Indicators");
 
-		_ma2Method = Param(nameof(Ma2Method), MaMethod.Exponential)
+		_ma2Method = Param(nameof(Ma2Method), MaMethods.Exponential)
 			.SetDisplay("MA 2 Method", "Smoothing for third MA", "Indicators");
 
 		_ma2Price = Param(nameof(Ma2Price), CandlePrice.Open)
@@ -265,7 +265,7 @@ public class PuriaMethodStrategy : Strategy
 	/// <summary>
 	/// Method used to smooth the first moving average.
 	/// </summary>
-	public MaMethod Ma0Method
+	public MaMethods Ma0Method
 	{
 		get => _ma0Method.Value;
 		set => _ma0Method.Value = value;
@@ -301,7 +301,7 @@ public class PuriaMethodStrategy : Strategy
 	/// <summary>
 	/// Method used to smooth the second moving average.
 	/// </summary>
-	public MaMethod Ma1Method
+	public MaMethods Ma1Method
 	{
 		get => _ma1Method.Value;
 		set => _ma1Method.Value = value;
@@ -337,7 +337,7 @@ public class PuriaMethodStrategy : Strategy
 	/// <summary>
 	/// Method used to smooth the third moving average.
 	/// </summary>
-	public MaMethod Ma2Method
+	public MaMethods Ma2Method
 	{
 		get => _ma2Method.Value;
 		set => _ma2Method.Value = value;
@@ -853,16 +853,16 @@ public class PuriaMethodStrategy : Strategy
 		_shortLowestPrice = null;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MaMethod method, int length, CandlePrice price)
+	private static LengthIndicator<decimal> CreateMovingAverage(MaMethods method, int length, CandlePrice price)
 	{
 		var maLength = Math.Max(1, length);
 
 		return method switch
 		{
-			MaMethod.Simple => new SimpleMovingAverage { Length = maLength, CandlePrice = price },
-			MaMethod.Exponential => new ExponentialMovingAverage { Length = maLength, CandlePrice = price },
-			MaMethod.Smoothed => new SmoothedMovingAverage { Length = maLength, CandlePrice = price },
-			MaMethod.LinearWeighted => new WeightedMovingAverage { Length = maLength, CandlePrice = price },
+			MaMethods.Simple => new SimpleMovingAverage { Length = maLength, CandlePrice = price },
+			MaMethods.Exponential => new ExponentialMovingAverage { Length = maLength, CandlePrice = price },
+			MaMethods.Smoothed => new SmoothedMovingAverage { Length = maLength, CandlePrice = price },
+			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = maLength, CandlePrice = price },
 			_ => new SimpleMovingAverage { Length = maLength, CandlePrice = price }
 		};
 	}
@@ -870,7 +870,7 @@ public class PuriaMethodStrategy : Strategy
 	/// <summary>
 	/// Moving average smoothing modes that mirror the original MetaTrader inputs.
 	/// </summary>
-	public enum MaMethod
+	public enum MaMethods
 	{
 		/// <summary>
 		/// Simple moving average.

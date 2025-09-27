@@ -23,12 +23,12 @@ public class BuySellOnYourPriceStrategy : Strategy
 	private readonly StrategyParam<decimal> _entryPrice;
 	private readonly StrategyParam<decimal> _stopLossPrice;
 	private readonly StrategyParam<decimal> _takeProfitPrice;
-	private readonly StrategyParam<OrderMode> _orderMode;
+	private readonly StrategyParam<OrderModes> _orderMode;
 
 	/// <summary>
 	/// Type of order to execute when the strategy starts.
 	/// </summary>
-	public enum OrderMode
+	public enum OrderModes
 	{
 		/// <summary>
 		/// Do not send any order.
@@ -105,7 +105,7 @@ public class BuySellOnYourPriceStrategy : Strategy
 	/// <summary>
 	/// Selected order mode.
 	/// </summary>
-	public OrderMode Mode
+	public OrderModes Mode
 	{
 		get => _orderMode.Value;
 		set => _orderMode.Value = value;
@@ -129,7 +129,7 @@ public class BuySellOnYourPriceStrategy : Strategy
 		_takeProfitPrice = Param(nameof(TakeProfitPrice), 0m)
 			.SetDisplay("Take Profit Price", "Absolute take-profit level", "Risk Management");
 
-		_orderMode = Param(nameof(Mode), OrderMode.None)
+		_orderMode = Param(nameof(Mode), OrderModes.None)
 			.SetDisplay("Order Mode", "Type of order to submit", "General");
 	}
 
@@ -145,7 +145,7 @@ public class BuySellOnYourPriceStrategy : Strategy
 		base.OnStarted(time);
 
 		var mode = Mode;
-		if (mode == OrderMode.None)
+		if (mode == OrderModes.None)
 		{
 			LogInfo("Order mode is set to None. No orders will be sent.");
 			return;
@@ -170,7 +170,7 @@ public class BuySellOnYourPriceStrategy : Strategy
 			return;
 		}
 
-		var isBuy = mode is OrderMode.Buy or OrderMode.BuyLimit or OrderMode.BuyStop;
+		var isBuy = mode is OrderModes.Buy or OrderModes.BuyLimit or OrderModes.BuyStop;
 		var entryPrice = ResolveEntryPrice(mode, isBuy);
 
 		if (!ValidateEntryPrice(mode, entryPrice))
@@ -182,32 +182,32 @@ public class BuySellOnYourPriceStrategy : Strategy
 
 		switch (mode)
 		{
-			case OrderMode.Buy:
+			case OrderModes.Buy:
 				BuyMarket(volume);
 				LogInfo($"Market buy order sent. Volume={volume}.");
 				break;
 
-			case OrderMode.Sell:
+			case OrderModes.Sell:
 				SellMarket(volume);
 				LogInfo($"Market sell order sent. Volume={volume}.");
 				break;
 
-			case OrderMode.BuyLimit:
+			case OrderModes.BuyLimit:
 				BuyLimit(volume, entryPrice);
 				LogInfo($"Buy limit order placed at {entryPrice}. Volume={volume}.");
 				break;
 
-			case OrderMode.SellLimit:
+			case OrderModes.SellLimit:
 				SellLimit(volume, entryPrice);
 				LogInfo($"Sell limit order placed at {entryPrice}. Volume={volume}.");
 				break;
 
-			case OrderMode.BuyStop:
+			case OrderModes.BuyStop:
 				BuyStop(volume, entryPrice);
 				LogInfo($"Buy stop order placed at {entryPrice}. Volume={volume}.");
 				break;
 
-			case OrderMode.SellStop:
+			case OrderModes.SellStop:
 				SellStop(volume, entryPrice);
 				LogInfo($"Sell stop order placed at {entryPrice}. Volume={volume}.");
 				break;
@@ -225,9 +225,9 @@ public class BuySellOnYourPriceStrategy : Strategy
 		return false;
 	}
 
-	private decimal ResolveEntryPrice(OrderMode mode, bool isBuy)
+	private decimal ResolveEntryPrice(OrderModes mode, bool isBuy)
 	{
-		if (mode == OrderMode.Buy || mode == OrderMode.Sell)
+		if (mode == OrderModes.Buy || mode == OrderModes.Sell)
 		{
 			var bestBid = Security.BestBid?.Price ?? 0m;
 			var bestAsk = Security.BestAsk?.Price ?? 0m;
@@ -248,9 +248,9 @@ public class BuySellOnYourPriceStrategy : Strategy
 		return EntryPrice;
 	}
 
-	private bool ValidateEntryPrice(OrderMode mode, decimal entryPrice)
+	private bool ValidateEntryPrice(OrderModes mode, decimal entryPrice)
 	{
-		if (mode == OrderMode.Buy || mode == OrderMode.Sell)
+		if (mode == OrderModes.Buy || mode == OrderModes.Sell)
 		{
 			if (entryPrice <= 0m)
 			{

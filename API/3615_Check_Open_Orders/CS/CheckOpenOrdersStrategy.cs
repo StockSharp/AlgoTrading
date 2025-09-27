@@ -16,7 +16,7 @@ using StockSharp.Messages;
 using System.Threading;
 using System.Threading.Tasks;
 
-public enum CheckOpenOrdersMode
+public enum CheckOpenOrdersModes
 {
 	CheckAllTypes = 0,
 	CheckOnlyBuy = 1,
@@ -33,7 +33,7 @@ public class CheckOpenOrdersStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _slippagePoints;
 	private readonly StrategyParam<int> _waitTimeMilliseconds;
-	private readonly StrategyParam<CheckOpenOrdersMode> _mode;
+	private readonly StrategyParam<CheckOpenOrdersModes> _mode;
 
 	private CancellationTokenSource _ordersCts;
 	private string _modeDescription = string.Empty;
@@ -68,7 +68,7 @@ public class CheckOpenOrdersStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Wait Time (ms)", "Delay in milliseconds between the sample orders.", "Execution");
 
-		_mode = Param(nameof(Mode), CheckOpenOrdersMode.CheckAllTypes)
+		_mode = Param(nameof(Mode), CheckOpenOrdersModes.CheckAllTypes)
 		.SetDisplay("Order Filter", "Type of market positions monitored by the status message.", "Monitoring");
 	}
 
@@ -128,7 +128,7 @@ public class CheckOpenOrdersStrategy : Strategy
 	/// <summary>
 	/// Type of open orders checked by the status report.
 	/// </summary>
-	public CheckOpenOrdersMode Mode
+	public CheckOpenOrdersModes Mode
 	{
 		get => _mode.Value;
 		set
@@ -246,15 +246,15 @@ public class CheckOpenOrdersStrategy : Strategy
 	{
 		_modeDescription = Mode switch
 		{
-			CheckOpenOrdersMode.CheckOnlyBuy => "Checking for buy market open orders only",
-			CheckOpenOrdersMode.CheckOnlySell => "Checking sell market open orders only",
+			CheckOpenOrdersModes.CheckOnlyBuy => "Checking for buy market open orders only",
+			CheckOpenOrdersModes.CheckOnlySell => "Checking sell market open orders only",
 			_ => "Checking all market open orders"
 		};
 
 		_orderTypesDescription = Mode switch
 		{
-			CheckOpenOrdersMode.CheckOnlyBuy => "buy",
-			CheckOpenOrdersMode.CheckOnlySell => "sell",
+			CheckOpenOrdersModes.CheckOnlyBuy => "buy",
+			CheckOpenOrdersModes.CheckOnlySell => "sell",
 			_ => "buy and sell"
 		};
 	}
@@ -278,8 +278,8 @@ public class CheckOpenOrdersStrategy : Strategy
 	{
 		return Mode switch
 		{
-			CheckOpenOrdersMode.CheckOnlyBuy => Position > 0m,
-			CheckOpenOrdersMode.CheckOnlySell => Position < 0m,
+			CheckOpenOrdersModes.CheckOnlyBuy => Position > 0m,
+			CheckOpenOrdersModes.CheckOnlySell => Position < 0m,
 			_ => Position != 0m,
 		};
 	}

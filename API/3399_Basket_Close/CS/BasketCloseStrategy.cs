@@ -13,13 +13,13 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-public enum BasketCloseLossMode
+public enum BasketCloseLossModes
 {
 	Percentage,
 	Currency,
 }
 
-public enum BasketCloseProfitMode
+public enum BasketCloseProfitModes
 {
 	Percentage,
 	Currency,
@@ -27,10 +27,10 @@ public enum BasketCloseProfitMode
 
 public class BasketCloseStrategy : Strategy
 {
-	private readonly StrategyParam<BasketCloseLossMode> _lossMode;
+	private readonly StrategyParam<BasketCloseLossModes> _lossMode;
 	private readonly StrategyParam<decimal> _lossPercentage;
 	private readonly StrategyParam<decimal> _lossCurrency;
-	private readonly StrategyParam<BasketCloseProfitMode> _profitMode;
+	private readonly StrategyParam<BasketCloseProfitModes> _profitMode;
 	private readonly StrategyParam<decimal> _profitPercentage;
 	private readonly StrategyParam<decimal> _profitCurrency;
 	private readonly StrategyParam<DataType> _candleType;
@@ -44,7 +44,7 @@ public class BasketCloseStrategy : Strategy
 
 	public BasketCloseStrategy()
 	{
-		_lossMode = Param(nameof(LossMode), BasketCloseLossMode.Percentage)
+		_lossMode = Param(nameof(LossMode), BasketCloseLossModes.Percentage)
 			.SetDisplay("Loss Mode", "Determines whether the loss threshold is evaluated in percent or currency.", "General");
 
 		_lossPercentage = Param(nameof(LossPercentage), 1m)
@@ -55,7 +55,7 @@ public class BasketCloseStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Loss Currency", "Close all positions once floating loss reaches this amount.", "Risk");
 
-		_profitMode = Param(nameof(ProfitMode), BasketCloseProfitMode.Percentage)
+		_profitMode = Param(nameof(ProfitMode), BasketCloseProfitModes.Percentage)
 			.SetDisplay("Profit Mode", "Determines whether the profit target is evaluated in percent or currency.", "General");
 
 		_profitPercentage = Param(nameof(ProfitPercentage), 1m)
@@ -77,7 +77,7 @@ public class BasketCloseStrategy : Strategy
 			.SetDisplay("Test Order Volume", "Default size for the optional test order.", "Testing");
 	}
 
-	public BasketCloseLossMode LossMode
+	public BasketCloseLossModes LossMode
 	{
 		get => _lossMode.Value;
 		set => _lossMode.Value = value;
@@ -95,7 +95,7 @@ public class BasketCloseStrategy : Strategy
 		set => _lossCurrency.Value = value;
 	}
 
-	public BasketCloseProfitMode ProfitMode
+	public BasketCloseProfitModes ProfitMode
 	{
 		get => _profitMode.Value;
 		set => _profitMode.Value = value;
@@ -229,8 +229,8 @@ public class BasketCloseStrategy : Strategy
 	{
 		return LossMode switch
 		{
-			BasketCloseLossMode.Percentage => percentage <= -LossPercentage,
-			BasketCloseLossMode.Currency => totalProfit <= -LossCurrency,
+			BasketCloseLossModes.Percentage => percentage <= -LossPercentage,
+			BasketCloseLossModes.Currency => totalProfit <= -LossCurrency,
 			_ => false,
 		};
 	}
@@ -239,8 +239,8 @@ public class BasketCloseStrategy : Strategy
 	{
 		return ProfitMode switch
 		{
-			BasketCloseProfitMode.Percentage => percentage >= ProfitPercentage,
-			BasketCloseProfitMode.Currency => totalProfit >= ProfitCurrency,
+			BasketCloseProfitModes.Percentage => percentage >= ProfitPercentage,
+			BasketCloseProfitModes.Currency => totalProfit >= ProfitCurrency,
 			_ => false,
 		};
 	}

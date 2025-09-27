@@ -31,12 +31,12 @@ public class ExpXwprHistogramVolStrategy : Strategy
 	private readonly StrategyParam<decimal> _deviationSteps;
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<int> _wprPeriod;
-	private readonly StrategyParam<VolumeAggregation> _volumeAggregation;
+	private readonly StrategyParam<VolumeAggregations> _volumeAggregation;
 	private readonly StrategyParam<decimal> _highLevel2;
 	private readonly StrategyParam<decimal> _highLevel1;
 	private readonly StrategyParam<decimal> _lowLevel1;
 	private readonly StrategyParam<decimal> _lowLevel2;
-	private readonly StrategyParam<SmoothMethod> _smoothingMethod;
+	private readonly StrategyParam<SmoothMethods> _smoothingMethod;
 	private readonly StrategyParam<int> _smoothingLength;
 	private readonly StrategyParam<int> _smoothingPhase;
 	private readonly StrategyParam<DataType> _candleType;
@@ -152,7 +152,7 @@ public class ExpXwprHistogramVolStrategy : Strategy
 	/// <summary>
 	/// Volume aggregation used by the histogram (tick count or real volume).
 	/// </summary>
-	public VolumeAggregation VolumeMode
+	public VolumeAggregations VolumeMode
 	{
 		get => _volumeAggregation.Value;
 		set => _volumeAggregation.Value = value;
@@ -197,7 +197,7 @@ public class ExpXwprHistogramVolStrategy : Strategy
 	/// <summary>
 	/// Smoothing method applied to the histogram and the volume baseline.
 	/// </summary>
-	public SmoothMethod SmoothingMethod
+	public SmoothMethods SmoothingMethod
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -280,7 +280,7 @@ public class ExpXwprHistogramVolStrategy : Strategy
 		.SetRange(5, 200)
 		.SetCanOptimize(true);
 
-		_volumeAggregation = Param(nameof(VolumeMode), VolumeAggregation.Tick)
+		_volumeAggregation = Param(nameof(VolumeMode), VolumeAggregations.Tick)
 		.SetDisplay("Volume Mode", "Volume source used in the histogram", "Indicator");
 
 		_highLevel2 = Param(nameof(HighLevel2), 17m)
@@ -303,7 +303,7 @@ public class ExpXwprHistogramVolStrategy : Strategy
 		.SetRange(-100m, 100m)
 		.SetCanOptimize(true);
 
-		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothMethod.Sma)
+		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothMethods.Sma)
 		.SetDisplay("Smoothing Method", "Type of moving average applied", "Indicator");
 
 		_smoothingLength = Param(nameof(SmoothingLength), 12)
@@ -539,7 +539,7 @@ public class ExpXwprHistogramVolStrategy : Strategy
 /// <summary>
 /// Volume aggregation used by <see cref="XwprHistogramVolIndicator"/>.
 /// </summary>
-public enum VolumeAggregation
+public enum VolumeAggregations
 {
 	/// <summary>
 	/// Use the number of ticks traded inside the candle.
@@ -555,7 +555,7 @@ public enum VolumeAggregation
 /// <summary>
 /// Available smoothing methods.
 /// </summary>
-public enum SmoothMethod
+public enum SmoothMethods
 {
 	/// <summary>
 	/// Simple moving average.
@@ -618,7 +618,7 @@ public class XwprHistogramVolIndicator : BaseIndicator<decimal>
 	private IIndicator _volumeSmoother;
 
 	private int _lastPeriod;
-	private SmoothMethod _lastMethod;
+	private SmoothMethods _lastMethod;
 	private int _lastLength;
 	private int _lastPhase;
 
@@ -630,7 +630,7 @@ public class XwprHistogramVolIndicator : BaseIndicator<decimal>
 	/// <summary>
 	/// Volume aggregation used in the histogram.
 	/// </summary>
-	public VolumeAggregation VolumeMode { get; set; } = VolumeAggregation.Tick;
+	public VolumeAggregations VolumeMode { get; set; } = VolumeAggregations.Tick;
 
 	/// <summary>
 	/// Upper histogram multiplier for strong bullish states.
@@ -655,7 +655,7 @@ public class XwprHistogramVolIndicator : BaseIndicator<decimal>
 	/// <summary>
 	/// Smoothing method applied to both the histogram and the baseline volume.
 	/// </summary>
-	public SmoothMethod Method { get; set; } = SmoothMethod.Sma;
+	public SmoothMethods Method { get; set; } = SmoothMethods.Sma;
 
 	/// <summary>
 	/// Length used by the smoothing filters.
@@ -726,8 +726,8 @@ public class XwprHistogramVolIndicator : BaseIndicator<decimal>
 	{
 		return VolumeMode switch
 		{
-			VolumeAggregation.Tick => candle.TotalTicks.HasValue ? candle.TotalTicks.Value : candle.TotalVolume ?? 0m,
-			VolumeAggregation.Real => candle.TotalVolume ?? (candle.TotalTicks.HasValue ? candle.TotalTicks.Value : 0m),
+			VolumeAggregations.Tick => candle.TotalTicks.HasValue ? candle.TotalTicks.Value : candle.TotalVolume ?? 0m,
+			VolumeAggregations.Real => candle.TotalVolume ?? (candle.TotalTicks.HasValue ? candle.TotalTicks.Value : 0m),
 			_ => candle.TotalVolume ?? 0m,
 		};
 	}
@@ -756,16 +756,16 @@ public class XwprHistogramVolIndicator : BaseIndicator<decimal>
 		var length = Math.Max(1, Length);
 		return Method switch
 		{
-			SmoothMethod.Sma => new SimpleMovingAverage { Length = length },
-			SmoothMethod.Ema => new ExponentialMovingAverage { Length = length },
-			SmoothMethod.Smma => new SmoothedMovingAverage { Length = length },
-			SmoothMethod.Lwma => new WeightedMovingAverage { Length = length },
-			SmoothMethod.Jjma => CreateJurik(length),
-			SmoothMethod.JurX => CreateJurik(length),
-			SmoothMethod.ParMa => new ExponentialMovingAverage { Length = length },
-			SmoothMethod.T3 => new TripleExponentialMovingAverage { Length = length },
-			SmoothMethod.Vidya => new ExponentialMovingAverage { Length = length },
-			SmoothMethod.Ama => new KaufmanAdaptiveMovingAverage { Length = length },
+			SmoothMethods.Sma => new SimpleMovingAverage { Length = length },
+			SmoothMethods.Ema => new ExponentialMovingAverage { Length = length },
+			SmoothMethods.Smma => new SmoothedMovingAverage { Length = length },
+			SmoothMethods.Lwma => new WeightedMovingAverage { Length = length },
+			SmoothMethods.Jjma => CreateJurik(length),
+			SmoothMethods.JurX => CreateJurik(length),
+			SmoothMethods.ParMa => new ExponentialMovingAverage { Length = length },
+			SmoothMethods.T3 => new TripleExponentialMovingAverage { Length = length },
+			SmoothMethods.Vidya => new ExponentialMovingAverage { Length = length },
+			SmoothMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}

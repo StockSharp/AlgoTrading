@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Defines which positions should be processed by the strategy.
 /// </summary>
-public enum CloseAgentMode
+public enum CloseAgentModes
 {
 	/// <summary>
 	/// Only process positions opened manually or by other strategies.
@@ -40,7 +40,7 @@ public enum CloseAgentMode
 /// <summary>
 /// Defines how indicator data should be sampled for signal evaluation.
 /// </summary>
-public enum CloseAgentOperationMode
+public enum CloseAgentOperationModes
 {
 	/// <summary>
 	/// Evaluate signals using the latest forming candle values.
@@ -59,9 +59,9 @@ public enum CloseAgentOperationMode
 /// </summary>
 public class CloseAgentStrategy : Strategy
 {
-	private readonly StrategyParam<CloseAgentMode> _closeMode;
+	private readonly StrategyParam<CloseAgentModes> _closeMode;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<CloseAgentOperationMode> _operationMode;
+	private readonly StrategyParam<CloseAgentOperationModes> _operationMode;
 	private readonly StrategyParam<decimal> _closeAllTarget;
 	private readonly StrategyParam<bool> _enableAlerts;
 	private readonly StrategyParam<int> _rsiLength;
@@ -79,7 +79,7 @@ public class CloseAgentStrategy : Strategy
 	/// <summary>
 	/// Determines which positions should be handled by the strategy.
 	/// </summary>
-	public CloseAgentMode CloseMode
+	public CloseAgentModes CloseMode
 	{
 		get => _closeMode.Value;
 		set => _closeMode.Value = value;
@@ -97,7 +97,7 @@ public class CloseAgentStrategy : Strategy
 	/// <summary>
 	/// Chooses whether signals rely on live or closed candle data.
 	/// </summary>
-	public CloseAgentOperationMode OperationMode
+	public CloseAgentOperationModes OperationMode
 	{
 		get => _operationMode.Value;
 		set => _operationMode.Value = value;
@@ -162,13 +162,13 @@ public class CloseAgentStrategy : Strategy
 	/// </summary>
 	public CloseAgentStrategy()
 	{
-		_closeMode = Param(nameof(CloseMode), CloseAgentMode.Both)
+		_closeMode = Param(nameof(CloseMode), CloseAgentModes.Both)
 		.SetDisplay("Close Mode", "Choose which positions are eligible for closing", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for indicators", "General");
 
-		_operationMode = Param(nameof(OperationMode), CloseAgentOperationMode.LiveBar)
+		_operationMode = Param(nameof(OperationMode), CloseAgentOperationModes.LiveBar)
 		.SetDisplay("Operation Mode", "Use forming candles or closed candles for signals", "Signals");
 
 		_closeAllTarget = Param(nameof(CloseAllTarget), 0m)
@@ -262,7 +262,7 @@ public class CloseAgentStrategy : Strategy
 		if (_rsi is null || _bands is null)
 			return;
 
-		if (OperationMode == CloseAgentOperationMode.NewBar && candle.State != CandleStates.Finished)
+		if (OperationMode == CloseAgentOperationModes.NewBar && candle.State != CandleStates.Finished)
 			return;
 
 		if (!_rsi.IsFormed || !_bands.IsFormed)
@@ -270,7 +270,7 @@ public class CloseAgentStrategy : Strategy
 
 		_history.Enqueue((candle.CloseTime, candle.ClosePrice, rsiValue, upper, lower));
 
-		var shift = OperationMode == CloseAgentOperationMode.NewBar ? 1 : 0;
+		var shift = OperationMode == CloseAgentOperationModes.NewBar ? 1 : 0;
 		var maxItems = Math.Max(shift + 2, 3);
 		while (_history.Count > maxItems)
 			_history.Dequeue();
@@ -374,14 +374,14 @@ public class CloseAgentStrategy : Strategy
 	{
 		switch (CloseMode)
 		{
-			case CloseAgentMode.Both:
+			case CloseAgentModes.Both:
 				return true;
-			case CloseAgentMode.Auto:
+			case CloseAgentModes.Auto:
 			{
 				var strategyId = TryGetStrategyId(position);
 				return !strategyId.IsEmpty() && strategyId.EqualsIgnoreCase(Id);
 			}
-			case CloseAgentMode.Manual:
+			case CloseAgentModes.Manual:
 			{
 				var strategyId = TryGetStrategyId(position);
 				return strategyId.IsEmpty() || !strategyId.EqualsIgnoreCase(Id);

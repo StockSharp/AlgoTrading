@@ -28,7 +28,7 @@ public class MaGridStrategy : Strategy
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Dictionary<Order, OrderIntent> _orderIntents = new();
+	private readonly Dictionary<Order, OrderIntents> _orderIntents = new();
 
 	private ExponentialMovingAverage _ema;
 	private int _effectiveGridAmount;
@@ -39,7 +39,7 @@ public class MaGridStrategy : Strategy
 	private decimal _longExposure;
 	private decimal _shortExposure;
 
-	private enum OrderIntent
+	private enum OrderIntents
 	{
 		OpenLong,
 		OpenShort,
@@ -186,16 +186,16 @@ public class MaGridStrategy : Strategy
 
 		switch (intent)
 		{
-		case OrderIntent.OpenLong:
+		case OrderIntents.OpenLong:
 		_longExposure += volume;
 		break;
-		case OrderIntent.OpenShort:
+		case OrderIntents.OpenShort:
 		_shortExposure += volume;
 		break;
-		case OrderIntent.CloseLong:
+		case OrderIntents.CloseLong:
 		_longExposure = Math.Max(0m, _longExposure - volume);
 		break;
-		case OrderIntent.CloseShort:
+		case OrderIntents.CloseShort:
 		_shortExposure = Math.Max(0m, _shortExposure - volume);
 		break;
 		}
@@ -321,7 +321,7 @@ public class MaGridStrategy : Strategy
 		if (OrderVolume <= 0m)
 		return;
 
-		RegisterOrder(BuyMarket(OrderVolume), OrderIntent.OpenLong);
+		RegisterOrder(BuyMarket(OrderVolume), OrderIntents.OpenLong);
 	}
 
 	private void OpenShortExposure()
@@ -329,7 +329,7 @@ public class MaGridStrategy : Strategy
 		if (OrderVolume <= 0m)
 		return;
 
-		RegisterOrder(SellMarket(OrderVolume), OrderIntent.OpenShort);
+		RegisterOrder(SellMarket(OrderVolume), OrderIntents.OpenShort);
 	}
 
 	private void CloseLongExposure()
@@ -341,7 +341,7 @@ public class MaGridStrategy : Strategy
 		if (volume <= VolumeTolerance)
 		return;
 
-		RegisterOrder(SellMarket(volume), OrderIntent.CloseLong);
+		RegisterOrder(SellMarket(volume), OrderIntents.CloseLong);
 	}
 
 	private void CloseShortExposure()
@@ -353,10 +353,10 @@ public class MaGridStrategy : Strategy
 		if (volume <= VolumeTolerance)
 		return;
 
-		RegisterOrder(BuyMarket(volume), OrderIntent.CloseShort);
+		RegisterOrder(BuyMarket(volume), OrderIntents.CloseShort);
 	}
 
-	private void RegisterOrder(Order order, OrderIntent intent)
+	private void RegisterOrder(Order order, OrderIntents intent)
 	{
 		if (order == null)
 		return;

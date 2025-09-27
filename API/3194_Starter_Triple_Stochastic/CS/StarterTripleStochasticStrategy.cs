@@ -24,15 +24,15 @@ public class StarterTripleStochasticStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _trailingStopPips;
 	private readonly StrategyParam<int> _trailingStepPips;
-	private readonly StrategyParam<MoneyManagementMode> _moneyMode;
+	private readonly StrategyParam<MoneyManagementModes> _moneyMode;
 	private readonly StrategyParam<decimal> _moneyValue;
 	private readonly StrategyParam<DataType> _fastCandleType;
 	private readonly StrategyParam<DataType> _normalCandleType;
 	private readonly StrategyParam<DataType> _slowCandleType;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageMethod> _maMethod;
-	private readonly StrategyParam<AppliedPriceType> _maPriceType;
+	private readonly StrategyParam<MovingAverageMethods> _maMethod;
+	private readonly StrategyParam<AppliedPriceTypes> _maPriceType;
 	private readonly StrategyParam<int> _stochKPeriod;
 	private readonly StrategyParam<int> _stochDPeriod;
 	private readonly StrategyParam<int> _stochSlowing;
@@ -87,7 +87,7 @@ public class StarterTripleStochasticStrategy : Strategy
 		.SetRange(0, 500)
 		.SetDisplay("Trailing Step (pips)", "Minimum advance before trailing stop moves", "Risk");
 
-		_moneyMode = Param(nameof(MoneyMode), MoneyManagementMode.RiskPercent)
+		_moneyMode = Param(nameof(MoneyMode), MoneyManagementModes.RiskPercent)
 		.SetDisplay("Money Mode", "Choose fixed volume or risk based sizing", "Money Management");
 
 		_moneyValue = Param(nameof(MoneyValue), 3m)
@@ -111,10 +111,10 @@ public class StarterTripleStochasticStrategy : Strategy
 		.SetRange(0, 20)
 		.SetDisplay("MA Shift", "Horizontal shift in completed bars", "Indicators");
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.Simple)
+		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Simple)
 		.SetDisplay("MA Method", "Moving average smoothing method", "Indicators");
 
-		_maPriceType = Param(nameof(MaPriceType), AppliedPriceType.Close)
+		_maPriceType = Param(nameof(MaPriceType), AppliedPriceTypes.Close)
 		.SetDisplay("MA Price", "Price source for the moving averages", "Indicators");
 
 		_stochKPeriod = Param(nameof(StochasticKPeriod), 5)
@@ -175,7 +175,7 @@ public class StarterTripleStochasticStrategy : Strategy
 	/// <summary>
 	/// Money management mode replicating the MetaTrader EA behaviour.
 	/// </summary>
-	public MoneyManagementMode MoneyMode
+	public MoneyManagementModes MoneyMode
 	{
 		get => _moneyMode.Value;
 		set => _moneyMode.Value = value;
@@ -238,7 +238,7 @@ public class StarterTripleStochasticStrategy : Strategy
 	/// <summary>
 	/// Moving average smoothing method.
 	/// </summary>
-	public MovingAverageMethod MaMethod
+	public MovingAverageMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -247,7 +247,7 @@ public class StarterTripleStochasticStrategy : Strategy
 	/// <summary>
 	/// Price source fed into the moving average.
 	/// </summary>
-	public AppliedPriceType MaPriceType
+	public AppliedPriceTypes MaPriceType
 	{
 		get => _maPriceType.Value;
 		set => _maPriceType.Value = value;
@@ -617,8 +617,8 @@ public class StarterTripleStochasticStrategy : Strategy
 	{
 		return MoneyMode switch
 		{
-			MoneyManagementMode.FixedLot => MoneyValue,
-			MoneyManagementMode.RiskPercent => CalculateRiskVolume(),
+			MoneyManagementModes.FixedLot => MoneyValue,
+			MoneyManagementModes.RiskPercent => CalculateRiskVolume(),
 			_ => MoneyValue
 		};
 	}
@@ -652,29 +652,29 @@ public class StarterTripleStochasticStrategy : Strategy
 		return step;
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceType priceType)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceTypes priceType)
 	{
 		return priceType switch
 		{
-			AppliedPriceType.Close => candle.ClosePrice,
-			AppliedPriceType.Open => candle.OpenPrice,
-			AppliedPriceType.High => candle.HighPrice,
-			AppliedPriceType.Low => candle.LowPrice,
-			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
+			AppliedPriceTypes.Close => candle.ClosePrice,
+			AppliedPriceTypes.Open => candle.OpenPrice,
+			AppliedPriceTypes.High => candle.HighPrice,
+			AppliedPriceTypes.Low => candle.LowPrice,
+			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
 			_ => candle.ClosePrice
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethod method, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
@@ -692,7 +692,7 @@ public class StarterTripleStochasticStrategy : Strategy
 	/// <summary>
 	/// Money management modes supported by the strategy.
 	/// </summary>
-	public enum MoneyManagementMode
+	public enum MoneyManagementModes
 	{
 		FixedLot,
 		RiskPercent,
@@ -701,7 +701,7 @@ public class StarterTripleStochasticStrategy : Strategy
 	/// <summary>
 	/// Moving average smoothing modes matching the MetaTrader enumerations.
 	/// </summary>
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		Simple,
 		Exponential,
@@ -712,7 +712,7 @@ public class StarterTripleStochasticStrategy : Strategy
 	/// <summary>
 	/// Price types compatible with the MetaTrader applied price options.
 	/// </summary>
-	public enum AppliedPriceType
+	public enum AppliedPriceTypes
 	{
 		Close,
 		Open,

@@ -26,7 +26,7 @@ public class MovingAveragePositionSystemStrategy : Strategy
 	/// <summary>
 	/// Moving average calculation mode.
 	/// </summary>
-	public enum MovingAverageMode
+	public enum MovingAverageModes
 	{
 		Simple,
 		Exponential,
@@ -34,7 +34,7 @@ public class MovingAveragePositionSystemStrategy : Strategy
 		LinearWeighted,
 	}
 
-	private readonly StrategyParam<MovingAverageMode> _maType;
+	private readonly StrategyParam<MovingAverageModes> _maType;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
 	private readonly StrategyParam<decimal> _initialVolume;
@@ -57,7 +57,7 @@ public class MovingAveragePositionSystemStrategy : Strategy
 	/// <summary>
 	/// Moving average type used for signal calculation.
 	/// </summary>
-	public MovingAverageMode MaType
+	public MovingAverageModes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -158,7 +158,7 @@ public class MovingAveragePositionSystemStrategy : Strategy
 	/// </summary>
 	public MovingAveragePositionSystemStrategy()
 	{
-		_maType = Param(nameof(MaType), MovingAverageMode.LinearWeighted)
+		_maType = Param(nameof(MaType), MovingAverageModes.LinearWeighted)
 		.SetDisplay("MA Type", "Moving average method", "Indicators");
 
 		_maPeriod = Param(nameof(MaPeriod), 240)
@@ -255,9 +255,9 @@ public class MovingAveragePositionSystemStrategy : Strategy
 	{
 		return MaType switch
 		{
-			MovingAverageMode.Exponential => new ExponentialMovingAverage { Length = MaPeriod },
-			MovingAverageMode.Smoothed => new SmoothedMovingAverage { Length = MaPeriod },
-			MovingAverageMode.LinearWeighted => new LinearWeightedMovingAverage { Length = MaPeriod },
+			MovingAverageModes.Exponential => new ExponentialMovingAverage { Length = MaPeriod },
+			MovingAverageModes.Smoothed => new SmoothedMovingAverage { Length = MaPeriod },
+			MovingAverageModes.LinearWeighted => new LinearWeightedMovingAverage { Length = MaPeriod },
 			_ => new SimpleMovingAverage { Length = MaPeriod },
 		};
 	}

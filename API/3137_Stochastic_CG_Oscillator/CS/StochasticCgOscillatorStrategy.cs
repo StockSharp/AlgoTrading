@@ -32,7 +32,7 @@ public class StochasticCgOscillatorStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _fixedVolume;
 	private readonly StrategyParam<decimal> _depositShare;
-	private readonly StrategyParam<PositionSizingMode> _sizingMode;
+	private readonly StrategyParam<PositionSizingModes> _sizingMode;
 
 	private StochasticCgOscillatorIndicator _oscillator = null!;
 	private readonly List<(decimal Main, decimal Trigger)> _oscillatorHistory = new();
@@ -84,7 +84,7 @@ public class StochasticCgOscillatorStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Deposit Share", "Fraction of portfolio value allocated per trade", "Risk");
 
-		_sizingMode = Param(nameof(SizingMode), PositionSizingMode.FixedVolume)
+		_sizingMode = Param(nameof(SizingMode), PositionSizingModes.FixedVolume)
 			.SetDisplay("Position Sizing", "Method used to convert the deposit share into volume", "Risk");
 	}
 
@@ -170,7 +170,7 @@ public class StochasticCgOscillatorStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Fixed trade volume when sizing mode is <see cref="PositionSizingMode.FixedVolume"/>.
+	/// Fixed trade volume when sizing mode is <see cref="PositionSizingModes.FixedVolume"/>.
 	/// </summary>
 	public decimal FixedVolume
 	{
@@ -190,7 +190,7 @@ public class StochasticCgOscillatorStrategy : Strategy
 	/// <summary>
 	/// Position sizing behaviour.
 	/// </summary>
-	public PositionSizingMode SizingMode
+	public PositionSizingModes SizingMode
 	{
 		get => _sizingMode.Value;
 		set => _sizingMode.Value = value;
@@ -334,7 +334,7 @@ public class StochasticCgOscillatorStrategy : Strategy
 
 	private decimal CalculateOrderVolume(decimal referencePrice)
 	{
-		if (SizingMode == PositionSizingMode.FixedVolume)
+		if (SizingMode == PositionSizingModes.FixedVolume)
 			return FixedVolume;
 
 		if (Portfolio is null || referencePrice <= 0m)
@@ -414,7 +414,7 @@ public class StochasticCgOscillatorStrategy : Strategy
 /// <summary>
 /// Position sizing modes supported by the strategy.
 /// </summary>
-public enum PositionSizingMode
+public enum PositionSizingModes
 {
 	/// <summary>Always trade the configured fixed volume.</summary>
 	FixedVolume,

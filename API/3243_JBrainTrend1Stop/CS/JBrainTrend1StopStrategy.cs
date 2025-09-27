@@ -248,7 +248,7 @@ public class JBrainTrend1StopStrategy : Strategy
 		ProcessPendingSignals();
 
 		var signal = UpdateState(data);
-		if (signal == SignalType.None)
+		if (signal == SignalTypes.None)
 			return;
 
 		if (SignalBar <= 0)
@@ -323,22 +323,22 @@ public class JBrainTrend1StopStrategy : Strategy
 		}
 	}
 
-	private SignalType UpdateState(IndicatorData data)
+	private SignalTypes UpdateState(IndicatorData data)
 	{
 		if (_prevJmaClose is null)
 		{
 			_prevJmaClose = data.JmaClose;
-			return SignalType.None;
+			return SignalTypes.None;
 		}
 
 		if (_prevPrevJmaClose is null)
 		{
 			_prevPrevJmaClose = _prevJmaClose;
 			_prevJmaClose = data.JmaClose;
-			return SignalType.None;
+			return SignalTypes.None;
 		}
 
-		var signal = SignalType.None;
+		var signal = SignalTypes.None;
 		var range = data.Atr / RangeDivisor;
 		var range1 = data.AtrExtended * RangeMultiplier;
 		var val3 = Math.Abs(data.JmaClose - _prevPrevJmaClose.Value);
@@ -349,13 +349,13 @@ public class JBrainTrend1StopStrategy : Strategy
 			{
 				_trendState = -1;
 				_trailStop = data.JmaHigh + range1 / 4m;
-				signal = SignalType.Sell;
+				signal = SignalTypes.Sell;
 			}
 			else if (data.Stochastic > UpperThreshold && _trendState != 1)
 			{
 				_trendState = 1;
 				_trailStop = data.JmaLow - range1 / 4m;
-				signal = SignalType.Buy;
+				signal = SignalTypes.Buy;
 			}
 		}
 		else if (_trendState == -1)
@@ -377,14 +377,14 @@ public class JBrainTrend1StopStrategy : Strategy
 		return signal;
 	}
 
-	private void ExecuteSignal(SignalType type)
+	private void ExecuteSignal(SignalTypes type)
 	{
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		switch (type)
 		{
-			case SignalType.Buy:
+			case SignalTypes.Buy:
 				if (SellClose && Position < 0)
 					BuyMarket(Math.Abs(Position));
 
@@ -392,7 +392,7 @@ public class JBrainTrend1StopStrategy : Strategy
 					BuyMarket();
 				break;
 
-			case SignalType.Sell:
+			case SignalTypes.Sell:
 				if (BuyClose && Position > 0)
 					SellMarket(Position);
 
@@ -417,9 +417,9 @@ public class JBrainTrend1StopStrategy : Strategy
 
 	private readonly record struct IndicatorData(decimal Atr, decimal AtrExtended, decimal Stochastic, decimal JmaHigh, decimal JmaLow, decimal JmaClose);
 
-	private readonly record struct PendingSignal(SignalType Type, int RemainingBars);
+	private readonly record struct PendingSignal(SignalTypes Type, int RemainingBars);
 
-	private enum SignalType
+	private enum SignalTypes
 	{
 		None,
 		Buy,

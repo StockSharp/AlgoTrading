@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class DailyRangeStrategy : Strategy
 {
-	private readonly StrategyParam<DailyRangeCalculation> _rangeMode;
+	private readonly StrategyParam<DailyRangeCalculations> _rangeMode;
 	private readonly StrategyParam<int> _slidingWindowDays;
 	private readonly StrategyParam<decimal> _stopLossCoefficient;
 	private readonly StrategyParam<decimal> _takeProfitCoefficient;
@@ -41,7 +41,7 @@ public class DailyRangeStrategy : Strategy
 	/// <summary>
 	/// Calculation method used for the daily range.
 	/// </summary>
-	public DailyRangeCalculation RangeMode
+	public DailyRangeCalculations RangeMode
 	{
 		get => _rangeMode.Value;
 		set => _rangeMode.Value = value;
@@ -115,7 +115,7 @@ public class DailyRangeStrategy : Strategy
 	/// </summary>
 	public DailyRangeStrategy()
 	{
-		_rangeMode = Param(nameof(RangeMode), DailyRangeCalculation.HighestLowest)
+		_rangeMode = Param(nameof(RangeMode), DailyRangeCalculations.HighestLowest)
 			.SetDisplay("Range Mode", "Daily range calculation method", "General")
 			.SetCanOptimize(true);
 
@@ -276,7 +276,7 @@ public class DailyRangeStrategy : Strategy
 			return false;
 		}
 
-		range = RangeMode == DailyRangeCalculation.HighestLowest || diffCount == 0
+		range = RangeMode == DailyRangeCalculations.HighestLowest || diffCount == 0
 			? highest - lowest
 			: diffSum / diffCount;
 
@@ -357,7 +357,7 @@ public class DailyRangeStrategy : Strategy
 	/// <summary>
 	/// Range calculation modes.
 	/// </summary>
-	public enum DailyRangeCalculation
+	public enum DailyRangeCalculations
 	{
 		/// <summary>
 		/// Use the distance between the highest high and the lowest low within the window.

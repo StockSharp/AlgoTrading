@@ -40,10 +40,10 @@ public class BagoEaClassicStrategy : Strategy
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageType> _maMethod;
-	private readonly StrategyParam<AppliedPriceType> _maAppliedPrice;
+	private readonly StrategyParam<MovingAverageTypes> _maMethod;
+	private readonly StrategyParam<AppliedPriceTypes> _maAppliedPrice;
 	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<AppliedPriceType> _rsiAppliedPrice;
+	private readonly StrategyParam<AppliedPriceTypes> _rsiAppliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _historyLimit;
 	private readonly StrategyParam<decimal> _fiftyLevel;
@@ -157,17 +157,17 @@ public class BagoEaClassicStrategy : Strategy
 		_maShift = Param(nameof(MaShift), 0)
 		.SetDisplay("MA Shift", "Horizontal displacement in bars", "Indicator");
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageType.Exponential)
+		_maMethod = Param(nameof(MaMethod), MovingAverageTypes.Exponential)
 		.SetDisplay("MA Method", "Moving average calculation mode", "Indicator");
 
-		_maAppliedPrice = Param(nameof(MaAppliedPrice), AppliedPriceType.Close)
+		_maAppliedPrice = Param(nameof(MaAppliedPrice), AppliedPriceTypes.Close)
 		.SetDisplay("MA Price", "Applied price for moving averages", "Indicator");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 21)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "RSI averaging length", "Indicator");
 
-		_rsiAppliedPrice = Param(nameof(RsiAppliedPrice), AppliedPriceType.Close)
+		_rsiAppliedPrice = Param(nameof(RsiAppliedPrice), AppliedPriceTypes.Close)
 		.SetDisplay("RSI Price", "Applied price for RSI", "Indicator");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -345,7 +345,7 @@ public int MaShift
 /// <summary>
 /// Moving average calculation method.
 /// </summary>
-public MovingAverageType MaMethod
+public MovingAverageTypes MaMethod
 {
 	get => _maMethod.Value;
 	set => _maMethod.Value = value;
@@ -354,7 +354,7 @@ public MovingAverageType MaMethod
 /// <summary>
 /// Applied price for the moving averages.
 /// </summary>
-public AppliedPriceType MaAppliedPrice
+public AppliedPriceTypes MaAppliedPrice
 {
 	get => _maAppliedPrice.Value;
 	set => _maAppliedPrice.Value = value;
@@ -372,7 +372,7 @@ public int RsiPeriod
 /// <summary>
 /// Applied price for the RSI indicator.
 /// </summary>
-public AppliedPriceType RsiAppliedPrice
+public AppliedPriceTypes RsiAppliedPrice
 {
 	get => _rsiAppliedPrice.Value;
 	set => _rsiAppliedPrice.Value = value;
@@ -992,27 +992,27 @@ else if (belowTunnel && prevAbove)
 }
 }
 
-private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceType type)
+private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceTypes type)
 {
 	return type switch
 	{
-		AppliedPriceType.Open => candle.OpenPrice,
-		AppliedPriceType.High => candle.HighPrice,
-		AppliedPriceType.Low => candle.LowPrice,
-		AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-		AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-		AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+		AppliedPriceTypes.Open => candle.OpenPrice,
+		AppliedPriceTypes.High => candle.HighPrice,
+		AppliedPriceTypes.Low => candle.LowPrice,
+		AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+		AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+		AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 		_ => candle.ClosePrice,
 	};
 }
 
-private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageType type, int length)
+private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type, int length)
 {
 	return type switch
 	{
-		MovingAverageType.Simple => new SimpleMovingAverage { Length = length },
-		MovingAverageType.Smoothed => new SmoothedMovingAverage { Length = length },
-		MovingAverageType.LinearWeighted => new WeightedMovingAverage { Length = length },
+		MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
+		MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
+		MovingAverageTypes.LinearWeighted => new WeightedMovingAverage { Length = length },
 		_ => new ExponentialMovingAverage { Length = length },
 	};
 }
@@ -1100,7 +1100,7 @@ public decimal Close { get; }
 /// <summary>
 /// Moving average calculation options supported by the strategy.
 /// </summary>
-public enum MovingAverageType
+public enum MovingAverageTypes
 {
 	/// <summary>
 	/// Simple moving average.
@@ -1126,7 +1126,7 @@ public enum MovingAverageType
 /// <summary>
 /// Price extraction modes replicated from MetaTrader.
 /// </summary>
-public enum AppliedPriceType
+public enum AppliedPriceTypes
 {
 	/// <summary>
 	/// Closing price.

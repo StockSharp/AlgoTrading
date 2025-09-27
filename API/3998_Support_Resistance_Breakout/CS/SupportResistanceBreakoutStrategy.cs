@@ -29,7 +29,7 @@ public class SupportResistanceBreakoutStrategy : Strategy
 
 	private decimal _support;
 	private decimal _resistance;
-	private TrendDirection _trend;
+	private TrendDirections _trend;
 
 	private decimal _point;
 	private Order _stopOrder;
@@ -37,7 +37,7 @@ public class SupportResistanceBreakoutStrategy : Strategy
 	private decimal? _entryPrice;
 	private int _trailingStage;
 
-	private enum TrendDirection
+	private enum TrendDirections
 	{
 		None,
 		Bullish,
@@ -105,7 +105,7 @@ public class SupportResistanceBreakoutStrategy : Strategy
 
 		_support = 0m;
 		_resistance = 0m;
-		_trend = TrendDirection.None;
+		_trend = TrendDirections.None;
 		_point = 0m;
 		_stopOrder = null;
 		_stopPrice = null;
@@ -159,11 +159,11 @@ public class SupportResistanceBreakoutStrategy : Strategy
 
 		var emaDecimal = emaValue.ToDecimal();
 
-		_trend = TrendDirection.None;
+		_trend = TrendDirections.None;
 		if (candle.OpenPrice > emaDecimal)
-		_trend = TrendDirection.Bullish;
+		_trend = TrendDirections.Bullish;
 		else if (candle.OpenPrice < emaDecimal)
-		_trend = TrendDirection.Bearish;
+		_trend = TrendDirections.Bearish;
 
 		var canTrade = IsFormedAndOnlineAndAllowTrading();
 
@@ -181,7 +181,7 @@ public class SupportResistanceBreakoutStrategy : Strategy
 		return;
 
 		// Buy the breakout when the market is trending higher.
-		if (_trend == TrendDirection.Bullish && Position <= 0 && candle.ClosePrice > _resistance)
+		if (_trend == TrendDirections.Bullish && Position <= 0 && candle.ClosePrice > _resistance)
 		{
 			var volume = Volume + Math.Abs(Position);
 			if (volume > 0m)
@@ -191,7 +191,7 @@ public class SupportResistanceBreakoutStrategy : Strategy
 			}
 		}
 		// Sell the breakdown when the market is trending lower.
-		else if (_trend == TrendDirection.Bearish && Position >= 0 && candle.ClosePrice < _support)
+		else if (_trend == TrendDirections.Bearish && Position >= 0 && candle.ClosePrice < _support)
 		{
 			var volume = Volume + Math.Abs(Position);
 			if (volume > 0m)

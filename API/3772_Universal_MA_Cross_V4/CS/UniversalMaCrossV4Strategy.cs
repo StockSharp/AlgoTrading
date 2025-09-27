@@ -50,7 +50,7 @@ public class UniversalMaCrossV4Strategy : Strategy
 	private decimal? _slowPrevPrev;
 
 	private DateTimeOffset? _lastEntryBar;
-	private TradeDirection _lastTrade = TradeDirection.None;
+	private TradeDirections _lastTrade = TradeDirections.None;
 
 	private decimal? _entryPrice;
 	private decimal? _stopPrice;
@@ -331,7 +331,7 @@ public class UniversalMaCrossV4Strategy : Strategy
 		_slowPrev = null;
 		_slowPrevPrev = null;
 		_lastEntryBar = null;
-		_lastTrade = TradeDirection.None;
+		_lastTrade = TradeDirections.None;
 		_entryPrice = null;
 		_stopPrice = null;
 		_takeProfitPrice = null;
@@ -438,14 +438,14 @@ public class UniversalMaCrossV4Strategy : Strategy
 
 		if (StopAndReverse && Position != 0)
 		{
-			var reverseToShort = _lastTrade == TradeDirection.Long && sellSignal;
-			var reverseToLong = _lastTrade == TradeDirection.Short && buySignal;
+			var reverseToShort = _lastTrade == TradeDirections.Long && sellSignal;
+			var reverseToLong = _lastTrade == TradeDirections.Short && buySignal;
 
 			if (reverseToLong || reverseToShort)
 			{
 				ClosePosition();
 				ResetProtection();
-				_lastTrade = TradeDirection.None;
+				_lastTrade = TradeDirections.None;
 			}
 		}
 
@@ -459,14 +459,14 @@ public class UniversalMaCrossV4Strategy : Strategy
 		{
 			BuyMarket(TradeVolume);
 			SetProtectionLevels(candle.ClosePrice, true);
-			_lastTrade = TradeDirection.Long;
+			_lastTrade = TradeDirections.Long;
 			_lastEntryBar = candle.OpenTime;
 		}
 		else if (sellSignal)
 		{
 			SellMarket(TradeVolume);
 			SetProtectionLevels(candle.ClosePrice, false);
-			_lastTrade = TradeDirection.Short;
+			_lastTrade = TradeDirections.Short;
 			_lastEntryBar = candle.OpenTime;
 		}
 	}
@@ -636,7 +636,7 @@ public class UniversalMaCrossV4Strategy : Strategy
 		return points;
 	}
 
-	private enum TradeDirection
+	private enum TradeDirections
 	{
 		None,
 		Long,

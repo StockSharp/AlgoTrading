@@ -24,9 +24,9 @@ private readonly StrategyParam<int> _fastLength;
 private readonly StrategyParam<int> _mediumLength;
 private readonly StrategyParam<int> _slowLength;
 private readonly StrategyParam<int> _channelLength;
-private readonly StrategyParam<MovingAverageTypeEnum> _fastType;
-private readonly StrategyParam<MovingAverageTypeEnum> _mediumType;
-private readonly StrategyParam<MovingAverageTypeEnum> _slowType;
+private readonly StrategyParam<MovingAverageTypes> _fastType;
+private readonly StrategyParam<MovingAverageTypes> _mediumType;
+private readonly StrategyParam<MovingAverageTypes> _slowType;
 private readonly StrategyParam<decimal> _takeProfit;
 private readonly StrategyParam<decimal> _stopLoss;
 private readonly StrategyParam<bool> _useChannelStop;
@@ -80,7 +80,7 @@ set => _channelLength.Value = value;
 /// <summary>
 /// Moving-average type applied to the fast average.
 /// </summary>
-public MovingAverageTypeEnum FastType
+public MovingAverageTypes FastType
 {
 get => _fastType.Value;
 set => _fastType.Value = value;
@@ -89,7 +89,7 @@ set => _fastType.Value = value;
 /// <summary>
 /// Moving-average type applied to the medium average.
 /// </summary>
-public MovingAverageTypeEnum MediumType
+public MovingAverageTypes MediumType
 {
 get => _mediumType.Value;
 set => _mediumType.Value = value;
@@ -98,7 +98,7 @@ set => _mediumType.Value = value;
 /// <summary>
 /// Moving-average type applied to the slow average.
 /// </summary>
-public MovingAverageTypeEnum SlowType
+public MovingAverageTypes SlowType
 {
 get => _slowType.Value;
 set => _slowType.Value = value;
@@ -161,13 +161,13 @@ _channelLength = Param(nameof(ChannelLength), 15)
 .SetGreaterThanZero()
 .SetDisplay("Channel", "Donchian channel lookback period", "Risk Management");
 
-_fastType = Param(nameof(FastType), MovingAverageTypeEnum.EMA)
+_fastType = Param(nameof(FastType), MovingAverageTypes.EMA)
 .SetDisplay("Fast MA Type", "Algorithm used for the fast average", "Moving Averages");
 
-_mediumType = Param(nameof(MediumType), MovingAverageTypeEnum.EMA)
+_mediumType = Param(nameof(MediumType), MovingAverageTypes.EMA)
 .SetDisplay("Medium MA Type", "Algorithm used for the medium average", "Moving Averages");
 
-_slowType = Param(nameof(SlowType), MovingAverageTypeEnum.EMA)
+_slowType = Param(nameof(SlowType), MovingAverageTypes.EMA)
 .SetDisplay("Slow MA Type", "Algorithm used for the slow average", "Moving Averages");
 
 _takeProfit = Param(nameof(TakeProfit), 0m)
@@ -315,14 +315,14 @@ _entryPrice = candle.ClosePrice;
 }
 }
 
-private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypeEnum type, int length)
+private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type, int length)
 {
 return type switch
 {
-MovingAverageTypeEnum.SMA => new SimpleMovingAverage { Length = length },
-MovingAverageTypeEnum.EMA => new ExponentialMovingAverage { Length = length },
-MovingAverageTypeEnum.SMMA => new SmoothedMovingAverage { Length = length },
-MovingAverageTypeEnum.WMA => new WeightedMovingAverage { Length = length },
+MovingAverageTypes.SMA => new SimpleMovingAverage { Length = length },
+MovingAverageTypes.EMA => new ExponentialMovingAverage { Length = length },
+MovingAverageTypes.SMMA => new SmoothedMovingAverage { Length = length },
+MovingAverageTypes.WMA => new WeightedMovingAverage { Length = length },
 _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unsupported moving average type."),
 };
 }
@@ -331,7 +331,7 @@ _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unsupported movi
 /// Moving-average algorithms supported by the strategy.
 /// Matches the modes available in the original MetaTrader script.
 /// </summary>
-public enum MovingAverageTypeEnum
+public enum MovingAverageTypes
 {
 /// <summary>
 /// Simple moving average.

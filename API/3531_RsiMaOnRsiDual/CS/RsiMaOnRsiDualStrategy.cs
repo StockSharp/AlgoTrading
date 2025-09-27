@@ -22,7 +22,7 @@ public class RsiMaOnRsiDualStrategy : Strategy
 	private readonly StrategyParam<int> _fastRsiPeriod;
 	private readonly StrategyParam<int> _slowRsiPeriod;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<AppliedPriceType> _appliedPrice;
+	private readonly StrategyParam<AppliedPriceTypes> _appliedPrice;
 	private readonly StrategyParam<decimal> _neutralLevel;
 	private readonly StrategyParam<bool> _allowLong;
 	private readonly StrategyParam<bool> _allowShort;
@@ -71,7 +71,7 @@ public class RsiMaOnRsiDualStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(2, 30, 1);
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceType.Close)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Close)
 			.SetDisplay("Applied price", "Price source used to build RSI values.", "Indicators");
 
 		_neutralLevel = Param(nameof(NeutralLevel), 50m)
@@ -128,7 +128,7 @@ public class RsiMaOnRsiDualStrategy : Strategy
 		set => _maPeriod.Value = value;
 	}
 
-	public AppliedPriceType AppliedPrice
+	public AppliedPriceTypes AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -432,23 +432,23 @@ public class RsiMaOnRsiDualStrategy : Strategy
 		return t >= start || t < end;
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceType priceType)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceTypes priceType)
 	{
 		return priceType switch
 		{
-			AppliedPriceType.Close => candle.ClosePrice,
-			AppliedPriceType.Open => candle.OpenPrice,
-			AppliedPriceType.High => candle.HighPrice,
-			AppliedPriceType.Low => candle.LowPrice,
-			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
-			AppliedPriceType.Average => (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
+			AppliedPriceTypes.Close => candle.ClosePrice,
+			AppliedPriceTypes.Open => candle.OpenPrice,
+			AppliedPriceTypes.High => candle.HighPrice,
+			AppliedPriceTypes.Low => candle.LowPrice,
+			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			AppliedPriceTypes.Average => (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
 
-	public enum AppliedPriceType
+	public enum AppliedPriceTypes
 	{
 		Close,
 		Open,

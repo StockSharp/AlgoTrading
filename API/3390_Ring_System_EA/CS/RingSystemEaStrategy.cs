@@ -18,26 +18,26 @@ namespace StockSharp.Samples.Strategies;
 
 public class RingSystemEaStrategy : Strategy
 {
-	private readonly StrategyParam<Oper> _operationParam;
+	private readonly StrategyParam<Operations> _operationParam;
 	private readonly StrategyParam<int> _timerParam;
 	private readonly StrategyParam<string> _currenciesParam;
 	private readonly StrategyParam<string> _skipGroupsParam;
-	private readonly StrategyParam<Side> _sideParam;
-	private readonly StrategyParam<StepMode> _lossModeParam;
+	private readonly StrategyParam<Sides> _sideParam;
+	private readonly StrategyParam<StepModes> _lossModeParam;
 	private readonly StrategyParam<decimal> _stepParam;
-	private readonly StrategyParam<StepProgression> _stepProgressParam;
+	private readonly StrategyParam<StepProgressions> _stepProgressParam;
 	private readonly StrategyParam<int> _minutesParam;
 	private readonly StrategyParam<int> _maxGroupsParam;
-	private readonly StrategyParam<CloseProfitMode> _closeProfitParam;
+	private readonly StrategyParam<CloseProfitModes> _closeProfitParam;
 	private readonly StrategyParam<decimal> _targetProfitParam;
 	private readonly StrategyParam<int> _delayProfitParam;
-	private readonly StrategyParam<CloseLossMode> _closeLossParam;
+	private readonly StrategyParam<CloseLossModes> _closeLossParam;
 	private readonly StrategyParam<decimal> _targetLossParam;
 	private readonly StrategyParam<int> _delayLossParam;
 	private readonly StrategyParam<bool> _autoLotParam;
 	private readonly StrategyParam<decimal> _riskParam;
 	private readonly StrategyParam<decimal> _manualLotParam;
-	private readonly StrategyParam<LotProgression> _lotProgressParam;
+	private readonly StrategyParam<LotProgressions> _lotProgressParam;
 	private readonly StrategyParam<bool> _fairLotParam;
 	private readonly StrategyParam<decimal> _maxLotParam;
 	private readonly StrategyParam<bool> _controlSessionParam;
@@ -65,7 +65,7 @@ public class RingSystemEaStrategy : Strategy
 
 	public RingSystemEaStrategy()
 	{
-		_operationParam = Param(nameof(TypeOfOperation), Oper.NormalOperation)
+		_operationParam = Param(nameof(TypeOfOperation), Operations.NormalOperation)
 			.SetDisplay("Operation Mode", "Defines how the basket operates", "Core")
 			.SetDescription("Matches the four MT4 modes: standby, trading, close on profit, or emergency close.");
 
@@ -79,17 +79,17 @@ public class RingSystemEaStrategy : Strategy
 		_skipGroupsParam = Param(nameof(NoOfGroupToSkip), "57,58,59,60")
 			.SetDisplay("Skip Groups", "Comma separated group numbers to disable", "Universe");
 
-		_sideParam = Param(nameof(SideOpenOrders), Side.OpenPlusAndMinus)
+		_sideParam = Param(nameof(SideOpenOrders), Sides.OpenPlusAndMinus)
 			.SetDisplay("Allowed Sides", "Choose whether plus, minus or both baskets trade", "Core");
 
-		_lossModeParam = Param(nameof(OpenOrdersInLoss), StepMode.OpenWithManualStep)
+		_lossModeParam = Param(nameof(OpenOrdersInLoss), StepModes.OpenWithManualStep)
 			.SetDisplay("Loss Mode", "Controls re-entry when basket is in loss", "Trading");
 
 		_stepParam = Param(nameof(StepOpenNextOrders), 200m)
 			.SetDisplay("Next Step", "Loss level that triggers additional orders", "Trading")
 			.SetGreaterThanZero();
 
-		_stepProgressParam = Param(nameof(StepOrdersProgress), StepProgression.StaticalStep)
+		_stepProgressParam = Param(nameof(StepOrdersProgress), StepProgressions.StaticalStep)
 			.SetDisplay("Step Progression", "How loss thresholds scale with new orders", "Trading");
 
 		_minutesParam = Param(nameof(MinutesForNextOrder), 60)
@@ -100,7 +100,7 @@ public class RingSystemEaStrategy : Strategy
 			.SetDisplay("Max Groups", "Simultaneous groups allowed (0 = unlimited)", "Trading")
 			.SetGreaterThanOrEqualTo(0);
 
-		_closeProfitParam = Param(nameof(TypeCloseInProfit), CloseProfitMode.SingleTicket)
+		_closeProfitParam = Param(nameof(TypeCloseInProfit), CloseProfitModes.SingleTicket)
 			.SetDisplay("Profit Close", "Scope of profit based exits", "Risk");
 
 		_targetProfitParam = Param(nameof(TargetCloseProfit), 200m)
@@ -111,7 +111,7 @@ public class RingSystemEaStrategy : Strategy
 			.SetDisplay("Profit Delay", "Number of evaluations before closing", "Risk")
 			.SetGreaterThanOrEqualTo(1);
 
-		_closeLossParam = Param(nameof(TypeCloseInLoss), CloseLossMode.NotCloseInLoss)
+		_closeLossParam = Param(nameof(TypeCloseInLoss), CloseLossModes.NotCloseInLoss)
 			.SetDisplay("Loss Close", "How losses are handled", "Risk");
 
 		_targetLossParam = Param(nameof(TargetCloseLoss), 1000m)
@@ -133,7 +133,7 @@ public class RingSystemEaStrategy : Strategy
 			.SetDisplay("Manual Lot", "Base lot when auto sizing is disabled", "Money")
 			.SetGreaterThanZero();
 
-		_lotProgressParam = Param(nameof(LotOrdersProgress), LotProgression.StaticalLot)
+		_lotProgressParam = Param(nameof(LotOrdersProgress), LotProgressions.StaticalLot)
 			.SetDisplay("Lot Progression", "Scaling rule for successive orders", "Money");
 
 		_fairLotParam = Param(nameof(UseFairLotSize), false)
@@ -189,7 +189,7 @@ public class RingSystemEaStrategy : Strategy
 			.SetDisplay("Candle Type", "Primary timeframe for calculations", "Data");
 	}
 
-	public Oper TypeOfOperation
+	public Operations TypeOfOperation
 	{
 		get => _operationParam.Value;
 		set => _operationParam.Value = value;
@@ -213,13 +213,13 @@ public class RingSystemEaStrategy : Strategy
 		set => _skipGroupsParam.Value = value;
 	}
 
-	public Side SideOpenOrders
+	public Sides SideOpenOrders
 	{
 		get => _sideParam.Value;
 		set => _sideParam.Value = value;
 	}
 
-	public StepMode OpenOrdersInLoss
+	public StepModes OpenOrdersInLoss
 	{
 		get => _lossModeParam.Value;
 		set => _lossModeParam.Value = value;
@@ -231,7 +231,7 @@ public class RingSystemEaStrategy : Strategy
 		set => _stepParam.Value = value;
 	}
 
-	public StepProgression StepOrdersProgress
+	public StepProgressions StepOrdersProgress
 	{
 		get => _stepProgressParam.Value;
 		set => _stepProgressParam.Value = value;
@@ -249,7 +249,7 @@ public class RingSystemEaStrategy : Strategy
 		set => _maxGroupsParam.Value = value;
 	}
 
-	public CloseProfitMode TypeCloseInProfit
+	public CloseProfitModes TypeCloseInProfit
 	{
 		get => _closeProfitParam.Value;
 		set => _closeProfitParam.Value = value;
@@ -267,7 +267,7 @@ public class RingSystemEaStrategy : Strategy
 		set => _delayProfitParam.Value = value;
 	}
 
-	public CloseLossMode TypeCloseInLoss
+	public CloseLossModes TypeCloseInLoss
 	{
 		get => _closeLossParam.Value;
 		set => _closeLossParam.Value = value;
@@ -303,7 +303,7 @@ public class RingSystemEaStrategy : Strategy
 		set => _manualLotParam.Value = value;
 	}
 
-	public LotProgression LotOrdersProgress
+	public LotProgressions LotOrdersProgress
 	{
 		get => _lotProgressParam.Value;
 		set => _lotProgressParam.Value = value;
@@ -554,7 +554,7 @@ public class RingSystemEaStrategy : Strategy
 
 		UpdateProfits(group);
 
-		if (TypeOfOperation == Oper.CloseImmediatelyAllOrders)
+		if (TypeOfOperation == Operations.CloseImmediatelyAllOrders)
 		{
 			CloseGroup(group);
 			return;
@@ -567,7 +567,7 @@ public class RingSystemEaStrategy : Strategy
 		if (!IsSessionAllowed(time))
 			return;
 
-		if (TypeCloseInProfit == CloseProfitMode.BasketTicket)
+		if (TypeCloseInProfit == CloseProfitModes.BasketTicket)
 		{
 			HandleBasketClose(group);
 		}
@@ -577,31 +577,31 @@ public class RingSystemEaStrategy : Strategy
 			HandleSideClose(group, false);
 		}
 
-		if (TypeCloseInProfit == CloseProfitMode.PairByPair)
+		if (TypeCloseInProfit == CloseProfitModes.PairByPair)
 		{
 			HandlePairClose(group, true);
 			HandlePairClose(group, false);
 		}
 
-		if (TypeCloseInLoss != CloseLossMode.NotCloseInLoss)
+		if (TypeCloseInLoss != CloseLossModes.NotCloseInLoss)
 		{
 			HandleLossExit(group, true);
 			HandleLossExit(group, false);
 		}
 
-		if (TypeOfOperation == Oper.CloseInProfitAndStop)
+		if (TypeOfOperation == Operations.CloseInProfitAndStop)
 			return;
 
-		if (TypeOfOperation == Oper.StandByMode)
+		if (TypeOfOperation == Operations.StandByMode)
 			return;
 
 		if (MaximumGroups > 0 && ActiveGroupCount() >= MaximumGroups && !group.IsActive)
 			return;
 
-		if (SideOpenOrders == Side.OpenOnlyPlus || SideOpenOrders == Side.OpenPlusAndMinus)
+		if (SideOpenOrders == Sides.OpenOnlyPlus || SideOpenOrders == Sides.OpenPlusAndMinus)
 			HandleOpen(group, true, time);
 
-		if (SideOpenOrders == Side.OpenOnlyMinus || SideOpenOrders == Side.OpenPlusAndMinus)
+		if (SideOpenOrders == Sides.OpenOnlyMinus || SideOpenOrders == Sides.OpenPlusAndMinus)
 			HandleOpen(group, false, time);
 	}
 
@@ -627,7 +627,7 @@ public class RingSystemEaStrategy : Strategy
 			group.Minus.ProfitDelay = 0;
 		}
 
-		if (TypeCloseInLoss == CloseLossMode.WholeTicket && profit <= -TargetCloseLoss)
+		if (TypeCloseInLoss == CloseLossModes.WholeTicket && profit <= -TargetCloseLoss)
 		{
 			if (++group.Plus.LossDelay >= DelayCloseLoss && ++group.Minus.LossDelay >= DelayCloseLoss)
 			{
@@ -646,7 +646,7 @@ public class RingSystemEaStrategy : Strategy
 		var side = isPlus ? group.Plus : group.Minus;
 		var profit = side.Profit;
 
-		if (profit >= TargetCloseProfit && TypeCloseInProfit == CloseProfitMode.SingleTicket)
+		if (profit >= TargetCloseProfit && TypeCloseInProfit == CloseProfitModes.SingleTicket)
 		{
 			if (++side.ProfitDelay >= DelayCloseProfit)
 			{
@@ -658,7 +658,7 @@ public class RingSystemEaStrategy : Strategy
 			side.ProfitDelay = 0;
 		}
 
-		if (profit <= -TargetCloseLoss && TypeCloseInLoss == CloseLossMode.WholeTicket)
+		if (profit <= -TargetCloseLoss && TypeCloseInLoss == CloseLossModes.WholeTicket)
 		{
 			if (++side.LossDelay >= DelayCloseLoss)
 			{
@@ -692,7 +692,7 @@ public class RingSystemEaStrategy : Strategy
 	private void HandleLossExit(GroupState group, bool isPlus)
 	{
 		var side = isPlus ? group.Plus : group.Minus;
-		if (TypeCloseInLoss == CloseLossMode.PartialTicket && side.Profit <= -TargetCloseLoss)
+		if (TypeCloseInLoss == CloseLossModes.PartialTicket && side.Profit <= -TargetCloseLoss)
 		{
 			if (++side.LossDelay >= DelayCloseLoss)
 			{
@@ -712,7 +712,7 @@ public class RingSystemEaStrategy : Strategy
 			return;
 		}
 
-		if (OpenOrdersInLoss == StepMode.NotOpenInLoss)
+		if (OpenOrdersInLoss == StepModes.NotOpenInLoss)
 			return;
 
 		var threshold = GetNextThreshold(side.Orders);
@@ -908,10 +908,10 @@ public class RingSystemEaStrategy : Strategy
 	{
 		return LotOrdersProgress switch
 		{
-			LotProgression.StaticalLot => 1m,
-			LotProgression.GeometricalLot => (decimal)Math.Pow(2, orderIndex),
-			LotProgression.ExponentialLot => (decimal)Math.Pow(3, orderIndex),
-			LotProgression.DecreasesLot => 1m / Math.Max(1, orderIndex + 1),
+			LotProgressions.StaticalLot => 1m,
+			LotProgressions.GeometricalLot => (decimal)Math.Pow(2, orderIndex),
+			LotProgressions.ExponentialLot => (decimal)Math.Pow(3, orderIndex),
+			LotProgressions.DecreasesLot => 1m / Math.Max(1, orderIndex + 1),
 			_ => 1m
 		};
 	}
@@ -920,9 +920,9 @@ public class RingSystemEaStrategy : Strategy
 	{
 		var multiplier = StepOrdersProgress switch
 		{
-			StepProgression.StaticalStep => 1m,
-			StepProgression.GeometricalStep => orderIndex + 1m,
-			StepProgression.ExponentialStep => (decimal)Math.Pow(2, orderIndex),
+			StepProgressions.StaticalStep => 1m,
+			StepProgressions.GeometricalStep => orderIndex + 1m,
+			StepProgressions.ExponentialStep => (decimal)Math.Pow(2, orderIndex),
 			_ => 1m
 		};
 
@@ -1234,7 +1234,7 @@ public class RingSystemEaStrategy : Strategy
 		}
 	}
 
-	public enum Oper
+	public enum Operations
 	{
 		StandByMode,
 		NormalOperation,
@@ -1242,42 +1242,42 @@ public class RingSystemEaStrategy : Strategy
 		CloseImmediatelyAllOrders
 	}
 
-	public enum Side
+	public enum Sides
 	{
 		OpenOnlyPlus,
 		OpenOnlyMinus,
 		OpenPlusAndMinus
 	}
 
-	public enum StepMode
+	public enum StepModes
 	{
 		NotOpenInLoss,
 		OpenWithManualStep,
 		OpenWithAutoStep
 	}
 
-	public enum StepProgression
+	public enum StepProgressions
 	{
 		StaticalStep,
 		GeometricalStep,
 		ExponentialStep
 	}
 
-	public enum CloseProfitMode
+	public enum CloseProfitModes
 	{
 		SingleTicket,
 		BasketTicket,
 		PairByPair
 	}
 
-	public enum CloseLossMode
+	public enum CloseLossModes
 	{
 		WholeTicket,
 		PartialTicket,
 		NotCloseInLoss
 	}
 
-	public enum LotProgression
+	public enum LotProgressions
 	{
 		StaticalLot,
 		GeometricalLot,

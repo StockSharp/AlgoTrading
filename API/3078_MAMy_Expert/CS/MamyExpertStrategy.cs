@@ -20,7 +20,7 @@ public class MamyExpertStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<MaCalculationType> _maType;
+	private readonly StrategyParam<MaCalculationTypes> _maType;
 	private readonly StrategyParam<decimal> _tradeVolume;
 
 	private LengthIndicator<decimal> _closeMa;
@@ -42,7 +42,7 @@ public class MamyExpertStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MA period", "Length applied to all moving averages.", "Indicator");
 
-		_maType = Param(nameof(MaType), MaCalculationType.Weighted)
+		_maType = Param(nameof(MaType), MaCalculationTypes.Weighted)
 			.SetDisplay("MA method", "Averaging algorithm applied to open/close/weighted prices.", "Indicator");
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -62,7 +62,7 @@ public class MamyExpertStrategy : Strategy
 		set => _maPeriod.Value = value;
 	}
 
-	public MaCalculationType MaType
+	public MaCalculationTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -226,19 +226,19 @@ public class MamyExpertStrategy : Strategy
 		return (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MaCalculationType type, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MaCalculationTypes type, int length)
 	{
 		return type switch
 		{
-			MaCalculationType.Simple => new SimpleMovingAverage { Length = length },
-			MaCalculationType.Exponential => new ExponentialMovingAverage { Length = length },
-			MaCalculationType.Smoothed => new SmoothedMovingAverage { Length = length },
+			MaCalculationTypes.Simple => new SimpleMovingAverage { Length = length },
+			MaCalculationTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MaCalculationTypes.Smoothed => new SmoothedMovingAverage { Length = length },
 			_ => new WeightedMovingAverage { Length = length },
 		};
 	}
 }
 
-public enum MaCalculationType
+public enum MaCalculationTypes
 {
 	Simple,
 	Exponential,

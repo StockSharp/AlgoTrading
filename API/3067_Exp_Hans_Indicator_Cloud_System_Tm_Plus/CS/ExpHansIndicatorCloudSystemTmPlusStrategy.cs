@@ -26,7 +26,7 @@ public class ExpHansIndicatorCloudSystemTmPlusStrategy : Strategy
 	private static readonly TimeSpan Session2End = TimeSpan.FromHours(12);
 
 	private readonly StrategyParam<decimal> _moneyManagement;
-	private readonly StrategyParam<MoneyManagementMode> _moneyMode;
+	private readonly StrategyParam<MoneyManagementModes> _moneyMode;
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<int> _deviationPoints;
@@ -52,7 +52,7 @@ public class ExpHansIndicatorCloudSystemTmPlusStrategy : Strategy
 	/// Enumeration matching the money management modes of the original expert.
 	/// Currently only the Lot mode is applied; other options are reserved for future extensions.
 	/// </summary>
-	public enum MoneyManagementMode
+	public enum MoneyManagementModes
 	{
 		FreeMargin,
 		Balance,
@@ -73,7 +73,7 @@ public class ExpHansIndicatorCloudSystemTmPlusStrategy : Strategy
 	/// <summary>
 	/// Selected money management interpretation.
 	/// </summary>
-	public MoneyManagementMode MoneyMode
+	public MoneyManagementModes MoneyMode
 	{
 		get => _moneyMode.Value;
 		set => _moneyMode.Value = value;
@@ -226,7 +226,7 @@ public class ExpHansIndicatorCloudSystemTmPlusStrategy : Strategy
 		_moneyManagement = Param(nameof(MoneyManagement), 0.1m)
 		.SetDisplay("Money Management", "Portion of the base volume traded per entry", "Risk");
 
-		_moneyMode = Param(nameof(MoneyMode), MoneyManagementMode.Lot)
+		_moneyMode = Param(nameof(MoneyMode), MoneyManagementModes.Lot)
 		.SetDisplay("Money Mode", "Interpretation of the money management value", "Risk");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)

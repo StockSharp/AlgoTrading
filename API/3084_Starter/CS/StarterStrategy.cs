@@ -26,7 +26,7 @@ public class StarterStrategy : Strategy
 	private readonly StrategyParam<int> _cciCurrentBar;
 	private readonly StrategyParam<int> _cciPreviousBar;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<MovingAverageMethod> _maMethod;
+	private readonly StrategyParam<MovingAverageMethods> _maMethod;
 	private readonly StrategyParam<int> _maCurrentBar;
 	private readonly StrategyParam<decimal> _maDelta;
 	private readonly StrategyParam<decimal> _stopLossPips;
@@ -92,7 +92,7 @@ public class StarterStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(20, 200, 5);
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.Simple)
+		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Simple)
 			.SetDisplay("MA Method", "Smoothing method applied to the moving average", "Indicators");
 
 		_maCurrentBar = Param(nameof(MaCurrentBar), 0)
@@ -193,7 +193,7 @@ public class StarterStrategy : Strategy
 	/// <summary>
 	/// Moving average smoothing method.
 	/// </summary>
-	public MovingAverageMethod MaMethod
+	public MovingAverageMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -517,14 +517,14 @@ public class StarterStrategy : Strategy
 		return Math.Max(cciRequirement, maRequirement);
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethod method, int period)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int period)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = period },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = period },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = period },
-			MovingAverageMethod.LinearWeighted => new WeightedMovingAverage { Length = period },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = period },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = period },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = period },
+			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = period },
 			_ => new SimpleMovingAverage { Length = period }
 		};
 	}
@@ -592,7 +592,7 @@ public class StarterStrategy : Strategy
 /// <summary>
 /// Moving average methods supported by <see cref="StarterStrategy"/>.
 /// </summary>
-public enum MovingAverageMethod
+public enum MovingAverageMethods
 {
 	/// <summary>
 	/// Simple moving average (equivalent to MODE_SMA in MetaTrader).

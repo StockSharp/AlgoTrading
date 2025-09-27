@@ -23,12 +23,12 @@ public class AdjustableMovingAverageStrategy : Strategy
 	private readonly StrategyParam<TimeFrame> _candleType;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
-	private readonly StrategyParam<MovingAverageMethod> _maMethod;
+	private readonly StrategyParam<MovingAverageMethods> _maMethod;
 	private readonly StrategyParam<decimal> _minGapPoints;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _trailingPoints;
-	private readonly StrategyParam<EntryMode> _entryMode;
+	private readonly StrategyParam<EntryModes> _entryMode;
 	private readonly StrategyParam<TimeSpan> _sessionStart;
 	private readonly StrategyParam<TimeSpan> _sessionEnd;
 	private readonly StrategyParam<bool> _closeOutsideSession;
@@ -69,7 +69,7 @@ public class AdjustableMovingAverageStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(3, 60, 1);
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.Exponential)
+		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Exponential)
 			.SetDisplay("MA method", "Moving average calculation method", "Moving averages")
 			.SetCanOptimize(true);
 
@@ -91,7 +91,7 @@ public class AdjustableMovingAverageStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Trailing stop (points)", "Trailing stop distance in price points", "Risk management");
 
-		_entryMode = Param(nameof(Mode), EntryMode.Both)
+		_entryMode = Param(nameof(Mode), EntryModes.Both)
 			.SetDisplay("Entry mode", "Allowed trade direction", "Trading");
 
 		_sessionStart = Param(nameof(SessionStart), TimeSpan.Zero)
@@ -155,7 +155,7 @@ public class AdjustableMovingAverageStrategy : Strategy
 	/// <summary>
 	/// Moving average calculation method.
 	/// </summary>
-	public MovingAverageMethod MaMethod
+	public MovingAverageMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -200,7 +200,7 @@ public class AdjustableMovingAverageStrategy : Strategy
 	/// <summary>
 	/// Allowed trade direction.
 	/// </summary>
-	public EntryMode Mode
+	public EntryModes Mode
 	{
 		get => _entryMode.Value;
 		set => _entryMode.Value = value;
@@ -374,7 +374,7 @@ public class AdjustableMovingAverageStrategy : Strategy
 				if (CloseOutsideSession || inSession)
 					CloseCurrentPosition();
 
-				if (allowTrading && Mode != EntryMode.BuyOnly)
+				if (allowTrading && Mode != EntryModes.BuyOnly)
 				{
 					OpenShort(candle.ClosePrice);
 				}
@@ -390,7 +390,7 @@ public class AdjustableMovingAverageStrategy : Strategy
 				if (CloseOutsideSession || inSession)
 					CloseCurrentPosition();
 
-				if (allowTrading && Mode != EntryMode.SellOnly)
+				if (allowTrading && Mode != EntryModes.SellOnly)
 				{
 					OpenLong(candle.ClosePrice);
 				}
@@ -618,14 +618,14 @@ public class AdjustableMovingAverageStrategy : Strategy
 		return point;
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethod method, int length)
+	private LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		LengthIndicator<decimal> indicator = method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = length, CandlePrice = CandlePrice.Close },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = length, CandlePrice = CandlePrice.Close },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length, CandlePrice = CandlePrice.Close },
-			MovingAverageMethod.Weighted => new WeightedMovingAverage { Length = length, CandlePrice = CandlePrice.Close },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length, CandlePrice = CandlePrice.Close },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length, CandlePrice = CandlePrice.Close },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length, CandlePrice = CandlePrice.Close },
+			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length, CandlePrice = CandlePrice.Close },
 			_ => new ExponentialMovingAverage { Length = length, CandlePrice = CandlePrice.Close }
 		};
 
@@ -642,7 +642,7 @@ public class AdjustableMovingAverageStrategy : Strategy
 /// <summary>
 /// Moving average calculation methods supported by the strategy.
 /// </summary>
-public enum MovingAverageMethod
+public enum MovingAverageMethods
 {
 	/// <summary>
 	/// Simple moving average.
@@ -668,7 +668,7 @@ public enum MovingAverageMethod
 /// <summary>
 /// Directional filter for new positions.
 /// </summary>
-public enum EntryMode
+public enum EntryModes
 {
 	/// <summary>
 	/// Allow both long and short entries.

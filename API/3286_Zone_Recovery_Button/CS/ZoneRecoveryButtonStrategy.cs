@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies;
 public class ZoneRecoveryButtonStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<ZoneRecoveryStartDirection> _startDirection;
+	private readonly StrategyParam<ZoneRecoveryStartDirections> _startDirection;
 	private readonly StrategyParam<bool> _autoRestart;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _zoneRecoveryPips;
@@ -42,7 +42,7 @@ public class ZoneRecoveryButtonStrategy : Strategy
 
 	private readonly List<TradeStep> _steps = new();
 
-	private ZoneRecoveryStartDirection _currentDirection;
+	private ZoneRecoveryStartDirections _currentDirection;
 	private bool _isLongCycle;
 	private decimal _cycleBasePrice;
 	private int _nextStepIndex;
@@ -57,7 +57,7 @@ public class ZoneRecoveryButtonStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for monitoring price", "General");
 
-		_startDirection = Param(nameof(StartDirection), ZoneRecoveryStartDirection.Buy)
+		_startDirection = Param(nameof(StartDirection), ZoneRecoveryStartDirections.Buy)
 			.SetDisplay("Start Direction", "Initial manual button emulation", "General");
 
 		_autoRestart = Param(nameof(AutoRestart), true)
@@ -135,7 +135,7 @@ public class ZoneRecoveryButtonStrategy : Strategy
 	/// <summary>
 	/// Initial direction that mimics pressing the BUY or SELL button.
 	/// </summary>
-	public ZoneRecoveryStartDirection StartDirection
+	public ZoneRecoveryStartDirections StartDirection
 	{
 		get => _startDirection.Value;
 		set => _startDirection.Value = value;
@@ -309,7 +309,7 @@ public class ZoneRecoveryButtonStrategy : Strategy
 		base.OnReseted();
 
 		_steps.Clear();
-		_currentDirection = ZoneRecoveryStartDirection.None;
+		_currentDirection = ZoneRecoveryStartDirections.None;
 		_isLongCycle = false;
 		_cycleBasePrice = 0m;
 		_nextStepIndex = 0;
@@ -359,13 +359,13 @@ public class ZoneRecoveryButtonStrategy : Strategy
 
 	private void TryStartCycle(decimal price)
 	{
-		if (_currentDirection == ZoneRecoveryStartDirection.None)
+		if (_currentDirection == ZoneRecoveryStartDirections.None)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		StartCycle(_currentDirection == ZoneRecoveryStartDirection.Buy, price);
+		StartCycle(_currentDirection == ZoneRecoveryStartDirections.Buy, price);
 	}
 
 	private void StartCycle(bool isLong, decimal price)
@@ -594,7 +594,7 @@ public class ZoneRecoveryButtonStrategy : Strategy
 
 		if (!AutoRestart)
 		{
-			_currentDirection = ZoneRecoveryStartDirection.None;
+			_currentDirection = ZoneRecoveryStartDirections.None;
 		}
 	}
 
@@ -627,7 +627,7 @@ public class ZoneRecoveryButtonStrategy : Strategy
 /// <summary>
 /// Available start directions for the recovery cycle.
 /// </summary>
-public enum ZoneRecoveryStartDirection
+public enum ZoneRecoveryStartDirections
 {
 	/// <summary>
 	/// Do not open any trades automatically.

@@ -23,8 +23,8 @@ public class CronexRsiStrategy : Strategy
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _signalShift;
-	private readonly StrategyParam<CronexSmoothingMethod> _smoothingMethod;
-	private readonly StrategyParam<AppliedPriceType> _appliedPrice;
+	private readonly StrategyParam<CronexSmoothingMethods> _smoothingMethod;
+	private readonly StrategyParam<AppliedPriceTypes> _appliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<bool> _enableLongEntry;
@@ -78,7 +78,7 @@ public class CronexRsiStrategy : Strategy
 	/// <summary>
 	/// Smoothing method replicated from the Cronex RSI indicator.
 	/// </summary>
-	public CronexSmoothingMethod SmoothingMethod
+	public CronexSmoothingMethods SmoothingMethod
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -87,7 +87,7 @@ public class CronexRsiStrategy : Strategy
 	/// <summary>
 	/// Applied price used for RSI calculations.
 	/// </summary>
-	public AppliedPriceType AppliedPrice
+	public AppliedPriceTypes AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -171,10 +171,10 @@ public class CronexRsiStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Signal Shift", "Number of completed bars used for confirmation", "Trading");
 
-		_smoothingMethod = Param(nameof(SmoothingMethod), CronexSmoothingMethod.Simple)
+		_smoothingMethod = Param(nameof(SmoothingMethod), CronexSmoothingMethods.Simple)
 			.SetDisplay("Smoothing Method", "Moving average type applied to the RSI", "Indicators");
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceType.Close)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Close)
 			.SetDisplay("Applied Price", "Price component passed to the RSI", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -380,28 +380,28 @@ public class CronexRsiStrategy : Strategy
 		return true;
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceType type)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceTypes type)
 	{
 		return type switch
 		{
-			AppliedPriceType.Open => candle.OpenPrice,
-			AppliedPriceType.High => candle.HighPrice,
-			AppliedPriceType.Low => candle.LowPrice,
-			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			AppliedPriceTypes.Open => candle.OpenPrice,
+			AppliedPriceTypes.High => candle.HighPrice,
+			AppliedPriceTypes.Low => candle.LowPrice,
+			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateSmoothingIndicator(CronexSmoothingMethod method, int length)
+	private static LengthIndicator<decimal> CreateSmoothingIndicator(CronexSmoothingMethods method, int length)
 	{
 		return method switch
 		{
-			CronexSmoothingMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			CronexSmoothingMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			CronexSmoothingMethod.LinearWeighted => new LinearWeightedMovingAverage { Length = length },
-			CronexSmoothingMethod.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
+			CronexSmoothingMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			CronexSmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			CronexSmoothingMethods.LinearWeighted => new LinearWeightedMovingAverage { Length = length },
+			CronexSmoothingMethods.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -410,7 +410,7 @@ public class CronexRsiStrategy : Strategy
 /// <summary>
 /// Moving average methods available in the Cronex RSI indicator.
 /// </summary>
-public enum CronexSmoothingMethod
+public enum CronexSmoothingMethods
 {
 /// <summary>
 /// Simple moving average.
@@ -441,7 +441,7 @@ VolumeWeighted,
 /// <summary>
 /// Applied price selection matching the MQL5 Cronex RSI inputs.
 /// </summary>
-public enum AppliedPriceType
+public enum AppliedPriceTypes
 {
 /// <summary>
 /// Close price.

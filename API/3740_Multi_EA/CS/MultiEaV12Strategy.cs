@@ -332,7 +332,7 @@ public class MultiEaV12Strategy : Strategy
 		if (!ProcessIndicators(candle))
 			return;
 
-		var signals = new List<SignalDirection>();
+		var signals = new List<SignalDirections>();
 
 		if (_acEnabled.Value)
 			CollectSignal(signals, EvaluateAcSignal());
@@ -476,85 +476,85 @@ public class MultiEaV12Strategy : Strategy
 		return true;
 	}
 
-	private void CollectSignal(List<SignalDirection> signals, SignalDirection signal)
+	private void CollectSignal(List<SignalDirections> signals, SignalDirections signal)
 	{
-		if (signal != SignalDirection.None)
+		if (signal != SignalDirections.None)
 			signals.Add(signal);
 	}
 
-	private SignalDirection EvaluateAcSignal()
+	private SignalDirections EvaluateAcSignal()
 	{
 		if (_acLast is not decimal current || _acPrev is not decimal prev)
-			return SignalDirection.None;
+			return SignalDirections.None;
 
 		var level = _acOpenLevel.Value;
 
 		if (current > level && current > prev)
-			return SignalDirection.Buy;
+			return SignalDirections.Buy;
 
 		if (current < -level && current < prev)
-			return SignalDirection.Sell;
+			return SignalDirections.Sell;
 
-		return SignalDirection.None;
+		return SignalDirections.None;
 	}
 
-	private SignalDirection EvaluateAdxSignal()
+	private SignalDirections EvaluateAdxSignal()
 	{
 		if (_adxStrength is not decimal adx || _adxPlus is not decimal plus || _adxMinus is not decimal minus)
-			return SignalDirection.None;
+			return SignalDirections.None;
 
 		if (adx < _adxTrendLevel.Value)
-			return SignalDirection.None;
+			return SignalDirections.None;
 
 		if (plus > minus && plus > _adxDirectionalLevel.Value)
-			return SignalDirection.Buy;
+			return SignalDirections.Buy;
 
 		if (minus > plus && minus > _adxDirectionalLevel.Value)
-			return SignalDirection.Sell;
+			return SignalDirections.Sell;
 
-		return SignalDirection.None;
+		return SignalDirections.None;
 	}
 
-	private SignalDirection EvaluateAoSignal()
+	private SignalDirections EvaluateAoSignal()
 	{
 		if (_aoLast is not decimal current || _aoPrev is not decimal prev)
-			return SignalDirection.None;
+			return SignalDirections.None;
 
 		var level = _aoOpenLevel.Value;
 
 		if (current > level && current > prev)
-			return SignalDirection.Buy;
+			return SignalDirections.Buy;
 
 		if (current < -level && current < prev)
-			return SignalDirection.Sell;
+			return SignalDirections.Sell;
 
-		return SignalDirection.None;
+		return SignalDirections.None;
 	}
 
-	private SignalDirection EvaluateDeMarkerSignal()
+	private SignalDirections EvaluateDeMarkerSignal()
 	{
 		if (_demLast is not decimal current)
-			return SignalDirection.None;
+			return SignalDirections.None;
 
 		var threshold = _demThreshold.Value;
 		var lower = 100m - threshold;
 
 		if (current < lower)
-			return SignalDirection.Buy;
+			return SignalDirections.Buy;
 
 		if (current > threshold)
-			return SignalDirection.Sell;
+			return SignalDirections.Sell;
 
-		return SignalDirection.None;
+		return SignalDirections.None;
 	}
 
-	private SignalDirection EvaluateForceBollingerSignal(ICandleMessage candle)
+	private SignalDirections EvaluateForceBollingerSignal(ICandleMessage candle)
 	{
 		if (_bollingerUpper is not decimal upper || _bollingerLower is not decimal lower)
-			return SignalDirection.None;
+			return SignalDirections.None;
 
 		if (_forceLast is not decimal force)
-			return SignalDirection.None;
+			return SignalDirections.None;
 
 		var distance = (upper - lower) / (_pipSize <= 0m ? 1m : _pipSize);
 		var distanceFilter = _bandDistanceFilter.Value;
@@ -567,45 +567,45 @@ public class MultiEaV12Strategy : Strategy
 		};
 
 		if (!acceptDistance)
-			return SignalDirection.None;
+			return SignalDirections.None;
 
 		var forceLevel = _forceConfirmationLevel.Value;
 		var touchedLower = candle.LowPrice <= lower;
 		var touchedUpper = candle.HighPrice >= upper;
 
 		if (touchedLower && force > forceLevel)
-			return SignalDirection.Buy;
+			return SignalDirections.Buy;
 
 		if (touchedUpper && force < -forceLevel)
-			return SignalDirection.Sell;
+			return SignalDirections.Sell;
 
-		return SignalDirection.None;
+		return SignalDirections.None;
 	}
 
-	private SignalDirection EvaluateMfiSignal()
+	private SignalDirections EvaluateMfiSignal()
 	{
 		if (_mfiLast is not decimal current)
-			return SignalDirection.None;
+			return SignalDirections.None;
 
 		var threshold = _mfiThreshold.Value;
 		var lower = 100m - threshold;
 
 		if (current < lower)
-			return SignalDirection.Buy;
+			return SignalDirections.Buy;
 
 		if (current > threshold)
-			return SignalDirection.Sell;
+			return SignalDirections.Sell;
 
-		return SignalDirection.None;
+		return SignalDirections.None;
 	}
 
-	private SignalDirection EvaluateMacdStochasticSignal()
+	private SignalDirections EvaluateMacdStochasticSignal()
 	{
 		if (_macdMainLast is not decimal macdMain || _macdSignalLast is not decimal macdSignal)
-			return SignalDirection.None;
+			return SignalDirections.None;
 
 		if (_stochasticKLast is not decimal stochK || _stochasticDLast is not decimal stochD)
-			return SignalDirection.None;
+			return SignalDirections.None;
 
 		var macdLevel = _macdLevel.Value;
 		var stochasticLevel = _stochasticLevel.Value;
@@ -618,18 +618,18 @@ public class MultiEaV12Strategy : Strategy
 		var stochasticBearish = stochK < lowerStochastic && stochK < stochD;
 
 		if (macdBullish && stochasticBullish)
-			return SignalDirection.Buy;
+			return SignalDirections.Buy;
 
 		if (macdBearish && stochasticBearish)
-			return SignalDirection.Sell;
+			return SignalDirections.Sell;
 
-		return SignalDirection.None;
+		return SignalDirections.None;
 	}
 
-	private SignalDirection ResolveConsensus(IReadOnlyCollection<SignalDirection> signals)
+	private SignalDirections ResolveConsensus(IReadOnlyCollection<SignalDirections> signals)
 	{
 		if (signals.Count == 0)
-			return SignalDirection.None;
+			return SignalDirections.None;
 
 		var minConfirmations = TradeAllStrategies ? Math.Max(1, _requiredConfirmations.Value) : 1;
 
@@ -638,24 +638,24 @@ public class MultiEaV12Strategy : Strategy
 
 		foreach (var signal in signals)
 		{
-			if (signal == SignalDirection.Buy)
+			if (signal == SignalDirections.Buy)
 				bullish++;
-			else if (signal == SignalDirection.Sell)
+			else if (signal == SignalDirections.Sell)
 				bearish++;
 		}
 
 		if (bullish >= minConfirmations && bearish == 0)
-			return SignalDirection.Buy;
+			return SignalDirections.Buy;
 
 		if (bearish >= minConfirmations && bullish == 0)
-			return SignalDirection.Sell;
+			return SignalDirections.Sell;
 
-		return SignalDirection.None;
+		return SignalDirections.None;
 	}
 
-	private void ManagePositions(SignalDirection decision, ICandleMessage candle)
+	private void ManagePositions(SignalDirections decision, ICandleMessage candle)
 	{
-		if (decision == SignalDirection.Buy)
+		if (decision == SignalDirections.Buy)
 		{
 			if (CloseInReverse && Position < 0)
 				BuyMarket(Math.Abs(Position));
@@ -667,7 +667,7 @@ public class MultiEaV12Strategy : Strategy
 				_shortEntryPrice = null;
 			}
 		}
-		else if (decision == SignalDirection.Sell)
+		else if (decision == SignalDirections.Sell)
 		{
 			if (CloseInReverse && Position > 0)
 				SellMarket(Position);
@@ -748,7 +748,7 @@ public class MultiEaV12Strategy : Strategy
 
 	private bool CloseInReverse => _closeInReverse.Value;
 
-	private enum SignalDirection
+	private enum SignalDirections
 	{
 		None,
 		Buy,

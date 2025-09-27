@@ -23,14 +23,14 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _longCandleType;
 	private readonly StrategyParam<DataType> _shortCandleType;
-	private readonly StrategyParam<AdaptiveRenkoVolatilityMode> _longVolatilityMode;
-	private readonly StrategyParam<AdaptiveRenkoVolatilityMode> _shortVolatilityMode;
+	private readonly StrategyParam<AdaptiveRenkoVolatilityModes> _longVolatilityMode;
+	private readonly StrategyParam<AdaptiveRenkoVolatilityModes> _shortVolatilityMode;
 	private readonly StrategyParam<int> _longVolatilityPeriod;
 	private readonly StrategyParam<int> _shortVolatilityPeriod;
 	private readonly StrategyParam<decimal> _longSensitivity;
 	private readonly StrategyParam<decimal> _shortSensitivity;
-	private readonly StrategyParam<AdaptiveRenkoPriceMode> _longPriceMode;
-	private readonly StrategyParam<AdaptiveRenkoPriceMode> _shortPriceMode;
+	private readonly StrategyParam<AdaptiveRenkoPriceModes> _longPriceMode;
+	private readonly StrategyParam<AdaptiveRenkoPriceModes> _shortPriceMode;
 	private readonly StrategyParam<decimal> _longMinimumBrickPoints;
 	private readonly StrategyParam<decimal> _shortMinimumBrickPoints;
 	private readonly StrategyParam<int> _longSignalBarOffset;
@@ -58,10 +58,10 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Short Candle Type", "Timeframe used to derive short-side signals", "Short Side");
 
-		_longVolatilityMode = Param(nameof(LongVolatilityMode), AdaptiveRenkoVolatilityMode.AverageTrueRange)
+		_longVolatilityMode = Param(nameof(LongVolatilityMode), AdaptiveRenkoVolatilityModes.AverageTrueRange)
 			.SetDisplay("Long Volatility Source", "Volatility measure controlling long Renko brick size", "Long Side");
 
-		_shortVolatilityMode = Param(nameof(ShortVolatilityMode), AdaptiveRenkoVolatilityMode.AverageTrueRange)
+		_shortVolatilityMode = Param(nameof(ShortVolatilityMode), AdaptiveRenkoVolatilityModes.AverageTrueRange)
 			.SetDisplay("Short Volatility Source", "Volatility measure controlling short Renko brick size", "Short Side");
 
 		_longVolatilityPeriod = Param(nameof(LongVolatilityPeriod), 10)
@@ -84,10 +84,10 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 			.SetDisplay("Short Sensitivity", "Multiplier applied to volatility for short bricks", "Short Side")
 			.SetCanOptimize(true);
 
-		_longPriceMode = Param(nameof(LongPriceMode), AdaptiveRenkoPriceMode.Close)
+		_longPriceMode = Param(nameof(LongPriceMode), AdaptiveRenkoPriceModes.Close)
 			.SetDisplay("Long Price Mode", "Price source used when building long bricks", "Long Side");
 
-		_shortPriceMode = Param(nameof(ShortPriceMode), AdaptiveRenkoPriceMode.Close)
+		_shortPriceMode = Param(nameof(ShortPriceMode), AdaptiveRenkoPriceModes.Close)
 			.SetDisplay("Short Price Mode", "Price source used when building short bricks", "Short Side");
 
 		_longMinimumBrickPoints = Param(nameof(LongMinimumBrickPoints), 2m)
@@ -156,7 +156,7 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 	/// <summary>
 	/// Volatility mode for the long Renko stream.
 	/// </summary>
-	public AdaptiveRenkoVolatilityMode LongVolatilityMode
+	public AdaptiveRenkoVolatilityModes LongVolatilityMode
 	{
 		get => _longVolatilityMode.Value;
 		set => _longVolatilityMode.Value = value;
@@ -165,7 +165,7 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 	/// <summary>
 	/// Volatility mode for the short Renko stream.
 	/// </summary>
-	public AdaptiveRenkoVolatilityMode ShortVolatilityMode
+	public AdaptiveRenkoVolatilityModes ShortVolatilityMode
 	{
 		get => _shortVolatilityMode.Value;
 		set => _shortVolatilityMode.Value = value;
@@ -210,7 +210,7 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 	/// <summary>
 	/// Price source used while building long bricks.
 	/// </summary>
-	public AdaptiveRenkoPriceMode LongPriceMode
+	public AdaptiveRenkoPriceModes LongPriceMode
 	{
 		get => _longPriceMode.Value;
 		set => _longPriceMode.Value = value;
@@ -219,7 +219,7 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 	/// <summary>
 	/// Price source used while building short bricks.
 	/// </summary>
-	public AdaptiveRenkoPriceMode ShortPriceMode
+	public AdaptiveRenkoPriceModes ShortPriceMode
 	{
 		get => _shortPriceMode.Value;
 		set => _shortPriceMode.Value = value;
@@ -406,7 +406,7 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 		if (signal == null)
 			return;
 
-		if (LongExitsEnabled && Position > 0 && signal.Value.Trend == RenkoTrend.Down)
+		if (LongExitsEnabled && Position > 0 && signal.Value.Trend == RenkoTrends.Down)
 		{
 			TryCloseLong("Adaptive Renko bearish reversal", candle);
 		}
@@ -414,7 +414,7 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (LongEntriesEnabled && signal.Value.Trend == RenkoTrend.Up)
+		if (LongEntriesEnabled && signal.Value.Trend == RenkoTrends.Up)
 		{
 			TryOpenLong(candle, signal.Value);
 		}
@@ -441,7 +441,7 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 		if (signal == null)
 			return;
 
-		if (ShortExitsEnabled && Position < 0 && signal.Value.Trend == RenkoTrend.Up)
+		if (ShortExitsEnabled && Position < 0 && signal.Value.Trend == RenkoTrends.Up)
 		{
 			TryCloseShort("Adaptive Renko bullish reversal", candle);
 		}
@@ -449,7 +449,7 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (ShortEntriesEnabled && signal.Value.Trend == RenkoTrend.Down)
+		if (ShortEntriesEnabled && signal.Value.Trend == RenkoTrends.Down)
 		{
 			TryOpenShort(candle, signal.Value);
 		}
@@ -583,12 +583,12 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 		LogInfo($"Short exit: {reason} at {candle.ClosePrice:F5}.");
 	}
 
-	private static IIndicator CreateVolatilityIndicator(AdaptiveRenkoVolatilityMode mode, int period)
+	private static IIndicator CreateVolatilityIndicator(AdaptiveRenkoVolatilityModes mode, int period)
 	{
 		return mode switch
 		{
-			AdaptiveRenkoVolatilityMode.AverageTrueRange => new AverageTrueRange { Length = period },
-			AdaptiveRenkoVolatilityMode.StandardDeviation => new StandardDeviation { Length = period },
+			AdaptiveRenkoVolatilityModes.AverageTrueRange => new AverageTrueRange { Length = period },
+			AdaptiveRenkoVolatilityModes.StandardDeviation => new StandardDeviation { Length = period },
 			_ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unsupported volatility mode"),
 		};
 	}
@@ -608,7 +608,7 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 		return 1m;
 	}
 
-	private enum RenkoTrend
+	private enum RenkoTrends
 	{
 		None = 0,
 		Up = 1,
@@ -617,7 +617,7 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 
 	private readonly struct RenkoSnapshot
 	{
-		public RenkoSnapshot(DateTimeOffset time, RenkoTrend trend, decimal? support, decimal? resistance)
+		public RenkoSnapshot(DateTimeOffset time, RenkoTrends trend, decimal? support, decimal? resistance)
 		{
 			Time = time;
 			Trend = trend;
@@ -627,7 +627,7 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 
 		public DateTimeOffset Time { get; }
 
-		public RenkoTrend Trend { get; }
+		public RenkoTrends Trend { get; }
 
 		public decimal? Support { get; }
 
@@ -641,11 +641,11 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 		private decimal _up;
 		private decimal _down;
 		private decimal _brick;
-		private RenkoTrend _trend;
+		private RenkoTrends _trend;
 
-		public RenkoSnapshot? Process(ICandleMessage candle, decimal volatility, decimal sensitivity, decimal minimumBrickPoints, AdaptiveRenkoPriceMode priceMode, int signalOffset, decimal step)
+		public RenkoSnapshot? Process(ICandleMessage candle, decimal volatility, decimal sensitivity, decimal minimumBrickPoints, AdaptiveRenkoPriceModes priceMode, int signalOffset, decimal step)
 		{
-			var (high, low) = priceMode == AdaptiveRenkoPriceMode.Close
+			var (high, low) = priceMode == AdaptiveRenkoPriceModes.Close
 				? (candle.ClosePrice, candle.ClosePrice)
 				: (candle.HighPrice, candle.LowPrice);
 
@@ -659,10 +659,10 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 				_up = high;
 				_down = low;
 				_brick = initialBrick > 0m ? initialBrick : minBrick;
-				_trend = RenkoTrend.None;
+				_trend = RenkoTrends.None;
 				_initialized = true;
 
-				var initialSnapshot = new RenkoSnapshot(GetCandleTime(candle), RenkoTrend.None, null, null);
+				var initialSnapshot = new RenkoSnapshot(GetCandleTime(candle), RenkoTrends.None, null, null);
 				AppendSnapshot(initialSnapshot, signalOffset);
 				return initialSnapshot;
 			}
@@ -718,18 +718,18 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 			}
 
 			if (_up < up)
-				trend = RenkoTrend.Up;
+				trend = RenkoTrends.Up;
 
 			if (_down > down)
-				trend = RenkoTrend.Down;
+				trend = RenkoTrends.Down;
 
 			_up = up;
 			_down = down;
 			_brick = brick;
 			_trend = trend;
 
-			var support = trend == RenkoTrend.Up ? down - brick : (decimal?)null;
-			var resistance = trend == RenkoTrend.Down ? up + brick : (decimal?)null;
+			var support = trend == RenkoTrends.Up ? down - brick : (decimal?)null;
+			var resistance = trend == RenkoTrends.Down ? up + brick : (decimal?)null;
 
 			var snapshot = new RenkoSnapshot(GetCandleTime(candle), trend, support, resistance);
 			AppendSnapshot(snapshot, signalOffset);
@@ -755,7 +755,7 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 			_up = 0m;
 			_down = 0m;
 			_brick = 0m;
-			_trend = RenkoTrend.None;
+			_trend = RenkoTrends.None;
 		}
 
 		private void AppendSnapshot(RenkoSnapshot snapshot, int signalOffset)
@@ -776,13 +776,13 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 		}
 	}
 
-	public enum AdaptiveRenkoVolatilityMode
+	public enum AdaptiveRenkoVolatilityModes
 	{
 		AverageTrueRange,
 		StandardDeviation
 	}
 
-	public enum AdaptiveRenkoPriceMode
+	public enum AdaptiveRenkoPriceModes
 	{
 		HighLow,
 		Close

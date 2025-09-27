@@ -37,12 +37,12 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 
 	private readonly StrategyParam<int> _indicatorPeriod;
 	private readonly StrategyParam<decimal> _gamma;
-	private readonly StrategyParam<AppliedVolume> _volumeType;
+	private readonly StrategyParam<AppliedVolumes> _volumeType;
 	private readonly StrategyParam<int> _highLevel2;
 	private readonly StrategyParam<int> _highLevel1;
 	private readonly StrategyParam<int> _lowLevel1;
 	private readonly StrategyParam<int> _lowLevel2;
-	private readonly StrategyParam<SmoothMethod> _smoothMethod;
+	private readonly StrategyParam<SmoothMethods> _smoothMethod;
 	private readonly StrategyParam<int> _smoothLength;
 	private readonly StrategyParam<int> _smoothPhase;
 	private readonly StrategyParam<int> _signalBar;
@@ -104,7 +104,7 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 		_gamma = Param(nameof(Gamma), 0.6m)
 		.SetDisplay("Gamma", "Adaptive smoothing factor used by the four-stage filter", "Indicator");
 
-		_volumeType = Param(nameof(VolumeType), AppliedVolume.Tick)
+		_volumeType = Param(nameof(VolumeType), AppliedVolumes.Tick)
 		.SetDisplay("Volume Type", "Volume source multiplied by the indicator", "Indicator");
 
 		_highLevel2 = Param(nameof(HighLevel2), 25)
@@ -119,7 +119,7 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 		_lowLevel2 = Param(nameof(LowLevel2), -25)
 		.SetDisplay("Low Level 2", "Lower level that marks strong bearish pressure", "Indicator");
 
-		_smoothMethod = Param(nameof(SmoothingMethod), SmoothMethod.Sma)
+		_smoothMethod = Param(nameof(SmoothingMethod), SmoothMethods.Sma)
 		.SetDisplay("Smoothing Method", "Moving average used for indicator smoothing", "Indicator");
 
 		_smoothLength = Param(nameof(SmoothingLength), 12)
@@ -236,7 +236,7 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 	/// <summary>
 	/// Volume source multiplied by the indicator output.
 	/// </summary>
-	public AppliedVolume VolumeType
+	public AppliedVolumes VolumeType
 	{
 		get => _volumeType.Value;
 		set => _volumeType.Value = value;
@@ -281,7 +281,7 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 	/// <summary>
 	/// Moving average used for indicator smoothing.
 	/// </summary>
-	public SmoothMethod SmoothingMethod
+	public SmoothMethods SmoothingMethod
 	{
 		get => _smoothMethod.Value;
 		set => _smoothMethod.Value = value;
@@ -553,7 +553,7 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 	/// <summary>
 	/// Volume source applied to the indicator output.
 	/// </summary>
-	public enum AppliedVolume
+	public enum AppliedVolumes
 {
 	/// <summary>
 	/// Multiply the indicator by tick volume.
@@ -569,7 +569,7 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 	/// <summary>
 	/// Moving average methods supported by the indicator.
 	/// </summary>
-	public enum SmoothMethod
+	public enum SmoothMethods
 {
 	/// <summary>
 	/// Simple moving average.
@@ -627,7 +627,7 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 	private readonly ExponentialMovingAverage _ema;
 	private readonly LengthIndicator<decimal> _valueSmoother;
 	private readonly LengthIndicator<decimal> _volumeSmoother;
-	private readonly AppliedVolume _volumeType;
+	private readonly AppliedVolumes _volumeType;
 	private readonly decimal _gamma;
 	private readonly decimal _highLevel2;
 	private readonly decimal _highLevel1;
@@ -642,12 +642,12 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 	public XBullsBearsEyesVolCalculator(
 		int emaPeriod,
 		decimal gamma,
-		AppliedVolume volumeType,
+		AppliedVolumes volumeType,
 		int highLevel2,
 		int highLevel1,
 		int lowLevel1,
 		int lowLevel2,
-		SmoothMethod method,
+		SmoothMethods method,
 		int smoothLength,
 		int smoothPhase)
 		{
@@ -756,28 +756,28 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 		{
 			return _volumeType switch
 			{
-				AppliedVolume.Tick => candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : candle.TotalVolume ?? 0m,
-				AppliedVolume.Real => candle.TotalVolume ?? (candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : 0m),
+				AppliedVolumes.Tick => candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : candle.TotalVolume ?? 0m,
+				AppliedVolumes.Real => candle.TotalVolume ?? (candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : 0m),
 				_ => candle.TotalVolume ?? 0m,
 			};
 		}
 
-		private static LengthIndicator<decimal> CreateSmoother(SmoothMethod method, int length, int phase)
+		private static LengthIndicator<decimal> CreateSmoother(SmoothMethods method, int length, int phase)
 		{
 			var normalizedLength = Math.Max(1, length);
 
 			return method switch
 			{
-				SmoothMethod.Sma => new SimpleMovingAverage { Length = normalizedLength },
-				SmoothMethod.Ema => new ExponentialMovingAverage { Length = normalizedLength },
-				SmoothMethod.Smma => new SmoothedMovingAverage { Length = normalizedLength },
-				SmoothMethod.Lwma => new WeightedMovingAverage { Length = normalizedLength },
-				SmoothMethod.Jjma => CreateJurik(normalizedLength, phase),
-				SmoothMethod.JurX => CreateJurik(normalizedLength, phase),
-				SmoothMethod.ParMa => new ExponentialMovingAverage { Length = normalizedLength },
-				SmoothMethod.T3 => new TripleExponentialMovingAverage { Length = normalizedLength },
-				SmoothMethod.Vidya => new ExponentialMovingAverage { Length = normalizedLength },
-				SmoothMethod.Ama => new KaufmanAdaptiveMovingAverage { Length = normalizedLength },
+				SmoothMethods.Sma => new SimpleMovingAverage { Length = normalizedLength },
+				SmoothMethods.Ema => new ExponentialMovingAverage { Length = normalizedLength },
+				SmoothMethods.Smma => new SmoothedMovingAverage { Length = normalizedLength },
+				SmoothMethods.Lwma => new WeightedMovingAverage { Length = normalizedLength },
+				SmoothMethods.Jjma => CreateJurik(normalizedLength, phase),
+				SmoothMethods.JurX => CreateJurik(normalizedLength, phase),
+				SmoothMethods.ParMa => new ExponentialMovingAverage { Length = normalizedLength },
+				SmoothMethods.T3 => new TripleExponentialMovingAverage { Length = normalizedLength },
+				SmoothMethods.Vidya => new ExponentialMovingAverage { Length = normalizedLength },
+				SmoothMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = normalizedLength },
 				_ => new SimpleMovingAverage { Length = normalizedLength },
 			};
 		}

@@ -26,7 +26,7 @@ public class FibonacciPotentialEntriesRetracementStrategy : Strategy
 	private readonly StrategyParam<decimal> _p100Level;
 	private readonly StrategyParam<decimal> _targetLevel;
 	private readonly StrategyParam<decimal> _riskPercent;
-	private readonly StrategyParam<MarketBiasType> _marketBias;
+	private readonly StrategyParam<MarketBiasTypes> _marketBias;
 
 	private decimal? _bestAsk;
 	private decimal? _bestBid;
@@ -54,7 +54,7 @@ public class FibonacciPotentialEntriesRetracementStrategy : Strategy
 	/// <summary>
 	/// Defines the direction bias of the strategy.
 	/// </summary>
-	public enum MarketBiasType
+	public enum MarketBiasTypes
 	{
 		Bull = 1,
 		Bear = 2,
@@ -117,7 +117,7 @@ public class FibonacciPotentialEntriesRetracementStrategy : Strategy
 	/// <summary>
 	/// Selected market bias (long or short campaign).
 	/// </summary>
-	public MarketBiasType MarketBias
+	public MarketBiasTypes MarketBias
 	{
 		get => _marketBias.Value;
 		set => _marketBias.Value = value;
@@ -148,7 +148,7 @@ public class FibonacciPotentialEntriesRetracementStrategy : Strategy
 			.SetDisplay("Risk Percent", "Total risk percentage allocated to both entries.", "Risk")
 			.SetGreaterOrEqual(FirstTradeRiskPercent);
 
-		_marketBias = Param(nameof(MarketBias), MarketBiasType.Bull)
+		_marketBias = Param(nameof(MarketBias), MarketBiasTypes.Bull)
 			.SetDisplay("Market Bias", "Long (Bull) or short (Bear) execution mode.", "General");
 	}
 
@@ -237,19 +237,19 @@ public class FibonacciPotentialEntriesRetracementStrategy : Strategy
 		var spread = Math.Max(0m, ask - bid);
 		var riskSecondTrade = Math.Max(0m, RiskPercent - FirstTradeRiskPercent);
 
-		var firstStop = MarketBias == MarketBiasType.Bull
+		var firstStop = MarketBias == MarketBiasTypes.Bull
 			? P61Level - 3m * spread
 			: P61Level + 3m * spread;
 
 		var midpoint = (P61Level + P100Level) / 2m;
-		var secondStop = MarketBias == MarketBiasType.Bull
+		var secondStop = MarketBias == MarketBiasTypes.Bull
 			? midpoint - 3m * spread
 			: midpoint + 3m * spread;
 
 		if (firstStop <= 0m || secondStop <= 0m)
 			return;
 
-		if (MarketBias == MarketBiasType.Bull)
+		if (MarketBias == MarketBiasTypes.Bull)
 		{
 			if (firstStop >= P50Level || secondStop >= P61Level)
 				return;
@@ -269,7 +269,7 @@ public class FibonacciPotentialEntriesRetracementStrategy : Strategy
 		if (firstVolume > 0m)
 		{
 			_firstInitialStop = firstStop;
-			_firstEntryOrder = MarketBias == MarketBiasType.Bull
+			_firstEntryOrder = MarketBias == MarketBiasTypes.Bull
 				? BuyLimit(price: P50Level, volume: firstVolume)
 				: SellLimit(price: P50Level, volume: firstVolume);
 		}
@@ -277,7 +277,7 @@ public class FibonacciPotentialEntriesRetracementStrategy : Strategy
 		if (secondVolume > 0m)
 		{
 			_secondInitialStop = secondStop;
-			_secondEntryOrder = MarketBias == MarketBiasType.Bull
+			_secondEntryOrder = MarketBias == MarketBiasTypes.Bull
 				? BuyLimit(price: P61Level, volume: secondVolume)
 				: SellLimit(price: P61Level, volume: secondVolume);
 		}
@@ -316,7 +316,7 @@ public class FibonacciPotentialEntriesRetracementStrategy : Strategy
 		if (maxClosable <= 0m)
 			return;
 
-		partialOrder = MarketBias == MarketBiasType.Bull
+		partialOrder = MarketBias == MarketBiasTypes.Bull
 			? SellMarket(maxClosable)
 			: BuyMarket(maxClosable);
 
@@ -483,7 +483,7 @@ public class FibonacciPotentialEntriesRetracementStrategy : Strategy
 		if (stopOrder != null)
 			CancelOrder(stopOrder);
 
-		stopOrder = MarketBias == MarketBiasType.Bull
+		stopOrder = MarketBias == MarketBiasTypes.Bull
 			? SellStop(cappedVolume, price)
 			: BuyStop(cappedVolume, price);
 

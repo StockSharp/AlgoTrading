@@ -19,12 +19,12 @@ using StockSharp.Messages;
 /// </summary>
 public class TargetEaManagerStrategy : Strategy
 {
-	private readonly StrategyParam<ManageMode> _manageMode;
+	private readonly StrategyParam<ManageModes> _manageMode;
 	private readonly StrategyParam<bool> _closeBuyOrders;
 	private readonly StrategyParam<bool> _closeSellOrders;
 	private readonly StrategyParam<bool> _cancelBuyPendings;
 	private readonly StrategyParam<bool> _cancelSellPendings;
-	private readonly StrategyParam<TargetCalculationMode> _targetMode;
+	private readonly StrategyParam<TargetCalculationModes> _targetMode;
 	private readonly StrategyParam<bool> _closeInProfit;
 	private readonly StrategyParam<decimal> _profitTargetPips;
 	private readonly StrategyParam<decimal> _profitTargetCurrency;
@@ -42,13 +42,13 @@ public class TargetEaManagerStrategy : Strategy
 	private decimal _longAveragePrice;
 	private decimal _shortAveragePrice;
 
-	private enum ManageMode
+	private enum ManageModes
 	{
 		Separate,
 		Combined
 	}
 
-	private enum TargetCalculationMode
+	private enum TargetCalculationModes
 	{
 		Pips,
 		CurrencyPerLot,
@@ -57,7 +57,7 @@ public class TargetEaManagerStrategy : Strategy
 
 	public TargetEaManagerStrategy()
 	{
-		_manageMode = Param(nameof(ManageBuySellOrders), ManageMode.Separate)
+		_manageMode = Param(nameof(ManageBuySellOrders), ManageModes.Separate)
 			.SetDisplay("Manage buy/sell", "Decide whether buy and sell orders are handled separately or as one basket.", "General");
 
 		_closeBuyOrders = Param(nameof(CloseBuyOrders), true)
@@ -72,7 +72,7 @@ public class TargetEaManagerStrategy : Strategy
 		_cancelSellPendings = Param(nameof(DeleteSellPendingPositions), true)
 			.SetDisplay("Cancel sell pendings", "Cancel active sell pending orders when the basket closes.", "General");
 
-		_targetMode = Param(nameof(TypeTargetUse), TargetCalculationMode.PercentageOfBalance)
+		_targetMode = Param(nameof(TypeTargetUse), TargetCalculationModes.PercentageOfBalance)
 			.SetDisplay("Target mode", "Select the metric used to measure floating profit and loss.", "Targets");
 
 		_closeInProfit = Param(nameof(CloseInProfit), true)
@@ -100,7 +100,7 @@ public class TargetEaManagerStrategy : Strategy
 			.SetDisplay("Loss target (%)", "Percentage drawdown of balance that forces liquidation.", "Targets");
 	}
 
-	public ManageMode ManageBuySellOrders
+	public ManageModes ManageBuySellOrders
 	{
 		get => _manageMode.Value;
 		set => _manageMode.Value = value;
@@ -130,7 +130,7 @@ public class TargetEaManagerStrategy : Strategy
 		set => _cancelSellPendings.Value = value;
 	}
 
-	public TargetCalculationMode TypeTargetUse
+	public TargetCalculationModes TypeTargetUse
 	{
 		get => _targetMode.Value;
 		set => _targetMode.Value = value;
@@ -267,15 +267,15 @@ public class TargetEaManagerStrategy : Strategy
 
 		switch (TypeTargetUse)
 		{
-			case TargetCalculationMode.Pips:
+			case TargetCalculationModes.Pips:
 				HandleTargets(longPips, shortPips, totalPips, totalVolume);
 				break;
 
-			case TargetCalculationMode.CurrencyPerLot:
+			case TargetCalculationModes.CurrencyPerLot:
 				HandleCurrencyTargets(longProfit, shortProfit, totalProfit, totalVolume);
 				break;
 
-			case TargetCalculationMode.PercentageOfBalance:
+			case TargetCalculationModes.PercentageOfBalance:
 				HandlePercentageTargets(longProfit, shortProfit, totalProfit, totalVolume, balance);
 				break;
 		}
@@ -332,7 +332,7 @@ public class TargetEaManagerStrategy : Strategy
 	{
 		switch (ManageBuySellOrders)
 		{
-			case ManageMode.Separate:
+			case ManageModes.Separate:
 				if (CloseBuyOrders && _longVolume > 0m)
 				{
 					var target = perLot ? threshold * _longVolume : threshold;
@@ -357,7 +357,7 @@ public class TargetEaManagerStrategy : Strategy
 				}
 				break;
 
-			case ManageMode.Combined:
+			case ManageModes.Combined:
 				if (totalVolume <= 0m)
 					return;
 
@@ -385,7 +385,7 @@ public class TargetEaManagerStrategy : Strategy
 	{
 		switch (ManageBuySellOrders)
 		{
-			case ManageMode.Separate:
+			case ManageModes.Separate:
 				if (CloseBuyOrders && _longVolume > 0m)
 				{
 					var target = perLot ? threshold * _longVolume : threshold;
@@ -410,7 +410,7 @@ public class TargetEaManagerStrategy : Strategy
 				}
 				break;
 
-			case ManageMode.Combined:
+			case ManageModes.Combined:
 				if (totalVolume <= 0m)
 					return;
 

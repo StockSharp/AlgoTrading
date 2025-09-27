@@ -33,15 +33,15 @@ public class ExpIKlPriceVolStrategy : Strategy
 	private readonly StrategyParam<bool> _allowLongExit;
 	private readonly StrategyParam<bool> _allowShortExit;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<SmoothMethod> _priceMaMethod;
+	private readonly StrategyParam<SmoothMethods> _priceMaMethod;
 	private readonly StrategyParam<int> _priceMaLength;
 	private readonly StrategyParam<int> _priceMaPhase;
-	private readonly StrategyParam<SmoothMethod> _rangeMaMethod;
+	private readonly StrategyParam<SmoothMethods> _rangeMaMethod;
 	private readonly StrategyParam<int> _rangeMaLength;
 	private readonly StrategyParam<int> _rangeMaPhase;
 	private readonly StrategyParam<int> _smoothingLength;
-	private readonly StrategyParam<AppliedPrice> _appliedPrice;
-	private readonly StrategyParam<AppliedVolume> _volumeType;
+	private readonly StrategyParam<AppliedPrices> _appliedPrice;
+	private readonly StrategyParam<AppliedVolumes> _volumeType;
 	private readonly StrategyParam<int> _highLevel2;
 	private readonly StrategyParam<int> _highLevel1;
 	private readonly StrategyParam<int> _lowLevel1;
@@ -98,7 +98,7 @@ public class ExpIKlPriceVolStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used by the indicator", "General");
 
-		_priceMaMethod = Param(nameof(PriceMaMethod), SmoothMethod.Sma)
+		_priceMaMethod = Param(nameof(PriceMaMethod), SmoothMethods.Sma)
 			.SetDisplay("Price MA Method", "Moving average type used to smooth price", "Indicator");
 
 		_priceMaLength = Param(nameof(PriceMaLength), 100)
@@ -110,7 +110,7 @@ public class ExpIKlPriceVolStrategy : Strategy
 		_priceMaPhase = Param(nameof(PriceMaPhase), 15)
 			.SetDisplay("Price MA Phase", "Phase parameter for Jurik style filters", "Indicator");
 
-		_rangeMaMethod = Param(nameof(RangeMaMethod), SmoothMethod.Jjma)
+		_rangeMaMethod = Param(nameof(RangeMaMethod), SmoothMethods.Jjma)
 			.SetDisplay("Range MA Method", "Moving average type used to smooth the candle range", "Indicator");
 
 		_rangeMaLength = Param(nameof(RangeMaLength), 20)
@@ -126,10 +126,10 @@ public class ExpIKlPriceVolStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Smoothing Length", "Length of the Jurik smoother applied to the oscillator", "Indicator");
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPrice.Close)
+		_appliedPrice = Param(nameof(AppliedPrices), AppliedPrices.Close)
 			.SetDisplay("Applied Price", "Price input used in oscillator calculations", "Indicator");
 
-		_volumeType = Param(nameof(VolumeType), AppliedVolume.Tick)
+		_volumeType = Param(nameof(VolumeType), AppliedVolumes.Tick)
 			.SetDisplay("Volume Type", "Volume source multiplied by the oscillator", "Indicator");
 
 		_highLevel2 = Param(nameof(HighLevel2), 150)
@@ -233,7 +233,7 @@ public class ExpIKlPriceVolStrategy : Strategy
 	/// <summary>
 	/// Moving average method used for price smoothing.
 	/// </summary>
-	public SmoothMethod PriceMaMethod
+	public SmoothMethods PriceMaMethod
 	{
 		get => _priceMaMethod.Value;
 		set => _priceMaMethod.Value = value;
@@ -260,7 +260,7 @@ public class ExpIKlPriceVolStrategy : Strategy
 	/// <summary>
 	/// Moving average method applied to the candle range.
 	/// </summary>
-	public SmoothMethod RangeMaMethod
+	public SmoothMethods RangeMaMethod
 	{
 		get => _rangeMaMethod.Value;
 		set => _rangeMaMethod.Value = value;
@@ -296,7 +296,7 @@ public class ExpIKlPriceVolStrategy : Strategy
 	/// <summary>
 	/// Price input used by the oscillator.
 	/// </summary>
-	public AppliedPrice AppliedPrice
+	public AppliedPrices AppliedPrices
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -305,7 +305,7 @@ public class ExpIKlPriceVolStrategy : Strategy
 	/// <summary>
 	/// Volume source multiplied by the oscillator output.
 	/// </summary>
-	public AppliedVolume VolumeType
+	public AppliedVolumes VolumeType
 	{
 		get => _volumeType.Value;
 		set => _volumeType.Value = value;
@@ -392,7 +392,7 @@ public class ExpIKlPriceVolStrategy : Strategy
 			RangeMaLength,
 			RangeMaPhase,
 			SmoothingLength,
-			AppliedPrice,
+			AppliedPrices,
 			VolumeType,
 			HighLevel2,
 			HighLevel1,
@@ -563,7 +563,7 @@ public class ExpIKlPriceVolStrategy : Strategy
 	/// <summary>
 	/// Volume source applied to the oscillator.
 	/// </summary>
-	public enum AppliedVolume
+	public enum AppliedVolumes
 	{
 		/// <summary>
 		/// Multiply by tick volume.
@@ -579,7 +579,7 @@ public class ExpIKlPriceVolStrategy : Strategy
 	/// <summary>
 	/// Price source used in calculations.
 	/// </summary>
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		/// <summary>
 		/// Close price.
@@ -645,7 +645,7 @@ public class ExpIKlPriceVolStrategy : Strategy
 	/// <summary>
 	/// Moving average methods supported by the calculator.
 	/// </summary>
-	public enum SmoothMethod
+	public enum SmoothMethods
 	{
 		/// <summary>
 		/// Simple moving average.
@@ -704,23 +704,23 @@ public class ExpIKlPriceVolStrategy : Strategy
 		private readonly LengthIndicator<decimal> _rangeMa;
 		private readonly LengthIndicator<decimal> _valueSmoother;
 		private readonly LengthIndicator<decimal> _volumeSmoother;
-		private readonly AppliedPrice _appliedPrice;
-		private readonly AppliedVolume _volumeType;
+		private readonly AppliedPrices _appliedPrice;
+		private readonly AppliedVolumes _volumeType;
 		private readonly decimal _highLevel2;
 		private readonly decimal _highLevel1;
 		private readonly decimal _lowLevel1;
 		private readonly decimal _lowLevel2;
 
 		public KlPriceVolCalculator(
-			SmoothMethod priceMethod,
+			SmoothMethods priceMethod,
 			int priceLength,
 			int pricePhase,
-			SmoothMethod rangeMethod,
+			SmoothMethods rangeMethod,
 			int rangeLength,
 			int rangePhase,
 			int smoothingLength,
-			AppliedPrice appliedPrice,
-			AppliedVolume volumeType,
+			AppliedPrices appliedPrice,
+			AppliedVolumes volumeType,
 			int highLevel2,
 			int highLevel1,
 			int lowLevel1,
@@ -732,8 +732,8 @@ public class ExpIKlPriceVolStrategy : Strategy
 
 			_priceMa = CreateSmoother(priceMethod, priceLen, pricePhase);
 			_rangeMa = CreateSmoother(rangeMethod, rangeLen, rangePhase);
-			_valueSmoother = CreateSmoother(SmoothMethod.Jjma, smoothLen, 100);
-			_volumeSmoother = CreateSmoother(SmoothMethod.Jjma, smoothLen, 100);
+			_valueSmoother = CreateSmoother(SmoothMethods.Jjma, smoothLen, 100);
+			_volumeSmoother = CreateSmoother(SmoothMethods.Jjma, smoothLen, 100);
 			_appliedPrice = appliedPrice;
 			_volumeType = volumeType;
 			_highLevel2 = highLevel2;
@@ -805,35 +805,35 @@ public class ExpIKlPriceVolStrategy : Strategy
 		{
 			return _volumeType switch
 			{
-				AppliedVolume.Tick => candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : candle.TotalVolume ?? 0m,
-				AppliedVolume.Real => candle.TotalVolume ?? (candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : 0m),
+				AppliedVolumes.Tick => candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : candle.TotalVolume ?? 0m,
+				AppliedVolumes.Real => candle.TotalVolume ?? (candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : 0m),
 				_ => candle.TotalVolume ?? 0m,
 			};
 		}
 
-		private static LengthIndicator<decimal> CreateSmoother(SmoothMethod method, int length, int phase)
+		private static LengthIndicator<decimal> CreateSmoother(SmoothMethods method, int length, int phase)
 		{
 			switch (method)
 			{
-				case SmoothMethod.Sma:
+				case SmoothMethods.Sma:
 					return new SimpleMovingAverage { Length = length };
-				case SmoothMethod.Ema:
+				case SmoothMethods.Ema:
 					return new ExponentialMovingAverage { Length = length };
-				case SmoothMethod.Smma:
+				case SmoothMethods.Smma:
 					return new SmoothedMovingAverage { Length = length };
-				case SmoothMethod.Lwma:
+				case SmoothMethods.Lwma:
 					return new WeightedMovingAverage { Length = length };
-				case SmoothMethod.Jjma:
+				case SmoothMethods.Jjma:
 					return CreateJurik(length, phase);
-				case SmoothMethod.JurX:
+				case SmoothMethods.JurX:
 					return CreateJurik(length, phase);
-				case SmoothMethod.ParMa:
+				case SmoothMethods.ParMa:
 					return new ExponentialMovingAverage { Length = length };
-				case SmoothMethod.T3:
+				case SmoothMethods.T3:
 					return new TripleExponentialMovingAverage { Length = length };
-				case SmoothMethod.Vidya:
+				case SmoothMethods.Vidya:
 					return new ExponentialMovingAverage { Length = length };
-				case SmoothMethod.Ama:
+				case SmoothMethods.Ama:
 					return new KaufmanAdaptiveMovingAverage { Length = length };
 				default:
 					return new SimpleMovingAverage { Length = length };
@@ -853,26 +853,26 @@ public class ExpIKlPriceVolStrategy : Strategy
 			return jurik;
 		}
 
-		private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrice price)
+		private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrices price)
 		{
 			return price switch
 			{
-				AppliedPrice.Close => candle.ClosePrice,
-				AppliedPrice.Open => candle.OpenPrice,
-				AppliedPrice.High => candle.HighPrice,
-				AppliedPrice.Low => candle.LowPrice,
-				AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-				AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-				AppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
-				AppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-				AppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-				AppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
+				AppliedPrices.Close => candle.ClosePrice,
+				AppliedPrices.Open => candle.OpenPrice,
+				AppliedPrices.High => candle.HighPrice,
+				AppliedPrices.Low => candle.LowPrice,
+				AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+				AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+				AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+				AppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+				AppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+				AppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
 					? candle.HighPrice
 					: candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
-				AppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
+				AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
 					? (candle.HighPrice + candle.ClosePrice) / 2m
 					: candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
-				AppliedPrice.Demark => GetDemarkPrice(candle),
+				AppliedPrices.Demark => GetDemarkPrice(candle),
 				_ => candle.ClosePrice,
 			};
 		}

@@ -36,7 +36,7 @@ public class AtRandomFullStrategy : Strategy
 	private readonly StrategyParam<bool> _useTimeControl;
 	private readonly StrategyParam<TimeSpan> _sessionStart;
 	private readonly StrategyParam<TimeSpan> _sessionEnd;
-	private readonly StrategyParam<TradeMode> _tradeMode;
+	private readonly StrategyParam<TradeModes> _tradeMode;
 	private readonly StrategyParam<int> _randomSeed;
 
 	private Random _random;
@@ -57,7 +57,7 @@ public class AtRandomFullStrategy : Strategy
 	/// <summary>
 	/// Defines which side of the market is allowed to trade.
 	/// </summary>
-	public enum TradeMode
+	public enum TradeModes
 	{
 		/// <summary>
 		/// Long and short positions are permitted.
@@ -213,7 +213,7 @@ public class AtRandomFullStrategy : Strategy
 	/// <summary>
 	/// Allowed trade direction.
 	/// </summary>
-	public TradeMode Mode
+	public TradeModes Mode
 	{
 		get => _tradeMode.Value;
 		set => _tradeMode.Value = value;
@@ -296,7 +296,7 @@ public class AtRandomFullStrategy : Strategy
 		_sessionEnd = Param(nameof(SessionEnd), new TimeSpan(15, 2, 0))
 			.SetDisplay("Session End", "Trading window end time", "Timing");
 
-		_tradeMode = Param(nameof(Mode), TradeMode.Both)
+		_tradeMode = Param(nameof(Mode), TradeModes.Both)
 			.SetDisplay("Trade Mode", "Allowed trade direction", "Execution");
 
 		_randomSeed = Param(nameof(RandomSeed), 0)
@@ -429,9 +429,9 @@ public class AtRandomFullStrategy : Strategy
 	{
 		return Mode switch
 		{
-			TradeMode.Both => true,
-			TradeMode.BuyOnly => side == Sides.Buy,
-			TradeMode.SellOnly => side == Sides.Sell,
+			TradeModes.Both => true,
+			TradeModes.BuyOnly => side == Sides.Buy,
+			TradeModes.SellOnly => side == Sides.Sell,
 			_ => true
 		};
 	}

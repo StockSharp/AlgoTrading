@@ -15,7 +15,7 @@ using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum ArrowMode
+public enum ArrowModes
 {
 	HideArrows,
 	SimpleArrows,
@@ -32,7 +32,7 @@ public class FollowLineTrendStrategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<bool> _useAtrFilter;
-	private readonly StrategyParam<ArrowMode> _arrowMode;
+	private readonly StrategyParam<ArrowModes> _arrowMode;
 	private readonly StrategyParam<int> _indicatorShift;
 	private readonly StrategyParam<bool> _closeInSignal;
 	private readonly StrategyParam<bool> _useBasketClose;
@@ -72,7 +72,7 @@ public class FollowLineTrendStrategy : Strategy
 	private bool _allowBuyArrow = true;
 	private bool _allowSellArrow = true;
 	private bool _initialized;
-	private readonly Queue<SignalDirection> _pendingSignals = new();
+	private readonly Queue<SignalDirections> _pendingSignals = new();
 
 	private decimal? _longEntryPrice;
 	private decimal? _shortEntryPrice;
@@ -105,7 +105,7 @@ public class FollowLineTrendStrategy : Strategy
 		_useAtrFilter = Param(nameof(UseAtrFilter), false)
 			.SetDisplay("Use ATR Filter", "Extend trend line by ATR", "Indicator");
 
-		_arrowMode = Param(nameof(TypeOfArrows), ArrowMode.SimpleArrows)
+		_arrowMode = Param(nameof(TypeOfArrows), ArrowModes.SimpleArrows)
 			.SetDisplay("Arrow Mode", "Signal confirmation type", "Indicator");
 
 		_indicatorShift = Param(nameof(IndicatorsShift), 1)
@@ -237,7 +237,7 @@ public class FollowLineTrendStrategy : Strategy
 		set => _useAtrFilter.Value = value;
 	}
 
-	public ArrowMode TypeOfArrows
+	public ArrowModes TypeOfArrows
 	{
 		get => _arrowMode.Value;
 		set => _arrowMode.Value = value;
@@ -458,7 +458,7 @@ public class FollowLineTrendStrategy : Strategy
 		if (!bollingerValue.IsFinal)
 			return;
 
-		if (TypeOfArrows != ArrowMode.SimpleArrows && TypeOfArrows != ArrowMode.HideArrows)
+		if (TypeOfArrows != ArrowModes.SimpleArrows && TypeOfArrows != ArrowModes.HideArrows)
 		{
 			if (!openValue.IsFinal || !closeValue.IsFinal || !highValue.IsFinal || !lowValue.IsFinal || !medianValue.IsFinal)
 				return;
@@ -491,7 +491,7 @@ public class FollowLineTrendStrategy : Strategy
 		UpdateTrailing(candle);
 	}
 
-	private SignalDirection CalculateSignal(
+	private SignalDirections CalculateSignal(
 		ICandleMessage candle,
 		IIndicatorValue bollingerValue,
 		IIndicatorValue atrValue,
@@ -502,20 +502,20 @@ public class FollowLineTrendStrategy : Strategy
 		IIndicatorValue medianValue)
 	{
 		if (bollingerValue is not BollingerBandsValue bb)
-			return SignalDirection.None;
+			return SignalDirections.None;
 
 		if (bb.UpBand is not decimal upperBand || bb.LowBand is not decimal lowerBand)
-			return SignalDirection.None;
+			return SignalDirections.None;
 
 		decimal atr = 0m;
 		if (UseAtrFilter)
 		{
 			if (!atrValue.TryGetValue(out atr))
-				return SignalDirection.None;
+				return SignalDirections.None;
 		}
 
 		int maSignal = 0;
-		if (TypeOfArrows != ArrowMode.SimpleArrows && TypeOfArrows != ArrowMode.HideArrows)
+		if (TypeOfArrows != ArrowModes.SimpleArrows && TypeOfArrows != ArrowModes.HideArrows)
 		{
 			if (!openValue.TryGetValue(out decimal openMa) ||
 				!closeValue.TryGetValue(out decimal closeMa) ||
@@ -523,17 +523,17 @@ public class FollowLineTrendStrategy : Strategy
 				!lowValue.TryGetValue(out decimal lowMa) ||
 				!medianValue.TryGetValue(out decimal medianMa))
 			{
-				return SignalDirection.None;
+				return SignalDirections.None;
 			}
 
-			if (TypeOfArrows == ArrowMode.OpenCloseMedian)
+			if (TypeOfArrows == ArrowModes.OpenCloseMedian)
 			{
 				if (closeMa > openMa && medianMa < closeMa && medianMa > openMa)
 					maSignal = 1;
 				else if (closeMa < openMa && medianMa > closeMa && medianMa < openMa)
 					maSignal = -1;
 			}
-			else if (TypeOfArrows == ArrowMode.HighLowOpenClose)
+			else if (TypeOfArrows == ArrowModes.HighLowOpenClose)
 			{
 				var diffHoc = (highMa - openMa) + (highMa - closeMa);
 				var diffLoc = (openMa - lowMa) + (closeMa - lowMa);
@@ -581,7 +581,7 @@ public class FollowLineTrendStrategy : Strategy
 				trendDirection = -1;
 		}
 
-		SignalDirection signal = SignalDirection.None;
+		SignalDirections signal = SignalDirections.None;
 
 		if (!_initialized)
 		{
@@ -592,14 +592,14 @@ public class FollowLineTrendStrategy : Strategy
 			if (trendDirection > 0)
 			{
 				_allowSellArrow = true;
-				var shouldTrigger = TypeOfArrows == ArrowMode.SimpleArrows
+				var shouldTrigger = TypeOfArrows == ArrowModes.SimpleArrows
 					? _previousTrendDirection < 0
-					: TypeOfArrows != ArrowMode.HideArrows;
-				var maConfirmed = TypeOfArrows == ArrowMode.SimpleArrows || maSignal > 0;
+					: TypeOfArrows != ArrowModes.HideArrows;
+				var maConfirmed = TypeOfArrows == ArrowModes.SimpleArrows || maSignal > 0;
 
-				if (_allowBuyArrow && TypeOfArrows != ArrowMode.HideArrows && shouldTrigger && maConfirmed)
+				if (_allowBuyArrow && TypeOfArrows != ArrowModes.HideArrows && shouldTrigger && maConfirmed)
 				{
-					signal = SignalDirection.Buy;
+					signal = SignalDirections.Buy;
 					_allowBuyArrow = false;
 					_allowSellArrow = true;
 				}
@@ -607,14 +607,14 @@ public class FollowLineTrendStrategy : Strategy
 			else if (trendDirection < 0)
 			{
 				_allowBuyArrow = true;
-				var shouldTrigger = TypeOfArrows == ArrowMode.SimpleArrows
+				var shouldTrigger = TypeOfArrows == ArrowModes.SimpleArrows
 					? _previousTrendDirection > 0
-					: TypeOfArrows != ArrowMode.HideArrows;
-				var maConfirmed = TypeOfArrows == ArrowMode.SimpleArrows || maSignal < 0;
+					: TypeOfArrows != ArrowModes.HideArrows;
+				var maConfirmed = TypeOfArrows == ArrowModes.SimpleArrows || maSignal < 0;
 
-				if (_allowSellArrow && TypeOfArrows != ArrowMode.HideArrows && shouldTrigger && maConfirmed)
+				if (_allowSellArrow && TypeOfArrows != ArrowModes.HideArrows && shouldTrigger && maConfirmed)
 				{
-					signal = SignalDirection.Sell;
+					signal = SignalDirections.Sell;
 					_allowSellArrow = false;
 					_allowBuyArrow = true;
 				}
@@ -627,9 +627,9 @@ public class FollowLineTrendStrategy : Strategy
 		return signal;
 	}
 
-	private void ExecuteSignal(ICandleMessage candle, SignalDirection signal)
+	private void ExecuteSignal(ICandleMessage candle, SignalDirections signal)
 	{
-		if (signal == SignalDirection.None)
+		if (signal == SignalDirections.None)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
@@ -641,7 +641,7 @@ public class FollowLineTrendStrategy : Strategy
 		if (!IsSpreadAccepted())
 			return;
 
-		if (signal == SignalDirection.Buy)
+		if (signal == SignalDirections.Buy)
 		{
 			if (CloseInSignal && Position < 0)
 				ClosePosition();
@@ -656,7 +656,7 @@ if (Position >= 0 && IsOrderSlotAvailable())
 				}
 			}
 		}
-		else if (signal == SignalDirection.Sell)
+		else if (signal == SignalDirections.Sell)
 		{
 			if (CloseInSignal && Position > 0)
 				ClosePosition();
@@ -817,7 +817,7 @@ if (Position <= 0 && IsOrderSlotAvailable())
 		return totalPosition < MaxOrders;
 	}
 
-	private enum SignalDirection
+	private enum SignalDirections
 	{
 		None,
 		Buy,

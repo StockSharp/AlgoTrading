@@ -20,7 +20,7 @@ namespace StockSharp.Samples.Strategies;
 public class SmartTrendFollowerStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<SignalMode> _signalMode;
+	private readonly StrategyParam<SignalModes> _signalMode;
 	private readonly StrategyParam<decimal> _initialVolume;
 	private readonly StrategyParam<decimal> _multiplier;
 	private readonly StrategyParam<decimal> _layerDistancePips;
@@ -48,7 +48,7 @@ public class SmartTrendFollowerStrategy : Strategy
 	/// <summary>
 	/// Trading signal mode.
 	/// </summary>
-	public SignalMode SignalMode
+	public SignalModes SignalModes
 	{
 		get => _signalMode.Value;
 		set => _signalMode.Value = value;
@@ -158,7 +158,7 @@ public class SmartTrendFollowerStrategy : Strategy
 	/// </summary>
 	public SmartTrendFollowerStrategy()
 	{
-		_signalMode = Param(nameof(SignalMode), SignalMode.CrossMa)
+		_signalMode = Param(nameof(SignalModes), SignalModes.CrossMa)
 		.SetDisplay("Signal Mode", "Trading logic selection", "Signals");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
@@ -317,9 +317,9 @@ public class SmartTrendFollowerStrategy : Strategy
 
 	ManageExits(candle);
 
-	var signal = SignalDirection.None;
+	var signal = SignalDirections.None;
 
-	if (SignalMode == SignalMode.CrossMa)
+	if (SignalModes == SignalModes.CrossMa)
 	{
 	if (_prevFast.HasValue && _prevSlow.HasValue)
 	{
@@ -327,9 +327,9 @@ public class SmartTrendFollowerStrategy : Strategy
 	var crossSell = fast > slow && _prevSlow.Value > _prevFast.Value;
 
 	if (crossBuy)
-	signal = SignalDirection.Buy;
+	signal = SignalDirections.Buy;
 	else if (crossSell)
-	signal = SignalDirection.Sell;
+	signal = SignalDirections.Sell;
 	}
 	}
 	else if (_stochastic?.IsFormed == true && stochasticValue is StochasticOscillatorValue stoch && stoch.K is decimal kValue)
@@ -338,12 +338,12 @@ public class SmartTrendFollowerStrategy : Strategy
 	var bearish = candle.ClosePrice < candle.OpenPrice;
 
 	if (fast > slow && bullish && kValue <= 30m)
-	signal = SignalDirection.Buy;
+	signal = SignalDirections.Buy;
 	else if (fast < slow && bearish && kValue >= 70m)
-	signal = SignalDirection.Sell;
+	signal = SignalDirections.Sell;
 	}
 
-	if (signal != SignalDirection.None && IsFormedAndOnlineAndAllowTrading())
+	if (signal != SignalDirections.None && IsFormedAndOnlineAndAllowTrading())
 	{
 	ProcessSignal(signal, candle.ClosePrice);
 	}
@@ -352,11 +352,11 @@ public class SmartTrendFollowerStrategy : Strategy
 	_prevSlow = slow;
 	}
 
-	private void ProcessSignal(SignalDirection signal, decimal referencePrice)
+	private void ProcessSignal(SignalDirections signal, decimal referencePrice)
 	{
 	switch (signal)
 	{
-	case SignalDirection.Buy:
+	case SignalDirections.Buy:
 	{
 	var shortVolume = GetTotalVolume(_shortEntries);
 	if (shortVolume > 0m)
@@ -391,7 +391,7 @@ public class SmartTrendFollowerStrategy : Strategy
 
 	break;
 	}
-	case SignalDirection.Sell:
+	case SignalDirections.Sell:
 	{
 	var longVolume = GetTotalVolume(_longEntries);
 	if (longVolume > 0m)
@@ -599,7 +599,7 @@ public class SmartTrendFollowerStrategy : Strategy
 	return step;
 	}
 
-	private enum SignalDirection
+	private enum SignalDirections
 	{
 	None,
 	Buy,
@@ -609,7 +609,7 @@ public class SmartTrendFollowerStrategy : Strategy
 	/// <summary>
 	/// Signal selector for the strategy.
 	/// </summary>
-	public enum SignalMode
+	public enum SignalModes
 	{
 	/// <summary>
 	/// Use moving average crossovers in a contrarian fashion.

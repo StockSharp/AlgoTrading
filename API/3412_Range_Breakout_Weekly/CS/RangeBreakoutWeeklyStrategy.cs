@@ -30,14 +30,14 @@ public class RangeBreakoutWeeklyStrategy : Strategy
 	private readonly StrategyParam<DataType> _hourCandleType;
 	private readonly StrategyParam<DataType> _atrCandleType;
 
-	private enum BreakoutPhase
+	private enum BreakoutPhases
 	{
 		Standby,
 		Setup,
 		Trade,
 	}
 
-	private BreakoutPhase _phase;
+	private BreakoutPhases _phase;
 	private DayOfWeek _effectiveTradingDay;
 	private AverageTrueRange _atrIndicator = null!;
 	private decimal? _atrValue;
@@ -207,7 +207,7 @@ public class RangeBreakoutWeeklyStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_phase = BreakoutPhase.Standby;
+		_phase = BreakoutPhases.Standby;
 		_effectiveTradingDay = DayOfWeek.Monday;
 		_atrIndicator = null!;
 		_atrValue = null;
@@ -306,7 +306,7 @@ public class RangeBreakoutWeeklyStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_phase != BreakoutPhase.Standby)
+		if (_phase != BreakoutPhases.Standby)
 			return;
 
 		if (candle.OpenTime.DayOfWeek != _effectiveTradingDay)
@@ -344,7 +344,7 @@ public class RangeBreakoutWeeklyStrategy : Strategy
 
 	private void TryEnterPosition()
 	{
-		if (_phase != BreakoutPhase.Setup)
+		if (_phase != BreakoutPhases.Setup)
 			return;
 
 		if (_entryOrderPending)
@@ -366,7 +366,7 @@ public class RangeBreakoutWeeklyStrategy : Strategy
 			_entryDirection = Sides.Buy;
 			_entryVolume = volume;
 			_entryOrderPending = true;
-			_phase = BreakoutPhase.Trade;
+			_phase = BreakoutPhases.Trade;
 			return;
 		}
 
@@ -376,13 +376,13 @@ public class RangeBreakoutWeeklyStrategy : Strategy
 			_entryDirection = Sides.Sell;
 			_entryVolume = volume;
 			_entryOrderPending = true;
-			_phase = BreakoutPhase.Trade;
+			_phase = BreakoutPhases.Trade;
 		}
 	}
 
 	private void ManageActivePosition()
 	{
-		if (_phase != BreakoutPhase.Trade)
+		if (_phase != BreakoutPhases.Trade)
 			return;
 
 		if (_exitOrderPending)
@@ -462,7 +462,7 @@ public class RangeBreakoutWeeklyStrategy : Strategy
 		_lowerStop = NormalizeAbsolute(lowerStop + lossOffset);
 
 		_setupPrepared = true;
-		_phase = BreakoutPhase.Setup;
+		_phase = BreakoutPhases.Setup;
 		_entryDirection = null;
 		_entryVolume = 0m;
 		_pendingExitIsLoss = false;
@@ -531,7 +531,7 @@ public class RangeBreakoutWeeklyStrategy : Strategy
 
 	private void ResetExecutionState()
 	{
-		_phase = BreakoutPhase.Standby;
+		_phase = BreakoutPhases.Standby;
 		_setupPrepared = false;
 		_centerPrice = null;
 		_upperTrigger = null;

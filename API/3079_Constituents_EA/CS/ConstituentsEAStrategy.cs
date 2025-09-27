@@ -21,7 +21,7 @@ public class ConstituentsEaStrategy : Strategy
 {
 	private readonly StrategyParam<int> _startHour;
 	private readonly StrategyParam<int> _searchDepth;
-	private readonly StrategyParam<OrderMode> _orderMode;
+	private readonly StrategyParam<OrderModes> _orderMode;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _pointValue;
@@ -40,7 +40,7 @@ public class ConstituentsEaStrategy : Strategy
 	/// <summary>
 	/// Type of pending order to place when the entry conditions are met.
 	/// </summary>
-	public enum OrderMode
+	public enum OrderModes
 	{
 		/// <summary>
 		/// Place limit orders at the identified support and resistance levels.
@@ -67,7 +67,7 @@ public class ConstituentsEaStrategy : Strategy
 			.SetDisplay("Search Depth", "Number of completed candles used to find extremes", "Setup")
 			.SetCanOptimize(true);
 
-		_orderMode = Param(nameof(PendingOrderMode), OrderMode.Limit)
+		_orderMode = Param(nameof(PendingOrderMode), OrderModes.Limit)
 			.SetDisplay("Order Type", "Pending order style (limit or stop)", "Setup");
 
 		_stopLossPips = Param(nameof(StopLossPips), 0m)
@@ -115,7 +115,7 @@ public class ConstituentsEaStrategy : Strategy
 	/// <summary>
 	/// Pending order style (limit or stop).
 	/// </summary>
-	public OrderMode PendingOrderMode
+	public OrderModes PendingOrderMode
 	{
 		get => _orderMode.Value;
 		set => _orderMode.Value = value;
@@ -274,7 +274,7 @@ public class ConstituentsEaStrategy : Strategy
 		var referenceBid = _bestBid > 0m ? _bestBid : candle.ClosePrice;
 		var referenceAsk = _bestAsk > 0m ? _bestAsk : candle.ClosePrice;
 
-		if (PendingOrderMode == OrderMode.Limit)
+		if (PendingOrderMode == OrderModes.Limit)
 		{
 			TryPlaceBuyLimit(lowValue, referenceBid, minOrderDistance);
 			TryPlaceSellLimit(highValue, referenceAsk, minOrderDistance);

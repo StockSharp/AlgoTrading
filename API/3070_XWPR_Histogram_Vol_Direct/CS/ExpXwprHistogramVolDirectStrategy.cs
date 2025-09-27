@@ -26,14 +26,14 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 	private readonly StrategyParam<int> _highLevel1;
 	private readonly StrategyParam<int> _lowLevel1;
 	private readonly StrategyParam<int> _lowLevel2;
-	private readonly StrategyParam<MovingAverageKind> _smoothingType;
+	private readonly StrategyParam<MovingAverageKinds> _smoothingType;
 	private readonly StrategyParam<int> _smoothingLength;
 	private readonly StrategyParam<int> _signalShift;
 	private readonly StrategyParam<bool> _enableLongEntries;
 	private readonly StrategyParam<bool> _enableShortEntries;
 	private readonly StrategyParam<bool> _enableLongExits;
 	private readonly StrategyParam<bool> _enableShortExits;
-	private readonly StrategyParam<VolumeSource> _volumeSource;
+	private readonly StrategyParam<VolumeSources> _volumeSource;
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<DataType> _candleType;
@@ -94,7 +94,7 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 	/// <summary>
 	/// Moving average smoothing type.
 	/// </summary>
-	public MovingAverageKind SmoothingType
+	public MovingAverageKinds SmoothingType
 	{
 		get => _smoothingType.Value;
 		set => _smoothingType.Value = value;
@@ -157,7 +157,7 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 	/// <summary>
 	/// Volume source used to weight Williams %R values.
 	/// </summary>
-	public VolumeSource VolumeSource
+	public VolumeSources VolumeSources
 	{
 		get => _volumeSource.Value;
 		set => _volumeSource.Value = value;
@@ -216,7 +216,7 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 		.SetRange(-200, 200)
 		.SetDisplay("Low Level 2", "Extreme bearish multiplier", "Indicator");
 
-		_smoothingType = Param(nameof(SmoothingType), MovingAverageKind.Simple)
+		_smoothingType = Param(nameof(SmoothingType), MovingAverageKinds.Simple)
 		.SetDisplay("Smoothing Type", "Moving average type used for smoothing", "Indicator");
 
 		_smoothingLength = Param(nameof(SmoothingLength), 12)
@@ -240,7 +240,7 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 		_enableShortExits = Param(nameof(EnableShortExits), true)
 		.SetDisplay("Enable Short Exits", "Allow the strategy to close short positions", "Trading Rules");
 
-		_volumeSource = Param(nameof(VolumeSource), VolumeSource.Tick)
+		_volumeSource = Param(nameof(VolumeSources), VolumeSources.Tick)
 		.SetDisplay("Volume Source", "Type of volume used for weighting", "Indicator");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
@@ -312,7 +312,7 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 		return;
 
 		var time = candle.OpenTime;
-		decimal volume = VolumeSource == VolumeSource.Tick ? candle.TotalTicks : candle.TotalVolume;
+		decimal volume = VolumeSources == VolumeSources.Tick ? candle.TotalTicks : candle.TotalVolume;
 		var weightedValue = (williamsValue + 50m) * volume;
 
 		var valueResult = _valueSmoother.Process(weightedValue, time, true);
@@ -479,18 +479,18 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 		return "Neutral";
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageKind type, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageKinds type, int length)
 	{
 		return type switch
 		{
-			MovingAverageKind.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageKind.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageKind.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageKind.Weighted => new WeightedMovingAverage { Length = length },
-			MovingAverageKind.Hull => new HullMovingAverage { Length = length },
-			MovingAverageKind.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
-			MovingAverageKind.DoubleExponential => new DoubleExponentialMovingAverage { Length = length },
-			MovingAverageKind.TripleExponential => new TripleExponentialMovingAverage { Length = length },
+			MovingAverageKinds.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageKinds.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageKinds.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageKinds.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageKinds.Hull => new HullMovingAverage { Length = length },
+			MovingAverageKinds.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
+			MovingAverageKinds.DoubleExponential => new DoubleExponentialMovingAverage { Length = length },
+			MovingAverageKinds.TripleExponential => new TripleExponentialMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -498,7 +498,7 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 	/// <summary>
 	/// Supported moving average types.
 	/// </summary>
-	public enum MovingAverageKind
+	public enum MovingAverageKinds
 	{
 		Simple,
 		Exponential,
@@ -513,7 +513,7 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 	/// <summary>
 	/// Volume source used to weight Williams %R values.
 	/// </summary>
-	public enum VolumeSource
+	public enum VolumeSources
 	{
 		Tick,
 		Real,

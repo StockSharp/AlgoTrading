@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class EqualVolumeRangeBarsStrategy : Strategy
 {
-	private readonly StrategyParam<EqualVolumeBarsMode> _workMode;
+	private readonly StrategyParam<EqualVolumeBarsModes> _workMode;
 	private readonly StrategyParam<int> _ticksInBar;
 	private readonly StrategyParam<bool> _fromMinuteHistory;
 	private readonly StrategyParam<DataType> _minuteCandleType;
@@ -41,7 +41,7 @@ public class EqualVolumeRangeBarsStrategy : Strategy
 	/// <summary>
 	/// Candle construction mode that matches the MT4 offline chart options.
 	/// </summary>
-	public EqualVolumeBarsMode WorkMode
+	public EqualVolumeBarsModes WorkMode
 	{
 		get => _workMode.Value;
 		set => _workMode.Value = value;
@@ -79,7 +79,7 @@ public class EqualVolumeRangeBarsStrategy : Strategy
 	/// </summary>
 	public EqualVolumeRangeBarsStrategy()
 	{
-		_workMode = Param(nameof(WorkMode), EqualVolumeBarsMode.EqualVolumeBars)
+		_workMode = Param(nameof(WorkMode), EqualVolumeBarsModes.EqualVolumeBars)
 			.SetDisplay("Work Mode", "Choose equal volume or range bars", "General");
 
 		_ticksInBar = Param(nameof(TicksInBar), 100)
@@ -136,7 +136,7 @@ public class EqualVolumeRangeBarsStrategy : Strategy
 
 		_rangeThreshold = _tickSize * TicksInBar;
 		_seriesName = BuildSeriesName();
-		LogInfo($"{_seriesName}: starting in {WorkMode} mode with threshold {TicksInBar} {(WorkMode == EqualVolumeBarsMode.EqualVolumeBars ? "ticks" : "points")}");
+		LogInfo($"{_seriesName}: starting in {WorkMode} mode with threshold {TicksInBar} {(WorkMode == EqualVolumeBarsModes.EqualVolumeBars ? "ticks" : "points")}");
 
 		if (FromMinuteHistory)
 		{
@@ -264,8 +264,8 @@ public class EqualVolumeRangeBarsStrategy : Strategy
 	{
 		return WorkMode switch
 		{
-			EqualVolumeBarsMode.EqualVolumeBars => volume > TicksInBar,
-			EqualVolumeBarsMode.RangeBars => high - low > _rangeThreshold,
+			EqualVolumeBarsModes.EqualVolumeBars => volume > TicksInBar,
+			EqualVolumeBarsModes.RangeBars => high - low > _rangeThreshold,
 			_ => false,
 		};
 	}
@@ -302,7 +302,7 @@ public class EqualVolumeRangeBarsStrategy : Strategy
 	/// <summary>
 	/// Operation mode copied from the MT4 script.
 	/// </summary>
-	public enum EqualVolumeBarsMode
+	public enum EqualVolumeBarsModes
 	{
 		/// <summary>
 		/// Create bars once the configured number of ticks has been accumulated.

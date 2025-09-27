@@ -19,14 +19,14 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BasicMartingaleEa3Strategy : Strategy
 {
-	private enum AveragingMode
+	private enum AveragingModes
 	{
 		AverageDown,
 		AverageUp,
 		None,
 	}
 
-	private enum MartinMode
+	private enum MartinModes
 	{
 		Multiply,
 		Increment,
@@ -50,8 +50,8 @@ public class BasicMartingaleEa3Strategy : Strategy
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _gridMultiplier;
 	private readonly StrategyParam<int> _maxAverageOrders;
-	private readonly StrategyParam<AveragingMode> _averagingMode;
-	private readonly StrategyParam<MartinMode> _martinMode;
+	private readonly StrategyParam<AveragingModes> _averagingMode;
+	private readonly StrategyParam<MartinModes> _martinMode;
 	private readonly StrategyParam<decimal> _lotMultiplier;
 	private readonly StrategyParam<decimal> _lotIncrement;
 	private readonly StrategyParam<bool> _tradeAtNewBar;
@@ -125,10 +125,10 @@ public class BasicMartingaleEa3Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Max Average Orders", "Maximum additional entries per side", "Money Management");
 
-		_averagingMode = Param(nameof(Averaging), AveragingMode.AverageDown)
+		_averagingMode = Param(nameof(Averaging), AveragingModes.AverageDown)
 			.SetDisplay("Averaging Mode", "Choose averaging direction", "Money Management");
 
-		_martinMode = Param(nameof(Martin), MartinMode.Multiply)
+		_martinMode = Param(nameof(Martin), MartinModes.Multiply)
 			.SetDisplay("Martingale Mode", "Volume growth scheme", "Money Management");
 
 		_lotMultiplier = Param(nameof(LotMultiplier), 1.5m)
@@ -257,7 +257,7 @@ public class BasicMartingaleEa3Strategy : Strategy
 	/// <summary>
 	/// Averaging mode defining when additional trades are allowed.
 	/// </summary>
-	public AveragingMode Averaging
+	public AveragingModes Averaging
 	{
 		get => _averagingMode.Value;
 		set => _averagingMode.Value = value;
@@ -266,14 +266,14 @@ public class BasicMartingaleEa3Strategy : Strategy
 	/// <summary>
 	/// Martingale mode controlling the next order size.
 	/// </summary>
-	public MartinMode Martin
+	public MartinModes Martin
 	{
 		get => _martinMode.Value;
 		set => _martinMode.Value = value;
 	}
 
 	/// <summary>
-	/// Multiplication factor when martingale mode is <see cref="MartinMode.Multiply"/>.
+	/// Multiplication factor when martingale mode is <see cref="MartinModes.Multiply"/>.
 	/// </summary>
 	public decimal LotMultiplier
 	{
@@ -282,7 +282,7 @@ public class BasicMartingaleEa3Strategy : Strategy
 	}
 
 	/// <summary>
-	/// Increment added when martingale mode is <see cref="MartinMode.Increment"/>.
+	/// Increment added when martingale mode is <see cref="MartinModes.Increment"/>.
 	/// </summary>
 	public decimal LotIncrement
 	{
@@ -490,7 +490,7 @@ public class BasicMartingaleEa3Strategy : Strategy
 
 		var atrDistance = GridMultiplier * _lastAtr;
 
-		if (Averaging == AveragingMode.AverageDown)
+		if (Averaging == AveragingModes.AverageDown)
 		{
 			if (price <= lowestPrice - atrDistance)
 			{
@@ -499,7 +499,7 @@ public class BasicMartingaleEa3Strategy : Strategy
 				_lastBuyVolume = nextVolume;
 			}
 		}
-		else if (Averaging == AveragingMode.AverageUp)
+		else if (Averaging == AveragingModes.AverageUp)
 		{
 			if (price >= highestPrice + atrDistance)
 			{
@@ -548,7 +548,7 @@ public class BasicMartingaleEa3Strategy : Strategy
 
 		var atrDistance = GridMultiplier * _lastAtr;
 
-		if (Averaging == AveragingMode.AverageDown)
+		if (Averaging == AveragingModes.AverageDown)
 		{
 			if (price >= highestPrice + atrDistance)
 			{
@@ -557,7 +557,7 @@ public class BasicMartingaleEa3Strategy : Strategy
 				_lastSellVolume = nextVolume;
 			}
 		}
-		else if (Averaging == AveragingMode.AverageUp)
+		else if (Averaging == AveragingModes.AverageUp)
 		{
 			if (price <= lowestPrice - atrDistance)
 			{
@@ -657,10 +657,10 @@ public class BasicMartingaleEa3Strategy : Strategy
 		decimal nextVolume = referenceVolume;
 		switch (Martin)
 		{
-			case MartinMode.Multiply:
+			case MartinModes.Multiply:
 				nextVolume = referenceVolume * LotMultiplier;
 				break;
-			case MartinMode.Increment:
+			case MartinModes.Increment:
 				nextVolume = referenceVolume + LotIncrement;
 				break;
 		}

@@ -21,7 +21,7 @@ public class ScalpWiz9001Strategy : Strategy
 {
 	private readonly StrategyParam<int> _levelCount;
 
-	private enum VolumeMode
+	private enum VolumeModes
 	{
 		FixedVolume,
 		RiskPercent,
@@ -35,7 +35,7 @@ public class ScalpWiz9001Strategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStopPips;
 	private readonly StrategyParam<decimal> _trailingStepPips;
 	private readonly StrategyParam<int> _expirationMinutes;
-	private readonly StrategyParam<VolumeMode> _volumeMode;
+	private readonly StrategyParam<VolumeModes> _volumeMode;
 	private readonly StrategyParam<decimal>[] _levelValues;
 	private readonly StrategyParam<decimal>[] _levelPips;
 
@@ -94,7 +94,7 @@ public class ScalpWiz9001Strategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Expiration (minutes)", "Lifetime of pending stop orders", "Orders");
 
-		_volumeMode = Param(nameof(ManagementMode), VolumeMode.RiskPercent)
+		_volumeMode = Param(nameof(ManagementMode), VolumeModes.RiskPercent)
 			.SetDisplay("Management Mode", "Interpretation of level values (fixed lot or risk percent)", "Money Management");
 
 		_levelCount = Param(nameof(LevelCount), levelSlots)
@@ -218,7 +218,7 @@ public class ScalpWiz9001Strategy : Strategy
 	/// <summary>
 	/// Interprets level values either as fixed volumes or risk percentages.
 	/// </summary>
-	public VolumeMode ManagementMode
+	public VolumeModes ManagementMode
 	{
 		get => _volumeMode.Value;
 		set => _volumeMode.Value = value;
@@ -673,7 +673,7 @@ public class ScalpWiz9001Strategy : Strategy
 			return 0m;
 		}
 
-		if (ManagementMode == VolumeMode.FixedVolume)
+		if (ManagementMode == VolumeModes.FixedVolume)
 		{
 			return value;
 		}

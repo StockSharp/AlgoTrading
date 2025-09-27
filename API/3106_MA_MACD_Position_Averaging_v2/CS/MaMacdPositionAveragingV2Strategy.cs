@@ -42,7 +42,7 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageMethod> _maMethod;
+	private readonly StrategyParam<MovingAverageMethods> _maMethod;
 	private readonly StrategyParam<CandlePrice> _maPrice;
 	private readonly StrategyParam<decimal> _maIndentPips;
 
@@ -130,7 +130,7 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 			.SetRange(0, 1000)
 			.SetDisplay("MA Shift", "Forward shift applied to the moving average", "Moving Average");
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.Weighted)
+		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Weighted)
 			.SetDisplay("MA Method", "Smoothing method for the moving average", "Moving Average");
 
 		_maPrice = Param(nameof(MaPrice), CandlePrice.Weighted)
@@ -269,7 +269,7 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 	/// <summary>
 	/// Moving average smoothing method.
 	/// </summary>
-	public MovingAverageMethod MaMethod
+	public MovingAverageMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -672,16 +672,16 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 		_shortLegs.Clear();
 	}
 
-	private MovingAverage CreateMovingAverage(MovingAverageMethod method, int period, CandlePrice price)
+	private MovingAverage CreateMovingAverage(MovingAverageMethods method, int period, CandlePrice price)
 	{
 		var length = Math.Max(1, period);
 
 		MovingAverage indicator = method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new WeightedMovingAverage { Length = length }
 		};
 
@@ -768,7 +768,7 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 /// <summary>
 /// Moving average smoothing modes mirroring the MetaTrader enumeration.
 /// </summary>
-public enum MovingAverageMethod
+public enum MovingAverageMethods
 {
 	/// <summary>
 	/// Simple moving average.

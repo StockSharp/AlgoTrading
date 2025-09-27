@@ -25,7 +25,7 @@ public class ExpAfirmaStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _periods;
 	private readonly StrategyParam<int> _taps;
-	private readonly StrategyParam<AfirmaIndicator.WindowType> _window;
+	private readonly StrategyParam<AfirmaIndicator.WindowTypes> _window;
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<bool> _buyEntries;
 	private readonly StrategyParam<bool> _sellEntries;
@@ -57,7 +57,7 @@ public class ExpAfirmaStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Taps", "Number of FIR coefficients (odd value)", "Indicator");
 
-		_window = Param(nameof(Window), AfirmaIndicator.WindowType.Blackman)
+		_window = Param(nameof(Window), AfirmaIndicator.WindowTypes.Blackman)
 			.SetDisplay("Window", "Window function applied to FIR coefficients", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -121,7 +121,7 @@ public class ExpAfirmaStrategy : Strategy
 	/// <summary>
 	/// Window function applied to FIR coefficients.
 	/// </summary>
-	public AfirmaIndicator.WindowType Window
+	public AfirmaIndicator.WindowTypes Window
 	{
 		get => _window.Value;
 		set => _window.Value = value;
@@ -334,7 +334,7 @@ public sealed class AfirmaIndicator : BaseIndicator<decimal>
 	/// <summary>
 	/// Available window functions for the FIR design.
 	/// </summary>
-	public enum WindowType
+	public enum WindowTypes
 	{
 		Rectangular = 1,
 		Hanning1,
@@ -356,7 +356,7 @@ public sealed class AfirmaIndicator : BaseIndicator<decimal>
 	/// <summary>
 	/// Window function applied to the FIR coefficients.
 	/// </summary>
-	public WindowType Window { get; set; } = WindowType.Blackman;
+	public WindowTypes Window { get; set; } = WindowTypes.Blackman;
 
 	/// <inheritdoc />
 	protected override IIndicatorValue OnProcess(IIndicatorValue input)
@@ -426,11 +426,11 @@ public sealed class AfirmaIndicator : BaseIndicator<decimal>
 		{
 			double weight = Window switch
 			{
-				WindowType.Rectangular => 1.0,
-				WindowType.Hanning1 => 0.50 - 0.50 * Math.Cos(2.0 * Math.PI * k / _effectiveTaps),
-				WindowType.Hanning2 => 0.54 - 0.46 * Math.Cos(2.0 * Math.PI * k / _effectiveTaps),
-				WindowType.Blackman => 0.42 - 0.50 * Math.Cos(2.0 * Math.PI * k / _effectiveTaps) + 0.08 * Math.Cos(4.0 * Math.PI * k / _effectiveTaps),
-				WindowType.BlackmanHarris => 0.35875 - 0.48829 * Math.Cos(2.0 * Math.PI * k / _effectiveTaps) + 0.14128 * Math.Cos(4.0 * Math.PI * k / _effectiveTaps) - 0.01168 * Math.Cos(6.0 * Math.PI * k / _effectiveTaps),
+				WindowTypes.Rectangular => 1.0,
+				WindowTypes.Hanning1 => 0.50 - 0.50 * Math.Cos(2.0 * Math.PI * k / _effectiveTaps),
+				WindowTypes.Hanning2 => 0.54 - 0.46 * Math.Cos(2.0 * Math.PI * k / _effectiveTaps),
+				WindowTypes.Blackman => 0.42 - 0.50 * Math.Cos(2.0 * Math.PI * k / _effectiveTaps) + 0.08 * Math.Cos(4.0 * Math.PI * k / _effectiveTaps),
+				WindowTypes.BlackmanHarris => 0.35875 - 0.48829 * Math.Cos(2.0 * Math.PI * k / _effectiveTaps) + 0.14128 * Math.Cos(4.0 * Math.PI * k / _effectiveTaps) - 0.01168 * Math.Cos(6.0 * Math.PI * k / _effectiveTaps),
 				_ => 1.0
 			};
 

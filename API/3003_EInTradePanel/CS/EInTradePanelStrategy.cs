@@ -21,7 +21,7 @@ public class EInTradePanelStrategy : Strategy
 	/// <summary>
 	/// Supported entry types.
 	/// </summary>
-	public enum EntryMode
+	public enum EntryModes
 	{
 		Buy,
 		Sell,
@@ -36,7 +36,7 @@ public class EInTradePanelStrategy : Strategy
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _volume;
-	private readonly StrategyParam<EntryMode> _entryMode;
+	private readonly StrategyParam<EntryModes> _entryMode;
 	private readonly StrategyParam<int> _baseTicks;
 	private readonly StrategyParam<int> _pendingMultiplier;
 	private readonly StrategyParam<int> _triggerMultiplier;
@@ -74,7 +74,7 @@ public class EInTradePanelStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Volume", "Order volume", "Trading");
 
-		_entryMode = Param(nameof(Mode), EntryMode.Buy)
+		_entryMode = Param(nameof(Mode), EntryModes.Buy)
 		.SetDisplay("Mode", "Type of entry order", "Trading");
 
 		_baseTicks = Param(nameof(BaseTicks), 10)
@@ -124,7 +124,7 @@ public class EInTradePanelStrategy : Strategy
 	/// <summary>
 	/// Selected entry mode.
 	/// </summary>
-	public EntryMode Mode
+	public EntryModes Mode
 	{
 		get => _entryMode.Value;
 		set => _entryMode.Value = value;
@@ -282,7 +282,7 @@ public class EInTradePanelStrategy : Strategy
 		if (_entryOrder != null)
 		return;
 
-		if (Mode is EntryMode.BuyStopLimit or EntryMode.SellStopLimit)
+		if (Mode is EntryModes.BuyStopLimit or EntryModes.SellStopLimit)
 		{
 			if (!_stopLimitWaiting)
 			PrepareStopLimit(Mode, baseTicks, priceStep, bid, ask);
@@ -360,7 +360,7 @@ public class EInTradePanelStrategy : Strategy
 		}
 	}
 
-	private void PrepareStopLimit(EntryMode mode, int baseTicks, decimal priceStep, decimal bid, decimal ask)
+	private void PrepareStopLimit(EntryModes mode, int baseTicks, decimal priceStep, decimal bid, decimal ask)
 	{
 		var levels = CalculateLevels(mode, priceStep, baseTicks, bid, ask);
 		if (levels.trigger is null || levels.entry is null)
@@ -378,7 +378,7 @@ public class EInTradePanelStrategy : Strategy
 		if (!_stopLimitWaiting || _stopLimitTrigger is null || _stopLimitEntry is null)
 		return;
 
-		if (Mode == EntryMode.BuyStopLimit)
+		if (Mode == EntryModes.BuyStopLimit)
 		{
 			if (candle.HighPrice < _stopLimitTrigger.Value)
 			return;
@@ -401,23 +401,23 @@ public class EInTradePanelStrategy : Strategy
 		_expirationTime = GetExpiration(candle);
 	}
 
-	private void SubmitEntryOrder(EntryMode mode, int baseTicks, decimal priceStep, decimal bid, decimal ask, ICandleMessage candle)
+	private void SubmitEntryOrder(EntryModes mode, int baseTicks, decimal priceStep, decimal bid, decimal ask, ICandleMessage candle)
 	{
 		var levels = CalculateLevels(mode, priceStep, baseTicks, bid, ask);
 
 		switch (mode)
 		{
-		case EntryMode.Buy:
+		case EntryModes.Buy:
 			BuyMarket(Volume);
 			_stopPrice = levels.stop;
 			_takePrice = levels.take;
 			break;
-		case EntryMode.Sell:
+		case EntryModes.Sell:
 			SellMarket(Volume);
 			_stopPrice = levels.stop;
 			_takePrice = levels.take;
 			break;
-		case EntryMode.BuyStop:
+		case EntryModes.BuyStop:
 			if (levels.entry is decimal buyStop)
 			{
 				_entryOrder = BuyStop(Volume, buyStop);
@@ -426,7 +426,7 @@ public class EInTradePanelStrategy : Strategy
 				_expirationTime = GetExpiration(candle);
 			}
 			break;
-		case EntryMode.SellStop:
+		case EntryModes.SellStop:
 			if (levels.entry is decimal sellStop)
 			{
 				_entryOrder = SellStop(Volume, sellStop);
@@ -435,7 +435,7 @@ public class EInTradePanelStrategy : Strategy
 				_expirationTime = GetExpiration(candle);
 			}
 			break;
-		case EntryMode.BuyLimit:
+		case EntryModes.BuyLimit:
 			if (levels.entry is decimal buyLimit)
 			{
 				_entryOrder = BuyLimit(buyLimit, Volume);
@@ -444,7 +444,7 @@ public class EInTradePanelStrategy : Strategy
 				_expirationTime = GetExpiration(candle);
 			}
 			break;
-		case EntryMode.SellLimit:
+		case EntryModes.SellLimit:
 			if (levels.entry is decimal sellLimit)
 			{
 				_entryOrder = SellLimit(sellLimit, Volume);
@@ -456,7 +456,7 @@ public class EInTradePanelStrategy : Strategy
 		}
 	}
 
-	private (decimal? trigger, decimal? entry, decimal? stop, decimal? take) CalculateLevels(EntryMode mode, decimal priceStep, int baseTicks, decimal bid, decimal ask)
+	private (decimal? trigger, decimal? entry, decimal? stop, decimal? take) CalculateLevels(EntryModes mode, decimal priceStep, int baseTicks, decimal bid, decimal ask)
 	{
 		var pendingTicks = baseTicks * PendingMultiplier;
 		var triggerTicks = baseTicks * TriggerMultiplier;
@@ -472,7 +472,7 @@ public class EInTradePanelStrategy : Strategy
 
 		switch (mode)
 		{
-		case EntryMode.Buy:
+		case EntryModes.Buy:
 			reference = ask;
 			entry = reference;
 			if (StopLossMultiplier > 0)
@@ -480,7 +480,7 @@ public class EInTradePanelStrategy : Strategy
 			if (TakeProfitMultiplier > 0)
 			take = reference + takeTicks * priceStep;
 			break;
-		case EntryMode.Sell:
+		case EntryModes.Sell:
 			reference = bid;
 			entry = reference;
 			if (StopLossMultiplier > 0)
@@ -488,7 +488,7 @@ public class EInTradePanelStrategy : Strategy
 			if (TakeProfitMultiplier > 0)
 			take = reference - takeTicks * priceStep;
 			break;
-		case EntryMode.BuyStop:
+		case EntryModes.BuyStop:
 			reference = ask + pendingTicks * priceStep;
 			reference = Math.Max(reference, ask + priceStep);
 			entry = reference;
@@ -497,7 +497,7 @@ public class EInTradePanelStrategy : Strategy
 			if (TakeProfitMultiplier > 0)
 			take = reference + takeTicks * priceStep;
 			break;
-		case EntryMode.SellStop:
+		case EntryModes.SellStop:
 			reference = bid - pendingTicks * priceStep;
 			reference = Math.Min(reference, bid - priceStep);
 			entry = reference;
@@ -506,7 +506,7 @@ public class EInTradePanelStrategy : Strategy
 			if (TakeProfitMultiplier > 0)
 			take = reference - takeTicks * priceStep;
 			break;
-		case EntryMode.BuyLimit:
+		case EntryModes.BuyLimit:
 			reference = ask - pendingTicks * priceStep;
 			reference = Math.Min(reference, ask - priceStep);
 			entry = reference;
@@ -515,7 +515,7 @@ public class EInTradePanelStrategy : Strategy
 			if (TakeProfitMultiplier > 0)
 			take = reference + takeTicks * priceStep;
 			break;
-		case EntryMode.SellLimit:
+		case EntryModes.SellLimit:
 			reference = bid + pendingTicks * priceStep;
 			reference = Math.Max(reference, bid + priceStep);
 			entry = reference;
@@ -524,7 +524,7 @@ public class EInTradePanelStrategy : Strategy
 			if (TakeProfitMultiplier > 0)
 			take = reference - takeTicks * priceStep;
 			break;
-		case EntryMode.BuyStopLimit:
+		case EntryModes.BuyStopLimit:
 			trigger = ask + triggerTicks * priceStep;
 			trigger = Math.Max(trigger.Value, ask + priceStep);
 			reference = trigger.Value - pendingTicks * priceStep;
@@ -535,7 +535,7 @@ public class EInTradePanelStrategy : Strategy
 			if (TakeProfitMultiplier > 0)
 			take = reference + takeTicks * priceStep;
 			break;
-		case EntryMode.SellStopLimit:
+		case EntryModes.SellStopLimit:
 			trigger = bid - triggerTicks * priceStep;
 			trigger = Math.Min(trigger.Value, bid - priceStep);
 			reference = trigger.Value + pendingTicks * priceStep;

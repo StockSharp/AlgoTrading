@@ -27,12 +27,12 @@ public class ThreeIndicatorsStrategy : Strategy
 	private readonly StrategyParam<int> _macdFastPeriod;
 	private readonly StrategyParam<int> _macdSlowPeriod;
 	private readonly StrategyParam<int> _macdSignalPeriod;
-	private readonly StrategyParam<IndicatorAppliedPrice> _macdPriceType;
+	private readonly StrategyParam<IndicatorAppliedPrices> _macdPriceType;
 	private readonly StrategyParam<int> _stochasticKPeriod;
 	private readonly StrategyParam<int> _stochasticDPeriod;
 	private readonly StrategyParam<int> _stochasticSlowing;
 	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<IndicatorAppliedPrice> _rsiPriceType;
+	private readonly StrategyParam<IndicatorAppliedPrices> _rsiPriceType;
 
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 	private StochasticOscillator _stochastic = null!;
@@ -62,7 +62,7 @@ public class ThreeIndicatorsStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MACD signal EMA", "Signal smoothing length for the MACD line.", "MACD");
 
-		_macdPriceType = Param(nameof(MacdPriceType), IndicatorAppliedPrice.Close)
+		_macdPriceType = Param(nameof(MacdPriceType), IndicatorAppliedPrices.Close)
 			.SetDisplay("MACD price", "Applied price used when feeding data into MACD.", "MACD");
 
 		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 40)
@@ -81,7 +81,7 @@ public class ThreeIndicatorsStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("RSI period", "Averaging length for the RSI filter.", "RSI");
 
-		_rsiPriceType = Param(nameof(RsiPriceType), IndicatorAppliedPrice.Close)
+		_rsiPriceType = Param(nameof(RsiPriceType), IndicatorAppliedPrices.Close)
 			.SetDisplay("RSI price", "Applied price used by the RSI filter.", "RSI");
 	}
 
@@ -133,7 +133,7 @@ public class ThreeIndicatorsStrategy : Strategy
 	/// <summary>
 	/// Applied price used for feeding MACD.
 	/// </summary>
-	public IndicatorAppliedPrice MacdPriceType
+	public IndicatorAppliedPrices MacdPriceType
 	{
 		get => _macdPriceType.Value;
 		set => _macdPriceType.Value = value;
@@ -178,7 +178,7 @@ public class ThreeIndicatorsStrategy : Strategy
 	/// <summary>
 	/// Applied price used for the RSI calculation.
 	/// </summary>
-	public IndicatorAppliedPrice RsiPriceType
+	public IndicatorAppliedPrices RsiPriceType
 	{
 		get => _rsiPriceType.Value;
 		set => _rsiPriceType.Value = value;
@@ -374,22 +374,22 @@ public class ThreeIndicatorsStrategy : Strategy
 		return 0;
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, IndicatorAppliedPrice priceType)
+	private static decimal GetAppliedPrice(ICandleMessage candle, IndicatorAppliedPrices priceType)
 	{
 		return priceType switch
 		{
-			IndicatorAppliedPrice.Open => candle.OpenPrice,
-			IndicatorAppliedPrice.High => candle.HighPrice,
-			IndicatorAppliedPrice.Low => candle.LowPrice,
-			IndicatorAppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			IndicatorAppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			IndicatorAppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
+			IndicatorAppliedPrices.Open => candle.OpenPrice,
+			IndicatorAppliedPrices.High => candle.HighPrice,
+			IndicatorAppliedPrices.Low => candle.LowPrice,
+			IndicatorAppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			IndicatorAppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			IndicatorAppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}
 }
 
-public enum IndicatorAppliedPrice
+public enum IndicatorAppliedPrices
 {
 	Close,
 	Open,

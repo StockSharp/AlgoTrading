@@ -20,40 +20,40 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BuildYourGridStrategy : Strategy
 {
-	private enum OrderPlacementMode
+	private enum OrderPlacementModes
 	{
 		Both,
 		LongOnly,
 		ShortOnly,
 	}
 
-	private enum GridDirectionMode
+	private enum GridDirectionModes
 	{
 		WithTrend,
 		AgainstTrend,
 	}
 
-	private enum StepProgressionMode
+	private enum StepProgressionModes
 	{
 		Static,
 		Geometric,
 		Exponential,
 	}
 
-	private enum CloseTargetMode
+	private enum CloseTargetModes
 	{
 		Pips,
 		Currency,
 	}
 
-	private enum LossCloseMode
+	private enum LossCloseModes
 	{
 		DoNothing,
 		CloseFirst,
 		CloseAll,
 	}
 
-	private enum LotProgressionMode
+	private enum LotProgressionModes
 	{
 		Static,
 		Geometric,
@@ -73,14 +73,14 @@ public class BuildYourGridStrategy : Strategy
 		public decimal Volume { get; set; }
 	}
 
-	private readonly StrategyParam<OrderPlacementMode> _orderPlacement;
-	private readonly StrategyParam<GridDirectionMode> _gridDirection;
+	private readonly StrategyParam<OrderPlacementModes> _orderPlacement;
+	private readonly StrategyParam<GridDirectionModes> _gridDirection;
 	private readonly StrategyParam<decimal> _pipsForNextOrder;
-	private readonly StrategyParam<StepProgressionMode> _stepProgression;
-	private readonly StrategyParam<CloseTargetMode> _closeTargetMode;
+	private readonly StrategyParam<StepProgressionModes> _stepProgression;
+	private readonly StrategyParam<CloseTargetModes> _closeTargetMode;
 	private readonly StrategyParam<decimal> _pipsCloseInProfit;
 	private readonly StrategyParam<decimal> _currencyCloseInProfit;
-	private readonly StrategyParam<LossCloseMode> _lossCloseMode;
+	private readonly StrategyParam<LossCloseModes> _lossCloseMode;
 	private readonly StrategyParam<decimal> _pipsForCloseInLoss;
 	private readonly StrategyParam<bool> _placeHedgeOrder;
 	private readonly StrategyParam<decimal> _hedgeLossThreshold;
@@ -88,7 +88,7 @@ public class BuildYourGridStrategy : Strategy
 	private readonly StrategyParam<bool> _autoLotSize;
 	private readonly StrategyParam<decimal> _riskFactor;
 	private readonly StrategyParam<decimal> _manualLotSize;
-	private readonly StrategyParam<LotProgressionMode> _lotProgression;
+	private readonly StrategyParam<LotProgressionModes> _lotProgression;
 	private readonly StrategyParam<decimal> _maxMultiplierLot;
 	private readonly StrategyParam<int> _maxOrders;
 	private readonly StrategyParam<decimal> _maxSpread;
@@ -127,7 +127,7 @@ public class BuildYourGridStrategy : Strategy
 	/// <summary>
 	/// Controls whether the strategy may open both directions or a single side only.
 	/// </summary>
-	public OrderPlacementMode OrderPlacement
+	public OrderPlacementModes OrderPlacement
 	{
 		get => _orderPlacement.Value;
 		set => _orderPlacement.Value = value;
@@ -136,7 +136,7 @@ public class BuildYourGridStrategy : Strategy
 	/// <summary>
 	/// Determines if new grid layers follow the trend or fade the movement.
 	/// </summary>
-	public GridDirectionMode GridDirection
+	public GridDirectionModes GridDirection
 	{
 		get => _gridDirection.Value;
 		set => _gridDirection.Value = value;
@@ -154,7 +154,7 @@ public class BuildYourGridStrategy : Strategy
 	/// <summary>
 	/// Defines how the grid step evolves with each new order.
 	/// </summary>
-	public StepProgressionMode StepProgression
+	public StepProgressionModes StepProgression
 	{
 		get => _stepProgression.Value;
 		set => _stepProgression.Value = value;
@@ -163,7 +163,7 @@ public class BuildYourGridStrategy : Strategy
 	/// <summary>
 	/// Target type used for closing the basket in profit.
 	/// </summary>
-	public CloseTargetMode CloseTarget
+	public CloseTargetModes CloseTarget
 	{
 		get => _closeTargetMode.Value;
 		set => _closeTargetMode.Value = value;
@@ -190,7 +190,7 @@ public class BuildYourGridStrategy : Strategy
 	/// <summary>
 	/// Defines how the basket is closed when the floating loss limit is reached.
 	/// </summary>
-	public LossCloseMode LossMode
+	public LossCloseModes LossMode
 	{
 		get => _lossCloseMode.Value;
 		set => _lossCloseMode.Value = value;
@@ -262,7 +262,7 @@ public class BuildYourGridStrategy : Strategy
 	/// <summary>
 	/// Controls how the lot size grows with new orders.
 	/// </summary>
-	public LotProgressionMode LotProgression
+	public LotProgressionModes LotProgression
 	{
 		get => _lotProgression.Value;
 		set => _lotProgression.Value = value;
@@ -318,20 +318,20 @@ public class BuildYourGridStrategy : Strategy
 	/// </summary>
 	public BuildYourGridStrategy()
 	{
-		_orderPlacement = Param(nameof(OrderPlacement), OrderPlacementMode.Both)
+		_orderPlacement = Param(nameof(OrderPlacement), OrderPlacementModes.Both)
 			.SetDisplay("Order Placement", "Allowed entry direction", "General");
 
-		_gridDirection = Param(nameof(GridDirection), GridDirectionMode.AgainstTrend)
+		_gridDirection = Param(nameof(GridDirection), GridDirectionModes.AgainstTrend)
 			.SetDisplay("Grid Direction", "Whether layers follow or fade the trend", "Grid");
 
 		_pipsForNextOrder = Param(nameof(PipsForNextOrder), 50m)
 			.SetDisplay("Grid Step (pips)", "Base spacing between grid levels", "Grid")
 			.SetGreaterThanZero();
 
-		_stepProgression = Param(nameof(StepProgression), StepProgressionMode.Geometric)
+		_stepProgression = Param(nameof(StepProgression), StepProgressionModes.Geometric)
 			.SetDisplay("Step Progression", "How the distance grows with each layer", "Grid");
 
-		_closeTargetMode = Param(nameof(CloseTarget), CloseTargetMode.Pips)
+		_closeTargetMode = Param(nameof(CloseTarget), CloseTargetModes.Pips)
 			.SetDisplay("Close Target", "Profit target type", "Risk");
 
 		_pipsCloseInProfit = Param(nameof(PipsCloseInProfit), 10m)
@@ -342,7 +342,7 @@ public class BuildYourGridStrategy : Strategy
 			.SetDisplay("Target (currency)", "Basket profit target in account currency", "Risk")
 			.SetGreaterThanZero();
 
-		_lossCloseMode = Param(nameof(LossMode), LossCloseMode.CloseAll)
+		_lossCloseMode = Param(nameof(LossMode), LossCloseModes.CloseAll)
 			.SetDisplay("Loss Handling", "Action when the loss threshold is hit", "Risk");
 
 		_pipsForCloseInLoss = Param(nameof(PipsForCloseInLoss), 100m)
@@ -371,7 +371,7 @@ public class BuildYourGridStrategy : Strategy
 			.SetDisplay("Manual Volume", "Order size when auto sizing is disabled", "Volume")
 			.SetGreaterThanZero();
 
-		_lotProgression = Param(nameof(LotProgression), LotProgressionMode.Static)
+		_lotProgression = Param(nameof(LotProgression), LotProgressionModes.Static)
 			.SetDisplay("Lot Progression", "How volumes scale with each layer", "Volume");
 
 		_maxMultiplierLot = Param(nameof(MaxMultiplierLot), 50m)
@@ -519,9 +519,9 @@ public class BuildYourGridStrategy : Strategy
 						return;
 				}
 
-				if (LossMode != LossCloseMode.DoNothing && ShouldCloseInLoss())
+				if (LossMode != LossCloseModes.DoNothing && ShouldCloseInLoss())
 				{
-					var closed = LossMode == LossCloseMode.CloseFirst ? CloseFirstPositions() : CloseAllPositions();
+					var closed = LossMode == LossCloseModes.CloseFirst ? CloseFirstPositions() : CloseAllPositions();
 					if (closed)
 						return;
 				}
@@ -608,8 +608,8 @@ public class BuildYourGridStrategy : Strategy
 	{
 		return CloseTarget switch
 		{
-			CloseTargetMode.Pips => (_buyPips + _sellPips) >= PipsCloseInProfit,
-			CloseTargetMode.Currency => (_buyProfit + _sellProfit) >= CurrencyCloseInProfit,
+			CloseTargetModes.Pips => (_buyPips + _sellPips) >= PipsCloseInProfit,
+			CloseTargetModes.Currency => (_buyProfit + _sellProfit) >= CurrencyCloseInProfit,
 			_ => false,
 		};
 	}
@@ -719,14 +719,14 @@ public class BuildYourGridStrategy : Strategy
 		if (!CanOpenMoreOrders())
 			return false;
 
-		if (_buyOrders == 0 && (OrderPlacement == OrderPlacementMode.Both || OrderPlacement == OrderPlacementMode.LongOnly))
+		if (_buyOrders == 0 && (OrderPlacement == OrderPlacementModes.Both || OrderPlacement == OrderPlacementModes.LongOnly))
 		{
 			var volume = GetOrderVolume(Sides.Buy);
 			if (SendMarketOrder(Sides.Buy, volume))
 				return true;
 		}
 
-		if (_sellOrders == 0 && (OrderPlacement == OrderPlacementMode.Both || OrderPlacement == OrderPlacementMode.ShortOnly))
+		if (_sellOrders == 0 && (OrderPlacement == OrderPlacementModes.Both || OrderPlacement == OrderPlacementModes.ShortOnly))
 		{
 			var volume = GetOrderVolume(Sides.Sell);
 			if (SendMarketOrder(Sides.Sell, volume))
@@ -741,19 +741,19 @@ public class BuildYourGridStrategy : Strategy
 		if (!CanOpenMoreOrders())
 			return;
 
-		var allowBuy = OrderPlacement != OrderPlacementMode.ShortOnly;
-		var allowSell = OrderPlacement != OrderPlacementMode.LongOnly;
+		var allowBuy = OrderPlacement != OrderPlacementModes.ShortOnly;
+		var allowSell = OrderPlacement != OrderPlacementModes.LongOnly;
 
 		if (!allowBuy && !allowSell)
 			return;
 
-		if ((_buyOrders > 0 || OrderPlacement == OrderPlacementMode.ShortOnly)
-			&& (_sellOrders > 0 || OrderPlacement == OrderPlacementMode.LongOnly))
+		if ((_buyOrders > 0 || OrderPlacement == OrderPlacementModes.ShortOnly)
+			&& (_sellOrders > 0 || OrderPlacement == OrderPlacementModes.LongOnly))
 		{
 			var buyDistance = allowBuy ? GetNextDistance(Sides.Buy) : 0m;
 			var sellDistance = allowSell ? GetNextDistance(Sides.Sell) : 0m;
 
-			if (GridDirection == GridDirectionMode.WithTrend)
+			if (GridDirection == GridDirectionModes.WithTrend)
 			{
 				if (allowBuy && _lastBuyPrice.HasValue && buyDistance > 0m)
 				{
@@ -819,9 +819,9 @@ public class BuildYourGridStrategy : Strategy
 
 		var multiplier = StepProgression switch
 		{
-			StepProgressionMode.Static => 1m,
-			StepProgressionMode.Geometric => Math.Max(1, count),
-			StepProgressionMode.Exponential => count <= 0 ? 1m : (decimal)Math.Max(1, Math.Pow(2, count - 1)),
+			StepProgressionModes.Static => 1m,
+			StepProgressionModes.Geometric => Math.Max(1, count),
+			StepProgressionModes.Exponential => count <= 0 ? 1m : (decimal)Math.Max(1, Math.Pow(2, count - 1)),
 			_ => 1m,
 		};
 
@@ -838,10 +838,10 @@ public class BuildYourGridStrategy : Strategy
 
 		switch (LotProgression)
 		{
-			case LotProgressionMode.Static:
+			case LotProgressionModes.Static:
 				result = orders == 0 ? baseVolume : (firstVolume > 0m ? firstVolume : baseVolume);
 				break;
-			case LotProgressionMode.Geometric:
+			case LotProgressionModes.Geometric:
 				if (orders == 0)
 				{
 					result = baseVolume;
@@ -855,7 +855,7 @@ public class BuildYourGridStrategy : Strategy
 					result = lastVolume + (firstVolume > 0m ? firstVolume : baseVolume);
 				}
 				break;
-			case LotProgressionMode.Exponential:
+			case LotProgressionModes.Exponential:
 				result = orders == 0 ? baseVolume : lastVolume * 2m;
 				break;
 			default:

@@ -39,7 +39,7 @@ public class LegoEaStrategy : Strategy
 	private readonly StrategyParam<int> _maFastPeriod;
 	private readonly StrategyParam<int> _maSlowPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MaMethodOption> _maMethod;
+	private readonly StrategyParam<MaMethodOptions> _maMethod;
 	private readonly StrategyParam<CandlePrice> _maPrice;
 	private readonly StrategyParam<int> _stochasticKPeriod;
 	private readonly StrategyParam<int> _stochasticDPeriod;
@@ -139,7 +139,7 @@ public class LegoEaStrategy : Strategy
 			.SetDisplay("MA Shift", "Number of completed bars used to offset moving averages", "Indicators")
 			.SetNotNegative();
 
-		_maMethod = Param(nameof(MaMethod), MaMethodOption.Simple)
+		_maMethod = Param(nameof(MaMethod), MaMethodOptions.Simple)
 			.SetDisplay("MA Method", "Smoothing method for moving averages", "Indicators");
 
 		_maPrice = Param(nameof(MaPrice), CandlePrice.Close)
@@ -352,7 +352,7 @@ public class LegoEaStrategy : Strategy
 	/// <summary>
 	/// Moving average smoothing method.
 	/// </summary>
-	public MaMethodOption MaMethod
+	public MaMethodOptions MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -771,14 +771,14 @@ public class LegoEaStrategy : Strategy
 		return priceStep * pipFactor;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MaMethodOption method, int length, CandlePrice price)
+	private static LengthIndicator<decimal> CreateMovingAverage(MaMethodOptions method, int length, CandlePrice price)
 	{
 		LengthIndicator<decimal> indicator = method switch
 		{
-			MaMethodOption.Simple => new SimpleMovingAverage(),
-			MaMethodOption.Exponential => new ExponentialMovingAverage(),
-			MaMethodOption.Smoothed => new SmoothedMovingAverage(),
-			MaMethodOption.Weighted => new WeightedMovingAverage(),
+			MaMethodOptions.Simple => new SimpleMovingAverage(),
+			MaMethodOptions.Exponential => new ExponentialMovingAverage(),
+			MaMethodOptions.Smoothed => new SmoothedMovingAverage(),
+			MaMethodOptions.Weighted => new WeightedMovingAverage(),
 			_ => new SimpleMovingAverage()
 		};
 
@@ -790,7 +790,7 @@ public class LegoEaStrategy : Strategy
 	/// <summary>
 	/// Available moving average smoothing methods.
 	/// </summary>
-	public enum MaMethodOption
+	public enum MaMethodOptions
 	{
 		/// <summary>
 		/// Simple moving average.

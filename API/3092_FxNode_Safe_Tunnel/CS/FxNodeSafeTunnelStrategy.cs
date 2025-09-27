@@ -22,7 +22,7 @@ public class FxNodeSafeTunnelStrategy : Strategy
 	private readonly StrategyParam<decimal> _atrMultiplier;
 
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<TrendPreference> _trendPreference;
+	private readonly StrategyParam<TrendPreferences> _trendPreference;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _maxStopLossPips;
 	private readonly StrategyParam<decimal> _fixedTakeProfitPips;
@@ -77,7 +77,7 @@ public class FxNodeSafeTunnelStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe used for trading", "General");
 
-		_trendPreference = Param(nameof(TrendPreference), TrendPreference.Both)
+		_trendPreference = Param(nameof(TrendPreferences), TrendPreferences.Both)
 		.SetDisplay("Trend Preference", "Directional bias for new trades", "General");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 800m)
@@ -177,7 +177,7 @@ public class FxNodeSafeTunnelStrategy : Strategy
 	/// <summary>
 	/// Preferred trade direction.
 	/// </summary>
-	public TrendPreference TrendPreference
+	public TrendPreferences TrendPreferences
 	{
 		get => _trendPreference.Value;
 		set => _trendPreference.Value = value;
@@ -507,7 +507,7 @@ public class FxNodeSafeTunnelStrategy : Strategy
 		var ask = _hasBestAsk && _bestAsk is decimal bestAsk ? bestAsk : candle.ClosePrice;
 		var bid = _hasBestBid && _bestBid is decimal bestBid ? bestBid : candle.ClosePrice;
 
-		if (TrendPreference != TrendPreference.SellOnly && Position <= 0)
+		if (TrendPreferences != TrendPreferences.SellOnly && Position <= 0)
 		{
 			var takeLong = support is decimal sup && ask > sup && ask <= sup + touchBuyDistance;
 			if (takeLong)
@@ -525,7 +525,7 @@ public class FxNodeSafeTunnelStrategy : Strategy
 			}
 		}
 
-		if (TrendPreference != TrendPreference.BuyOnly && Position >= 0)
+		if (TrendPreferences != TrendPreferences.BuyOnly && Position >= 0)
 		{
 			var takeShort = resistance is decimal res && bid < res && bid >= res - touchSellDistance;
 			if (takeShort)
@@ -925,7 +925,7 @@ public class FxNodeSafeTunnelStrategy : Strategy
 	/// <summary>
 	/// Trade direction preference parameter.
 	/// </summary>
-	public enum TrendPreference
+	public enum TrendPreferences
 	{
 		BuyOnly,
 		SellOnly,

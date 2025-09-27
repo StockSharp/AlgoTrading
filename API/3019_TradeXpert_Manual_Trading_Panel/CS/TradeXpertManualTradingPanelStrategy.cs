@@ -19,8 +19,8 @@ namespace StockSharp.Samples.Strategies;
 public class TradeXpertManualTradingPanelStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<TradeXpertEntryAction> _entryAction;
-	private readonly StrategyParam<TradeXpertPendingAction> _pendingAction;
+	private readonly StrategyParam<TradeXpertEntryActions> _entryAction;
+	private readonly StrategyParam<TradeXpertPendingActions> _pendingAction;
 	private readonly StrategyParam<decimal> _pendingPrice;
 	private readonly StrategyParam<decimal> _pendingOffset;
 	private readonly StrategyParam<decimal> _tradeVolume;
@@ -35,9 +35,9 @@ public class TradeXpertManualTradingPanelStrategy : Strategy
 	private readonly StrategyParam<decimal> _reverseVolume;
 
 	private bool _marketActionHandled;
-	private TradeXpertEntryAction _lastEntryAction;
+	private TradeXpertEntryActions _lastEntryAction;
 	private bool _pendingActionHandled;
-	private TradeXpertPendingAction _lastPendingAction;
+	private TradeXpertPendingActions _lastPendingAction;
 	private decimal _entryPrice;
 	private bool _stopTriggered;
 	private bool _takeProfitTriggered;
@@ -46,7 +46,7 @@ public class TradeXpertManualTradingPanelStrategy : Strategy
 	/// <summary>
 	/// Available market actions initiated by the user.
 	/// </summary>
-	public enum TradeXpertEntryAction
+	public enum TradeXpertEntryActions
 	{
 		None,
 		BuyMarket,
@@ -56,7 +56,7 @@ public class TradeXpertManualTradingPanelStrategy : Strategy
 	/// <summary>
 	/// Available pending order actions initiated by the user.
 	/// </summary>
-	public enum TradeXpertPendingAction
+	public enum TradeXpertPendingActions
 	{
 		None,
 		BuyLimit,
@@ -73,10 +73,10 @@ public class TradeXpertManualTradingPanelStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles used to monitor price for requests", "Market Data");
 
-		_entryAction = Param(nameof(EntryAction), TradeXpertEntryAction.None)
+		_entryAction = Param(nameof(EntryAction), TradeXpertEntryActions.None)
 		.SetDisplay("Entry Action", "Requested market order action. The value resets after execution.", "Manual Actions");
 
-		_pendingAction = Param(nameof(PendingAction), TradeXpertPendingAction.None)
+		_pendingAction = Param(nameof(PendingAction), TradeXpertPendingActions.None)
 		.SetDisplay("Pending Action", "Requested pending order action. The value resets after the order is sent.", "Manual Actions");
 
 		_pendingPrice = Param(nameof(PendingPrice), 0m)
@@ -144,7 +144,7 @@ public class TradeXpertManualTradingPanelStrategy : Strategy
 	/// <summary>
 	/// Market action requested by the user.
 	/// </summary>
-	public TradeXpertEntryAction EntryAction
+	public TradeXpertEntryActions EntryAction
 	{
 		get => _entryAction.Value;
 		set => _entryAction.Value = value;
@@ -153,7 +153,7 @@ public class TradeXpertManualTradingPanelStrategy : Strategy
 	/// <summary>
 	/// Pending order action requested by the user.
 	/// </summary>
-	public TradeXpertPendingAction PendingAction
+	public TradeXpertPendingActions PendingAction
 	{
 		get => _pendingAction.Value;
 		set => _pendingAction.Value = value;
@@ -272,9 +272,9 @@ public class TradeXpertManualTradingPanelStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_marketActionHandled = EntryAction == TradeXpertEntryAction.None;
+		_marketActionHandled = EntryAction == TradeXpertEntryActions.None;
 		_lastEntryAction = EntryAction;
-		_pendingActionHandled = PendingAction == TradeXpertPendingAction.None;
+		_pendingActionHandled = PendingAction == TradeXpertPendingActions.None;
 		_lastPendingAction = PendingAction;
 		_entryPrice = 0m;
 		_stopTriggered = false;
@@ -345,37 +345,37 @@ public class TradeXpertManualTradingPanelStrategy : Strategy
 		if (volume <= 0)
 		{
 			_marketActionHandled = true;
-			EntryAction = TradeXpertEntryAction.None;
+			EntryAction = TradeXpertEntryActions.None;
 			_lastEntryAction = EntryAction;
 			return;
 		}
 
 		switch (EntryAction)
 		{
-			case TradeXpertEntryAction.None:
+			case TradeXpertEntryActions.None:
 				_marketActionHandled = true;
 				break;
 
-			case TradeXpertEntryAction.BuyMarket:
+			case TradeXpertEntryActions.BuyMarket:
 				// Execute a market buy and reset the request.
 				BuyMarket(volume);
 				_entryPrice = candle.ClosePrice;
 				_stopTriggered = false;
 				_takeProfitTriggered = false;
 				_marketActionHandled = true;
-				EntryAction = TradeXpertEntryAction.None;
+				EntryAction = TradeXpertEntryActions.None;
 				_lastEntryAction = EntryAction;
 				_lastPosition = Position;
 				break;
 
-			case TradeXpertEntryAction.SellMarket:
+			case TradeXpertEntryActions.SellMarket:
 				// Execute a market sell and reset the request.
 				SellMarket(volume);
 				_entryPrice = candle.ClosePrice;
 				_stopTriggered = false;
 				_takeProfitTriggered = false;
 				_marketActionHandled = true;
-				EntryAction = TradeXpertEntryAction.None;
+				EntryAction = TradeXpertEntryActions.None;
 				_lastEntryAction = EntryAction;
 				_lastPosition = Position;
 				break;
@@ -395,7 +395,7 @@ public class TradeXpertManualTradingPanelStrategy : Strategy
 
 		switch (PendingAction)
 		{
-			case TradeXpertPendingAction.None:
+			case TradeXpertPendingActions.None:
 				_pendingActionHandled = true;
 				break;
 
@@ -404,7 +404,7 @@ public class TradeXpertManualTradingPanelStrategy : Strategy
 				if (volume <= 0)
 				{
 					_pendingActionHandled = true;
-					PendingAction = TradeXpertPendingAction.None;
+					PendingAction = TradeXpertPendingActions.None;
 					_lastPendingAction = PendingAction;
 					return;
 				}
@@ -416,25 +416,25 @@ public class TradeXpertManualTradingPanelStrategy : Strategy
 				// Register the requested pending order and reset the action.
 				switch (PendingAction)
 				{
-					case TradeXpertPendingAction.BuyLimit:
+					case TradeXpertPendingActions.BuyLimit:
 						BuyLimit(volume, price);
 						break;
 
-					case TradeXpertPendingAction.BuyStop:
+					case TradeXpertPendingActions.BuyStop:
 						BuyStop(volume, price);
 						break;
 
-					case TradeXpertPendingAction.SellLimit:
+					case TradeXpertPendingActions.SellLimit:
 						SellLimit(volume, price);
 						break;
 
-					case TradeXpertPendingAction.SellStop:
+					case TradeXpertPendingActions.SellStop:
 						SellStop(volume, price);
 						break;
 				}
 
 				_pendingActionHandled = true;
-				PendingAction = TradeXpertPendingAction.None;
+				PendingAction = TradeXpertPendingActions.None;
 				_lastPendingAction = PendingAction;
 				break;
 		}
@@ -453,10 +453,10 @@ public class TradeXpertManualTradingPanelStrategy : Strategy
 		var reference = candle.ClosePrice;
 		return PendingAction switch
 		{
-			TradeXpertPendingAction.BuyLimit => Math.Max(reference - offset, 0m),
-			TradeXpertPendingAction.BuyStop => reference + offset,
-			TradeXpertPendingAction.SellLimit => reference + offset,
-			TradeXpertPendingAction.SellStop => Math.Max(reference - offset, 0m),
+			TradeXpertPendingActions.BuyLimit => Math.Max(reference - offset, 0m),
+			TradeXpertPendingActions.BuyStop => reference + offset,
+			TradeXpertPendingActions.SellLimit => reference + offset,
+			TradeXpertPendingActions.SellStop => Math.Max(reference - offset, 0m),
 			_ => 0m
 		};
 	}

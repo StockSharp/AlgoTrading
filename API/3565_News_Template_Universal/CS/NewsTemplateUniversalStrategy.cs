@@ -347,46 +347,46 @@ public class NewsTemplateUniversalStrategy : Strategy
 		return text.IndexOf(filter.Trim().ToUpperInvariant(), StringComparison.Ordinal) >= 0;
 	}
 
-	private NewsImportance ParseImportance(NewsMessage news)
+	private NewsImportances ParseImportance(NewsMessage news)
 	{
 		var text = BuildNormalizedText(news);
 
 		if (text.IndexOf("***", StringComparison.Ordinal) >= 0)
-		return NewsImportance.High;
+		return NewsImportances.High;
 
 		if (text.IndexOf("**", StringComparison.Ordinal) >= 0)
-		return NewsImportance.Medium;
+		return NewsImportances.Medium;
 
 		if (text.Contains('*'))
-		return NewsImportance.Low;
+		return NewsImportances.Low;
 
 		if (text.IndexOf("HIGH", StringComparison.Ordinal) >= 0)
-		return NewsImportance.High;
+		return NewsImportances.High;
 
 		if (text.IndexOf("MEDIUM", StringComparison.Ordinal) >= 0 || text.IndexOf("MODERATE", StringComparison.Ordinal) >= 0)
-		return NewsImportance.Medium;
+		return NewsImportances.Medium;
 
 		if (text.IndexOf("LOW", StringComparison.Ordinal) >= 0)
-		return NewsImportance.Low;
+		return NewsImportances.Low;
 
-		return NewsImportance.Unknown;
+		return NewsImportances.Unknown;
 	}
 
-	private bool IsImportanceAccepted(NewsImportance importance)
+	private bool IsImportanceAccepted(NewsImportances importance)
 	{
 		return importance switch
 		{
-			NewsImportance.High => IncludeHigh,
-			NewsImportance.Medium => IncludeMedium,
-			NewsImportance.Low => IncludeLow,
-			NewsImportance.Unknown => IncludeHigh || IncludeMedium || IncludeLow,
+			NewsImportances.High => IncludeHigh,
+			NewsImportances.Medium => IncludeMedium,
+			NewsImportances.Low => IncludeLow,
+			NewsImportances.Unknown => IncludeHigh || IncludeMedium || IncludeLow,
 			_ => false,
 		};
 	}
 
-	private sealed record class NewsEvent(DateTimeOffset Time, NewsImportance Importance, string Headline);
+	private sealed record class NewsEvent(DateTimeOffset Time, NewsImportances Importance, string Headline);
 
-	private enum NewsImportance
+	private enum NewsImportances
 	{
 		Unknown = 0,
 		Low = 1,

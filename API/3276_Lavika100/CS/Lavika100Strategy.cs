@@ -30,7 +30,7 @@ public class Lavika100Strategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStepPoints;
 	private readonly StrategyParam<decimal> _fixedVolume;
 	private readonly StrategyParam<decimal> _riskPercent;
-	private readonly StrategyParam<MoneyManagementMode> _moneyMode;
+	private readonly StrategyParam<MoneyManagementModes> _moneyMode;
 	private readonly StrategyParam<bool> _onlyOnePosition;
 	private readonly StrategyParam<bool> _reverseSignals;
 	private readonly StrategyParam<bool> _closeOpposite;
@@ -51,7 +51,7 @@ public class Lavika100Strategy : Strategy
 	/// <summary>
 	/// Available money management modes.
 	/// </summary>
-	public enum MoneyManagementMode
+	public enum MoneyManagementModes
 	{
 		/// <summary>
 		/// Use the configured fixed volume for every trade.
@@ -115,7 +115,7 @@ public Lavika100Strategy()
 	.SetRange(0m, 100m)
 	.SetDisplay("Risk Percent", "Percent of portfolio value to risk per trade when RiskPercent mode is selected.", "Trading");
 
-	_moneyMode = Param(nameof(MoneyMode), MoneyManagementMode.RiskPercent)
+	_moneyMode = Param(nameof(MoneyMode), MoneyManagementModes.RiskPercent)
 	.SetDisplay("Money Mode", "Choose between fixed lots or percent risk sizing.", "Trading");
 
 	_onlyOnePosition = Param(nameof(OnlyOnePosition), true)
@@ -219,7 +219,7 @@ public decimal TrailingStepPoints
 }
 
 /// <summary>
-/// Fixed lot size used when <see cref="MoneyMode"/> is <see cref="MoneyManagementMode.FixedLot"/>.
+/// Fixed lot size used when <see cref="MoneyMode"/> is <see cref="MoneyManagementModes.FixedLot"/>.
 /// </summary>
 public decimal FixedVolume
 {
@@ -228,7 +228,7 @@ public decimal FixedVolume
 }
 
 /// <summary>
-/// Risk percentage applied when <see cref="MoneyMode"/> is <see cref="MoneyManagementMode.RiskPercent"/>.
+/// Risk percentage applied when <see cref="MoneyMode"/> is <see cref="MoneyManagementModes.RiskPercent"/>.
 /// </summary>
 public decimal RiskPercent
 {
@@ -239,7 +239,7 @@ public decimal RiskPercent
 /// <summary>
 /// Selects the position sizing approach.
 /// </summary>
-public MoneyManagementMode MoneyMode
+public MoneyManagementModes MoneyMode
 {
 	get => _moneyMode.Value;
 	set => _moneyMode.Value = value;
@@ -441,7 +441,7 @@ private decimal CalculateVolume()
 {
 	var volume = FixedVolume;
 
-	if (MoneyMode == MoneyManagementMode.RiskPercent)
+	if (MoneyMode == MoneyManagementModes.RiskPercent)
 	{
 		if (Portfolio is null)
 		return 0m;

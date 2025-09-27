@@ -21,7 +21,7 @@ using StockSharp.Algo;
 /// </summary>
 public class FXFSafeTrendScalpV1Strategy : Strategy
 {
-private enum SignalDirection
+private enum SignalDirections
 {
 None,
 Buy,
@@ -49,7 +49,7 @@ private SimpleMovingAverage _fastMa;
 private SimpleMovingAverage _slowMa;
 private readonly List<ZigZagPivot> _highPivots = new();
 private readonly List<ZigZagPivot> _lowPivots = new();
-private SignalDirection _signal;
+private SignalDirections _signal;
 private int _barIndex;
 private decimal _pipSize;
 private int _searchDirection;
@@ -251,7 +251,7 @@ _fastMa = null;
 _slowMa = null;
 _highPivots.Clear();
 _lowPivots.Clear();
-_signal = SignalDirection.None;
+_signal = SignalDirections.None;
 _barIndex = -1;
 _pipSize = 0m;
 _searchDirection = 1;
@@ -324,24 +324,24 @@ var offset = GetPointsValue(TrendOffsetPoints);
 var highLine = GetTrendlineValue(_highPivots);
 var lowLine = GetTrendlineValue(_lowPivots);
 
-if (highLine.HasValue && _signal != SignalDirection.Sell)
+if (highLine.HasValue && _signal != SignalDirections.Sell)
 {
 var trigger = highLine.Value - offset;
 if (fastMaValue < slowMaValue && candle.ClosePrice >= trigger)
-_signal = SignalDirection.Sell;
+_signal = SignalDirections.Sell;
 }
 
-if (lowLine.HasValue && _signal != SignalDirection.Buy)
+if (lowLine.HasValue && _signal != SignalDirections.Buy)
 {
 var trigger = lowLine.Value + offset;
 if (fastMaValue > slowMaValue && candle.ClosePrice <= trigger)
-_signal = SignalDirection.Buy;
+_signal = SignalDirections.Buy;
 }
 }
 
 private void TryExecuteSignal(ICandleMessage candle)
 {
-if (_signal == SignalDirection.None)
+if (_signal == SignalDirections.None)
 return;
 
 if (!IsFormedAndOnlineAndAllowTrading())
@@ -368,9 +368,9 @@ var volume = AlignVolume(VolumePerTrade);
 if (volume <= 0m)
 return;
 
-var resultingPosition = _signal == SignalDirection.Buy ? Position + volume : Position - volume;
+var resultingPosition = _signal == SignalDirections.Buy ? Position + volume : Position - volume;
 
-if (_signal == SignalDirection.Buy)
+if (_signal == SignalDirections.Buy)
 BuyMarket(volume);
 else
 SellMarket(volume);
