@@ -312,7 +312,7 @@ public class CloseAllControlStrategy : Strategy
 			return current == null || Equals(security, current);
 		}
 
-		return security != null && string.Equals(security.Id, filter, StringComparison.OrdinalIgnoreCase);
+		return security != null && security.Id.EqualsIgnoreCase(filter);
 	}
 
 	private bool MatchesMagicOrTicket(Position position)
@@ -352,7 +352,7 @@ public class CloseAllControlStrategy : Strategy
 		if (long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed))
 			return parsed == target;
 
-		return string.Equals(value, target.ToString(CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase);
+		return value.EqualsIgnoreCase(target.ToString(CultureInfo.InvariantCulture));
 	}
 
 	private static bool IsPendingOrder(Order order)

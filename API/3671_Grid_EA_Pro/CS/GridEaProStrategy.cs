@@ -933,7 +933,7 @@ public class GridEaProStrategy : Strategy
 
 	private bool IsWithinTradingHours(DateTimeOffset time)
 	{
-		if (string.Equals(StartTime, "00:00", StringComparison.Ordinal) && string.Equals(EndTime, "00:00", StringComparison.Ordinal))
+		if (StartTime.EqualsIgnoreCase("00:00") && EndTime.EqualsIgnoreCase("00:00"))
 		return true;
 
 		if (!TimeSpan.TryParseExact(StartTime, "hh\\:mm", CultureInfo.InvariantCulture, out var start))

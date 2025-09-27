@@ -337,7 +337,7 @@ public class CryptosStrategy : Strategy
 		var lowestBoundary = AutoHighLow ? lowestValue : (_manualLow != decimal.MaxValue ? _manualLow : lowestValue);
 		var highestBoundary = AutoHighLow ? highestValue : (_manualHigh != decimal.MinValue ? _manualHigh : highestValue);
 
-		var isEth = string.Equals(Security?.Code, "ETHUSD", StringComparison.OrdinalIgnoreCase);
+		var isEth = Security?.Code.EqualsIgnoreCase("ETHUSD");
 		var takeProfitRatio = isEth ? TakeProfitRatio : AlternativeTakeProfitRatio;
 		var valueIndex = isEth ? CryptoValueIndex : ValueIndex;
 

@@ -263,7 +263,7 @@ public class TrendlineCrossAlertStrategy : Strategy
 					break;
 			}
 
-			if (!string.Equals(color, monitoringColor, StringComparison.OrdinalIgnoreCase))
+			if (!color.EqualsIgnoreCase(monitoringColor))
 			{
 				index++;
 				continue;
@@ -330,7 +330,7 @@ public class TrendlineCrossAlertStrategy : Strategy
 				continue;
 			}
 
-			if (!string.Equals(color, monitoringColor, StringComparison.OrdinalIgnoreCase))
+			if (!color.EqualsIgnoreCase(monitoringColor))
 			{
 				index++;
 				continue;

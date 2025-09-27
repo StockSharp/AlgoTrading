@@ -322,12 +322,12 @@ public class CloseAgentStrategy : Strategy
 			case CloseAgentMode.Auto:
 			{
 				var strategyId = TryGetStrategyId(position);
-				return !string.IsNullOrEmpty(strategyId) && string.Equals(strategyId, Id, StringComparison.OrdinalIgnoreCase);
+				return !string.IsNullOrEmpty(strategyId) && strategyId.EqualsIgnoreCase(Id);
 			}
 			case CloseAgentMode.Manual:
 			{
 				var strategyId = TryGetStrategyId(position);
-				return string.IsNullOrEmpty(strategyId) || !string.Equals(strategyId, Id, StringComparison.OrdinalIgnoreCase);
+				return string.IsNullOrEmpty(strategyId) || !strategyId.EqualsIgnoreCase(Id);
 			}
 			default:
 				return true;

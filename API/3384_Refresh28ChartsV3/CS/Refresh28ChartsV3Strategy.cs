@@ -162,8 +162,8 @@ public class Refresh28ChartsV3Strategy : Strategy
 
 			if (security == null && Security != null)
 			{
-				if (string.Equals(Security.Id, token, StringComparison.OrdinalIgnoreCase) ||
-					string.Equals(Security.Code, token, StringComparison.OrdinalIgnoreCase))
+				if (Security.Id.EqualsIgnoreCase(token) ||
+					Security.Code.EqualsIgnoreCase(token))
 				{
 					security = Security;
 				}

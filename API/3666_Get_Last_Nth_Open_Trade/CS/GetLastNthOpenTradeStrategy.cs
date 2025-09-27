@@ -194,7 +194,7 @@ public class GetLastNthOpenTradeStrategy : Strategy
 
 	private void UpdateSnapshot(string message)
 	{
-		if (string.Equals(_lastSnapshot, message, StringComparison.Ordinal))
+		if (_lastSnapshot.EqualsIgnoreCase(message))
 			return;
 
 		_lastSnapshot = message;

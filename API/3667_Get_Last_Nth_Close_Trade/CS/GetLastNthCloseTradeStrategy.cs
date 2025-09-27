@@ -268,7 +268,7 @@ public class GetLastNthCloseTradeStrategy : Strategy
 
 	private void PublishMessage(string message)
 	{
-		if (string.Equals(_lastMessage, message, StringComparison.Ordinal))
+		if (_lastMessage.EqualsIgnoreCase(message))
 		return;
 
 		_lastMessage = message;

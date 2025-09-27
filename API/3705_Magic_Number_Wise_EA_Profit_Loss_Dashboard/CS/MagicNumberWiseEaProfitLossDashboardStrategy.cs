@@ -285,7 +285,7 @@ public class MagicNumberWiseEaProfitLossDashboardStrategy : Strategy
 
 		if (!string.IsNullOrEmpty(summary.Symbol))
 		{
-			if (string.Equals(summary.Symbol, symbol, StringComparison.OrdinalIgnoreCase))
+			if (summary.Symbol.EqualsIgnoreCase(symbol))
 				return;
 
 			_symbolMap.Remove(summary.Symbol);

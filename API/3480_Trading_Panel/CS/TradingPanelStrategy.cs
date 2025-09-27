@@ -41,7 +41,7 @@ public class TradingPanelStrategy : Strategy
 		get => _timeFrameName.Value;
 		set
 		{
-			if (string.Equals(_timeFrameName.Value, value, StringComparison.OrdinalIgnoreCase))
+			if (_timeFrameName.Value.EqualsIgnoreCase(value))
 				return;
 
 			_timeFrameName.Value = value;
@@ -60,7 +60,7 @@ public class TradingPanelStrategy : Strategy
 		get => _securityId.Value;
 		set
 		{
-			if (string.Equals(_securityId.Value, value, StringComparison.OrdinalIgnoreCase))
+			if (_securityId.Value.EqualsIgnoreCase(value))
 				return;
 
 			_securityId.Value = value;

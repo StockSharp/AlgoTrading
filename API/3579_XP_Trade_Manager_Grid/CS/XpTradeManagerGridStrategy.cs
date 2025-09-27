@@ -798,8 +798,8 @@ HandleTakeProfit(order.Side, stage.Value, execution.Price, volume);
 return;
 }
 
-if (string.Equals(comment, "breakeven_exit", StringComparison.OrdinalIgnoreCase) ||
-string.Equals(comment, "risk_exit", StringComparison.OrdinalIgnoreCase))
+if (comment.EqualsIgnoreCase("breakeven_exit") ||
+comment.EqualsIgnoreCase("risk_exit"))
 {
 HandleForcedExit(order.Side, execution.Price, volume);
 }

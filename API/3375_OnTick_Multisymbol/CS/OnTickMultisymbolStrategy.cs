@@ -109,7 +109,7 @@ public class OnTickMultisymbolStrategy : Strategy
 			if (symbol.Length == 0)
 				continue;
 
-			if (string.Equals(symbol, "MARKET_WATCH", StringComparison.OrdinalIgnoreCase))
+			if (symbol.EqualsIgnoreCase("MARKET_WATCH"))
 			{
 				LogWarning("MARKET_WATCH token is not supported automatically. Provide explicit symbols in the Symbols parameter.");
 				continue;

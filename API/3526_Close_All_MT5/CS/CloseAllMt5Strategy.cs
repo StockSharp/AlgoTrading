@@ -486,7 +486,7 @@ public class CloseAllMt5Strategy : Strategy
 					return true;
 
 				var symbol = security?.Id;
-				return symbol != null && string.Equals(symbol, filter, StringComparison.OrdinalIgnoreCase);
+				return symbol != null && symbol.EqualsIgnoreCase(filter);
 			}
 
 			case CloseRequestMode.CloseMagic:
@@ -499,7 +499,7 @@ public class CloseAllMt5Strategy : Strategy
 					return false;
 
 				var magic = MagicNumber.ToString(CultureInfo.InvariantCulture);
-				return string.Equals(strategyId, magic, StringComparison.OrdinalIgnoreCase);
+				return strategyId.EqualsIgnoreCase(magic);
 			}
 
 			case CloseRequestMode.CloseTicket:
@@ -512,7 +512,7 @@ public class CloseAllMt5Strategy : Strategy
 					return false;
 
 				var ticket = TicketNumber.ToString(CultureInfo.InvariantCulture);
-				return string.Equals(positionId, ticket, StringComparison.OrdinalIgnoreCase);
+				return positionId.EqualsIgnoreCase(ticket);
 			}
 
 			default:

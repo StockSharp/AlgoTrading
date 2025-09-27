@@ -199,7 +199,7 @@ public class SymbolSwapPanelStrategy : Strategy
 			return;
 		}
 
-		if (_appliedSecurityId != null && string.Equals(_appliedSecurityId, security.Id, StringComparison.InvariantCultureIgnoreCase))
+		if (_appliedSecurityId != null && _appliedSecurityId.EqualsIgnoreCase(security.Id))
 		{
 			LogInfo($"Security '{security.Id}' is already active; swap request was ignored.");
 			SwapRequested = false;

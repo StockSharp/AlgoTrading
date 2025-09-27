@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 
-using Ecng.Common;
 
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -133,7 +132,7 @@ public class SymbolSyncStrategy : Strategy
 		if (Security != security)
 			Security = security;
 
-		if (string.Equals(SyncSecurityId, security.Id, StringComparison.Ordinal))
+		if (SyncSecurityId.EqualsIgnoreCase(security.Id))
 		{
 			SyncSymbols();
 			return false;
@@ -207,7 +206,7 @@ public class SymbolSyncStrategy : Strategy
 
 	private Security ResolveSecurity()
 	{
-		if (Security != null && (SyncSecurityId.IsEmpty() || string.Equals(SyncSecurityId, Security.Id, StringComparison.Ordinal)))
+		if (Security != null && (SyncSecurityId.IsEmpty() || SyncSecurityId.EqualsIgnoreCase(Security.Id)))
 			return Security;
 
 		if (!SyncSecurityId.IsEmpty() && SecurityProvider != null)

@@ -315,7 +315,7 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 
 	private void NotifyNewsMessage(string message)
 	{
-		if (string.Equals(_lastNewsMessage, message, StringComparison.Ordinal))
+		if (_lastNewsMessage.EqualsIgnoreCase(message))
 			return;
 
 		_lastNewsMessage = message;

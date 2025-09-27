@@ -151,9 +151,9 @@ public class HistoryInfoEaStrategy : Strategy
 
 		return FilterType switch
 		{
-			HistoryInfoFilterType.CountByUserOrderId => !string.IsNullOrEmpty(MagicNumber) && string.Equals(order.UserOrderId, MagicNumber, StringComparison.Ordinal),
+			HistoryInfoFilterType.CountByUserOrderId => !string.IsNullOrEmpty(MagicNumber) && order.UserOrderId.EqualsIgnoreCase(MagicNumber),
 			HistoryInfoFilterType.CountByComment => !string.IsNullOrEmpty(OrderComment) && order.Comment != null && order.Comment.StartsWith(OrderComment, StringComparison.Ordinal),
-			HistoryInfoFilterType.CountBySecurity => !string.IsNullOrEmpty(SecurityId) && order.Security?.Id != null && string.Equals(order.Security.Id, SecurityId, StringComparison.Ordinal),
+			HistoryInfoFilterType.CountBySecurity => !string.IsNullOrEmpty(SecurityId) && order.Security?.Id != null && order.Security.Id.EqualsIgnoreCase(SecurityId),
 			_ => false
 		};
 	}

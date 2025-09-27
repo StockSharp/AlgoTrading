@@ -396,10 +396,10 @@ return direct;
 if (TryCreateSuggestion(weakCurrency, strongCurrency, Sides.Sell, out var inverse))
 return inverse;
 
-if (!string.Equals(strongCurrency, "USD", StringComparison.OrdinalIgnoreCase) && TryCreateSuggestion(strongCurrency, "USD", Sides.Buy, out var strongUsd))
+if (!strongCurrency.EqualsIgnoreCase("USD") && TryCreateSuggestion(strongCurrency, "USD", Sides.Buy, out var strongUsd))
 return strongUsd;
 
-if (!string.Equals(weakCurrency, "USD", StringComparison.OrdinalIgnoreCase) && TryCreateSuggestion("USD", weakCurrency, Sides.Sell, out var usdWeak))
+if (!weakCurrency.EqualsIgnoreCase("USD") && TryCreateSuggestion("USD", weakCurrency, Sides.Sell, out var usdWeak))
 return usdWeak;
 
 return null;

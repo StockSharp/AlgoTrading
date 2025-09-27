@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
-using Ecng.Common;
 
 using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
@@ -316,10 +315,10 @@ public class CurrencyStrengthStrategy : Strategy
 		if (baseCurrency.IsEmpty() || quoteCurrency.IsEmpty())
 			return;
 
-		var longBias = string.Equals(strongest, baseCurrency, StringComparison.OrdinalIgnoreCase)
-			&& string.Equals(weakest, quoteCurrency, StringComparison.OrdinalIgnoreCase);
-		var shortBias = string.Equals(strongest, quoteCurrency, StringComparison.OrdinalIgnoreCase)
-			&& string.Equals(weakest, baseCurrency, StringComparison.OrdinalIgnoreCase);
+		var longBias = strongest.EqualsIgnoreCase(baseCurrency)
+			&& weakest.EqualsIgnoreCase(quoteCurrency);
+		var shortBias = strongest.EqualsIgnoreCase(quoteCurrency)
+			&& weakest.EqualsIgnoreCase(baseCurrency);
 
 		var momentumReady = Math.Abs(momentum) >= MomentumThreshold;
 		var macdBullish = macdLine > 0m && macdLine > signalLine;
