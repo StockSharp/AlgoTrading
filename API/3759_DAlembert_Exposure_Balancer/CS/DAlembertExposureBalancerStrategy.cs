@@ -571,7 +571,7 @@ public class DAlembertExposureBalancerStrategy : Strategy
 	private static (string Base, string Quote) ExtractCurrencies(Security security)
 	{
 		var code = security?.Code;
-		if (string.IsNullOrEmpty(code) || code.Length < 6)
+		if (code.IsEmpty() || code.Length < 6)
 		return (null, null);
 
 		var baseCurrency = code.Substring(0, 3);

@@ -81,7 +81,7 @@ public class RiskFixedMarginStrategy : Strategy
 			return;
 
 		var status = BuildStatusMessage();
-		if (string.IsNullOrEmpty(status) || status == _lastStatus)
+		if (status.IsEmpty() || status == _lastStatus)
 			return;
 
 		_lastStatus = status;

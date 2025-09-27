@@ -300,7 +300,7 @@ public class CloseAllMt5Strategy : Strategy
 			return true;
 
 		var strategyId = TryGetStrategyId(position);
-		if (!string.IsNullOrEmpty(strategyId) && strategyId.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0)
+		if (!strategyId.IsEmpty() && strategyId.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0)
 			return true;
 
 		return false;
@@ -495,7 +495,7 @@ public class CloseAllMt5Strategy : Strategy
 					return false;
 
 				var strategyId = TryGetStrategyId(position);
-				if (string.IsNullOrEmpty(strategyId))
+				if (strategyId.IsEmpty())
 					return false;
 
 				var magic = MagicNumber.ToString(CultureInfo.InvariantCulture);
@@ -508,7 +508,7 @@ public class CloseAllMt5Strategy : Strategy
 					return false;
 
 				var positionId = position.Id;
-				if (string.IsNullOrEmpty(positionId))
+				if (positionId.IsEmpty())
 					return false;
 
 				var ticket = TicketNumber.ToString(CultureInfo.InvariantCulture);

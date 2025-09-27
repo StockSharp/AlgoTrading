@@ -190,7 +190,7 @@ public class GetLastNthCloseTradeStrategy : Strategy
 		if (EnableMagicNumber)
 		{
 			var comment = order.Comment?.Trim();
-			if (string.IsNullOrEmpty(comment))
+			if (comment.IsEmpty())
 			return false;
 
 			if (!long.TryParse(comment, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed))

@@ -896,7 +896,7 @@ entries.Add(entry);
 private static int? ExtractStage(string comment)
 {
 var digits = new string(comment.Where(char.IsDigit).ToArray());
-if (string.IsNullOrEmpty(digits))
+if (digits.IsEmpty())
 return null;
 
 if (int.TryParse(digits, NumberStyles.Integer, CultureInfo.InvariantCulture, out var stage))

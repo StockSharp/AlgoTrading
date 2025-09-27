@@ -473,7 +473,7 @@ public class LazyBotV1Strategy : Strategy
 	{
 		var symbol = Security?.Id ?? string.Empty;
 		var barsInfo = signalDate.ToString("yyyyMMdd");
-		return string.IsNullOrEmpty(symbol)
+		return symbol.IsEmpty()
 		? BotName
 		: $"{BotName};{symbol};{barsInfo}";
 	}

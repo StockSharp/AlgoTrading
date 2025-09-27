@@ -292,7 +292,7 @@ public class OrderNotifyStrategy : Strategy
 				DeliveryMethod = SmtpDeliveryMethod.Network
 			};
 
-			if (!string.IsNullOrEmpty(SmtpUser))
+			if (!SmtpUser.IsEmpty())
 			{
 				client.Credentials = new NetworkCredential(SmtpUser, SmtpPassword ?? string.Empty);
 			}

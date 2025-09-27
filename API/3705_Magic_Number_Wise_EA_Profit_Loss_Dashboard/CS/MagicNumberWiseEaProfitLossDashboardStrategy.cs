@@ -132,7 +132,7 @@ public class MagicNumberWiseEaProfitLossDashboardStrategy : Strategy
 		{
 			var summary = GetOrCreateSummary(identifier);
 
-			if (!string.IsNullOrEmpty(comment) && string.IsNullOrEmpty(summary.Comment))
+			if (!comment.IsEmpty() && summary.Comment.IsEmpty())
 				summary.Comment = comment;
 
 			UpdateSymbol(summary, symbol);
@@ -154,9 +154,9 @@ public class MagicNumberWiseEaProfitLossDashboardStrategy : Strategy
 			summary.DealCount++;
 			summary.ClosedPnL += trade.PnL;
 
-			if (GroupByComment && string.IsNullOrEmpty(summary.Comment))
+			if (GroupByComment && summary.Comment.IsEmpty())
 				summary.Comment = identifier;
-			else if (!string.IsNullOrEmpty(comment) && string.IsNullOrEmpty(summary.Comment))
+			else if (!comment.IsEmpty() && summary.Comment.IsEmpty())
 				summary.Comment = comment;
 
 			UpdateSymbol(summary, tradeSecurity);
@@ -188,8 +188,8 @@ public class MagicNumberWiseEaProfitLossDashboardStrategy : Strategy
 			foreach (var snapshot in snapshots)
 			{
 				var floatingText = snapshot.HasFloating ? snapshot.FloatingPnL.ToString("0.##") : "-";
-				var symbol = string.IsNullOrEmpty(snapshot.Symbol) ? "-" : snapshot.Symbol;
-				var comment = string.IsNullOrEmpty(snapshot.Comment) ? "-" : snapshot.Comment;
+				var symbol = snapshot.Symbol.IsEmpty() ? "-" : snapshot.Symbol;
+				var comment = snapshot.Comment.IsEmpty() ? "-" : snapshot.Comment;
 
 				builder.AppendLine(string.Format(
 					"{0,-10} | {1,5} | {2,11:0.##} | {3,12} | {4,-12} | {5}",
@@ -256,7 +256,7 @@ public class MagicNumberWiseEaProfitLossDashboardStrategy : Strategy
 		foreach (var position in portfolio.Positions)
 		{
 			var symbol = position.Security?.Id;
-			if (string.IsNullOrEmpty(symbol))
+			if (symbol.IsEmpty())
 				continue;
 
 			if (!_symbolMap.TryGetValue(symbol, out var summary))
@@ -280,10 +280,10 @@ public class MagicNumberWiseEaProfitLossDashboardStrategy : Strategy
 
 	private void UpdateSymbol(Summary summary, string symbol)
 	{
-		if (string.IsNullOrEmpty(symbol))
+		if (symbol.IsEmpty())
 			return;
 
-		if (!string.IsNullOrEmpty(summary.Symbol))
+		if (!summary.Symbol.IsEmpty())
 		{
 			if (summary.Symbol.EqualsIgnoreCase(symbol))
 				return;
@@ -305,18 +305,18 @@ public class MagicNumberWiseEaProfitLossDashboardStrategy : Strategy
 
 		if (GroupByComment)
 		{
-			if (!string.IsNullOrEmpty(comment))
+			if (!comment.IsEmpty())
 				return comment;
 
-			if (!string.IsNullOrEmpty(userOrderId))
+			if (!userOrderId.IsEmpty())
 				return userOrderId;
 		}
 		else
 		{
-			if (!string.IsNullOrEmpty(userOrderId))
+			if (!userOrderId.IsEmpty())
 				return userOrderId;
 
-			if (!string.IsNullOrEmpty(comment))
+			if (!comment.IsEmpty())
 				return comment;
 		}
 

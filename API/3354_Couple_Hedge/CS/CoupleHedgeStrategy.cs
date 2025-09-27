@@ -884,7 +884,7 @@ public class CoupleHedgeStrategy : Strategy
 
 	private Security LookupSecurity(string id)
 	{
-		if (string.IsNullOrEmpty(id))
+		if (id.IsEmpty())
 		return null;
 
 		var provider = SecurityProvider;

@@ -129,10 +129,10 @@ public class ListPositionsStrategy : Strategy
 				if (selectionMode == PositionSelectionMode.CurrentSymbol && currentSecurity != null && !Equals(position.Security, currentSecurity))
 					continue;
 
-				if (!string.IsNullOrEmpty(filter))
+				if (!filter.IsEmpty())
 				{
 					var strategyId = TryGetStrategyId(position);
-					if (!string.IsNullOrEmpty(strategyId) && strategyId.EqualsIgnoreCase(filter))
+					if (!strategyId.IsEmpty() && strategyId.EqualsIgnoreCase(filter))
 						continue;
 				}
 

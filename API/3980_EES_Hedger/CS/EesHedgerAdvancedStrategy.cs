@@ -216,14 +216,14 @@ public class EesHedgerAdvancedStrategy : Strategy
 		if (trade.Order.TransactionId != 0 && _ownOrderTransactions.Contains(trade.Order.TransactionId))
 		return;
 
-		if (!string.IsNullOrEmpty(HedgerOrderComment))
+		if (!HedgerOrderComment.IsEmpty())
 		{
 			var hedgeComment = trade.Order.Comment ?? string.Empty;
 			if (hedgeComment.Equals(HedgerOrderComment, StringComparison.InvariantCultureIgnoreCase))
 			return;
 		}
 
-		if (!string.IsNullOrEmpty(OriginalOrderComment))
+		if (!OriginalOrderComment.IsEmpty())
 		{
 			var comment = trade.Order.Comment ?? string.Empty;
 			if (!comment.Equals(OriginalOrderComment, StringComparison.InvariantCultureIgnoreCase))

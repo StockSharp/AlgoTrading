@@ -146,7 +146,7 @@ public class SimpleProfitByPeriodsPanel2ExtendedStrategy : Strategy
 		var monthPercent = CalculatePercent(currentBalance, currentBalance - monthProfit);
 		
 		var currency = Portfolio?.Currency ?? Security?.Currency ?? string.Empty;
-		var currencyPrefix = string.IsNullOrEmpty(currency) ? string.Empty : currency + " ";
+		var currencyPrefix = currency.IsEmpty() ? string.Empty : currency + " ";
 		
 		Comment = string.Join(Environment.NewLine,
 			FormatProfitLine("Daily", currencyPrefix, dayProfit, dayPercent),

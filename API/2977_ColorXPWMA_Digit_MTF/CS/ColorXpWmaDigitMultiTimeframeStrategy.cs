@@ -169,7 +169,7 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 		base.OnNewMyTrade(trade);
 
 		var comment = trade.Order.Comment;
-		if (string.IsNullOrEmpty(comment))
+		if (comment.IsEmpty())
 		return;
 
 		if (!TryParseComment(comment, out var processor, out var action))

@@ -143,7 +143,7 @@ public class MultiPairCloserStrategy : Strategy
 		var raw = WatchedSymbols ?? string.Empty;
 		var tokens = raw.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
 			.Select(t => t.Trim())
-			.Where(t => !string.IsNullOrEmpty(t))
+			.Where(t => !t.IsEmpty())
 			.ToArray();
 
 		if (tokens.Length == 0)

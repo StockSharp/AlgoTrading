@@ -181,7 +181,7 @@ public class SymbolSwapPanelStrategy : Strategy
 		if (!requested)
 			return;
 
-		if (string.IsNullOrEmpty(target))
+		if (target.IsEmpty())
 		{
 			LogWarning("Swap requested but the target security ID is empty.");
 

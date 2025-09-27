@@ -130,7 +130,7 @@ public class CloseOrdersStrategy : Strategy
 			return 0m;
 
 		var magic = MagicNumber;
-		var filterEnabled = !string.IsNullOrEmpty(magic);
+		var filterEnabled = !magic.IsEmpty();
 
 		if (!filterEnabled && portfolio.CurrentProfit is decimal currentProfit)
 			return currentProfit;
@@ -160,7 +160,7 @@ public class CloseOrdersStrategy : Strategy
 	private void CancelMatchingOrders()
 	{
 		var magic = MagicNumber;
-		var filterEnabled = !string.IsNullOrEmpty(magic);
+		var filterEnabled = !magic.IsEmpty();
 
 		var snapshot = new List<Order>(ActiveOrders);
 		foreach (var order in snapshot)
@@ -179,7 +179,7 @@ public class CloseOrdersStrategy : Strategy
 			return;
 
 		var magic = MagicNumber;
-		var filterEnabled = !string.IsNullOrEmpty(magic);
+		var filterEnabled = !magic.IsEmpty();
 
 		foreach (var position in portfolio.Positions)
 		{
@@ -211,7 +211,7 @@ public class CloseOrdersStrategy : Strategy
 			return false;
 
 		var magic = MagicNumber;
-		var filterEnabled = !string.IsNullOrEmpty(magic);
+		var filterEnabled = !magic.IsEmpty();
 
 		foreach (var position in portfolio.Positions)
 		{
@@ -228,7 +228,7 @@ public class CloseOrdersStrategy : Strategy
 
 	private static bool MatchesMagicNumber(Position position, string magicNumber)
 	{
-		if (string.IsNullOrEmpty(magicNumber))
+		if (magicNumber.IsEmpty())
 			return true;
 
 		var value = position.StrategyId;

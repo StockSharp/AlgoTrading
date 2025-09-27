@@ -139,7 +139,7 @@ public class GalenderStrategy : Strategy
 
 		var text = ((news.Headline ?? string.Empty) + " " + (news.Story ?? string.Empty)).Trim();
 
-		if (string.IsNullOrEmpty(text))
+		if (text.IsEmpty())
 		{
 			return;
 		}
