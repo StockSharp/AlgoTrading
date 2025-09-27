@@ -90,7 +90,7 @@ public class ColorMetroDuplexStrategy : Strategy
 
 	private void StartModule(SignalModule module)
 	{
-		var indicator = new ColorMetroIndicator
+		var indicator = new ColorMetroDuplexIndicator
 		{
 			Length = module.Period,
 			StepSizeFast = module.StepSizeFast,
@@ -108,7 +108,7 @@ public class ColorMetroDuplexStrategy : Strategy
 
 	private void ProcessModule(SignalModule module, ICandleMessage candle, IIndicatorValue indicatorValue)
 	{
-		if (indicatorValue is not ColorMetroValue metroValue)
+		if (indicatorValue is not ColorMetroDuplexValue metroValue)
 			return;
 
 		if (!metroValue.IsReady)
@@ -289,9 +289,9 @@ public class ColorMetroDuplexStrategy : Strategy
 
 		public int Magic => _magic.Value;
 
-		public ColorMetroIndicator Indicator { get; private set; } = default!;
+		public ColorMetroDuplexIndicator Indicator { get; private set; } = default!;
 
-		public void SetIndicator(ColorMetroIndicator indicator)
+		public void SetIndicator(ColorMetroDuplexIndicator indicator)
 		{
 			Indicator = indicator;
 		}
@@ -305,7 +305,7 @@ public class ColorMetroDuplexStrategy : Strategy
 			Indicator?.Reset();
 		}
 
-		public void Add(ColorMetroValue value, DateTimeOffset closeTime)
+		public void Add(ColorMetroDuplexValue value, DateTimeOffset closeTime)
 		{
 			if (_timeHistory.Count > 0 && _timeHistory[^1] == closeTime)
 			{
@@ -418,9 +418,9 @@ public class ColorMetroDuplexStrategy : Strategy
 /// <summary>
 /// Indicator output for the ColorMETRO calculation.
 /// </summary>
-public sealed class ColorMetroValue : ComplexIndicatorValue
+public sealed class ColorMetroDuplexValue : ComplexIndicatorValue
 {
-	public ColorMetroValue(IIndicator indicator, IIndicatorValue input, decimal up, decimal down, decimal rsi, bool isReady)
+	public ColorMetroDuplexValue(IIndicator indicator, IIndicatorValue input, decimal up, decimal down, decimal rsi, bool isReady)
 		: base(indicator, input, (nameof(Up), up), (nameof(Down), down), (nameof(Rsi), rsi))
 	{
 		IsReady = isReady;
@@ -450,7 +450,7 @@ public sealed class ColorMetroValue : ComplexIndicatorValue
 /// <summary>
 /// ColorMETRO indicator recreated from the original MT5 source code.
 /// </summary>
-public sealed class ColorMetroIndicator : BaseIndicator<ColorMetroValue>
+public sealed class ColorMetroDuplexIndicator : BaseIndicator<ColorMetroDuplexValue>
 {
 	private readonly RelativeStrengthIndex _rsi = new();
 
@@ -489,16 +489,16 @@ public sealed class ColorMetroIndicator : BaseIndicator<ColorMetroValue>
 	protected override IIndicatorValue OnProcess(IIndicatorValue input)
 	{
 		if (input is not ICandleMessage candle)
-			return new ColorMetroValue(this, input, default, default, default, false);
+			return new ColorMetroDuplexValue(this, input, default, default, default, false);
 
 		if (candle.State != CandleStates.Finished)
-			return new ColorMetroValue(this, input, default, default, default, false);
+			return new ColorMetroDuplexValue(this, input, default, default, default, false);
 
 		var price = SelectPrice(candle, PriceMode);
 		var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, price, input.Time));
 
 		if (!_rsi.IsFormed)
-			return new ColorMetroValue(this, input, default, default, default, false);
+			return new ColorMetroDuplexValue(this, input, default, default, default, false);
 
 		var rsi = rsiValue.ToDecimal();
 		var fastStep = StepSizeFast;
@@ -518,7 +518,7 @@ public sealed class ColorMetroIndicator : BaseIndicator<ColorMetroValue>
 			_slowMax = slowMaxCandidate;
 			_fastTrend = 0;
 			_slowTrend = 0;
-			return new ColorMetroValue(this, input, default, default, rsi, false);
+			return new ColorMetroDuplexValue(this, input, default, default, rsi, false);
 		}
 
 		var fastTrend = _fastTrend;
@@ -565,7 +565,7 @@ public sealed class ColorMetroIndicator : BaseIndicator<ColorMetroValue>
 		_slowTrend = slowTrend;
 
 		var isReady = up.HasValue && down.HasValue;
-		return new ColorMetroValue(this, input, up ?? 0m, down ?? 0m, rsi, isReady);
+		return new ColorMetroDuplexValue(this, input, up ?? 0m, down ?? 0m, rsi, isReady);
 	}
 
 	/// <inheritdoc />
