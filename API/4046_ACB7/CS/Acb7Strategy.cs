@@ -1,10 +1,20 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
+using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
+using StockSharp.Messages;
+
 using System.Diagnostics;
 using System.Text;
-
-using StockSharp.Algo.Strategies;
 
 /// <summary>
 /// Port of the MetaTrader 4 script ACB7.
