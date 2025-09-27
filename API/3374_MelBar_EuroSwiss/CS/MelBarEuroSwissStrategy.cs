@@ -14,8 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MelBarEuroSwissStrategy : Strategy
 {
-	private const decimal Epsilon = 0.000001m;
-
 	private readonly StrategyParam<decimal> _tradeVolumeParam;
 	private readonly StrategyParam<int> _bollingerPeriodParam;
 	private readonly StrategyParam<decimal> _bollingerDeviationParam;
@@ -25,6 +23,7 @@ public class MelBarEuroSwissStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPipsParam;
 	private readonly StrategyParam<decimal> _pipSizeParam;
 	private readonly StrategyParam<DataType> _candleTypeParam;
+	private readonly StrategyParam<decimal> _epsilonParam;
 
 	private BollingerBands _bollinger = null!;
 	private RelativeVigorIndex _rvi = null!;
@@ -155,6 +154,12 @@ public class MelBarEuroSwissStrategy : Strategy
 	{
 		get => _takeProfitPipsParam.Value;
 		set => _takeProfitPipsParam.Value = value;
+	}
+
+	public decimal Epsilon
+	{
+		get => _epsilonParam.Value;
+		set => _epsilonParam.Value = value;
 	}
 
 	/// <summary>

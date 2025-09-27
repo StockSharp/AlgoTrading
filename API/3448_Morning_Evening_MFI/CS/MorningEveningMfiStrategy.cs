@@ -14,9 +14,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MorningEveningMfiStrategy : Strategy
 {
-	private const decimal Tolerance = 0.0000001m;
-
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _tolerance;
 	private readonly StrategyParam<int> _mfiPeriod;
 	private readonly StrategyParam<decimal> _bullishMfiThreshold;
 	private readonly StrategyParam<decimal> _bearishMfiThreshold;
@@ -82,6 +81,12 @@ public class MorningEveningMfiStrategy : Strategy
 		set => _lowerExitLevel.Value = value;
 	}
 
+	public decimal Tolerance
+	{
+		get => _tolerance.Value;
+		set => _tolerance.Value = value;
+	}
+
 	/// <summary>
 	/// Initializes a new instance of the strategy.
 	/// </summary>
@@ -115,6 +120,10 @@ public class MorningEveningMfiStrategy : Strategy
 			.SetDisplay("Lower Exit", "MFI level used to close oversold positions", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(20m, 40m, 5m);
+
+		_tolerance = Param(nameof(Tolerance), 0.0000001m)
+			.SetGreaterOrEqual(0m)
+			.SetDisplay("Tolerance", "Price comparison tolerance for pattern validation", "Signals");
 	}
 
 	/// <inheritdoc />

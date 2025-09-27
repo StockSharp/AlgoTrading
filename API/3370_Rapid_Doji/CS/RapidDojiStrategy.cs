@@ -20,6 +20,7 @@ public class RapidDojiStrategy : Strategy
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<decimal> _trailingDistancePoints;
+	private readonly StrategyParam<decimal> _dojiBodyThreshold;
 
 	private AverageTrueRange _atr = null!;
 	private Order _longEntryOrder;
@@ -28,8 +29,6 @@ public class RapidDojiStrategy : Strategy
 
 	private decimal? _plannedLongStop;
 	private decimal? _plannedShortStop;
-
-	private const decimal DojiBodyThreshold = 0.03m;
 
 	public RapidDojiStrategy()
 	{
@@ -83,6 +82,12 @@ public class RapidDojiStrategy : Strategy
 	{
 		get => _trailingDistancePoints.Value;
 		set => _trailingDistancePoints.Value = value;
+	}
+
+	public decimal DojiBodyThreshold
+	{
+		get => _dojiBodyThreshold.Value;
+		set => _dojiBodyThreshold.Value = value;
 	}
 
 	/// <inheritdoc />
