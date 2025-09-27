@@ -17,10 +17,14 @@ public class ExpMamaStrategy : Strategy
 	private readonly StrategyParam<bool> _sellOpen;
 	private readonly StrategyParam<bool> _buyClose;
 	private readonly StrategyParam<bool> _sellClose;
+	private readonly StrategyParam<decimal> _hilbertCoefficient0;
+	private readonly StrategyParam<decimal> _hilbertCoefficient1;
+	private readonly StrategyParam<decimal> _hilbertCoefficient2;
+	private readonly StrategyParam<decimal> _hilbertCoefficient3;
 
 	private decimal? _prevMama;
 	private decimal? _prevFama;
-	private readonly MamaCalculator _calc = new();
+	private readonly MamaCalculator _calc;
 
 	/// <summary>
 	/// Fast limit of adaptive factor.
@@ -57,6 +61,26 @@ public class ExpMamaStrategy : Strategy
 	/// </summary>
 	public bool SellClose { get => _sellClose.Value; set => _sellClose.Value = value; }
 
+	/// <summary>
+	/// Hilbert transform coefficient c0.
+	/// </summary>
+	public decimal HilbertCoefficient0 { get => _hilbertCoefficient0.Value; set => _hilbertCoefficient0.Value = value; }
+
+	/// <summary>
+	/// Hilbert transform coefficient c1.
+	/// </summary>
+	public decimal HilbertCoefficient1 { get => _hilbertCoefficient1.Value; set => _hilbertCoefficient1.Value = value; }
+
+	/// <summary>
+	/// Hilbert transform coefficient c2.
+	/// </summary>
+	public decimal HilbertCoefficient2 { get => _hilbertCoefficient2.Value; set => _hilbertCoefficient2.Value = value; }
+
+	/// <summary>
+	/// Hilbert transform coefficient c3.
+	/// </summary>
+	public decimal HilbertCoefficient3 { get => _hilbertCoefficient3.Value; set => _hilbertCoefficient3.Value = value; }
+
 	public ExpMamaStrategy()
 	{
 		_fastLimit = Param(nameof(FastLimit), 0.5m)
@@ -75,6 +99,16 @@ public class ExpMamaStrategy : Strategy
 		.SetDisplay("Buy Close", "Allow closing long positions", "Trading");
 		_sellClose = Param(nameof(SellClose), true)
 		.SetDisplay("Sell Close", "Allow closing short positions", "Trading");
+		_hilbertCoefficient0 = Param(nameof(HilbertCoefficient0), 0.0962m)
+		.SetDisplay("Hilbert c0", "Hilbert coefficient c0", "Indicators");
+		_hilbertCoefficient1 = Param(nameof(HilbertCoefficient1), 0.5769m)
+		.SetDisplay("Hilbert c1", "Hilbert coefficient c1", "Indicators");
+		_hilbertCoefficient2 = Param(nameof(HilbertCoefficient2), -0.5769m)
+		.SetDisplay("Hilbert c2", "Hilbert coefficient c2", "Indicators");
+		_hilbertCoefficient3 = Param(nameof(HilbertCoefficient3), -0.0962m)
+		.SetDisplay("Hilbert c3", "Hilbert coefficient c3", "Indicators");
+
+		_calc = new MamaCalculator(this);
 	}
 
 	/// <inheritdoc />
@@ -133,10 +167,7 @@ public class ExpMamaStrategy : Strategy
 
 	private class MamaCalculator
 	{
-		private const decimal c0 = 0.0962m;
-		private const decimal c1 = 0.5769m;
-		private const decimal c2 = -0.5769m;
-		private const decimal c3 = -0.0962m;
+		private readonly ExpMamaStrategy _strategy;
 
 		private decimal _p1, _p2, _p3;
 		private decimal _s1, _s2, _s3;
@@ -151,9 +182,19 @@ public class ExpMamaStrategy : Strategy
 		private decimal? _fama;
 		private int _count;
 
+		public MamaCalculator(ExpMamaStrategy strategy)
+		{
+			_strategy = strategy;
+		}
+
 		public (decimal mama, decimal fama)? Process(decimal price, decimal fast, decimal slow)
 		{
 			_count++;
+
+			var c0 = _strategy.HilbertCoefficient0;
+			var c1 = _strategy.HilbertCoefficient1;
+			var c2 = _strategy.HilbertCoefficient2;
+			var c3 = _strategy.HilbertCoefficient3;
 
 			var smooth = (4m * price + 3m * _p1 + 2m * _p2 + _p3) / 10m;
 
