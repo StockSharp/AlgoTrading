@@ -1,13 +1,19 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
-using StockSharp.Algo;
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using StockSharp.Algo;
 
 /// <summary>
 /// Broadening Top pattern strategy that follows the original MQL logic.

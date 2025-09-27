@@ -1,12 +1,19 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
-using StockSharp.Algo;
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using StockSharp.Algo;
 
 /// <summary>
 /// Pending stop scalping strategy converted from the MQL4 expert "AK-47 Scalper EA".
@@ -652,3 +659,4 @@ public class Ak47ScalperStrategy : Strategy
                 return count;
         }
 }
+

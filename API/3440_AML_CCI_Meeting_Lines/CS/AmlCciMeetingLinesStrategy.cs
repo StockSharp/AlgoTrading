@@ -1,13 +1,19 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
-using StockSharp.Algo.Candles;
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using StockSharp.Algo.Candles;
 
 /// <summary>
 /// Strategy that replicates the MetaTrader Expert_AML_CCI logic using candlestick pattern recognition and the CCI oscillator.
@@ -258,3 +264,4 @@ public class AmlCciMeetingLinesStrategy : Strategy
 			|| (currentCci < -extreme && previousCci > -extreme);
 	}
 }
+

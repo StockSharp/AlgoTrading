@@ -1,13 +1,19 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
-using StockSharp.Algo;
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using StockSharp.Algo;
 
 /// <summary>
 /// Bollinger band breakout strategy converted from the MetaTrader 4 expert "Crypto Analysis".
@@ -943,3 +949,4 @@ public class CryptoAnalysisStrategy : Strategy
 		return diff * Position;
 	}
 }
+

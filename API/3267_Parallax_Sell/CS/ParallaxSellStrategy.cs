@@ -1,11 +1,17 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
-using StockSharp.Algo;
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -618,3 +624,4 @@ public class ParallaxSellStrategy : Strategy
 	return decimals is 3 or 5 ? priceStep * 10m : priceStep;
 	}
 }
+

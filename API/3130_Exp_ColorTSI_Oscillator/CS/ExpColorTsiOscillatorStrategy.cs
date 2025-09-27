@@ -1,14 +1,20 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
-using System.Reflection;
 
-using StockSharp.Algo;
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using System.Reflection;
+using StockSharp.Algo;
 
 /// <summary>
 /// MetaTrader 5 expert advisor Exp_ColorTSI-Oscillator converted to StockSharp.
@@ -571,3 +577,4 @@ TrendFollow1,
 /// <summary>Demark price.</summary>
 Demark
 }
+

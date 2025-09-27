@@ -1,5 +1,10 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -286,3 +291,4 @@ public class FastSlowRviCrossoverStrategy : Strategy
 		return decimals is 3 or 5 ? step * 10m : step;
 	}
 }
+

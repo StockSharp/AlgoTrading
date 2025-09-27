@@ -1,11 +1,17 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
-using System.Globalization;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using System.Globalization;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -257,3 +263,4 @@ public class VolatilityHftEaStrategy : Strategy
 		return separatorIndex < 0 ? 0 : text.Length - separatorIndex - 1;
 	}
 }
+

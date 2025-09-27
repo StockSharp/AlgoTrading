@@ -1,12 +1,19 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
-using StockSharp.Algo.Candles;
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using StockSharp.Algo.Candles;
 
 /// <summary>
 /// Time-based straddle strategy converted from the MetaTrader expert advisor e-News-Lucky$.
@@ -517,3 +524,4 @@ public class ENewsLuckywStrategy : Strategy
 	return steps * step.Value;
 	}
 }
+

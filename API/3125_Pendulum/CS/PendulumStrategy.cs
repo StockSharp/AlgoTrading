@@ -1,12 +1,19 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
-using StockSharp.Algo;
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using StockSharp.Algo;
 
 /// <summary>
 /// Grid-based pendulum strategy converted from the original MQL implementation.
@@ -380,3 +387,4 @@ public class PendulumStrategy : Strategy
 		return steps * step;
 	}
 }
+

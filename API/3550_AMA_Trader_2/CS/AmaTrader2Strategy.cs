@@ -2,15 +2,19 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
 
-using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using StockSharp.Algo;
 
 /// <summary>
 /// Adaptive moving average averaging strategy with RSI confirmation and
@@ -711,3 +715,4 @@ public class AmaTrader2Strategy : Strategy
 		}
 	}
 }
+

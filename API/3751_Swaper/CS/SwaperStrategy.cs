@@ -1,11 +1,19 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
+using System.Collections.Generic;
 
-using StockSharp.Algo.Candles;
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using StockSharp.Algo.Candles;
 
 /// <summary>
 /// Swap-based mean reversion strategy converted from the MetaTrader expert "Swaper 1.1".
@@ -424,3 +432,4 @@ public class SwaperStrategy : Strategy
 		_averagePrice = price;
 	}
 }
+

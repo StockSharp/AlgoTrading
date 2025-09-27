@@ -1,7 +1,12 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -219,3 +224,4 @@ public class BasicRsiEaTemplateStrategy : Strategy
 		return distance > 0m ? new Unit(distance, UnitTypes.Absolute) : null;
 	}
 }
+

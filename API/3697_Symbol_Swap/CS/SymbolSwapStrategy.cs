@@ -1,12 +1,20 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
-using System.Text;
+using System.Linq;
+using System.Collections.Generic;
 
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
-using StockSharp.Charting;
 using StockSharp.Messages;
+
+using System.Text;
+using StockSharp.Charting;
 
 /// <summary>
 /// Displays real-time market information for a user selected symbol and allows swapping the tracked security on demand.
@@ -338,3 +346,4 @@ public class SymbolSwapStrategy : Strategy
 		return _trackedSecurity?.LastPrice ?? 0m;
 	}
 }
+

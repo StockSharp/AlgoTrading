@@ -1,5 +1,10 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -579,3 +584,4 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 		return volume > 0m ? volume : 0m;
 	}
 }
+

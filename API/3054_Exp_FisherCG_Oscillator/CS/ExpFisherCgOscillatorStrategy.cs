@@ -1,13 +1,19 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
-using StockSharp.Algo.Candles;
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using StockSharp.Algo.Candles;
 
 /// <summary>
 /// Strategy converted from the Exp_FisherCGOscillator MetaTrader expert advisor.
@@ -563,3 +569,4 @@ public sealed class FisherCgOscillatorValue : ComplexIndicatorValue
 	/// <summary>Gets the trigger line value.</summary>
 	public decimal? Trigger => (decimal?)GetValue(nameof(Trigger));
 }
+

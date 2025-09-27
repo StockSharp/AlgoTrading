@@ -1,12 +1,20 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
-using System.Reflection;
-using System.Threading;
+using System.Linq;
+using System.Collections.Generic;
 
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using System.Reflection;
+using System.Threading;
 
 /// <summary>
 /// Utility strategy that closes open positions and cancels pending orders based on filters.
@@ -345,3 +353,4 @@ public class CloseDeleteEaStrategy : Strategy
 		return value;
 	}
 }
+
