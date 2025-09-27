@@ -542,7 +542,7 @@ public class ForexCurrencyPowerStrategy : Strategy
 
 	private decimal? GetCurrencyPower(string code)
 	{
-		if (string.IsNullOrWhiteSpace(code))
+		if (code.IsEmptyOrWhiteSpace())
 		return null;
 
 		return _currencyStates.TryGetValue(code, out var state) ? state.Power : null;

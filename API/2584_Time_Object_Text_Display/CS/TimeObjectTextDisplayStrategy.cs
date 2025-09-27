@@ -57,7 +57,7 @@ public class TimeObjectTextDisplayStrategy : Strategy
 	{
 		var definitions = TextObjectDefinitions;
 
-		if (string.IsNullOrWhiteSpace(definitions))
+		if (definitions.IsEmptyOrWhiteSpace())
 		{
 			LogInfo("No text object definitions provided.");
 			return;

@@ -98,7 +98,7 @@ public class ColorStrategy : Strategy
 
 	private static Color HexStringToColor(string hex)
 	{
-		if (string.IsNullOrWhiteSpace(hex))
+		if (hex.IsEmptyOrWhiteSpace())
 			return Color.Black;
 
 		if (!hex.StartsWith("#", StringComparison.Ordinal))

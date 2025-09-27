@@ -167,7 +167,7 @@ public class ExpBreakoutSignalsStrategy : Strategy
 	// Ensure configuration values do not contradict each other.
 	private bool ValidateParameters()
 	{
-		if (SignalMode == BreakoutNotificationMode.Sound && string.IsNullOrWhiteSpace(SoundName))
+		if (SignalMode == BreakoutNotificationMode.Sound && SoundName.IsEmptyOrWhiteSpace())
 		{
 			LogError("Sound mode requires a non-empty sound file name.");
 			return false;
@@ -179,7 +179,7 @@ public class ExpBreakoutSignalsStrategy : Strategy
 	// Convert the textual level description into a numeric array.
 	private decimal[] ParseLevels(string text)
 	{
-		if (string.IsNullOrWhiteSpace(text))
+		if (text.IsEmptyOrWhiteSpace())
 			return Array.Empty<decimal>();
 
 		var parts = text.Split(LevelSeparators, StringSplitOptions.RemoveEmptyEntries);

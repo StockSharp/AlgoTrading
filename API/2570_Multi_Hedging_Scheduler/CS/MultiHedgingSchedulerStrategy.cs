@@ -223,7 +223,7 @@ public class MultiHedgingSchedulerStrategy : Strategy
 
 	private Security ResolveSecurity(string code)
 	{
-		if (string.IsNullOrWhiteSpace(code))
+		if (code.IsEmptyOrWhiteSpace())
 		return null;
 
 		return SecurityProvider?.LookupById(code);

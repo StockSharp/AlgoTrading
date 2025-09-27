@@ -1043,7 +1043,7 @@ public class RingSystemEaStrategy : Strategy
 	private HashSet<int> ParseSkippedGroups()
 	{
 		var result = new HashSet<int>();
-		if (string.IsNullOrWhiteSpace(NoOfGroupToSkip))
+		if (NoOfGroupToSkip.IsEmptyOrWhiteSpace())
 			return result;
 
 		var tokens = NoOfGroupToSkip.Split(new[] { ',', ';', ' ', '	' }, StringSplitOptions.RemoveEmptyEntries);
@@ -1106,7 +1106,7 @@ public class RingSystemEaStrategy : Strategy
 
 	private static string NormalizeAffix(string value)
 	{
-		if (string.IsNullOrWhiteSpace(value) || value.Equals("NONE", StringComparison.OrdinalIgnoreCase) || value.Equals("AUTO", StringComparison.OrdinalIgnoreCase))
+		if (value.IsEmptyOrWhiteSpace() || value.Equals("NONE", StringComparison.OrdinalIgnoreCase) || value.Equals("AUTO", StringComparison.OrdinalIgnoreCase))
 			return string.Empty;
 
 		return value.Trim();

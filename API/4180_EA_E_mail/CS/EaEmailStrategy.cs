@@ -93,7 +93,7 @@ public class EaEmailStrategy : Strategy
 	private void SendAccountReport()
 	{
 		var accountName = Portfolio?.Name;
-		if (string.IsNullOrWhiteSpace(accountName))
+		if (accountName.IsEmptyOrWhiteSpace())
 			accountName = "Unknown";
 
 		var subject = $"Forex Account : {accountName} Details";
@@ -143,11 +143,11 @@ public class EaEmailStrategy : Strategy
 		var type = connector.GetType();
 
 		var nameProperty = type.GetProperty("Name");
-		if (nameProperty?.GetValue(connector) is string name && !string.IsNullOrWhiteSpace(name))
+		if (nameProperty?.GetValue(connector) is string name && !name.IsEmptyOrWhiteSpace())
 			return name;
 
 		var idProperty = type.GetProperty("Id");
-		if (idProperty?.GetValue(connector) is string id && !string.IsNullOrWhiteSpace(id))
+		if (idProperty?.GetValue(connector) is string id && !id.IsEmptyOrWhiteSpace())
 			return id;
 
 		return type.Name;

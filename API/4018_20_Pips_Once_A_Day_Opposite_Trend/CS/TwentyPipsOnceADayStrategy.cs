@@ -684,7 +684,7 @@ public class TwentyPipsOnceADayStrategy : Strategy
 		_allowedHours.Clear();
 
 		var raw = _tradingDayHours.Value;
-		if (string.IsNullOrWhiteSpace(raw))
+		if (raw.IsEmptyOrWhiteSpace())
 		{
 			FillFullDay();
 			return;

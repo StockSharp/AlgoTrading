@@ -38,7 +38,7 @@ public class CrossLineTraderStrategy : Strategy
 	{
 		public LineState(string name, string label, LineType type, decimal basePrice, decimal slopePerBar, int length, bool ray)
 		{
-			Name = string.IsNullOrWhiteSpace(name) ? type.ToString() : name;
+			Name = name.IsEmptyOrWhiteSpace() ? type.ToString() : name;
 			Label = label ?? string.Empty;
 			Type = type;
 			BasePrice = basePrice;
@@ -326,11 +326,11 @@ public class CrossLineTraderStrategy : Strategy
 			case LineDirectionMode.ForceSell:
 				return TradeDirection.Sell;
 			case LineDirectionMode.FromLabel:
-				if (!string.IsNullOrWhiteSpace(BuyLabel) &&
+				if (!BuyLabel.IsEmptyOrWhiteSpace() &&
 					line.Label.EqualsIgnoreCase(BuyLabel))
 					return TradeDirection.Buy;
 
-				if (!string.IsNullOrWhiteSpace(SellLabel) &&
+				if (!SellLabel.IsEmptyOrWhiteSpace() &&
 					line.Label.EqualsIgnoreCase(SellLabel))
 					return TradeDirection.Sell;
 				break;
@@ -401,7 +401,7 @@ public class CrossLineTraderStrategy : Strategy
 	{
 		var result = new List<LineState>();
 
-		if (string.IsNullOrWhiteSpace(raw))
+		if (raw.IsEmptyOrWhiteSpace())
 			return result;
 
 		var entries = raw.Split(new[] { '\n', '\r', ';' }, StringSplitOptions.RemoveEmptyEntries);

@@ -110,13 +110,13 @@ public class HpcsFifthMt4EaV01WeStrategy : Strategy
 
 		_lastCandleOpenTime = candle.OpenTime;
 
-		var message = string.IsNullOrWhiteSpace(AlertMessage)
+		var message = AlertMessage.IsEmptyOrWhiteSpace()
 			? "New candle detected"
 			: AlertMessage;
 
 		LogInfo($"{message}. Time: {candle.OpenTime:O}.");
 
-		if (PlaySound && !string.IsNullOrWhiteSpace(SoundFile))
+		if (PlaySound && !SoundFile.IsEmptyOrWhiteSpace())
 		{
 			LogInfo($"Sound notification requested: {SoundFile}.");
 		}

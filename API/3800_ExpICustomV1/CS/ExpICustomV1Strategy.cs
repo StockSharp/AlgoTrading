@@ -692,7 +692,7 @@ public class ExpICustomV1Strategy : Strategy
 	private string BuildParameterString()
 	{
 		var tokens = new List<string>();
-		if (!string.IsNullOrWhiteSpace(IndicatorParameters))
+		if (!IndicatorParameters.IsEmptyOrWhiteSpace())
 		{
 			var parts = IndicatorParameters.Split('/');
 			foreach (var part in parts)
@@ -754,7 +754,7 @@ public class ExpICustomV1Strategy : Strategy
 
 	private static IIndicator CreateIndicator(string name, string parameters)
 	{
-		if (string.IsNullOrWhiteSpace(name))
+		if (name.IsEmptyOrWhiteSpace())
 			return null;
 
 		var type = Type.GetType(name, false, true);
@@ -774,7 +774,7 @@ public class ExpICustomV1Strategy : Strategy
 
 	private static void ApplyParameters(IIndicator indicator, string parameters)
 	{
-		if (string.IsNullOrWhiteSpace(parameters))
+		if (parameters.IsEmptyOrWhiteSpace())
 			return;
 
 		var namedValues = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);

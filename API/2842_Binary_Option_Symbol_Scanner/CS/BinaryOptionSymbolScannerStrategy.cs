@@ -102,7 +102,7 @@ public class BinaryOptionSymbolScannerStrategy : Strategy
 
 	private static IEnumerable<string> ParseSymbols(string symbols)
 	{
-		if (string.IsNullOrWhiteSpace(symbols))
+		if (symbols.IsEmptyOrWhiteSpace())
 			yield break;
 
 		var separators = new[] { ',', ';', '\n', '\r', '\t', ' ' };

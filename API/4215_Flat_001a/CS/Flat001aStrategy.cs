@@ -181,7 +181,7 @@ public class Flat001aStrategy : Strategy
 		_highest = new Highest { Length = 3 };
 		_lowest = new Lowest { Length = 3 };
 
-		_isSecurityValid = string.IsNullOrWhiteSpace(SecurityCode) ||
+		_isSecurityValid = SecurityCode.IsEmptyOrWhiteSpace() ||
 		(Security?.Code?.Equals(SecurityCode, StringComparison.InvariantCultureIgnoreCase) ?? false);
 
 		if (!_isSecurityValid)

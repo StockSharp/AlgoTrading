@@ -224,7 +224,7 @@ var shortAllowed = Direction is null or Sides.Sell;
 	{
 		start = TimeSpan.Zero;
 		end = TimeSpan.FromHours(24);
-		if (string.IsNullOrWhiteSpace(input))
+		if (input.IsEmptyOrWhiteSpace())
 			return;
 		var parts = input.Split('-');
 		if (parts.Length != 2)

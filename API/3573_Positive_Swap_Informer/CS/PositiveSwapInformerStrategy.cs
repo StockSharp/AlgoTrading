@@ -195,7 +195,7 @@ public class PositiveSwapInformerStrategy : Strategy
 				AddSecurity(Security);
 			}
 
-			if (!string.IsNullOrWhiteSpace(SymbolsList))
+			if (!SymbolsList.IsEmptyOrWhiteSpace())
 			{
 				var provider = SecurityProvider;
 				if (provider == null)

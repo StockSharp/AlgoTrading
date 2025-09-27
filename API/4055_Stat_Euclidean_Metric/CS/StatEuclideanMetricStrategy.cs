@@ -553,7 +553,7 @@ public class StatEuclideanMetricStrategy : Strategy
 
 	private decimal[][] LoadDataset(string path, string name)
 	{
-		if (string.IsNullOrWhiteSpace(path))
+		if (path.IsEmptyOrWhiteSpace())
 			return Array.Empty<decimal[]>();
 
 		var fullPath = Path.IsPathRooted(path)

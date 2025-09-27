@@ -659,7 +659,7 @@ public class ProperBotStrategy : Strategy
 	{
 		_gridLevels.Clear();
 
-		if (string.IsNullOrWhiteSpace(GridMap))
+		if (GridMap.IsEmptyOrWhiteSpace())
 			return;
 
 		var parts = GridMap.Split(new[] { ' ', ';', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);

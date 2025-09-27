@@ -441,7 +441,7 @@ public class FetchNewsStrategy : Strategy
 	private void LoadInstrumentCurrencies()
 	{
 		var symbol = Security?.Code;
-		if (string.IsNullOrWhiteSpace(symbol))
+		if (symbol.IsEmptyOrWhiteSpace())
 		return;
 
 		var upper = symbol.ToUpperInvariant();
@@ -459,7 +459,7 @@ public class FetchNewsStrategy : Strategy
 		}
 
 		var currency = Security?.Currency;
-		if (!string.IsNullOrWhiteSpace(currency))
+		if (!currency.IsEmptyOrWhiteSpace())
 		_instrumentCurrencies.Add(currency!.ToUpperInvariant());
 	}
 
@@ -468,7 +468,7 @@ public class FetchNewsStrategy : Strategy
 		_keywordList.Clear();
 
 		var source = TradingKeywords;
-		if (string.IsNullOrWhiteSpace(source))
+		if (source.IsEmptyOrWhiteSpace())
 		return;
 
 		var parts = source.Split(new[] { ';', ',', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
@@ -485,7 +485,7 @@ public class FetchNewsStrategy : Strategy
 		_calendarEvents.Clear();
 
 		var raw = CalendarEventsDefinition;
-		if (string.IsNullOrWhiteSpace(raw))
+		if (raw.IsEmptyOrWhiteSpace())
 		{
 			LogWarning("Calendar events definition is empty. No alerts or trades will be generated.");
 			return;

@@ -227,7 +227,7 @@ public class TrendlineCrossAlertStrategy : Strategy
 	private static HorizontalLevel[] ParseHorizontalLevels(string input, string monitoringColor)
 	{
 		// Convert the textual definition into strongly typed horizontal levels.
-		if (string.IsNullOrWhiteSpace(input))
+		if (input.IsEmptyOrWhiteSpace())
 			return Array.Empty<HorizontalLevel>();
 
 		var segments = input.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -275,7 +275,7 @@ public class TrendlineCrossAlertStrategy : Strategy
 				continue;
 			}
 
-			if (string.IsNullOrWhiteSpace(name))
+			if (name.IsEmptyOrWhiteSpace())
 				name = $"Horizontal {index}";
 
 			result.Add(new HorizontalLevel(name, color, price));
@@ -288,7 +288,7 @@ public class TrendlineCrossAlertStrategy : Strategy
 	private static TrendlineDefinition[] ParseTrendlines(string input, string monitoringColor)
 	{
 		// Convert the textual definition into strongly typed trendlines with two anchor points.
-		if (string.IsNullOrWhiteSpace(input))
+		if (input.IsEmptyOrWhiteSpace())
 			return Array.Empty<TrendlineDefinition>();
 
 		var segments = input.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -361,7 +361,7 @@ public class TrendlineCrossAlertStrategy : Strategy
 				continue;
 			}
 
-			if (string.IsNullOrWhiteSpace(name))
+			if (name.IsEmptyOrWhiteSpace())
 				name = $"Trendline {index}";
 
 			result.Add(new TrendlineDefinition(name, color, startTime, startPrice, endTime, endPrice));

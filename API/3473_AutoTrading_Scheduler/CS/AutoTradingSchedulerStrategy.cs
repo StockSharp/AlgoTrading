@@ -226,7 +226,7 @@ public class AutoTradingSchedulerStrategy : Strategy
 	{
 		var ranges = new List<TimeRange>();
 
-		if (string.IsNullOrWhiteSpace(text))
+		if (text.IsEmptyOrWhiteSpace())
 			return ranges;
 
 		var parts = text.Split(',', StringSplitOptions.RemoveEmptyEntries);
@@ -261,7 +261,7 @@ public class AutoTradingSchedulerStrategy : Strategy
 
 	private static TimeSpan? ParseTime(string value)
 	{
-		if (string.IsNullOrWhiteSpace(value))
+		if (value.IsEmptyOrWhiteSpace())
 			return null;
 
 		var cleaned = value.Trim();

@@ -132,7 +132,7 @@ public class OnTickMarketWatchStrategy : Strategy
 		// Always include the primary strategy security if it is set.
 		AddSecurity(Security);
 
-		if (string.IsNullOrWhiteSpace(SymbolsList))
+		if (SymbolsList.IsEmptyOrWhiteSpace())
 		{
 			_watchListNeedsResolve = false;
 			return;

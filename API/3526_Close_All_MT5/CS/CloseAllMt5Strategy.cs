@@ -296,7 +296,7 @@ public class CloseAllMt5Strategy : Strategy
 	private bool MatchesComment(Position position)
 	{
 		var filter = CommentFilter;
-		if (string.IsNullOrWhiteSpace(filter))
+		if (filter.IsEmptyOrWhiteSpace())
 			return true;
 
 		var strategyId = TryGetStrategyId(position);
@@ -479,10 +479,10 @@ public class CloseAllMt5Strategy : Strategy
 			case CloseRequestMode.CloseCurrency:
 			{
 				var filter = CurrencyFilter;
-				if (string.IsNullOrWhiteSpace(filter))
+				if (filter.IsEmptyOrWhiteSpace())
 					filter = Security?.Id ?? string.Empty;
 
-				if (string.IsNullOrWhiteSpace(filter))
+				if (filter.IsEmptyOrWhiteSpace())
 					return true;
 
 				var symbol = security?.Id;
@@ -532,7 +532,7 @@ public class CloseAllMt5Strategy : Strategy
 			if (!Equals(order.Security, security))
 				continue;
 
-			if (!string.IsNullOrWhiteSpace(filter))
+			if (!filter.IsEmptyOrWhiteSpace())
 			{
 				var comment = order.Comment ?? string.Empty;
 				if (comment.IndexOf(filter, StringComparison.OrdinalIgnoreCase) < 0)

@@ -98,7 +98,7 @@ public class OnTickMultisymbolStrategy : Strategy
 			return;
 		}
 
-		if (string.IsNullOrWhiteSpace(text))
+		if (text.IsEmptyOrWhiteSpace())
 			return;
 
 		var parts = text.Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries);

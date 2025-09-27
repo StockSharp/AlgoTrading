@@ -409,7 +409,7 @@ public class RichKohonenMapStrategy : Strategy
 	{
 		var path = GetMapFullPath();
 
-		if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+		if (path.IsEmptyOrWhiteSpace() || !File.Exists(path))
 			return;
 
 		try
@@ -437,7 +437,7 @@ public class RichKohonenMapStrategy : Strategy
 	{
 		var path = GetMapFullPath();
 
-		if (string.IsNullOrWhiteSpace(path))
+		if (path.IsEmptyOrWhiteSpace())
 			return;
 
 		try
@@ -461,7 +461,7 @@ public class RichKohonenMapStrategy : Strategy
 
 	private string GetMapFullPath()
 	{
-		if (string.IsNullOrWhiteSpace(MapPath))
+		if (MapPath.IsEmptyOrWhiteSpace())
 			return Path.Combine(Environment.CurrentDirectory, "rl.bin");
 
 		return Path.IsPathRooted(MapPath)

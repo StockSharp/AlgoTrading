@@ -346,7 +346,7 @@ public class GbpChfCorrelationStrategy : Strategy
 
 	private Security ResolveSecurity(string symbol, bool throwOnError)
 	{
-		if (string.IsNullOrWhiteSpace(symbol))
+		if (symbol.IsEmptyOrWhiteSpace())
 		{
 			if (throwOnError)
 				throw new InvalidOperationException("Security identifier is not specified.");

@@ -232,7 +232,7 @@ return result;
 
 private static string[] SplitSymbols(string symbols)
 {
-if (string.IsNullOrWhiteSpace(symbols))
+if (symbols.IsEmptyOrWhiteSpace())
 {
 return Array.Empty<string>();
 }

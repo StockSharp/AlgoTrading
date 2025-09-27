@@ -272,7 +272,7 @@ public class OrderNotifyStrategy : Strategy
 		if (!SendEmails)
 			return;
 
-		if (string.IsNullOrWhiteSpace(SmtpHost) || string.IsNullOrWhiteSpace(EmailFrom) || string.IsNullOrWhiteSpace(EmailTo))
+		if (SmtpHost.IsEmptyOrWhiteSpace() || EmailFrom.IsEmptyOrWhiteSpace() || EmailTo.IsEmptyOrWhiteSpace())
 		{
 			LogWarning("SMTP settings are incomplete. Email notification skipped.");
 			return;

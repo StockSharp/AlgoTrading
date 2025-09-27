@@ -220,7 +220,7 @@ public class ChopFlowAtrScalpStrategy : Strategy
 	{
 		start = TimeSpan.Zero;
 		end = TimeSpan.FromHours(24);
-		if (string.IsNullOrWhiteSpace(input))
+		if (input.IsEmptyOrWhiteSpace())
 		return;
 
 		var parts = input.Split('-', ':');
