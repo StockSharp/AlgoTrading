@@ -16,13 +16,13 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class AutoAdjustingStrategy : Strategy
 {
-	private const int FastEmaLength = 6;
-	private const int MiddleEmaLength = 14;
-	private const int SlowEmaLength = 26;
-	private const int MomentumLength = 14;
-	private const int MomentumSamples = 3;
 	private static readonly DataType DefaultMacroType = TimeSpan.FromDays(30).TimeFrame();
 
+	private readonly StrategyParam<int> _fastEmaLength;
+	private readonly StrategyParam<int> _middleEmaLength;
+	private readonly StrategyParam<int> _slowEmaLength;
+	private readonly StrategyParam<int> _momentumLength;
+	private readonly StrategyParam<int> _momentumSamples;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<DataType> _momentumCandleType;
 	private readonly StrategyParam<DataType> _macroCandleType;
@@ -54,6 +54,26 @@ public class AutoAdjustingStrategy : Strategy
 	{
 		var defaultFrame = TimeSpan.FromHours(1);
 		var defaultMomentum = GetDefaultMomentumFrame(defaultFrame);
+
+		_fastEmaLength = Param(nameof(FastEmaLength), 6)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Length of the fast EMA in the stack", "Signals");
+
+		_middleEmaLength = Param(nameof(MiddleEmaLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("Middle EMA", "Length of the middle EMA in the stack", "Signals");
+
+		_slowEmaLength = Param(nameof(SlowEmaLength), 26)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Length of the slow EMA in the stack", "Signals");
+
+		_momentumLength = Param(nameof(MomentumLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("Momentum Length", "Lookback for the momentum indicator", "Signals");
+
+		_momentumSamples = Param(nameof(MomentumSamples), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("Momentum Samples", "Number of higher timeframe momentum values required", "Signals");
 
 		_candleType = Param(nameof(CandleType), defaultFrame.TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used for the EMA stack", "General");
@@ -99,6 +119,51 @@ public class AutoAdjustingStrategy : Strategy
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Length of the fast EMA in the stack.
+	/// </summary>
+	public int FastEmaLength
+	{
+		get => _fastEmaLength.Value;
+		set => _fastEmaLength.Value = value;
+	}
+
+	/// <summary>
+	/// Length of the middle EMA in the stack.
+	/// </summary>
+	public int MiddleEmaLength
+	{
+		get => _middleEmaLength.Value;
+		set => _middleEmaLength.Value = value;
+	}
+
+	/// <summary>
+	/// Length of the slow EMA in the stack.
+	/// </summary>
+	public int SlowEmaLength
+	{
+		get => _slowEmaLength.Value;
+		set => _slowEmaLength.Value = value;
+	}
+
+	/// <summary>
+	/// Lookback for the momentum indicator.
+	/// </summary>
+	public int MomentumLength
+	{
+		get => _momentumLength.Value;
+		set => _momentumLength.Value = value;
+	}
+
+	/// <summary>
+	/// Number of higher timeframe momentum values required.
+	/// </summary>
+	public int MomentumSamples
+	{
+		get => _momentumSamples.Value;
+		set => _momentumSamples.Value = value;
 	}
 
 	/// <summary>
