@@ -33,7 +33,7 @@ public class EightHundredBbStrategy : Strategy
 	private decimal? _previousUpperBand;
 	private decimal? _previousLowerBand;
 	private decimal? _previousOpen;
-	private PriceStatus _previousStatus = PriceStatus.Nothing;
+	private PriceStatuses _previousStatus = PriceStatuses.Nothing;
 
 	private decimal? _longStopPrice;
 	private decimal? _longTakePrice;
@@ -153,7 +153,7 @@ public class EightHundredBbStrategy : Strategy
 		_previousUpperBand = null;
 		_previousLowerBand = null;
 		_previousOpen = null;
-		_previousStatus = PriceStatus.Nothing;
+		_previousStatus = PriceStatuses.Nothing;
 
 		_longStopPrice = null;
 		_longTakePrice = null;
@@ -225,12 +225,12 @@ public class EightHundredBbStrategy : Strategy
 		UpdatePreviousValues(candle, upperBand, lowerBand);
 	}
 
-	private void TryEnterLong(ICandleMessage candle, decimal prevLowerBand, decimal prevOpen, PriceStatus prevStatus, decimal atrValue)
+	private void TryEnterLong(ICandleMessage candle, decimal prevLowerBand, decimal prevOpen, PriceStatuses prevStatus, decimal atrValue)
 	{
 		if (candle.OpenPrice < prevLowerBand)
 			return;
 
-		var crossedBelow = prevOpen <= prevLowerBand || prevStatus == PriceStatus.CrossedBelowLower;
+		var crossedBelow = prevOpen <= prevLowerBand || prevStatus == PriceStatuses.CrossedBelowLower;
 		if (!crossedBelow)
 			return;
 
@@ -256,12 +256,12 @@ public class EightHundredBbStrategy : Strategy
 		_shortTakePrice = null;
 	}
 
-	private void TryEnterShort(ICandleMessage candle, decimal prevUpperBand, decimal prevOpen, PriceStatus prevStatus, decimal atrValue)
+	private void TryEnterShort(ICandleMessage candle, decimal prevUpperBand, decimal prevOpen, PriceStatuses prevStatus, decimal atrValue)
 	{
 		if (candle.OpenPrice > prevUpperBand)
 			return;
 
-		var crossedAbove = prevOpen >= prevUpperBand || prevStatus == PriceStatus.CrossedAboveUpper;
+		var crossedAbove = prevOpen >= prevUpperBand || prevStatus == PriceStatuses.CrossedAboveUpper;
 		if (!crossedAbove)
 			return;
 
@@ -323,15 +323,15 @@ public class EightHundredBbStrategy : Strategy
 
 		if (candle.OpenPrice > upperBand || candle.ClosePrice > upperBand)
 		{
-			_previousStatus = PriceStatus.CrossedAboveUpper;
+			_previousStatus = PriceStatuses.CrossedAboveUpper;
 		}
 		else if (candle.OpenPrice < lowerBand || candle.ClosePrice < lowerBand)
 		{
-			_previousStatus = PriceStatus.CrossedBelowLower;
+			_previousStatus = PriceStatuses.CrossedBelowLower;
 		}
 		else
 		{
-			_previousStatus = PriceStatus.Nothing;
+			_previousStatus = PriceStatuses.Nothing;
 		}
 	}
 
@@ -422,7 +422,7 @@ public class EightHundredBbStrategy : Strategy
 			_pipValueMoney = stepPrice;
 	}
 
-	private enum PriceStatus
+	private enum PriceStatuses
 	{
 		Nothing,
 		CrossedBelowLower,

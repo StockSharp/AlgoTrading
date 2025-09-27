@@ -24,13 +24,13 @@ public class SecwentaMultiBarSignalsStrategy : Strategy
 	private readonly StrategyParam<int> _bearishBarCount;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Queue<CandleDirection> _directions = new();
+	private readonly Queue<CandleDirections> _directions = new();
 
 	private int _bullCounter;
 	private int _bearCounter;
 	private int _maxBufferSize;
 
-	private enum CandleDirection
+	private enum CandleDirections
 	{
 		Neutral,
 		Bullish,
@@ -305,16 +305,16 @@ public class SecwentaMultiBarSignalsStrategy : Strategy
 			RemoveOldest();
 	}
 
-	private void AddDirection(CandleDirection direction)
+	private void AddDirection(CandleDirections direction)
 	{
 		_directions.Enqueue(direction);
 
 		switch (direction)
 		{
-			case CandleDirection.Bullish:
+			case CandleDirections.Bullish:
 				_bullCounter++;
 				break;
-			case CandleDirection.Bearish:
+			case CandleDirections.Bearish:
 				_bearCounter++;
 				break;
 		}
@@ -332,24 +332,24 @@ public class SecwentaMultiBarSignalsStrategy : Strategy
 
 		switch (removed)
 		{
-			case CandleDirection.Bullish:
+			case CandleDirections.Bullish:
 				_bullCounter = Math.Max(0, _bullCounter - 1);
 				break;
-			case CandleDirection.Bearish:
+			case CandleDirections.Bearish:
 				_bearCounter = Math.Max(0, _bearCounter - 1);
 				break;
 		}
 	}
 
-	private static CandleDirection GetDirection(ICandleMessage candle)
+	private static CandleDirections GetDirection(ICandleMessage candle)
 	{
 		if (candle.ClosePrice > candle.OpenPrice)
-			return CandleDirection.Bullish;
+			return CandleDirections.Bullish;
 
 		if (candle.ClosePrice < candle.OpenPrice)
-			return CandleDirection.Bearish;
+			return CandleDirections.Bearish;
 
-		return CandleDirection.Neutral;
+		return CandleDirections.Neutral;
 	}
 }
 

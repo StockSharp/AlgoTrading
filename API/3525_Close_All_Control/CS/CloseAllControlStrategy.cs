@@ -20,7 +20,7 @@ using System.Reflection;
 /// Strategy that replicates the MetaTrader "CloseAll" utility for managing existing orders.
 /// The strategy performs the configured bulk close action immediately when it starts.
 /// </summary>
-public enum CloseAllMode
+public enum CloseAllModes
 {
 	/// <summary>
 	/// Close all open positions that match the comment filter.
@@ -84,7 +84,7 @@ public enum CloseAllMode
 public class CloseAllControlStrategy : Strategy
 {
 	private readonly StrategyParam<string> _orderComment;
-	private readonly StrategyParam<CloseAllMode> _mode;
+	private readonly StrategyParam<CloseAllModes> _mode;
 	private readonly StrategyParam<string> _currencyId;
 	private readonly StrategyParam<long> _magicOrTicket;
 
@@ -101,7 +101,7 @@ public class CloseAllControlStrategy : Strategy
 	/// <summary>
 	/// Gets or sets which close scenario must be executed when the strategy starts.
 	/// </summary>
-	public CloseAllMode Mode
+	public CloseAllModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -133,7 +133,7 @@ public class CloseAllControlStrategy : Strategy
 		_orderComment = Param(nameof(OrderComment), "Bonnitta EA")
 			.SetDisplay("Order Comment", "Substring that must be present in the order comment to be processed.", "Filters");
 
-		_mode = Param(nameof(Mode), CloseAllMode.CloseAll)
+		_mode = Param(nameof(Mode), CloseAllModes.CloseAll)
 			.SetDisplay("Mode", "Bulk close scenario executed once the strategy starts.", "Execution");
 
 		_currencyId = Param(nameof(CurrencyId), string.Empty)
@@ -164,25 +164,25 @@ public class CloseAllControlStrategy : Strategy
 
 		switch (mode)
 		{
-			case CloseAllMode.CloseAll:
-			case CloseAllMode.CloseBuy:
-			case CloseAllMode.CloseSell:
-			case CloseAllMode.CloseCurrency:
-			case CloseAllMode.CloseMagic:
-			case CloseAllMode.CloseTicket:
-			case CloseAllMode.CloseAllAndPending:
-			case CloseAllMode.CloseAllAndPendingByMagic:
+			case CloseAllModes.CloseAll:
+			case CloseAllModes.CloseBuy:
+			case CloseAllModes.CloseSell:
+			case CloseAllModes.CloseCurrency:
+			case CloseAllModes.CloseMagic:
+			case CloseAllModes.CloseTicket:
+			case CloseAllModes.CloseAllAndPending:
+			case CloseAllModes.CloseAllAndPendingByMagic:
 				ClosePositions();
 				break;
 		}
 
 		switch (mode)
 		{
-			case CloseAllMode.ClosePending:
-			case CloseAllMode.ClosePendingByMagic:
-			case CloseAllMode.ClosePendingByMagicCurrency:
-			case CloseAllMode.CloseAllAndPending:
-			case CloseAllMode.CloseAllAndPendingByMagic:
+			case CloseAllModes.ClosePending:
+			case CloseAllModes.ClosePendingByMagic:
+			case CloseAllModes.ClosePendingByMagicCurrency:
+			case CloseAllModes.CloseAllAndPending:
+			case CloseAllModes.CloseAllAndPendingByMagic:
 				CancelPendingOrders();
 				break;
 		}
@@ -243,24 +243,24 @@ public class CloseAllControlStrategy : Strategy
 
 		switch (mode)
 		{
-			case CloseAllMode.CloseAll:
-			case CloseAllMode.CloseAllAndPending:
+			case CloseAllModes.CloseAll:
+			case CloseAllModes.CloseAllAndPending:
 			return true;
 
-			case CloseAllMode.CloseBuy:
+			case CloseAllModes.CloseBuy:
 			return position.CurrentValue > 0m;
 
-			case CloseAllMode.CloseSell:
+			case CloseAllModes.CloseSell:
 			return position.CurrentValue < 0m;
 
-			case CloseAllMode.CloseCurrency:
+			case CloseAllModes.CloseCurrency:
 			return MatchesCurrency(position.Security, true);
 
-			case CloseAllMode.CloseMagic:
-			case CloseAllMode.CloseAllAndPendingByMagic:
+			case CloseAllModes.CloseMagic:
+			case CloseAllModes.CloseAllAndPendingByMagic:
 			return MatchesMagicOrTicket(position);
 
-			case CloseAllMode.CloseTicket:
+			case CloseAllModes.CloseTicket:
 			return MatchesTicket(position);
 
 			default:
@@ -277,15 +277,15 @@ public class CloseAllControlStrategy : Strategy
 
 		switch (mode)
 		{
-			case CloseAllMode.ClosePending:
-			case CloseAllMode.CloseAllAndPending:
+			case CloseAllModes.ClosePending:
+			case CloseAllModes.CloseAllAndPending:
 			return true;
 
-			case CloseAllMode.ClosePendingByMagic:
-			case CloseAllMode.CloseAllAndPendingByMagic:
+			case CloseAllModes.ClosePendingByMagic:
+			case CloseAllModes.CloseAllAndPendingByMagic:
 			return MatchesMagicOrTicket(order);
 
-			case CloseAllMode.ClosePendingByMagicCurrency:
+			case CloseAllModes.ClosePendingByMagicCurrency:
 			return MatchesMagicOrTicket(order) && MatchesCurrency(order.Security, true);
 
 			default:

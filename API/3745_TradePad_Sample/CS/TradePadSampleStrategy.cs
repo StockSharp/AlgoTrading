@@ -30,14 +30,14 @@ private readonly StrategyParam<decimal> _lowerLevel;
 private readonly StrategyParam<DataType> _candleType;
 
 private readonly Dictionary<Security, StochasticOscillator> _stochastics = new();
-private readonly Dictionary<string, TrendState> _trendStates = new();
+private readonly Dictionary<string, TrendStates> _trendStates = new();
 private readonly Dictionary<string, decimal> _latestK = new();
 private readonly Dictionary<string, DateTimeOffset> _lastUpdateTime = new();
 
 /// <summary>
 /// Represents the simplified trend state of a monitored symbol.
 /// </summary>
-public enum TrendState
+public enum TrendStates
 {
 /// <summary>No reading calculated yet.</summary>
 Unknown,
@@ -166,7 +166,7 @@ set => _candleType.Value = value;
 /// <summary>
 /// Returns the latest trend state per symbol.
 /// </summary>
-public IReadOnlyDictionary<string, TrendState> TrendStates => _trendStates;
+public IReadOnlyDictionary<string, TrendStates> TrendStates => _trendStates;
 
 /// <summary>
 /// Returns the latest %K oscillator readings per symbol.
@@ -201,7 +201,7 @@ subscription.BindEx(stochastic, (candle, indicatorValue) => ProcessStochastic(se
 var symbolId = security.Id;
 if (!_trendStates.ContainsKey(symbolId))
 {
-_trendStates[symbolId] = TrendState.Unknown;
+_trendStates[symbolId] = TrendStates.Unknown;
 }
 }
 }
@@ -291,19 +291,19 @@ LogInfo("{0}: {1} (K={2:0.##})", symbolId, currentState, kValue);
 }
 }
 
-private TrendState DetermineState(decimal kValue)
+private TrendStates DetermineState(decimal kValue)
 {
 if (kValue >= UpperLevel)
 {
-return TrendState.Uptrend;
+return TrendStates.Uptrend;
 }
 
 if (kValue <= LowerLevel)
 {
-return TrendState.Downtrend;
+return TrendStates.Downtrend;
 }
 
-return TrendState.Flat;
+return TrendStates.Flat;
 }
 }
 

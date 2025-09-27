@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class RrsRandomnessStrategy : Strategy
 {
-	private readonly StrategyParam<TradingMode> _tradingMode;
+	private readonly StrategyParam<TradingModes> _tradingMode;
 	private readonly StrategyParam<decimal> _minVolume;
 	private readonly StrategyParam<decimal> _maxVolume;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
@@ -28,7 +28,7 @@ public class RrsRandomnessStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingGapPoints;
 	private readonly StrategyParam<decimal> _maxSpreadPoints;
 	private readonly StrategyParam<decimal> _slippagePoints;
-	private readonly StrategyParam<RiskMode> _riskMode;
+	private readonly StrategyParam<RiskModes> _riskMode;
 	private readonly StrategyParam<decimal> _riskValue;
 	private readonly StrategyParam<string> _tradeComment;
 	private readonly StrategyParam<DataType> _candleType;
@@ -43,7 +43,7 @@ public class RrsRandomnessStrategy : Strategy
 	/// <summary>
 	/// Trading direction selection logic.
 	/// </summary>
-	public TradingMode Mode
+	public TradingModes Mode
 	{
 		get => _tradingMode.Value;
 		set => _tradingMode.Value = value;
@@ -124,7 +124,7 @@ public class RrsRandomnessStrategy : Strategy
 	/// <summary>
 	/// Risk management mode.
 	/// </summary>
-	public RiskMode MoneyRiskMode
+	public RiskModes MoneyRiskMode
 	{
 		get => _riskMode.Value;
 		set => _riskMode.Value = value;
@@ -162,7 +162,7 @@ public class RrsRandomnessStrategy : Strategy
 	/// </summary>
 	public RrsRandomnessStrategy()
 	{
-		_tradingMode = Param(nameof(Mode), TradingMode.DoubleSide)
+		_tradingMode = Param(nameof(Mode), TradingModes.DoubleSide)
 			.SetDisplay("Trading Mode", "Select whether a trade is chosen every cycle or only on random matches.", "General");
 
 		_minVolume = Param(nameof(MinVolume), 0.01m)
@@ -197,7 +197,7 @@ public class RrsRandomnessStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Slippage", "Expected slippage in price steps. Used for reference only.", "Filters");
 
-		_riskMode = Param(nameof(MoneyRiskMode), RiskMode.BalancePercentage)
+		_riskMode = Param(nameof(MoneyRiskMode), RiskModes.BalancePercentage)
 			.SetDisplay("Risk Mode", "Choose whether risk is fixed or percentage based.", "Risk Management");
 
 		_riskValue = Param(nameof(RiskValue), 5m)
@@ -429,7 +429,7 @@ public class RrsRandomnessStrategy : Strategy
 		var floatingPnL = steps * stepPrice * Position;
 
 		var portfolioValue = Portfolio?.CurrentValue ?? 0m;
-		var riskThreshold = MoneyRiskMode == RiskMode.BalancePercentage
+		var riskThreshold = MoneyRiskMode == RiskModes.BalancePercentage
 			? -portfolioValue * (RiskValue / 100m)
 			: -RiskValue;
 
@@ -464,7 +464,7 @@ public class RrsRandomnessStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		if (Mode == TradingMode.DoubleSide)
+		if (Mode == TradingModes.DoubleSide)
 		{
 			if (_openLongNext)
 			{
@@ -542,7 +542,7 @@ public class RrsRandomnessStrategy : Strategy
 	/// <summary>
 	/// Trading mode options.
 	/// </summary>
-	public enum TradingMode
+	public enum TradingModes
 	{
 		/// <summary>
 		/// Alternate between long and short entries every cycle.
@@ -558,7 +558,7 @@ public class RrsRandomnessStrategy : Strategy
 	/// <summary>
 	/// Risk management configuration.
 	/// </summary>
-	public enum RiskMode
+	public enum RiskModes
 	{
 		/// <summary>
 		/// Risk is defined as a fixed currency value.

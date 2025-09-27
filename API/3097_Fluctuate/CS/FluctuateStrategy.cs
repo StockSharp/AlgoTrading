@@ -17,7 +17,7 @@ using StockSharp.Algo;
 
 public class FluctuateStrategy : Strategy
 {
-	private enum LotMode
+	private enum LotModes
 	{
 		FixedVolume,
 		RiskPercent
@@ -38,7 +38,7 @@ public class FluctuateStrategy : Strategy
 	private readonly StrategyParam<bool> _closeAllAtStart;
 	private readonly StrategyParam<int> _startHour;
 	private readonly StrategyParam<int> _endHour;
-	private readonly StrategyParam<LotMode> _lotMode;
+	private readonly StrategyParam<LotModes> _lotMode;
 	private readonly StrategyParam<decimal> _volumeOrRisk;
 
 	private readonly Queue<decimal> _closeHistory = new();
@@ -128,7 +128,7 @@ public class FluctuateStrategy : Strategy
 		.SetRange(0, 23)
 		.SetDisplay("End hour", "Hour when trading stops accepting new signals (exclusive).", "Schedule");
 
-		_lotMode = Param(nameof(PositionSizingMode), LotMode.FixedVolume)
+		_lotMode = Param(nameof(PositionSizingMode), LotModes.FixedVolume)
 		.SetDisplay("Sizing mode", "Select between fixed volume and risk-based position sizing.", "Money Management");
 
 		_volumeOrRisk = Param(nameof(VolumeOrRisk), 1m)
@@ -226,7 +226,7 @@ public class FluctuateStrategy : Strategy
 		set => _endHour.Value = value;
 	}
 
-	public LotMode PositionSizingMode
+	public LotModes PositionSizingMode
 	{
 		get => _lotMode.Value;
 		set => _lotMode.Value = value;
@@ -502,7 +502,7 @@ public class FluctuateStrategy : Strategy
 	{
 		decimal volume = 0m;
 
-		if (PositionSizingMode == LotMode.RiskPercent)
+		if (PositionSizingMode == LotModes.RiskPercent)
 			volume = CalculateRiskVolume(entryPrice, stopPrice);
 
 		if (volume <= 0m)

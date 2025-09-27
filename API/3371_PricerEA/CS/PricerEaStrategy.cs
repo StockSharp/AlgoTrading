@@ -22,7 +22,7 @@ public class PricerEaStrategy : Strategy
 	/// <summary>
 	/// Volume selection mode.
 	/// </summary>
-	public enum LotSizingMode
+	public enum LotSizingModes
 	{
 		/// <summary>
 		/// Always use the manual volume parameter.
@@ -46,7 +46,7 @@ public class PricerEaStrategy : Strategy
 	private readonly StrategyParam<bool> _enableBreakEven;
 	private readonly StrategyParam<decimal> _breakEvenTriggerPoints;
 	private readonly StrategyParam<int> _pendingExpiryMinutes;
-	private readonly StrategyParam<LotSizingMode> _lotSizingMode;
+	private readonly StrategyParam<LotSizingModes> _lotSizingMode;
 	private readonly StrategyParam<decimal> _riskFactor;
 	private readonly StrategyParam<decimal> _manualVolume;
 
@@ -107,7 +107,7 @@ public class PricerEaStrategy : Strategy
 		_pendingExpiryMinutes = Param(nameof(PendingExpiryMinutes), 60)
 			.SetDisplay("Pending Expiry (minutes)", "Lifetime of the pending orders (0 keeps them alive)", "Pending Orders");
 
-		_lotSizingMode = Param(nameof(VolumeMode), LotSizingMode.Manual)
+		_lotSizingMode = Param(nameof(VolumeMode), LotSizingModes.Manual)
 			.SetDisplay("Lot Sizing Mode", "Choose between manual and automatic volume", "Risk");
 
 		_riskFactor = Param(nameof(RiskFactor), 1m)
@@ -221,7 +221,7 @@ public class PricerEaStrategy : Strategy
 	/// <summary>
 	/// Volume selection mode.
 	/// </summary>
-	public LotSizingMode VolumeMode
+	public LotSizingModes VolumeMode
 	{
 		get => _lotSizingMode.Value;
 		set => _lotSizingMode.Value = value;
@@ -237,7 +237,7 @@ public class PricerEaStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Manual volume used when <see cref="VolumeMode"/> equals <see cref="LotSizingMode.Manual"/>.
+	/// Manual volume used when <see cref="VolumeMode"/> equals <see cref="LotSizingModes.Manual"/>.
 	/// </summary>
 	public decimal ManualVolume
 	{
@@ -679,7 +679,7 @@ public class PricerEaStrategy : Strategy
 
 	private decimal CalculateOrderVolume()
 	{
-		var volume = VolumeMode == LotSizingMode.Manual
+		var volume = VolumeMode == LotSizingModes.Manual
 			? ManualVolume
 			: CalculateAutomaticVolume();
 

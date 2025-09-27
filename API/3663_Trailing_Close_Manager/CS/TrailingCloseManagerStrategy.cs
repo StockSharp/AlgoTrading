@@ -50,13 +50,13 @@ public class TrailingCloseManagerStrategy : Strategy
 
 	private sealed class CloseRequest
 	{
-		public CloseMode Mode { get; init; }
+		public CloseModes Mode { get; init; }
 		public int RemainingAttempts { get; set; }
 		public DateTimeOffset NextAttempt { get; set; }
 		public string Reason { get; set; } = string.Empty;
 	}
 
-	private enum CloseMode
+	private enum CloseModes
 	{
 		All,
 		Profitable,
@@ -284,19 +284,19 @@ public class TrailingCloseManagerStrategy : Strategy
 		if (CloseAllButton)
 		{
 			CloseAllButton = false;
-			EnqueueCloseRequest(CloseMode.All, "Manual close all requested", time);
+			EnqueueCloseRequest(CloseModes.All, "Manual close all requested", time);
 		}
 
 		if (CloseProfitableButton)
 		{
 			CloseProfitableButton = false;
-			EnqueueCloseRequest(CloseMode.Profitable, "Manual close of profitable positions requested", time);
+			EnqueueCloseRequest(CloseModes.Profitable, "Manual close of profitable positions requested", time);
 		}
 
 		if (CloseLosingButton)
 		{
 			CloseLosingButton = false;
-			EnqueueCloseRequest(CloseMode.Losing, "Manual close of losing positions requested", time);
+			EnqueueCloseRequest(CloseModes.Losing, "Manual close of losing positions requested", time);
 		}
 	}
 
@@ -306,12 +306,12 @@ public class TrailingCloseManagerStrategy : Strategy
 
 		if (CloseProfitThreshold > 0m && totalPnL >= CloseProfitThreshold)
 		{
-			EnqueueCloseRequest(CloseMode.All, $"Floating profit {totalPnL:0.##} reached the configured threshold {CloseProfitThreshold:0.##}", time);
+			EnqueueCloseRequest(CloseModes.All, $"Floating profit {totalPnL:0.##} reached the configured threshold {CloseProfitThreshold:0.##}", time);
 		}
 
 		if (CloseLossThreshold < 0m && totalPnL <= CloseLossThreshold)
 		{
-			EnqueueCloseRequest(CloseMode.All, $"Floating loss {totalPnL:0.##} reached the configured threshold {CloseLossThreshold:0.##}", time);
+			EnqueueCloseRequest(CloseModes.All, $"Floating loss {totalPnL:0.##} reached the configured threshold {CloseLossThreshold:0.##}", time);
 		}
 	}
 
@@ -358,7 +358,7 @@ public class TrailingCloseManagerStrategy : Strategy
 		}
 	}
 
-	private bool ExecuteClose(CloseMode mode)
+	private bool ExecuteClose(CloseModes mode)
 	{
 		var portfolio = Portfolio;
 		if (portfolio == null)
@@ -409,9 +409,9 @@ public class TrailingCloseManagerStrategy : Strategy
 
 			var shouldClose = mode switch
 			{
-			CloseMode.All => true,
-			CloseMode.Profitable => pnl > 0m,
-			CloseMode.Losing => pnl < 0m,
+			CloseModes.All => true,
+			CloseModes.Profitable => pnl > 0m,
+			CloseModes.Losing => pnl < 0m,
 			_ => false
 			};
 
@@ -578,7 +578,7 @@ public class TrailingCloseManagerStrategy : Strategy
 		}
 	}
 
-	private void EnqueueCloseRequest(CloseMode mode, string reason, DateTimeOffset time)
+	private void EnqueueCloseRequest(CloseModes mode, string reason, DateTimeOffset time)
 	{
 		var existing = _closeRequests.FirstOrDefault(r => r.Mode == mode);
 		if (existing != null)

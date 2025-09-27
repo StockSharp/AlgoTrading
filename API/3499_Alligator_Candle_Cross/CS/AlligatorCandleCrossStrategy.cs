@@ -30,7 +30,7 @@ public class AlligatorCandleCrossStrategy : Strategy
 	private readonly StrategyParam<int> _lipsPeriod;
 	private readonly StrategyParam<int> _lipsShift;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<AlligatorCrossMode> _entryMode;
+	private readonly StrategyParam<AlligatorCrossModes> _entryMode;
 
 	private SmoothedMovingAverage _jaw = null!;
 	private SmoothedMovingAverage _teeth = null!;
@@ -143,7 +143,7 @@ public class AlligatorCandleCrossStrategy : Strategy
 	/// <summary>
 	/// Directional bias for the candle cross signals.
 	/// </summary>
-	public AlligatorCrossMode EntryMode
+	public AlligatorCrossModes EntryMode
 	{
 		get => _entryMode.Value;
 		set => _entryMode.Value = value;
@@ -193,7 +193,7 @@ public class AlligatorCandleCrossStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame used for candle subscription", "General");
 
-		_entryMode = Param(nameof(EntryMode), AlligatorCrossMode.Both)
+		_entryMode = Param(nameof(EntryMode), AlligatorCrossModes.Both)
 		.SetDisplay("Entry Mode", "Directional bias for cross signals", "Trading");
 	}
 
@@ -337,8 +337,8 @@ public class AlligatorCandleCrossStrategy : Strategy
 
 		if (Position == 0 && IsFormedAndOnlineAndAllowTrading() && _previousClose is decimal prevClose)
 		{
-			var allowLong = EntryMode is AlligatorCrossMode.Both or AlligatorCrossMode.LongOnly;
-			var allowShort = EntryMode is AlligatorCrossMode.Both or AlligatorCrossMode.ShortOnly;
+			var allowLong = EntryMode is AlligatorCrossModes.Both or AlligatorCrossModes.LongOnly;
+			var allowShort = EntryMode is AlligatorCrossModes.Both or AlligatorCrossModes.ShortOnly;
 
 			var alligatorUpperPrev = Math.Max(jawPrevious, Math.Max(teethPrevious, lipsPrevious));
 			var alligatorLowerPrev = Math.Min(jawPrevious, Math.Min(teethPrevious, lipsPrevious));
@@ -474,7 +474,7 @@ public class AlligatorCandleCrossStrategy : Strategy
 /// <summary>
 /// Selects the trade direction for the Alligator candle cross logic.
 /// </summary>
-public enum AlligatorCrossMode
+public enum AlligatorCrossModes
 {
 	/// <summary>
 	/// Enable both long and short entries.

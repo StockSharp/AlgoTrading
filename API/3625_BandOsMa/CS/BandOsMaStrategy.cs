@@ -25,13 +25,13 @@ public class BandOsMaStrategy : Strategy
 	private readonly StrategyParam<int> _macdFastPeriod;
 	private readonly StrategyParam<int> _macdSlowPeriod;
 	private readonly StrategyParam<int> _macdSignalPeriod;
-	private readonly StrategyParam<IndicatorAppliedPrice> _priceType;
+	private readonly StrategyParam<IndicatorAppliedPrices> _priceType;
 	private readonly StrategyParam<int> _bollingerPeriod;
 	private readonly StrategyParam<int> _bollingerShift;
 	private readonly StrategyParam<decimal> _bollingerDeviation;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageMethod> _maMethod;
+	private readonly StrategyParam<MovingAverageMethods> _maMethod;
 
 	private MovingAverageConvergenceDivergenceSignal _macd;
 	private BollingerBands _bollinger;
@@ -107,7 +107,7 @@ public class BandOsMaStrategy : Strategy
 	/// <summary>
 	/// Applied price mapping that mirrors MetaTrader PRICE_* constants.
 	/// </summary>
-	public IndicatorAppliedPrice PriceType
+	public IndicatorAppliedPrices PriceType
 	{
 		get => _priceType.Value;
 		set => _priceType.Value = value;
@@ -161,7 +161,7 @@ public class BandOsMaStrategy : Strategy
 	/// <summary>
 	/// Moving average method matching the MetaTrader enumeration.
 	/// </summary>
-	public MovingAverageMethod MovingAverageMethod
+	public MovingAverageMethods MovingAverageMethods
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -200,7 +200,7 @@ public class BandOsMaStrategy : Strategy
 		.SetDisplay("MACD Signal", "Signal EMA length used inside MACD", "Indicators")
 		.SetCanOptimize(true);
 
-		_priceType = Param(nameof(PriceType), IndicatorAppliedPrice.Typical)
+		_priceType = Param(nameof(PriceType), IndicatorAppliedPrices.Typical)
 		.SetDisplay("Applied Price", "Price source forwarded to the MACD", "General")
 		.SetCanOptimize(true);
 
@@ -227,7 +227,7 @@ public class BandOsMaStrategy : Strategy
 		.SetDisplay("OsMA MA Shift", "Shift applied to the moving average buffer", "Indicators")
 		.SetCanOptimize(true);
 
-		_maMethod = Param(nameof(MovingAverageMethod), MovingAverageMethod.Simple)
+		_maMethod = Param(nameof(MovingAverageMethods), MovingAverageMethods.Simple)
 		.SetDisplay("OsMA MA Method", "Moving average method applied to the OsMA", "Indicators")
 		.SetCanOptimize(true);
 	}
@@ -283,7 +283,7 @@ public class BandOsMaStrategy : Strategy
 			Width = BollingerDeviation
 		};
 
-		_osmaAverage = CreateMovingAverage(MovingAverageMethod, MovingAveragePeriod);
+		_osmaAverage = CreateMovingAverage(MovingAverageMethods, MovingAveragePeriod);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -547,27 +547,27 @@ private static bool TryGetRecentPair(List<decimal> history, int shift, out decim
 	return true;
 }
 
-private static decimal GetAppliedPrice(ICandleMessage candle, IndicatorAppliedPrice priceType)
+private static decimal GetAppliedPrice(ICandleMessage candle, IndicatorAppliedPrices priceType)
 {
 	return priceType switch
 	{
-		IndicatorAppliedPrice.Open => candle.OpenPrice,
-		IndicatorAppliedPrice.High => candle.HighPrice,
-		IndicatorAppliedPrice.Low => candle.LowPrice,
-		IndicatorAppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-		IndicatorAppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-		IndicatorAppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
+		IndicatorAppliedPrices.Open => candle.OpenPrice,
+		IndicatorAppliedPrices.High => candle.HighPrice,
+		IndicatorAppliedPrices.Low => candle.LowPrice,
+		IndicatorAppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+		IndicatorAppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+		IndicatorAppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
 		_ => candle.ClosePrice
 	};
 }
 
-private static IIndicator CreateMovingAverage(MovingAverageMethod method, int length)
+private static IIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 {
 	return method switch
 	{
-		MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = length },
-		MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-		MovingAverageMethod.LinearWeighted => new WeightedMovingAverage { Length = length },
+		MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+		MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+		MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 		_ => new SimpleMovingAverage { Length = length }
 	};
 }
@@ -576,7 +576,7 @@ private static IIndicator CreateMovingAverage(MovingAverageMethod method, int le
 /// <summary>
 /// Enumeration mirroring the MetaTrader applied price options.
 /// </summary>
-public enum IndicatorAppliedPrice
+public enum IndicatorAppliedPrices
 {
 	Close,
 	Open,
@@ -590,7 +590,7 @@ public enum IndicatorAppliedPrice
 /// <summary>
 /// Moving average methods corresponding to MetaTrader's ENUM_MA_METHOD values.
 /// </summary>
-public enum MovingAverageMethod
+public enum MovingAverageMethods
 {
 	Simple,
 	Exponential,

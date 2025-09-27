@@ -35,7 +35,7 @@ public class MnistPatternClassifierStrategy : Strategy
 	private int _lastClass = -1;
 	private decimal _lastConfidence;
 
-	private enum PatternBias
+	private enum PatternBiases
 	{
 		Neutral,
 		Bullish,
@@ -173,11 +173,11 @@ public class MnistPatternClassifierStrategy : Strategy
 		_previousClose = candle.ClosePrice;
 	}
 
-	private void ExecuteBias(PatternBias bias)
+	private void ExecuteBias(PatternBiases bias)
 	{
 		switch (bias)
 		{
-		case PatternBias.Bullish:
+		case PatternBiases.Bullish:
 			if (Position < 0)
 			BuyMarket(-Position);
 
@@ -188,7 +188,7 @@ public class MnistPatternClassifierStrategy : Strategy
 			}
 
 			break;
-		case PatternBias.Bearish:
+		case PatternBiases.Bearish:
 			if (Position > 0)
 			SellMarket(Position);
 
@@ -248,55 +248,55 @@ public class MnistPatternClassifierStrategy : Strategy
 
 		if (rangeStrength < stats.FlatThreshold)
 		{
-			return new PatternResult(0, Math.Max(confidence, 0.4m), PatternBias.Neutral);
+			return new PatternResult(0, Math.Max(confidence, 0.4m), PatternBiases.Neutral);
 		}
 
 		if (trendStrength >= stats.TrendThreshold)
 		{
 			if (rangePosition >= 0.75m && rangeStrength >= breakoutRange)
 			{
-				return new PatternResult(3, confidence, PatternBias.Bullish);
+				return new PatternResult(3, confidence, PatternBiases.Bullish);
 			}
 
 			if (momentum < 0m)
 			{
-				return new PatternResult(6, confidence * 0.8m, PatternBias.Bullish);
+				return new PatternResult(6, confidence * 0.8m, PatternBiases.Bullish);
 			}
 
-			return new PatternResult(1, confidence, PatternBias.Bullish);
+			return new PatternResult(1, confidence, PatternBiases.Bullish);
 		}
 
 		if (trendStrength <= -stats.TrendThreshold)
 		{
 			if (rangePosition <= 0.25m && rangeStrength >= breakoutRange)
 			{
-				return new PatternResult(4, confidence, PatternBias.Bearish);
+				return new PatternResult(4, confidence, PatternBiases.Bearish);
 			}
 
 			if (momentum > 0m)
 			{
-				return new PatternResult(7, confidence * 0.8m, PatternBias.Bearish);
+				return new PatternResult(7, confidence * 0.8m, PatternBiases.Bearish);
 			}
 
-			return new PatternResult(2, confidence, PatternBias.Bearish);
+			return new PatternResult(2, confidence, PatternBiases.Bearish);
 		}
 
 		if (rangeStrength >= breakoutRange)
 		{
-			return new PatternResult(5, confidence * 0.9m, PatternBias.Neutral);
+			return new PatternResult(5, confidence * 0.9m, PatternBiases.Neutral);
 		}
 
 		if (rangePosition <= 0.4m && rsi >= 55m)
 		{
-			return new PatternResult(8, confidence * 0.85m, PatternBias.Bullish);
+			return new PatternResult(8, confidence * 0.85m, PatternBiases.Bullish);
 		}
 
 		if (rangePosition >= 0.6m && rsi <= 45m)
 		{
-			return new PatternResult(9, confidence * 0.85m, PatternBias.Bearish);
+			return new PatternResult(9, confidence * 0.85m, PatternBiases.Bearish);
 		}
 
-		return new PatternResult(0, confidence * 0.7m, PatternBias.Neutral);
+		return new PatternResult(0, confidence * 0.7m, PatternBiases.Neutral);
 	}
 
 	private PatternStatistics CalculateStatistics(decimal currentClose, decimal rsiValue, decimal atrValue)
@@ -348,7 +348,7 @@ public class MnistPatternClassifierStrategy : Strategy
 
 	private readonly struct PatternResult
 	{
-		public PatternResult(int patternClass, decimal confidence, PatternBias bias)
+		public PatternResult(int patternClass, decimal confidence, PatternBiases bias)
 		{
 			PatternClass = patternClass;
 			Confidence = confidence;
@@ -359,7 +359,7 @@ public class MnistPatternClassifierStrategy : Strategy
 
 		public decimal Confidence { get; }
 
-		public PatternBias Bias { get; }
+		public PatternBiases Bias { get; }
 	}
 
 	private readonly struct PatternStatistics

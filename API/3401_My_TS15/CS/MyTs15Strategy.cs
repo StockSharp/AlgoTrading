@@ -20,7 +20,7 @@ public class MyTs15Strategy : Strategy
 {
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageMethod> _maMethod;
+	private readonly StrategyParam<MovingAverageMethods> _maMethod;
 	private readonly StrategyParam<CandlePrice> _maPrice;
 	private readonly StrategyParam<int> _maBarsTrail;
 	private readonly StrategyParam<decimal> _trailBehindMaPoints;
@@ -50,7 +50,7 @@ public class MyTs15Strategy : Strategy
 		.SetDisplay("MA Shift", "Additional bar shift applied when requesting MA values.", "Moving Average")
 		.SetNotNegative();
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.LinearWeighted)
+		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.LinearWeighted)
 		.SetDisplay("MA Method", "Moving average smoothing method.", "Moving Average");
 
 		_maPrice = Param(nameof(MaPrice), CandlePrice.Weighted)
@@ -92,7 +92,7 @@ public class MyTs15Strategy : Strategy
 
 	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
 	public int MaShift { get => _maShift.Value; set => _maShift.Value = value; }
-	public MovingAverageMethod MaMethod { get => _maMethod.Value; set => _maMethod.Value = value; }
+	public MovingAverageMethods MaMethod { get => _maMethod.Value; set => _maMethod.Value = value; }
 	public CandlePrice MaPrice { get => _maPrice.Value; set => _maPrice.Value = value; }
 	public int MaBarsTrail { get => _maBarsTrail.Value; set => _maBarsTrail.Value = value; }
 	public decimal TrailBehindMaPoints { get => _trailBehindMaPoints.Value; set => _trailBehindMaPoints.Value = value; }
@@ -385,14 +385,14 @@ public class MyTs15Strategy : Strategy
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethod method, int length, CandlePrice price)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length, CandlePrice price)
 	{
 		LengthIndicator<decimal> indicator = method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage(),
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage(),
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage(),
-			MovingAverageMethod.LinearWeighted => new WeightedMovingAverage(),
+			MovingAverageMethods.Simple => new SimpleMovingAverage(),
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage(),
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage(),
+			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage(),
 			_ => new SimpleMovingAverage(),
 		};
 
@@ -420,7 +420,7 @@ public class MyTs15Strategy : Strategy
 	/// <summary>
 	/// Moving average smoothing methods supported by the strategy.
 	/// </summary>
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		/// <summary>
 		/// Simple moving average.

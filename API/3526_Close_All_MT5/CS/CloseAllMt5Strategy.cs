@@ -25,10 +25,10 @@ using System.Reflection;
 /// </summary>
 public class CloseAllMt5Strategy : Strategy
 {
-	private readonly StrategyParam<PositionSelection> _positionSelection;
-	private readonly StrategyParam<ProfitMeasure> _profitMeasure;
+	private readonly StrategyParam<PositionSelections> _positionSelection;
+	private readonly StrategyParam<ProfitMeasures> _profitMeasure;
 	private readonly StrategyParam<decimal> _profitThreshold;
-	private readonly StrategyParam<CloseRequestMode> _closeMode;
+	private readonly StrategyParam<CloseRequestModes> _closeMode;
 	private readonly StrategyParam<string> _commentFilter;
 	private readonly StrategyParam<string> _currencyFilter;
 	private readonly StrategyParam<long> _magicNumber;
@@ -42,7 +42,7 @@ public class CloseAllMt5Strategy : Strategy
 	/// <summary>
 	/// Determines which position sides participate in the automatic profit checks.
 	/// </summary>
-	public PositionSelection PositionFilter
+	public PositionSelections PositionFilter
 	{
 		get => _positionSelection.Value;
 		set => _positionSelection.Value = value;
@@ -51,7 +51,7 @@ public class CloseAllMt5Strategy : Strategy
 	/// <summary>
 	/// Measurement unit used for the floating profit comparison.
 	/// </summary>
-	public ProfitMeasure ProfitMode
+	public ProfitMeasures ProfitMode
 	{
 		get => _profitMeasure.Value;
 		set => _profitMeasure.Value = value;
@@ -70,7 +70,7 @@ public class CloseAllMt5Strategy : Strategy
 	/// <summary>
 	/// Manual closing behaviour that emulates the button from the MQL version.
 	/// </summary>
-	public CloseRequestMode CloseMode
+	public CloseRequestModes CloseMode
 	{
 		get => _closeMode.Value;
 		set => _closeMode.Value = value;
@@ -86,7 +86,7 @@ public class CloseAllMt5Strategy : Strategy
 	}
 
 	/// <summary>
-	/// Symbol identifier applied when <see cref="CloseMode"/> equals <see cref="CloseRequestMode.CloseCurrency"/>.
+	/// Symbol identifier applied when <see cref="CloseMode"/> equals <see cref="CloseRequestModes.CloseCurrency"/>.
 	/// Leave empty to use the current strategy security.
 	/// </summary>
 	public string CurrencyFilter
@@ -96,7 +96,7 @@ public class CloseAllMt5Strategy : Strategy
 	}
 
 	/// <summary>
-	/// Strategy identifier (Magic number) used by <see cref="CloseRequestMode.CloseMagic"/>.
+	/// Strategy identifier (Magic number) used by <see cref="CloseRequestModes.CloseMagic"/>.
 	/// </summary>
 	public long MagicNumber
 	{
@@ -105,7 +105,7 @@ public class CloseAllMt5Strategy : Strategy
 	}
 
 	/// <summary>
-	/// Specific position identifier targeted by <see cref="CloseRequestMode.CloseTicket"/>.
+	/// Specific position identifier targeted by <see cref="CloseRequestModes.CloseTicket"/>.
 	/// </summary>
 	public long TicketNumber
 	{
@@ -150,10 +150,10 @@ public class CloseAllMt5Strategy : Strategy
 	/// </summary>
 	public CloseAllMt5Strategy()
 	{
-		_positionSelection = Param(nameof(PositionFilter), PositionSelection.Buy)
+		_positionSelection = Param(nameof(PositionFilter), PositionSelections.Buy)
 			.SetDisplay("Position Filter", "Positions included in automatic profit checks", "General");
 
-		_profitMeasure = Param(nameof(ProfitMode), ProfitMeasure.Money)
+		_profitMeasure = Param(nameof(ProfitMode), ProfitMeasures.Money)
 			.SetDisplay("Profit Mode", "Unit used to measure floating profit", "General");
 
 		_profitThreshold = Param(nameof(ProfitThreshold), 3m)
@@ -161,7 +161,7 @@ public class CloseAllMt5Strategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(-20m, 20m, 1m);
 
-		_closeMode = Param(nameof(CloseMode), CloseRequestMode.CloseAll)
+		_closeMode = Param(nameof(CloseMode), CloseRequestModes.CloseAll)
 			.SetDisplay("Close Mode", "Manual close behaviour", "Controls");
 
 		_commentFilter = Param(nameof(CommentFilter), "Bonnitta EA")
@@ -294,8 +294,8 @@ public class CloseAllMt5Strategy : Strategy
 
 		return PositionFilter switch
 		{
-			PositionSelection.Buy => volume > 0m,
-			PositionSelection.Sell => volume < 0m,
+			PositionSelections.Buy => volume > 0m,
+			PositionSelections.Sell => volume < 0m,
 			_ => volume != 0m,
 		};
 	}
@@ -354,7 +354,7 @@ public class CloseAllMt5Strategy : Strategy
 
 		switch (ProfitMode)
 		{
-			case ProfitMeasure.Money:
+			case ProfitMeasures.Money:
 			{
 				var pnl = position.PnL;
 				if (pnl.HasValue)
@@ -376,7 +376,7 @@ public class CloseAllMt5Strategy : Strategy
 				return true;
 			}
 
-			case ProfitMeasure.Points:
+			case ProfitMeasures.Points:
 			{
 				var step = security.PriceStep ?? 0m;
 				if (step <= 0m)
@@ -386,7 +386,7 @@ public class CloseAllMt5Strategy : Strategy
 				return true;
 			}
 
-			case ProfitMeasure.Pips:
+			case ProfitMeasures.Pips:
 			{
 				var pipSize = GetPipSize(security);
 				if (pipSize <= 0m)
@@ -453,7 +453,7 @@ public class CloseAllMt5Strategy : Strategy
 			ClosePosition(position);
 		}
 
-		if (CloseMode == CloseRequestMode.CloseAllAndPending)
+		if (CloseMode == CloseRequestModes.CloseAllAndPending)
 		{
 			var securities = positions
 			.Select(p => p.Security)
@@ -473,17 +473,17 @@ public class CloseAllMt5Strategy : Strategy
 
 		switch (CloseMode)
 		{
-			case CloseRequestMode.CloseAll:
-			case CloseRequestMode.CloseAllAndPending:
+			case CloseRequestModes.CloseAll:
+			case CloseRequestModes.CloseAllAndPending:
 				return true;
 
-			case CloseRequestMode.CloseBuy:
+			case CloseRequestModes.CloseBuy:
 				return volume > 0m;
 
-			case CloseRequestMode.CloseSell:
+			case CloseRequestModes.CloseSell:
 				return volume < 0m;
 
-			case CloseRequestMode.CloseCurrency:
+			case CloseRequestModes.CloseCurrency:
 			{
 				var filter = CurrencyFilter;
 				if (filter.IsEmptyOrWhiteSpace())
@@ -496,7 +496,7 @@ public class CloseAllMt5Strategy : Strategy
 				return symbol != null && symbol.EqualsIgnoreCase(filter);
 			}
 
-			case CloseRequestMode.CloseMagic:
+			case CloseRequestModes.CloseMagic:
 			{
 				if (MagicNumber == 0L)
 					return false;
@@ -509,7 +509,7 @@ public class CloseAllMt5Strategy : Strategy
 				return strategyId.EqualsIgnoreCase(magic);
 			}
 
-			case CloseRequestMode.CloseTicket:
+			case CloseRequestModes.CloseTicket:
 			{
 				if (TicketNumber == 0L)
 					return false;
@@ -559,7 +559,7 @@ public class CloseAllMt5Strategy : Strategy
 	/// <summary>
 	/// Position side filter from the MQL version.
 	/// </summary>
-	public enum PositionSelection
+	public enum PositionSelections
 	{
 		/// <summary>Process only long positions.</summary>
 		Buy = 0,
@@ -572,7 +572,7 @@ public class CloseAllMt5Strategy : Strategy
 	/// <summary>
 	/// Profit evaluation unit.
 	/// </summary>
-	public enum ProfitMeasure
+	public enum ProfitMeasures
 	{
 		/// <summary>Use monetary profit reported by the portfolio.</summary>
 		Money = 0,
@@ -585,7 +585,7 @@ public class CloseAllMt5Strategy : Strategy
 	/// <summary>
 	/// Manual closing mode emulating the button from the original script.
 	/// </summary>
-	public enum CloseRequestMode
+	public enum CloseRequestModes
 	{
 		/// <summary>Close every matching position.</summary>
 		CloseAll = 0,

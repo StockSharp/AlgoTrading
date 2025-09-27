@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies;
 public class ExpTrendMagicStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _moneyManagement;
-	private readonly StrategyParam<MarginModeOption> _marginMode;
+	private readonly StrategyParam<MarginModeOptions> _marginMode;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _deviationPoints;
@@ -31,7 +31,7 @@ public class ExpTrendMagicStrategy : Strategy
 	private readonly StrategyParam<bool> _allowSellExit;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _cciPeriod;
-	private readonly StrategyParam<AppliedPriceMode> _cciPrice;
+	private readonly StrategyParam<AppliedPriceModes> _cciPrice;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<int> _signalBar;
 
@@ -54,7 +54,7 @@ public class ExpTrendMagicStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(0.05m, 0.5m, 0.05m);
 
-		_marginMode = Param(nameof(MarginMode), MarginModeOption.Lot)
+		_marginMode = Param(nameof(MarginMode), MarginModeOptions.Lot)
 		.SetDisplay("Margin Mode", "Mode used to translate MM into volume", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
@@ -89,7 +89,7 @@ public class ExpTrendMagicStrategy : Strategy
 		.SetDisplay("CCI Period", "Length of the CCI", "Indicator")
 		.SetGreaterThanZero();
 
-		_cciPrice = Param(nameof(CciPrice), AppliedPriceMode.Median)
+		_cciPrice = Param(nameof(CciPrice), AppliedPriceModes.Median)
 		.SetDisplay("CCI Price", "Applied price for the CCI", "Indicator");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 5)
@@ -113,7 +113,7 @@ public class ExpTrendMagicStrategy : Strategy
 	/// <summary>
 	/// Mode used to convert the money management value into an order volume.
 	/// </summary>
-	public MarginModeOption MarginMode
+	public MarginModeOptions MarginMode
 	{
 		get => _marginMode.Value;
 		set => _marginMode.Value = value;
@@ -203,7 +203,7 @@ public class ExpTrendMagicStrategy : Strategy
 	/// <summary>
 	/// Applied price used as the CCI input.
 	/// </summary>
-	public AppliedPriceMode CciPrice
+	public AppliedPriceModes CciPrice
 	{
 		get => _cciPrice.Value;
 		set => _cciPrice.Value = value;
@@ -496,15 +496,15 @@ public class ExpTrendMagicStrategy : Strategy
 
 		switch (MarginMode)
 		{
-			case MarginModeOption.FreeMargin:
-			case MarginModeOption.Balance:
+			case MarginModeOptions.FreeMargin:
+			case MarginModeOptions.Balance:
 			{
 				var amount = capital * mm;
 				volume = amount / price;
 				break;
 			}
-			case MarginModeOption.LossFreeMargin:
-			case MarginModeOption.LossBalance:
+			case MarginModeOptions.LossFreeMargin:
+			case MarginModeOptions.LossBalance:
 			{
 				if (StopLossPoints <= 0m)
 					return NormalizeVolume(Volume);
@@ -521,7 +521,7 @@ public class ExpTrendMagicStrategy : Strategy
 				volume = lossAmount / riskPerContract;
 				break;
 			}
-			case MarginModeOption.Lot:
+			case MarginModeOptions.Lot:
 			default:
 				volume = mm;
 				break;
@@ -554,18 +554,18 @@ public class ExpTrendMagicStrategy : Strategy
 		return volume;
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceMode mode)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceModes mode)
 	{
 		return mode switch
 		{
-			AppliedPriceMode.Close => candle.ClosePrice,
-			AppliedPriceMode.Open => candle.OpenPrice,
-			AppliedPriceMode.High => candle.HighPrice,
-			AppliedPriceMode.Low => candle.LowPrice,
-			AppliedPriceMode.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceMode.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceMode.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
-			AppliedPriceMode.Average => (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
+			AppliedPriceModes.Close => candle.ClosePrice,
+			AppliedPriceModes.Open => candle.OpenPrice,
+			AppliedPriceModes.High => candle.HighPrice,
+			AppliedPriceModes.Low => candle.LowPrice,
+			AppliedPriceModes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceModes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceModes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			AppliedPriceModes.Average => (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
@@ -573,7 +573,7 @@ public class ExpTrendMagicStrategy : Strategy
 	/// <summary>
 	/// Available money-management modes.
 	/// </summary>
-	public enum MarginModeOption
+	public enum MarginModeOptions
 	{
 		/// <summary>
 		/// Use the account free margin share.
@@ -604,7 +604,7 @@ public class ExpTrendMagicStrategy : Strategy
 	/// <summary>
 	/// Applied price options for the CCI input.
 	/// </summary>
-	public enum AppliedPriceMode
+	public enum AppliedPriceModes
 	{
 		/// <summary>
 		/// Close price.

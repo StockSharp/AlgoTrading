@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SwapStatusStrategy : Strategy
 {
-	private readonly StrategyParam<SwapPreset> _preset;
+	private readonly StrategyParam<SwapPresets> _preset;
 	private readonly StrategyParam<string> _customSymbols;
 
 	private readonly List<Security> _monitoredSecurities = new();
@@ -32,7 +32,7 @@ public class SwapStatusStrategy : Strategy
 	/// <summary>
 	/// Determines which predefined group of currency pairs should be monitored.
 	/// </summary>
-	public SwapPreset Preset
+	public SwapPresets Preset
 	{
 		get => _preset.Value;
 		set
@@ -60,7 +60,7 @@ public class SwapStatusStrategy : Strategy
 	/// </summary>
 	public SwapStatusStrategy()
 	{
-		_preset = Param(nameof(Preset), SwapPreset.PrimarySymbol)
+		_preset = Param(nameof(Preset), SwapPresets.PrimarySymbol)
 			.SetDisplay("Preset", "Predefined group of symbols to inspect", "General");
 
 		_customSymbols = Param(nameof(CustomSymbols), string.Empty)
@@ -166,7 +166,7 @@ public class SwapStatusStrategy : Strategy
 			_monitoredSecurities.Add(security);
 		}
 
-		if (Preset == SwapPreset.PrimarySymbol && Security != null)
+		if (Preset == SwapPresets.PrimarySymbol && Security != null)
 		{
 			// The original EA defaults to the current chart symbol, so include Strategy.Security.
 			AddSecurity(Security);
@@ -231,11 +231,11 @@ public class SwapStatusStrategy : Strategy
 		return "Zero";
 	}
 
-	private static IEnumerable<string> GetPresetSymbols(SwapPreset preset)
+	private static IEnumerable<string> GetPresetSymbols(SwapPresets preset)
 	{
 		return preset switch
 		{
-			SwapPreset.MajorPairs => new[]
+			SwapPresets.MajorPairs => new[]
 			{
 				"EURUSD",
 				"GBPUSD",
@@ -245,7 +245,7 @@ public class SwapStatusStrategy : Strategy
 				"USDCHF",
 				"USDJPY"
 			},
-			SwapPreset.MinorPairs => new[]
+			SwapPresets.MinorPairs => new[]
 			{
 				"EURGBP",
 				"EURJPY",
@@ -255,7 +255,7 @@ public class SwapStatusStrategy : Strategy
 				"AUDJPY",
 				"NZDJPY"
 			},
-			SwapPreset.ExoticPairs => new[]
+			SwapPresets.ExoticPairs => new[]
 			{
 				"EURTRY",
 				"EURZAR",
@@ -281,7 +281,7 @@ public class SwapStatusStrategy : Strategy
 /// <summary>
 /// Lists available symbol presets that mirror the MetaTrader scripts.
 /// </summary>
-public enum SwapPreset
+public enum SwapPresets
 {
 	/// <summary>
 	/// Only monitors the primary strategy security (matches Swap.mq4 behaviour).

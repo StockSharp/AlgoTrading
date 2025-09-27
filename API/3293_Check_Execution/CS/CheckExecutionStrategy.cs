@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies;
 public class CheckExecutionStrategy : Strategy
 {
 	private readonly StrategyParam<int> _iterations;
-	private readonly StrategyParam<CheckExecutionOrderType> _orderMode;
+	private readonly StrategyParam<CheckExecutionOrderTypes> _orderMode;
 	private readonly StrategyParam<decimal> _pendingOffset;
 	private readonly StrategyParam<decimal> _stopLossOffset;
 
@@ -43,7 +43,7 @@ public class CheckExecutionStrategy : Strategy
 		.SetDisplay("Iterations", "Number of modify attempts (1-500).", "General")
 		.SetCanOptimize(true);
 
-		_orderMode = Param(nameof(OrderMode), CheckExecutionOrderType.Pending)
+		_orderMode = Param(nameof(OrderMode), CheckExecutionOrderTypes.Pending)
 		.SetDisplay("Order Mode", "Select pending or market order workflow.", "General");
 
 		_pendingOffset = Param(nameof(PendingOffset), 100m)
@@ -68,7 +68,7 @@ public class CheckExecutionStrategy : Strategy
 		}
 	}
 
-	public CheckExecutionOrderType OrderMode
+	public CheckExecutionOrderTypes OrderMode
 	{
 		get => _orderMode.Value;
 		set => _orderMode.Value = value;
@@ -138,7 +138,7 @@ public class CheckExecutionStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 
-		if (OrderMode == CheckExecutionOrderType.Pending)
+		if (OrderMode == CheckExecutionOrderTypes.Pending)
 		{
 			HandlePendingWorkflow(askPrice, priceStep);
 		}
@@ -259,7 +259,7 @@ public class CheckExecutionStrategy : Strategy
 
 		if (order == _pendingOrder)
 		{
-			if (OrderMode == CheckExecutionOrderType.Market && order.State == OrderStates.Done)
+			if (OrderMode == CheckExecutionOrderTypes.Market && order.State == OrderStates.Done)
 			{
 				_pendingOrder = null;
 			}
@@ -306,7 +306,7 @@ public class CheckExecutionStrategy : Strategy
 
 	private void FinalizeCheck()
 	{
-		if (OrderMode == CheckExecutionOrderType.Pending)
+		if (OrderMode == CheckExecutionOrderTypes.Pending)
 		{
 			CancelOrderIfActive(ref _pendingOrder);
 		}
@@ -404,7 +404,7 @@ public class CheckExecutionStrategy : Strategy
 	}
 }
 
-public enum CheckExecutionOrderType
+public enum CheckExecutionOrderTypes
 {
 	Pending,
 	Market

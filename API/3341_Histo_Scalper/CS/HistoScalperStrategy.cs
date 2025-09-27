@@ -16,7 +16,7 @@ using StockSharp.Messages;
 /// <summary>
 /// Defines how indicator signals are interpreted.
 /// </summary>
-public enum SignalDirection
+public enum SignalDirections
 {
 	Straight,
 	Reverse,
@@ -41,35 +41,35 @@ public class HistoScalperStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPoints;
 
 	private readonly StrategyParam<bool> _useIndicator1;
-	private readonly StrategyParam<SignalDirection> _modeIndicator1;
+	private readonly StrategyParam<SignalDirections> _modeIndicator1;
 	private readonly StrategyParam<int> _periodIndicator1;
 
 	private readonly StrategyParam<bool> _useIndicator2;
-	private readonly StrategyParam<SignalDirection> _modeIndicator2;
+	private readonly StrategyParam<SignalDirections> _modeIndicator2;
 	private readonly StrategyParam<int> _periodIndicator2;
 	private readonly StrategyParam<int> _atrAveragePeriod;
 	private readonly StrategyParam<decimal> _atrPositiveThreshold;
 	private readonly StrategyParam<decimal> _atrNegativeThreshold;
 
 	private readonly StrategyParam<bool> _useIndicator3;
-	private readonly StrategyParam<SignalDirection> _modeIndicator3;
+	private readonly StrategyParam<SignalDirections> _modeIndicator3;
 	private readonly StrategyParam<int> _periodIndicator3;
 	private readonly StrategyParam<decimal> _bollingerDeviation;
 
 	private readonly StrategyParam<bool> _useIndicator4;
-	private readonly StrategyParam<SignalDirection> _modeIndicator4;
+	private readonly StrategyParam<SignalDirections> _modeIndicator4;
 	private readonly StrategyParam<int> _periodIndicator4;
 	private readonly StrategyParam<decimal> _bullsThreshold;
 	private readonly StrategyParam<decimal> _bearsThreshold;
 
 	private readonly StrategyParam<bool> _useIndicator5;
-	private readonly StrategyParam<SignalDirection> _modeIndicator5;
+	private readonly StrategyParam<SignalDirections> _modeIndicator5;
 	private readonly StrategyParam<int> _periodIndicator5;
 	private readonly StrategyParam<decimal> _cciBuyLevel;
 	private readonly StrategyParam<decimal> _cciSellLevel;
 
 	private readonly StrategyParam<bool> _useIndicator6;
-	private readonly StrategyParam<SignalDirection> _modeIndicator6;
+	private readonly StrategyParam<SignalDirections> _modeIndicator6;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _signalPeriod;
@@ -77,13 +77,13 @@ public class HistoScalperStrategy : Strategy
 	private readonly StrategyParam<decimal> _macdNegativeThreshold;
 
 	private readonly StrategyParam<bool> _useIndicator7;
-	private readonly StrategyParam<SignalDirection> _modeIndicator7;
+	private readonly StrategyParam<SignalDirections> _modeIndicator7;
 	private readonly StrategyParam<int> _periodIndicator7;
 	private readonly StrategyParam<decimal> _rsiBuyLevel;
 	private readonly StrategyParam<decimal> _rsiSellLevel;
 
 	private readonly StrategyParam<bool> _useIndicator8;
-	private readonly StrategyParam<SignalDirection> _modeIndicator8;
+	private readonly StrategyParam<SignalDirections> _modeIndicator8;
 	private readonly StrategyParam<int> _kPeriod;
 	private readonly StrategyParam<int> _dPeriod;
 	private readonly StrategyParam<int> _slowing;
@@ -145,7 +145,7 @@ public class HistoScalperStrategy : Strategy
 		_useIndicator1 = Param(nameof(UseIndicator1), true)
 			.SetDisplay("Use ADX", "Enable directional index confirmation", "ADX");
 
-		_modeIndicator1 = Param(nameof(ModeIndicator1), SignalDirection.Straight)
+		_modeIndicator1 = Param(nameof(ModeIndicator1), SignalDirections.Straight)
 			.SetDisplay("ADX Mode", "Invert ADX decision if needed", "ADX");
 
 		_periodIndicator1 = Param(nameof(PeriodIndicator1), 14)
@@ -155,7 +155,7 @@ public class HistoScalperStrategy : Strategy
 		_useIndicator2 = Param(nameof(UseIndicator2), true)
 			.SetDisplay("Use ATR", "Enable ATR momentum filter", "ATR");
 
-		_modeIndicator2 = Param(nameof(ModeIndicator2), SignalDirection.Straight)
+		_modeIndicator2 = Param(nameof(ModeIndicator2), SignalDirections.Straight)
 			.SetDisplay("ATR Mode", "Invert ATR decision if needed", "ATR");
 
 		_periodIndicator2 = Param(nameof(PeriodIndicator2), 14)
@@ -177,7 +177,7 @@ public class HistoScalperStrategy : Strategy
 		_useIndicator3 = Param(nameof(UseIndicator3), true)
 			.SetDisplay("Use Bollinger", "Enable Bollinger band breakout filter", "Bollinger");
 
-		_modeIndicator3 = Param(nameof(ModeIndicator3), SignalDirection.Straight)
+		_modeIndicator3 = Param(nameof(ModeIndicator3), SignalDirections.Straight)
 			.SetDisplay("Bollinger Mode", "Invert Bollinger breakout direction", "Bollinger");
 
 		_periodIndicator3 = Param(nameof(PeriodIndicator3), 20)
@@ -191,7 +191,7 @@ public class HistoScalperStrategy : Strategy
 		_useIndicator4 = Param(nameof(UseIndicator4), true)
 			.SetDisplay("Use Bulls/Bears", "Enable bulls/bears power filter", "Power");
 
-		_modeIndicator4 = Param(nameof(ModeIndicator4), SignalDirection.Straight)
+		_modeIndicator4 = Param(nameof(ModeIndicator4), SignalDirections.Straight)
 			.SetDisplay("Power Mode", "Invert bulls/bears logic", "Power");
 
 		_periodIndicator4 = Param(nameof(PeriodIndicator4), 14)
@@ -207,7 +207,7 @@ public class HistoScalperStrategy : Strategy
 		_useIndicator5 = Param(nameof(UseIndicator5), true)
 			.SetDisplay("Use CCI", "Enable CCI filter", "CCI");
 
-		_modeIndicator5 = Param(nameof(ModeIndicator5), SignalDirection.Straight)
+		_modeIndicator5 = Param(nameof(ModeIndicator5), SignalDirections.Straight)
 			.SetDisplay("CCI Mode", "Invert CCI levels", "CCI");
 
 		_periodIndicator5 = Param(nameof(PeriodIndicator5), 14)
@@ -223,7 +223,7 @@ public class HistoScalperStrategy : Strategy
 		_useIndicator6 = Param(nameof(UseIndicator6), true)
 			.SetDisplay("Use MACD", "Enable MACD histogram filter", "MACD");
 
-		_modeIndicator6 = Param(nameof(ModeIndicator6), SignalDirection.Straight)
+		_modeIndicator6 = Param(nameof(ModeIndicator6), SignalDirections.Straight)
 			.SetDisplay("MACD Mode", "Invert MACD histogram", "MACD");
 
 		_fastPeriod = Param(nameof(FastPeriod), 12)
@@ -247,7 +247,7 @@ public class HistoScalperStrategy : Strategy
 		_useIndicator7 = Param(nameof(UseIndicator7), true)
 			.SetDisplay("Use RSI", "Enable RSI filter", "RSI");
 
-		_modeIndicator7 = Param(nameof(ModeIndicator7), SignalDirection.Straight)
+		_modeIndicator7 = Param(nameof(ModeIndicator7), SignalDirections.Straight)
 			.SetDisplay("RSI Mode", "Invert RSI logic", "RSI");
 
 		_periodIndicator7 = Param(nameof(PeriodIndicator7), 14)
@@ -263,7 +263,7 @@ public class HistoScalperStrategy : Strategy
 		_useIndicator8 = Param(nameof(UseIndicator8), true)
 			.SetDisplay("Use Stochastic", "Enable stochastic oscillator filter", "Stochastic");
 
-		_modeIndicator8 = Param(nameof(ModeIndicator8), SignalDirection.Straight)
+		_modeIndicator8 = Param(nameof(ModeIndicator8), SignalDirections.Straight)
 			.SetDisplay("Stochastic Mode", "Invert stochastic logic", "Stochastic");
 
 		_kPeriod = Param(nameof(KPeriod), 5)
@@ -357,7 +357,7 @@ public class HistoScalperStrategy : Strategy
 		set => _useIndicator1.Value = value;
 	}
 
-	public SignalDirection ModeIndicator1
+	public SignalDirections ModeIndicator1
 	{
 		get => _modeIndicator1.Value;
 		set => _modeIndicator1.Value = value;
@@ -375,7 +375,7 @@ public class HistoScalperStrategy : Strategy
 		set => _useIndicator2.Value = value;
 	}
 
-	public SignalDirection ModeIndicator2
+	public SignalDirections ModeIndicator2
 	{
 		get => _modeIndicator2.Value;
 		set => _modeIndicator2.Value = value;
@@ -411,7 +411,7 @@ public class HistoScalperStrategy : Strategy
 		set => _useIndicator3.Value = value;
 	}
 
-	public SignalDirection ModeIndicator3
+	public SignalDirections ModeIndicator3
 	{
 		get => _modeIndicator3.Value;
 		set => _modeIndicator3.Value = value;
@@ -435,7 +435,7 @@ public class HistoScalperStrategy : Strategy
 		set => _useIndicator4.Value = value;
 	}
 
-	public SignalDirection ModeIndicator4
+	public SignalDirections ModeIndicator4
 	{
 		get => _modeIndicator4.Value;
 		set => _modeIndicator4.Value = value;
@@ -465,7 +465,7 @@ public class HistoScalperStrategy : Strategy
 		set => _useIndicator5.Value = value;
 	}
 
-	public SignalDirection ModeIndicator5
+	public SignalDirections ModeIndicator5
 	{
 		get => _modeIndicator5.Value;
 		set => _modeIndicator5.Value = value;
@@ -495,7 +495,7 @@ public class HistoScalperStrategy : Strategy
 		set => _useIndicator6.Value = value;
 	}
 
-	public SignalDirection ModeIndicator6
+	public SignalDirections ModeIndicator6
 	{
 		get => _modeIndicator6.Value;
 		set => _modeIndicator6.Value = value;
@@ -537,7 +537,7 @@ public class HistoScalperStrategy : Strategy
 		set => _useIndicator7.Value = value;
 	}
 
-	public SignalDirection ModeIndicator7
+	public SignalDirections ModeIndicator7
 	{
 		get => _modeIndicator7.Value;
 		set => _modeIndicator7.Value = value;
@@ -567,7 +567,7 @@ public class HistoScalperStrategy : Strategy
 		set => _useIndicator8.Value = value;
 	}
 
-	public SignalDirection ModeIndicator8
+	public SignalDirections ModeIndicator8
 	{
 		get => _modeIndicator8.Value;
 		set => _modeIndicator8.Value = value;
@@ -1020,10 +1020,10 @@ public class HistoScalperStrategy : Strategy
 			6 => ModeIndicator6,
 			7 => ModeIndicator7,
 			8 => ModeIndicator8,
-			_ => SignalDirection.Straight,
+			_ => SignalDirections.Straight,
 		};
 
-		return mode == SignalDirection.Reverse ? -signal : signal;
+		return mode == SignalDirections.Reverse ? -signal : signal;
 	}
 
 	private bool IsWithinSession(TimeSpan time)

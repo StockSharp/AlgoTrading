@@ -25,7 +25,7 @@ public class ChoSmoothedEaStrategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<MovingAverageTypes> _maType;
 	private readonly StrategyParam<bool> _useZeroLevel;
-	private readonly StrategyParam<ChoTradeMode> _tradeMode;
+	private readonly StrategyParam<ChoTradeModes> _tradeMode;
 	private readonly StrategyParam<bool> _reverseSignals;
 	private readonly StrategyParam<bool> _closeOpposite;
 	private readonly StrategyParam<bool> _onlyOnePosition;
@@ -101,7 +101,7 @@ public class ChoSmoothedEaStrategy : Strategy
 	/// <summary>
 	/// Allowed trade direction.
 	/// </summary>
-	public ChoTradeMode TradeMode
+	public ChoTradeModes TradeMode
 	{
 		get => _tradeMode.Value;
 		set => _tradeMode.Value = value;
@@ -229,7 +229,7 @@ public class ChoSmoothedEaStrategy : Strategy
 		_useZeroLevel = Param(nameof(UseZeroLevel), true)
 			.SetDisplay("Use Zero Level", "Require oscillator to be below/above zero", "Filters");
 
-		_tradeMode = Param(nameof(TradeMode), ChoTradeMode.BuyAndSell)
+		_tradeMode = Param(nameof(TradeMode), ChoTradeModes.BuyAndSell)
 			.SetDisplay("Trade Mode", "Allowed direction of trades", "Risk");
 
 		_reverseSignals = Param(nameof(ReverseSignals), false)
@@ -353,7 +353,7 @@ public class ChoSmoothedEaStrategy : Strategy
 			return;
 		}
 
-		if (buySignal && TradeMode != ChoTradeMode.SellOnly)
+		if (buySignal && TradeMode != ChoTradeModes.SellOnly)
 		{
 			if (Position < 0)
 			{
@@ -377,7 +377,7 @@ public class ChoSmoothedEaStrategy : Strategy
 				SetupRiskLevels(candle.ClosePrice, true);
 			}
 		}
-		else if (sellSignal && TradeMode != ChoTradeMode.BuyOnly)
+		else if (sellSignal && TradeMode != ChoTradeModes.BuyOnly)
 		{
 			if (Position > 0)
 			{
@@ -526,7 +526,7 @@ public class ChoSmoothedEaStrategy : Strategy
 	/// <summary>
 	/// Trade mode selection.
 	/// </summary>
-	public enum ChoTradeMode
+	public enum ChoTradeModes
 	{
 		/// <summary>
 		/// Allow both long and short trades.

@@ -29,8 +29,8 @@ public class GlamTraderStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStepPips;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MaMethod> _maMethod;
-	private readonly StrategyParam<AppliedPrice> _appliedPrice;
+	private readonly StrategyParam<MaMethods> _maMethod;
+	private readonly StrategyParam<AppliedPrices> _appliedPrice;
 	private readonly StrategyParam<decimal> _laguerreGamma;
 
 	private LengthIndicator<decimal> _maIndicator = null!;
@@ -115,10 +115,10 @@ public class GlamTraderStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(0, 5, 1);
 
-		_maMethod = Param(nameof(MaMethod), MaMethod.LinearWeighted)
+		_maMethod = Param(nameof(MaMethods), MaMethods.LinearWeighted)
 		.SetDisplay("MA Method", "Averaging method applied to the moving average", "Indicators");
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPrice.Weighted)
+		_appliedPrice = Param(nameof(AppliedPrices), AppliedPrices.Weighted)
 		.SetDisplay("Applied Price", "Price source used for both MA and Laguerre filters", "Indicators");
 
 		_laguerreGamma = Param(nameof(LaguerreGamma), 0.7m)
@@ -221,7 +221,7 @@ public class GlamTraderStrategy : Strategy
 	/// <summary>
 	/// Moving average method replicated from MetaTrader constants.
 	/// </summary>
-	public MaMethod MaMethod
+	public MaMethods MaMethods
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -230,7 +230,7 @@ public class GlamTraderStrategy : Strategy
 	/// <summary>
 	/// Price source used by the moving average and Laguerre filter.
 	/// </summary>
-	public AppliedPrice AppliedPrice
+	public AppliedPrices AppliedPrices
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -290,7 +290,7 @@ public class GlamTraderStrategy : Strategy
 			_pipSize = _priceStep * 10m;
 		}
 
-		_maIndicator = CreateMovingAverage(MaMethod, MaPeriod);
+		_maIndicator = CreateMovingAverage(MaMethods, MaPeriod);
 		_awesomeOscillator = new AwesomeOscillator();
 
 		var subscription = SubscribeCandles(CandleType);
@@ -609,27 +609,27 @@ public class GlamTraderStrategy : Strategy
 
 	private decimal GetAppliedPrice(ICandleMessage candle)
 	{
-		return AppliedPrice switch
+		return AppliedPrices switch
 		{
-			AppliedPrice.Close => candle.ClosePrice,
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			AppliedPrices.Close => candle.ClosePrice,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverage(MaMethod method, int length)
+	private LengthIndicator<decimal> CreateMovingAverage(MaMethods method, int length)
 	{
 		return method switch
 		{
-			MaMethod.Simple => new SimpleMovingAverage { Length = length },
-			MaMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			MaMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MaMethod.LinearWeighted => new WeightedMovingAverage { Length = length },
+			MaMethods.Simple => new SimpleMovingAverage { Length = length },
+			MaMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MaMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -659,7 +659,7 @@ public class GlamTraderStrategy : Strategy
 	/// <summary>
 	/// Moving average methods corresponding to MetaTrader modes.
 	/// </summary>
-	public enum MaMethod
+	public enum MaMethods
 	{
 		Simple,
 		Exponential,
@@ -670,7 +670,7 @@ public class GlamTraderStrategy : Strategy
 	/// <summary>
 	/// Price source equivalents of MetaTrader's applied price constants.
 	/// </summary>
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		Close,
 		Open,

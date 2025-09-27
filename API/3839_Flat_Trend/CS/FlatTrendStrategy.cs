@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class FlatTrendStrategy : Strategy
 {
-	private enum TrendState
+	private enum TrendStates
 	{
 		Neutral,
 		Bull,
@@ -565,57 +565,57 @@ public class FlatTrendStrategy : Strategy
 		return hour >= TradingHourBegin || hour < TradingHourEnd;
 	}
 
-	private TrendState ResolveState(decimal price, decimal ema, decimal? prevEma)
+	private TrendStates ResolveState(decimal price, decimal ema, decimal? prevEma)
 	{
 		if (prevEma is null)
-		return TrendState.Neutral;
+		return TrendStates.Neutral;
 
 		var slope = ema - prevEma.Value;
 
 		if (price > ema && slope > 0m)
-		return TrendState.StrongBull;
+		return TrendStates.StrongBull;
 
 		if (price > ema)
-		return TrendState.Bull;
+		return TrendStates.Bull;
 
 		if (price < ema && slope < 0m)
-		return TrendState.StrongBear;
+		return TrendStates.StrongBear;
 
 		if (price < ema)
-		return TrendState.Bear;
+		return TrendStates.Bear;
 
-		return TrendState.Neutral;
+		return TrendStates.Neutral;
 	}
 
-	private bool CanEnterLong(TrendState triggerState, TrendState filterState1, TrendState filterState2)
+	private bool CanEnterLong(TrendStates triggerState, TrendStates filterState1, TrendStates filterState2)
 	{
-		var triggerOk = triggerState == TrendState.StrongBull || (!IgnoreModerateForEntry && triggerState == TrendState.Bull);
-		var filter1Ok = filterState1 == TrendState.StrongBull || (!IgnoreModerateForEntry && filterState1 == TrendState.Bull);
-		var filter2Ok = UseOnlyPrimaryIndicators || filterState2 == TrendState.StrongBull || (!IgnoreModerateForEntry && filterState2 == TrendState.Bull);
+		var triggerOk = triggerState == TrendStates.StrongBull || (!IgnoreModerateForEntry && triggerState == TrendStates.Bull);
+		var filter1Ok = filterState1 == TrendStates.StrongBull || (!IgnoreModerateForEntry && filterState1 == TrendStates.Bull);
+		var filter2Ok = UseOnlyPrimaryIndicators || filterState2 == TrendStates.StrongBull || (!IgnoreModerateForEntry && filterState2 == TrendStates.Bull);
 
 		return triggerOk && filter1Ok && filter2Ok;
 	}
 
-	private bool CanEnterShort(TrendState triggerState, TrendState filterState1, TrendState filterState2)
+	private bool CanEnterShort(TrendStates triggerState, TrendStates filterState1, TrendStates filterState2)
 	{
-		var triggerOk = triggerState == TrendState.StrongBear || (!IgnoreModerateForEntry && triggerState == TrendState.Bear);
-		var filter1Ok = filterState1 == TrendState.StrongBear || (!IgnoreModerateForEntry && filterState1 == TrendState.Bear);
-		var filter2Ok = UseOnlyPrimaryIndicators || filterState2 == TrendState.StrongBear || (!IgnoreModerateForEntry && filterState2 == TrendState.Bear);
+		var triggerOk = triggerState == TrendStates.StrongBear || (!IgnoreModerateForEntry && triggerState == TrendStates.Bear);
+		var filter1Ok = filterState1 == TrendStates.StrongBear || (!IgnoreModerateForEntry && filterState1 == TrendStates.Bear);
+		var filter2Ok = UseOnlyPrimaryIndicators || filterState2 == TrendStates.StrongBear || (!IgnoreModerateForEntry && filterState2 == TrendStates.Bear);
 
 		return triggerOk && filter1Ok && filter2Ok;
 	}
 
-	private bool ShouldExitLong(TrendState triggerState)
+	private bool ShouldExitLong(TrendStates triggerState)
 	{
-		return IgnoreModerateForExit ? triggerState == TrendState.StrongBear : triggerState == TrendState.Bear || triggerState == TrendState.StrongBear;
+		return IgnoreModerateForExit ? triggerState == TrendStates.StrongBear : triggerState == TrendStates.Bear || triggerState == TrendStates.StrongBear;
 	}
 
-	private bool ShouldExitShort(TrendState triggerState)
+	private bool ShouldExitShort(TrendStates triggerState)
 	{
-		return IgnoreModerateForExit ? triggerState == TrendState.StrongBull : triggerState == TrendState.Bull || triggerState == TrendState.StrongBull;
+		return IgnoreModerateForExit ? triggerState == TrendStates.StrongBull : triggerState == TrendStates.Bull || triggerState == TrendStates.StrongBull;
 	}
 
-	private void UpdateRiskManagement(ICandleMessage candle, TrendState triggerState)
+	private void UpdateRiskManagement(ICandleMessage candle, TrendStates triggerState)
 	{
 		var step = Security?.PriceStep ?? 0.0001m;
 		if (step <= 0m)

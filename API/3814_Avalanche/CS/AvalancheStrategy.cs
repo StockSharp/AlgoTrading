@@ -55,7 +55,7 @@ public class AvalancheStrategy : Strategy
 	private SMA _erpSma;
 	private decimal? _currentErp;
 	private decimal _pipSize;
-	private ErpPosition _erpPosition;
+	private ErpPositions _erpPosition;
 	private Sides? _interestSide;
 	private Sides? _gridDirection;
 	private Sides? _pendingEntrySide;
@@ -64,7 +64,7 @@ public class AvalancheStrategy : Strategy
 	private bool _startingOrdersOpened;
 	private bool _isClosingAll;
 
-	private enum ErpPosition
+	private enum ErpPositions
 	{
 		None,
 		Above,
@@ -263,7 +263,7 @@ public class AvalancheStrategy : Strategy
 		_erpSma = null;
 		_currentErp = null;
 		_pipSize = 0m;
-		_erpPosition = ErpPosition.None;
+		_erpPosition = ErpPositions.None;
 		_interestSide = null;
 		_gridDirection = null;
 		_pendingEntrySide = null;
@@ -342,10 +342,10 @@ public class AvalancheStrategy : Strategy
 		if (_isClosingAll)
 			return;
 
-		if (_erpPosition == ErpPosition.None)
+		if (_erpPosition == ErpPositions.None)
 			return;
 
-		var desiredSide = _erpPosition == ErpPosition.Below ? Sides.Buy : Sides.Sell;
+		var desiredSide = _erpPosition == ErpPositions.Below ? Sides.Buy : Sides.Sell;
 
 		if (_entries.Count == 0)
 		{
@@ -358,20 +358,20 @@ public class AvalancheStrategy : Strategy
 		HandleGridEntries(desiredSide, candle.ClosePrice);
 	}
 
-	private ErpPosition DetermineErpPosition(decimal price, decimal erp)
+	private ErpPositions DetermineErpPosition(decimal price, decimal erp)
 	{
 		var buffer = ErpChangeBuffer * _pipSize;
 
 		return _erpPosition switch
 		{
-			ErpPosition.None => price >= erp ? ErpPosition.Above : ErpPosition.Below,
-			ErpPosition.Above => price >= erp - buffer ? ErpPosition.Above : ErpPosition.Below,
-			ErpPosition.Below => price >= erp + buffer ? ErpPosition.Above : ErpPosition.Below,
-			_ => ErpPosition.None,
+			ErpPositions.None => price >= erp ? ErpPositions.Above : ErpPositions.Below,
+			ErpPositions.Above => price >= erp - buffer ? ErpPositions.Above : ErpPositions.Below,
+			ErpPositions.Below => price >= erp + buffer ? ErpPositions.Above : ErpPositions.Below,
+			_ => ErpPositions.None,
 		};
 	}
 
-	private void OnErpPositionChanged(ErpPosition newPosition, decimal price)
+	private void OnErpPositionChanged(ErpPositions newPosition, decimal price)
 	{
 		var previous = _erpPosition;
 		_erpPosition = newPosition;

@@ -23,9 +23,9 @@ public class TrailingOnlyCloseAllButtonStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _trailingStopPips;
 	private readonly StrategyParam<decimal> _trailingStepPips;
-	private readonly StrategyParam<CloseMode> _closeMode;
-	private readonly StrategyParam<CloseSymbol> _closeSymbol;
-	private readonly StrategyParam<CloseProfitFilter> _closeProfitFilter;
+	private readonly StrategyParam<CloseModes> _closeMode;
+	private readonly StrategyParam<CloseSymbols> _closeSymbol;
+	private readonly StrategyParam<CloseProfitFilters> _closeProfitFilter;
 	private readonly StrategyParam<bool> _closeAll;
 
 	private decimal? _longStop;
@@ -39,7 +39,7 @@ public class TrailingOnlyCloseAllButtonStrategy : Strategy
 	/// <summary>
 	/// Defines what should be closed when the manual button is triggered.
 	/// </summary>
-	public enum CloseMode
+	public enum CloseModes
 	{
 		Positions,
 		All,
@@ -49,7 +49,7 @@ public class TrailingOnlyCloseAllButtonStrategy : Strategy
 	/// <summary>
 	/// Defines whether the manual closing routine targets only the current symbol or all tracked instruments.
 	/// </summary>
-	public enum CloseSymbol
+	public enum CloseSymbols
 	{
 		Chart,
 		All,
@@ -58,7 +58,7 @@ public class TrailingOnlyCloseAllButtonStrategy : Strategy
 	/// <summary>
 	/// Profit filter applied before closing positions.
 	/// </summary>
-	public enum CloseProfitFilter
+	public enum CloseProfitFilters
 	{
 		All,
 		ProfitOnly,
@@ -104,7 +104,7 @@ public class TrailingOnlyCloseAllButtonStrategy : Strategy
 	/// <summary>
 	/// Manual close mode for the button.
 	/// </summary>
-	public CloseMode ManualCloseMode
+	public CloseModes ManualCloseMode
 	{
 		get => _closeMode.Value;
 		set => _closeMode.Value = value;
@@ -113,7 +113,7 @@ public class TrailingOnlyCloseAllButtonStrategy : Strategy
 	/// <summary>
 	/// Manual close symbol scope for the button.
 	/// </summary>
-	public CloseSymbol ManualCloseSymbol
+	public CloseSymbols ManualCloseSymbol
 	{
 		get => _closeSymbol.Value;
 		set => _closeSymbol.Value = value;
@@ -122,7 +122,7 @@ public class TrailingOnlyCloseAllButtonStrategy : Strategy
 	/// <summary>
 	/// Manual close profit filter for the button.
 	/// </summary>
-	public CloseProfitFilter ManualCloseProfitFilter
+	public CloseProfitFilters ManualCloseProfitFilter
 	{
 		get => _closeProfitFilter.Value;
 		set => _closeProfitFilter.Value = value;
@@ -174,15 +174,15 @@ public class TrailingOnlyCloseAllButtonStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Trailing Step", "Additional profit in MetaTrader pips before moving the stop", "Risk");
 
-		_closeMode = Param(nameof(ManualCloseMode), CloseMode.Positions)
+		_closeMode = Param(nameof(ManualCloseMode), CloseModes.Positions)
 			.SetDisplay("Close Mode", "Objects affected by the manual close", "Manual")
 			.SetCanOptimize(false);
 
-		_closeSymbol = Param(nameof(ManualCloseSymbol), CloseSymbol.Chart)
+		_closeSymbol = Param(nameof(ManualCloseSymbol), CloseSymbols.Chart)
 			.SetDisplay("Symbol Scope", "Whether to close only the main symbol or all", "Manual")
 			.SetCanOptimize(false);
 
-		_closeProfitFilter = Param(nameof(ManualCloseProfitFilter), CloseProfitFilter.ProfitOnly)
+		_closeProfitFilter = Param(nameof(ManualCloseProfitFilter), CloseProfitFilters.ProfitOnly)
 			.SetDisplay("Profit Filter", "Filter positions by floating PnL before closing", "Manual")
 			.SetCanOptimize(false);
 
@@ -436,12 +436,12 @@ public class TrailingOnlyCloseAllButtonStrategy : Strategy
 
 	private void ExecuteManualClose()
 	{
-		if (ManualCloseMode != CloseMode.Orders)
+		if (ManualCloseMode != CloseModes.Orders)
 		{
 			ClosePositionsByFilter();
 		}
 
-		if (ManualCloseMode != CloseMode.Positions)
+		if (ManualCloseMode != CloseModes.Positions)
 		{
 			CancelOrdersByFilter();
 		}
@@ -491,7 +491,7 @@ public class TrailingOnlyCloseAllButtonStrategy : Strategy
 			return false;
 		}
 
-		if (ManualCloseSymbol == CloseSymbol.Chart && Security != null && !Equals(position.Security, Security))
+		if (ManualCloseSymbol == CloseSymbols.Chart && Security != null && !Equals(position.Security, Security))
 		{
 			return false;
 		}
@@ -500,11 +500,11 @@ public class TrailingOnlyCloseAllButtonStrategy : Strategy
 
 		switch (ManualCloseProfitFilter)
 		{
-			case CloseProfitFilter.ProfitOnly when pnl <= 0m:
+			case CloseProfitFilters.ProfitOnly when pnl <= 0m:
 			{
 				return false;
 			}
-			case CloseProfitFilter.LossOnly when pnl >= 0m:
+			case CloseProfitFilters.LossOnly when pnl >= 0m:
 			{
 				return false;
 			}
@@ -536,7 +536,7 @@ public class TrailingOnlyCloseAllButtonStrategy : Strategy
 			return false;
 		}
 
-		if (ManualCloseSymbol == CloseSymbol.Chart && Security != null && !Equals(order.Security, Security))
+		if (ManualCloseSymbol == CloseSymbols.Chart && Security != null && !Equals(order.Security, Security))
 		{
 			return false;
 		}

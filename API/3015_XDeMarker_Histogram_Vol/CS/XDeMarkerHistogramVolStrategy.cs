@@ -24,10 +24,10 @@ public class XDeMarkerHistogramVolStrategy : Strategy
 	private readonly StrategyParam<decimal> _highLevel2;
 	private readonly StrategyParam<decimal> _lowLevel1;
 	private readonly StrategyParam<decimal> _lowLevel2;
-	private readonly StrategyParam<SmoothingMethod> _smoothingMethod;
+	private readonly StrategyParam<SmoothingMethods> _smoothingMethod;
 	private readonly StrategyParam<int> _smoothingLength;
 	private readonly StrategyParam<int> _signalBar;
-	private readonly StrategyParam<VolumeSource> _volumeSource;
+	private readonly StrategyParam<VolumeSources> _volumeSource;
 	private readonly StrategyParam<bool> _enableLongEntries;
 	private readonly StrategyParam<bool> _enableShortEntries;
 	private readonly StrategyParam<bool> _enableLongExits;
@@ -73,7 +73,7 @@ public class XDeMarkerHistogramVolStrategy : Strategy
 			.SetDisplay("Low Level 2", "Extreme lower level multiplied by smoothed volume", "Indicator")
 			.SetCanOptimize(true);
 
-		_smoothingMethod = Param(nameof(Smoothing), SmoothingMethod.Simple)
+		_smoothingMethod = Param(nameof(Smoothing), SmoothingMethods.Simple)
 			.SetDisplay("Smoothing", "Moving average type applied to the histogram and volume", "Indicator");
 
 		_smoothingLength = Param(nameof(SmoothingLength), 12)
@@ -86,7 +86,7 @@ public class XDeMarkerHistogramVolStrategy : Strategy
 			.SetDisplay("Signal Bar", "Number of closed bars used for signal detection", "Trading")
 			.SetCanOptimize(true);
 
-		_volumeSource = Param(nameof(VolumeType), VolumeSource.Tick)
+		_volumeSource = Param(nameof(VolumeType), VolumeSources.Tick)
 			.SetDisplay("Volume Type", "Source of volume data used in weighting", "Indicator");
 
 		_enableLongEntries = Param(nameof(EnableLongEntries), true)
@@ -135,7 +135,7 @@ public class XDeMarkerHistogramVolStrategy : Strategy
 	/// <summary>
 	/// Smoothing method applied to the histogram.
 	/// </summary>
-	public SmoothingMethod Smoothing { get => _smoothingMethod.Value; set => _smoothingMethod.Value = value; }
+	public SmoothingMethods Smoothing { get => _smoothingMethod.Value; set => _smoothingMethod.Value = value; }
 
 	/// <summary>
 	/// Length of the smoothing moving averages.
@@ -150,7 +150,7 @@ public class XDeMarkerHistogramVolStrategy : Strategy
 	/// <summary>
 	/// Type of volume used in weighting the oscillator.
 	/// </summary>
-	public VolumeSource VolumeType { get => _volumeSource.Value; set => _volumeSource.Value = value; }
+	public VolumeSources VolumeType { get => _volumeSource.Value; set => _volumeSource.Value = value; }
 
 	/// <summary>
 	/// Enable opening long positions.
@@ -330,8 +330,8 @@ public class XDeMarkerHistogramVolStrategy : Strategy
 
 		return VolumeType switch
 		{
-			VolumeSource.Tick => volume,
-			VolumeSource.Real => volume,
+			VolumeSources.Tick => volume,
+			VolumeSources.Real => volume,
 			_ => volume,
 		};
 	}
@@ -358,14 +358,14 @@ public class XDeMarkerHistogramVolStrategy : Strategy
 		return 2;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(SmoothingMethod method, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(SmoothingMethods method, int length)
 	{
 		return method switch
 		{
-			SmoothingMethod.Simple => new SimpleMovingAverage { Length = length },
-			SmoothingMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			SmoothingMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			SmoothingMethod.Weighted => new WeightedMovingAverage { Length = length },
+			SmoothingMethods.Simple => new SimpleMovingAverage { Length = length },
+			SmoothingMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			SmoothingMethods.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -373,7 +373,7 @@ public class XDeMarkerHistogramVolStrategy : Strategy
 	/// <summary>
 	/// Supported moving average types.
 	/// </summary>
-	public enum SmoothingMethod
+	public enum SmoothingMethods
 	{
 		/// <summary>Simple moving average.</summary>
 		Simple,
@@ -388,7 +388,7 @@ public class XDeMarkerHistogramVolStrategy : Strategy
 	/// <summary>
 	/// Volume source used for weighting.
 	/// </summary>
-	public enum VolumeSource
+	public enum VolumeSources
 	{
 		/// <summary>Use tick volume. In StockSharp it falls back to candle volume.</summary>
 		Tick,

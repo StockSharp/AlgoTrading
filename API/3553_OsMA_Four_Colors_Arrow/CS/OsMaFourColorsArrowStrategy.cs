@@ -22,7 +22,7 @@ public class OsMaFourColorsArrowStrategy : Strategy
 	/// <summary>
 	/// Trade direction restriction that mirrors the original expert inputs.
 	/// </summary>
-	public enum TradeDirectionMode
+	public enum TradeDirectionModes
 	{
 		/// <summary>Allow only long positions.</summary>
 		LongOnly,
@@ -47,7 +47,7 @@ public class OsMaFourColorsArrowStrategy : Strategy
 	private readonly StrategyParam<int> _trailingStepPips;
 	private readonly StrategyParam<int> _maxPositions;
 	private readonly StrategyParam<bool> _reverseSignals;
-	private readonly StrategyParam<TradeDirectionMode> _tradeMode;
+	private readonly StrategyParam<TradeDirectionModes> _tradeMode;
 	private readonly StrategyParam<bool> _closeOpposite;
 	private readonly StrategyParam<bool> _onlyOnePosition;
 	private readonly StrategyParam<bool> _useTimeControl;
@@ -110,7 +110,7 @@ public class OsMaFourColorsArrowStrategy : Strategy
 		_reverseSignals = Param(nameof(ReverseSignals), false)
 		.SetDisplay("Reverse Signals", "Invert buy and sell logic", "Trading");
 
-		_tradeMode = Param(nameof(DirectionMode), TradeDirectionMode.Both)
+		_tradeMode = Param(nameof(DirectionMode), TradeDirectionModes.Both)
 		.SetDisplay("Trade Mode", "Allow longs, shorts, or both", "Trading");
 
 		_closeOpposite = Param(nameof(CloseOppositePositions), false)
@@ -256,7 +256,7 @@ public class OsMaFourColorsArrowStrategy : Strategy
 	/// <summary>
 	/// Allowed trade direction.
 	/// </summary>
-	public TradeDirectionMode DirectionMode
+	public TradeDirectionModes DirectionMode
 	{
 		get => _tradeMode.Value;
 		set => _tradeMode.Value = value;
@@ -456,7 +456,7 @@ LongMa = { Length = SlowPeriod }
 
 	private void TryEnterLong()
 	{
-		if (DirectionMode == TradeDirectionMode.ShortOnly)
+		if (DirectionMode == TradeDirectionModes.ShortOnly)
 			return;
 
 		if (TradeVolume <= 0m)
@@ -485,7 +485,7 @@ LongMa = { Length = SlowPeriod }
 
 	private void TryEnterShort()
 	{
-		if (DirectionMode == TradeDirectionMode.LongOnly)
+		if (DirectionMode == TradeDirectionModes.LongOnly)
 			return;
 
 		if (TradeVolume <= 0m)

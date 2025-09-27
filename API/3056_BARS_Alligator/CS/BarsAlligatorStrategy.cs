@@ -25,7 +25,7 @@ public class BarsAlligatorStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _trailingStopPips;
 	private readonly StrategyParam<int> _trailingStepPips;
-	private readonly StrategyParam<MoneyManagementMode> _moneyMode;
+	private readonly StrategyParam<MoneyManagementModes> _moneyMode;
 	private readonly StrategyParam<decimal> _moneyValue;
 	private readonly StrategyParam<int> _maxPositions;
 	private readonly StrategyParam<int> _jawPeriod;
@@ -34,8 +34,8 @@ public class BarsAlligatorStrategy : Strategy
 	private readonly StrategyParam<int> _teethShift;
 	private readonly StrategyParam<int> _lipsPeriod;
 	private readonly StrategyParam<int> _lipsShift;
-	private readonly StrategyParam<MovingAverageType> _maType;
-	private readonly StrategyParam<AppliedPriceType> _appliedPrice;
+	private readonly StrategyParam<MovingAverageTypes> _maType;
+	private readonly StrategyParam<AppliedPriceTypes> _appliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private LengthIndicator<decimal> _jaw = null!;
@@ -104,14 +104,14 @@ public class BarsAlligatorStrategy : Strategy
 	/// <summary>
 	/// Money management selection between fixed volume and risk-based sizing.
 	/// </summary>
-	public MoneyManagementMode MoneyMode
+	public MoneyManagementModes MoneyMode
 	{
 		get => _moneyMode.Value;
 		set => _moneyMode.Value = value;
 	}
 
 	/// <summary>
-	/// Risk percentage applied when <see cref="MoneyMode"/> is <see cref="MoneyManagementMode.RiskPercent"/>.
+	/// Risk percentage applied when <see cref="MoneyMode"/> is <see cref="MoneyManagementModes.RiskPercent"/>.
 	/// Ignored when fixed volume sizing is active.
 	/// </summary>
 	public decimal MoneyValue
@@ -186,7 +186,7 @@ public class BarsAlligatorStrategy : Strategy
 	/// <summary>
 	/// Moving average type shared by all Alligator lines.
 	/// </summary>
-	public MovingAverageType MaType
+	public MovingAverageTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -195,7 +195,7 @@ public class BarsAlligatorStrategy : Strategy
 	/// <summary>
 	/// Candle price used as input for the moving averages.
 	/// </summary>
-	public AppliedPriceType AppliedPrice
+	public AppliedPriceTypes AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -235,7 +235,7 @@ public class BarsAlligatorStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Trailing Step", "Extra distance before the trailing stop moves", "Risk");
 
-		_moneyMode = Param(nameof(MoneyMode), MoneyManagementMode.FixedVolume)
+		_moneyMode = Param(nameof(MoneyMode), MoneyManagementModes.FixedVolume)
 		.SetDisplay("Money Mode", "Choose between fixed volume or risk percentage sizing", "Risk");
 
 		_moneyValue = Param(nameof(MoneyValue), 1m)
@@ -270,10 +270,10 @@ public class BarsAlligatorStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Lips Shift", "Forward shift of the lips line", "Alligator");
 
-		_maType = Param(nameof(MaType), MovingAverageType.Smoothed)
+		_maType = Param(nameof(MaType), MovingAverageTypes.Smoothed)
 		.SetDisplay("MA Type", "Moving average calculation for the Alligator lines", "Alligator");
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceType.Median)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Median)
 		.SetDisplay("Applied Price", "Price component supplied to the averages", "Alligator");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -571,7 +571,7 @@ public class BarsAlligatorStrategy : Strategy
 
 	private decimal CalculateEntryVolume()
 	{
-		if (MoneyMode == MoneyManagementMode.RiskPercent)
+		if (MoneyMode == MoneyManagementModes.RiskPercent)
 		{
 			if (_stopLossDistance <= 0m)
 			return OrderVolume;
@@ -639,28 +639,28 @@ public class BarsAlligatorStrategy : Strategy
 		return true;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageType type, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageType.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageType.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageType.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageType.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new SmoothedMovingAverage { Length = length }
 		};
 	}
 
-	private static decimal GetPrice(ICandleMessage candle, AppliedPriceType priceType)
+	private static decimal GetPrice(ICandleMessage candle, AppliedPriceTypes priceType)
 	{
 		return priceType switch
 		{
-			AppliedPriceType.Open => candle.OpenPrice,
-			AppliedPriceType.High => candle.HighPrice,
-			AppliedPriceType.Low => candle.LowPrice,
-			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			AppliedPriceTypes.Open => candle.OpenPrice,
+			AppliedPriceTypes.High => candle.HighPrice,
+			AppliedPriceTypes.Low => candle.LowPrice,
+			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}
@@ -669,7 +669,7 @@ public class BarsAlligatorStrategy : Strategy
 /// <summary>
 /// Available money management modes.
 /// </summary>
-public enum MoneyManagementMode
+public enum MoneyManagementModes
 {
 	/// <summary>
 	/// Use a fixed volume defined by <see cref="BarsAlligatorStrategy.OrderVolume"/>.
@@ -685,7 +685,7 @@ public enum MoneyManagementMode
 /// <summary>
 /// Moving average types supported by the Alligator implementation.
 /// </summary>
-public enum MovingAverageType
+public enum MovingAverageTypes
 {
 	/// <summary>
 	/// Simple moving average.
@@ -711,7 +711,7 @@ public enum MovingAverageType
 /// <summary>
 /// Price sources that can feed the Alligator averages.
 /// </summary>
-public enum AppliedPriceType
+public enum AppliedPriceTypes
 {
 	/// <summary>
 	/// Candle close price.

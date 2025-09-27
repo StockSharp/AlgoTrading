@@ -19,16 +19,16 @@ namespace StockSharp.Samples.Strategies;
 public class HeikenAshiEngulfStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<TradeDirectionOption> _directionParam;
+	private readonly StrategyParam<TradeDirectionOptions> _directionParam;
 	private readonly StrategyParam<decimal> _buyVolume;
 	private readonly StrategyParam<decimal> _buyStopLossPips;
 	private readonly StrategyParam<decimal> _buyTakeProfitPips;
 	private readonly StrategyParam<int> _buyBaselinePeriod;
-	private readonly StrategyParam<MaMethod> _buyBaselineMethod;
+	private readonly StrategyParam<MaMethods> _buyBaselineMethod;
 	private readonly StrategyParam<int> _buyFastPeriod;
-	private readonly StrategyParam<MaMethod> _buyFastMethod;
+	private readonly StrategyParam<MaMethods> _buyFastMethod;
 	private readonly StrategyParam<int> _buySlowPeriod;
-	private readonly StrategyParam<MaMethod> _buySlowMethod;
+	private readonly StrategyParam<MaMethods> _buySlowMethod;
 	private readonly StrategyParam<int> _buyPrimaryRsiPeriod;
 	private readonly StrategyParam<int> _buyPrimaryShift;
 	private readonly StrategyParam<int> _buyPrimaryWindow;
@@ -45,11 +45,11 @@ public class HeikenAshiEngulfStrategy : Strategy
 	private readonly StrategyParam<decimal> _sellStopLossPips;
 	private readonly StrategyParam<decimal> _sellTakeProfitPips;
 	private readonly StrategyParam<int> _sellBaselinePeriod;
-	private readonly StrategyParam<MaMethod> _sellBaselineMethod;
+	private readonly StrategyParam<MaMethods> _sellBaselineMethod;
 	private readonly StrategyParam<int> _sellFastPeriod;
-	private readonly StrategyParam<MaMethod> _sellFastMethod;
+	private readonly StrategyParam<MaMethods> _sellFastMethod;
 	private readonly StrategyParam<int> _sellSlowPeriod;
-	private readonly StrategyParam<MaMethod> _sellSlowMethod;
+	private readonly StrategyParam<MaMethods> _sellSlowMethod;
 	private readonly StrategyParam<int> _sellPrimaryRsiPeriod;
 	private readonly StrategyParam<int> _sellPrimaryShift;
 	private readonly StrategyParam<int> _sellPrimaryWindow;
@@ -100,7 +100,7 @@ public class HeikenAshiEngulfStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for all indicators and signal calculations.", "Data");
 
-		_directionParam = Param(nameof(Direction), TradeDirectionOption.Both)
+		_directionParam = Param(nameof(Direction), TradeDirectionOptions.Both)
 		.SetDisplay("Trade Direction", "Which side of the engulfing setup should be executed.", "Trading");
 
 		_buyVolume = Param(nameof(BuyVolume), 0.01m)
@@ -119,21 +119,21 @@ public class HeikenAshiEngulfStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Buy Baseline MA Period", "Length of the moving average compared with the bullish Heiken Ashi candle.", "Filters");
 
-		_buyBaselineMethod = Param(nameof(BuyBaselineMethod), MaMethod.Exponential)
+		_buyBaselineMethod = Param(nameof(BuyBaselineMethod), MaMethods.Exponential)
 		.SetDisplay("Buy Baseline MA Method", "Type of moving average used against the Heiken Ashi candle.", "Filters");
 
 		_buyFastPeriod = Param(nameof(BuyFastPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Buy Fast MA Period", "Length of the fast trend filter moving average.", "Filters");
 
-		_buyFastMethod = Param(nameof(BuyFastMethod), MaMethod.Exponential)
+		_buyFastMethod = Param(nameof(BuyFastMethod), MaMethods.Exponential)
 		.SetDisplay("Buy Fast MA Method", "Moving average method for the fast trend filter.", "Filters");
 
 		_buySlowPeriod = Param(nameof(BuySlowPeriod), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("Buy Slow MA Period", "Length of the slow trend filter moving average.", "Filters");
 
-		_buySlowMethod = Param(nameof(BuySlowMethod), MaMethod.Exponential)
+		_buySlowMethod = Param(nameof(BuySlowMethod), MaMethods.Exponential)
 		.SetDisplay("Buy Slow MA Method", "Moving average method for the slow trend filter.", "Filters");
 
 		_buyPrimaryRsiPeriod = Param(nameof(BuyPrimaryRsiPeriod), 14)
@@ -196,21 +196,21 @@ public class HeikenAshiEngulfStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Sell Baseline MA Period", "Length of the moving average compared with the bearish Heiken Ashi candle.", "Filters");
 
-		_sellBaselineMethod = Param(nameof(SellBaselineMethod), MaMethod.Exponential)
+		_sellBaselineMethod = Param(nameof(SellBaselineMethod), MaMethods.Exponential)
 		.SetDisplay("Sell Baseline MA Method", "Type of moving average used against the bearish Heiken Ashi candle.", "Filters");
 
 		_sellFastPeriod = Param(nameof(SellFastPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Sell Fast MA Period", "Length of the fast trend filter moving average for shorts.", "Filters");
 
-		_sellFastMethod = Param(nameof(SellFastMethod), MaMethod.Exponential)
+		_sellFastMethod = Param(nameof(SellFastMethod), MaMethods.Exponential)
 		.SetDisplay("Sell Fast MA Method", "Moving average method for the fast bearish trend filter.", "Filters");
 
 		_sellSlowPeriod = Param(nameof(SellSlowPeriod), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("Sell Slow MA Period", "Length of the slow trend filter moving average for shorts.", "Filters");
 
-		_sellSlowMethod = Param(nameof(SellSlowMethod), MaMethod.Exponential)
+		_sellSlowMethod = Param(nameof(SellSlowMethod), MaMethods.Exponential)
 		.SetDisplay("Sell Slow MA Method", "Moving average method for the slow bearish trend filter.", "Filters");
 
 		_sellPrimaryRsiPeriod = Param(nameof(SellPrimaryRsiPeriod), 14)
@@ -276,7 +276,7 @@ public class HeikenAshiEngulfStrategy : Strategy
 	/// <summary>
 	/// Direction handled by the strategy.
 	/// </summary>
-	public TradeDirectionOption Direction
+	public TradeDirectionOptions Direction
 	{
 		get => _directionParam.Value;
 		set => _directionParam.Value = value;
@@ -445,10 +445,10 @@ public class HeikenAshiEngulfStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 
-		if (Direction != TradeDirectionOption.SellOnly && TryEnterLong(candle))
+		if (Direction != TradeDirectionOptions.SellOnly && TryEnterLong(candle))
 		return;
 
-		if (Direction != TradeDirectionOption.BuyOnly)
+		if (Direction != TradeDirectionOptions.BuyOnly)
 		TryEnterShort(candle);
 	}
 
@@ -723,24 +723,24 @@ public class HeikenAshiEngulfStrategy : Strategy
 		return step * multiplier;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MaMethod method, int period)
+	private static LengthIndicator<decimal> CreateMovingAverage(MaMethods method, int period)
 	{
 		return method switch
 		{
-			MaMethod.Simple => new SimpleMovingAverage { Length = period, CandlePrice = CandlePrice.Close },
-			MaMethod.Exponential => new ExponentialMovingAverage { Length = period, CandlePrice = CandlePrice.Close },
-			MaMethod.Smoothed => new SmoothedMovingAverage { Length = period, CandlePrice = CandlePrice.Close },
-			MaMethod.LinearWeighted => new WeightedMovingAverage { Length = period, CandlePrice = CandlePrice.Close },
+			MaMethods.Simple => new SimpleMovingAverage { Length = period, CandlePrice = CandlePrice.Close },
+			MaMethods.Exponential => new ExponentialMovingAverage { Length = period, CandlePrice = CandlePrice.Close },
+			MaMethods.Smoothed => new SmoothedMovingAverage { Length = period, CandlePrice = CandlePrice.Close },
+			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = period, CandlePrice = CandlePrice.Close },
 			_ => new ExponentialMovingAverage { Length = period, CandlePrice = CandlePrice.Close }
 		};
 	}
 
 	private int BuyBaselinePeriod => _buyBaselinePeriod.Value;
-	private MaMethod BuyBaselineMethod => _buyBaselineMethod.Value;
+	private MaMethods BuyBaselineMethod => _buyBaselineMethod.Value;
 	private int BuyFastPeriod => _buyFastPeriod.Value;
-	private MaMethod BuyFastMethod => _buyFastMethod.Value;
+	private MaMethods BuyFastMethod => _buyFastMethod.Value;
 	private int BuySlowPeriod => _buySlowPeriod.Value;
-	private MaMethod BuySlowMethod => _buySlowMethod.Value;
+	private MaMethods BuySlowMethod => _buySlowMethod.Value;
 	private int BuyPrimaryRsiPeriod => _buyPrimaryRsiPeriod.Value;
 	private int BuyPrimaryShift => _buyPrimaryShift.Value;
 	private int BuyPrimaryWindow => _buyPrimaryWindow.Value;
@@ -754,11 +754,11 @@ public class HeikenAshiEngulfStrategy : Strategy
 	private decimal BuySecondaryUpper => _buySecondaryUpper.Value;
 	private decimal BuySecondaryLower => _buySecondaryLower.Value;
 	private int SellBaselinePeriod => _sellBaselinePeriod.Value;
-	private MaMethod SellBaselineMethod => _sellBaselineMethod.Value;
+	private MaMethods SellBaselineMethod => _sellBaselineMethod.Value;
 	private int SellFastPeriod => _sellFastPeriod.Value;
-	private MaMethod SellFastMethod => _sellFastMethod.Value;
+	private MaMethods SellFastMethod => _sellFastMethod.Value;
 	private int SellSlowPeriod => _sellSlowPeriod.Value;
-	private MaMethod SellSlowMethod => _sellSlowMethod.Value;
+	private MaMethods SellSlowMethod => _sellSlowMethod.Value;
 	private int SellPrimaryRsiPeriod => _sellPrimaryRsiPeriod.Value;
 	private int SellPrimaryShift => _sellPrimaryShift.Value;
 	private int SellPrimaryWindow => _sellPrimaryWindow.Value;
@@ -812,7 +812,7 @@ public class HeikenAshiEngulfStrategy : Strategy
 	/// <summary>
 	/// Moving average methods supported by MetaTrader.
 	/// </summary>
-	public enum MaMethod
+	public enum MaMethods
 	{
 		Simple,
 		Exponential,
@@ -823,7 +823,7 @@ public class HeikenAshiEngulfStrategy : Strategy
 	/// <summary>
 	/// Trade direction options.
 	/// </summary>
-	public enum TradeDirectionOption
+	public enum TradeDirectionOptions
 	{
 		BuyOnly,
 		SellOnly,

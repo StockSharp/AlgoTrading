@@ -13,14 +13,14 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum ManualTradingOrderType
+public enum ManualTradingOrderTypes
 {
 	MarketExecution,
 	PendingLimit,
 	PendingStop
 }
 
-public enum ManualPriceMode
+public enum ManualPriceModes
 {
 	Market,
 	Manual
@@ -43,10 +43,10 @@ public class ManualTradingLightweightUtilityPanelStrategy : Strategy
 
 	private readonly StrategyParam<decimal> _sellVolume;
 	private readonly StrategyParam<decimal> _buyVolume;
-	private readonly StrategyParam<ManualTradingOrderType> _sellOrderType;
-	private readonly StrategyParam<ManualTradingOrderType> _buyOrderType;
-	private readonly StrategyParam<ManualPriceMode> _sellPriceMode;
-	private readonly StrategyParam<ManualPriceMode> _buyPriceMode;
+	private readonly StrategyParam<ManualTradingOrderTypes> _sellOrderType;
+	private readonly StrategyParam<ManualTradingOrderTypes> _buyOrderType;
+	private readonly StrategyParam<ManualPriceModes> _sellPriceMode;
+	private readonly StrategyParam<ManualPriceModes> _buyPriceMode;
 	private readonly StrategyParam<decimal> _sellManualPrice;
 	private readonly StrategyParam<decimal> _buyManualPrice;
 	private readonly StrategyParam<bool> _sendSellOrder;
@@ -107,17 +107,17 @@ public class ManualTradingLightweightUtilityPanelStrategy : Strategy
 			.SetDisplay("Buy Volume", "Volume used for buy orders when Lot Control is enabled.", "Buy")
 			.SetCanOptimize(false);
 
-		_sellOrderType = Param(nameof(SellOrderType), ManualTradingOrderType.MarketExecution)
+		_sellOrderType = Param(nameof(SellOrderType), ManualTradingOrderTypes.MarketExecution)
 			.SetDisplay("Sell Order Type", "Order type used when submitting sell orders.", "Sell");
 
-		_buyOrderType = Param(nameof(BuyOrderType), ManualTradingOrderType.MarketExecution)
+		_buyOrderType = Param(nameof(BuyOrderType), ManualTradingOrderTypes.MarketExecution)
 			.SetDisplay("Buy Order Type", "Order type used when submitting buy orders.", "Buy");
 
-		_sellPriceMode = Param(nameof(SellPriceMode), ManualPriceMode.Market)
+		_sellPriceMode = Param(nameof(SellPriceMode), ManualPriceModes.Market)
 			.SetDisplay("Sell Price Mode", "Select automatic or manual price handling for sell orders.", "Sell")
 			.SetCanOptimize(false);
 
-		_buyPriceMode = Param(nameof(BuyPriceMode), ManualPriceMode.Market)
+		_buyPriceMode = Param(nameof(BuyPriceMode), ManualPriceModes.Market)
 			.SetDisplay("Buy Price Mode", "Select automatic or manual price handling for buy orders.", "Buy")
 			.SetCanOptimize(false);
 
@@ -204,25 +204,25 @@ public class ManualTradingLightweightUtilityPanelStrategy : Strategy
 		set => _buyVolume.Value = value;
 	}
 
-	public ManualTradingOrderType SellOrderType
+	public ManualTradingOrderTypes SellOrderType
 	{
 		get => _sellOrderType.Value;
 		set => _sellOrderType.Value = value;
 	}
 
-	public ManualTradingOrderType BuyOrderType
+	public ManualTradingOrderTypes BuyOrderType
 	{
 		get => _buyOrderType.Value;
 		set => _buyOrderType.Value = value;
 	}
 
-	public ManualPriceMode SellPriceMode
+	public ManualPriceModes SellPriceMode
 	{
 		get => _sellPriceMode.Value;
 		set => _sellPriceMode.Value = value;
 	}
 
-	public ManualPriceMode BuyPriceMode
+	public ManualPriceModes BuyPriceMode
 	{
 		get => _buyPriceMode.Value;
 		set => _buyPriceMode.Value = value;
@@ -324,12 +324,12 @@ public class ManualTradingLightweightUtilityPanelStrategy : Strategy
 		UpdateAutoPrice(Sides.Buy, BuyOrderType, BuyPriceMode, value => BuyManualPrice = value);
 	}
 
-	private void UpdateAutoPrice(Sides side, ManualTradingOrderType orderType, ManualPriceMode mode, Action<decimal> setter)
+	private void UpdateAutoPrice(Sides side, ManualTradingOrderTypes orderType, ManualPriceModes mode, Action<decimal> setter)
 	{
-		if (mode == ManualPriceMode.Manual)
+		if (mode == ManualPriceModes.Manual)
 			return;
 
-		if (orderType == ManualTradingOrderType.MarketExecution)
+		if (orderType == ManualTradingOrderTypes.MarketExecution)
 		{
 			setter(0m);
 			return;
@@ -386,7 +386,7 @@ public class ManualTradingLightweightUtilityPanelStrategy : Strategy
 		}
 	}
 
-	private void SendOrder(Sides side, ManualTradingOrderType orderType, ManualPriceMode priceMode, decimal manualPrice, decimal volume)
+	private void SendOrder(Sides side, ManualTradingOrderTypes orderType, ManualPriceModes priceMode, decimal manualPrice, decimal volume)
 	{
 		if (volume <= 0m)
 		{
@@ -405,10 +405,10 @@ public class ManualTradingLightweightUtilityPanelStrategy : Strategy
 
 		switch (orderType)
 		{
-			case ManualTradingOrderType.MarketExecution:
+			case ManualTradingOrderTypes.MarketExecution:
 				SubmitMarketOrder(side, adjustedVolume);
 				break;
-			case ManualTradingOrderType.PendingLimit:
+			case ManualTradingOrderTypes.PendingLimit:
 				if (orderPrice == null)
 				{
 					LogWarning($"{side} limit order skipped because price is unavailable.");
@@ -417,7 +417,7 @@ public class ManualTradingLightweightUtilityPanelStrategy : Strategy
 
 				SubmitLimitOrder(side, adjustedVolume, orderPrice.Value);
 				break;
-			case ManualTradingOrderType.PendingStop:
+			case ManualTradingOrderTypes.PendingStop:
 				if (orderPrice == null)
 				{
 					LogWarning($"{side} stop order skipped because price is unavailable.");
@@ -467,15 +467,15 @@ public class ManualTradingLightweightUtilityPanelStrategy : Strategy
 			SellStop(volume, normalizedPrice);
 	}
 
-	private decimal? ResolveOrderPrice(Sides side, ManualTradingOrderType orderType, ManualPriceMode mode, decimal manualPrice)
+	private decimal? ResolveOrderPrice(Sides side, ManualTradingOrderTypes orderType, ManualPriceModes mode, decimal manualPrice)
 	{
-		if (orderType == ManualTradingOrderType.MarketExecution)
+		if (orderType == ManualTradingOrderTypes.MarketExecution)
 			return null;
 
-		if (mode == ManualPriceMode.Manual && manualPrice > 0m)
+		if (mode == ManualPriceModes.Manual && manualPrice > 0m)
 			return manualPrice;
 
-		if (mode == ManualPriceMode.Manual)
+		if (mode == ManualPriceModes.Manual)
 		{
 			var fallback = ComputeManualFallbackPrice(side, orderType);
 			if (fallback != null)
@@ -485,7 +485,7 @@ public class ManualTradingLightweightUtilityPanelStrategy : Strategy
 		return ComputeAutoPrice(side, orderType);
 	}
 
-	private decimal? ComputeManualFallbackPrice(Sides side, ManualTradingOrderType orderType)
+	private decimal? ComputeManualFallbackPrice(Sides side, ManualTradingOrderTypes orderType)
 	{
 		var reference = side == Sides.Sell ? _lastBid ?? _lastTrade : _lastAsk ?? _lastTrade;
 		if (reference == null)
@@ -493,7 +493,7 @@ public class ManualTradingLightweightUtilityPanelStrategy : Strategy
 
 		var offset = GetPriceOffset(PriceStepPoints);
 		if (offset <= 0m)
-			offset = GetPriceOffset(orderType == ManualTradingOrderType.PendingLimit ? LimitOrderPoints : StopOrderPoints);
+			offset = GetPriceOffset(orderType == ManualTradingOrderTypes.PendingLimit ? LimitOrderPoints : StopOrderPoints);
 
 		if (offset <= 0m)
 			return reference;
@@ -502,13 +502,13 @@ public class ManualTradingLightweightUtilityPanelStrategy : Strategy
 		return reference.Value + direction * offset;
 	}
 
-	private decimal? ComputeAutoPrice(Sides side, ManualTradingOrderType orderType)
+	private decimal? ComputeAutoPrice(Sides side, ManualTradingOrderTypes orderType)
 	{
 		var reference = side == Sides.Sell ? _lastBid ?? _lastTrade : _lastAsk ?? _lastTrade;
 		if (reference == null)
 			return null;
 
-		var offset = orderType == ManualTradingOrderType.PendingLimit
+		var offset = orderType == ManualTradingOrderTypes.PendingLimit
 			? GetPriceOffset(LimitOrderPoints)
 			: GetPriceOffset(StopOrderPoints);
 
@@ -516,9 +516,9 @@ public class ManualTradingLightweightUtilityPanelStrategy : Strategy
 		return reference.Value + direction * offset;
 	}
 
-	private static decimal GetPriceDirection(Sides side, ManualTradingOrderType orderType)
+	private static decimal GetPriceDirection(Sides side, ManualTradingOrderTypes orderType)
 	{
-		return (side == Sides.Sell ? 1m : -1m) * (orderType == ManualTradingOrderType.PendingLimit ? 1m : -1m);
+		return (side == Sides.Sell ? 1m : -1m) * (orderType == ManualTradingOrderTypes.PendingLimit ? 1m : -1m);
 	}
 
 	private decimal ResolveVolume(bool isBuy)

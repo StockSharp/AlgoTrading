@@ -49,10 +49,10 @@ public class ExpSkyscraperFixColorAmlX2MaCandleMmRecStrategy : Strategy
 	private readonly StrategyParam<int> _colorAmlSellLossTrigger;
 
 	private readonly StrategyParam<DataType> _x2MaCandleType;
-	private readonly StrategyParam<X2MaSmoothMethod> _x2MaFirstMethod;
+	private readonly StrategyParam<X2MaSmoothMethods> _x2MaFirstMethod;
 	private readonly StrategyParam<int> _x2MaFirstLength;
 	private readonly StrategyParam<int> _x2MaFirstPhase;
-	private readonly StrategyParam<X2MaSmoothMethod> _x2MaSecondMethod;
+	private readonly StrategyParam<X2MaSmoothMethods> _x2MaSecondMethod;
 	private readonly StrategyParam<int> _x2MaSecondLength;
 	private readonly StrategyParam<int> _x2MaSecondPhase;
 	private readonly StrategyParam<int> _x2MaGapPoints;
@@ -160,14 +160,14 @@ public class ExpSkyscraperFixColorAmlX2MaCandleMmRecStrategy : Strategy
 
 		_x2MaCandleType = Param(nameof(X2MaCandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("X2MA Candle", "Timeframe for X2MA candles", "X2MA");
-		_x2MaFirstMethod = Param(nameof(X2MaFirstMethod), X2MaSmoothMethod.Simple)
+		_x2MaFirstMethod = Param(nameof(X2MaFirstMethod), X2MaSmoothMethods.Simple)
 		.SetDisplay("First Method", "First smoothing method", "X2MA");
 		_x2MaFirstLength = Param(nameof(X2MaFirstLength), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("First Length", "Length of the first smoothing stage", "X2MA");
 		_x2MaFirstPhase = Param(nameof(X2MaFirstPhase), 15)
 		.SetDisplay("First Phase", "Compatibility phase for Jurik", "X2MA");
-		_x2MaSecondMethod = Param(nameof(X2MaSecondMethod), X2MaSmoothMethod.Jurik)
+		_x2MaSecondMethod = Param(nameof(X2MaSecondMethod), X2MaSmoothMethods.Jurik)
 		.SetDisplay("Second Method", "Second smoothing method", "X2MA");
 		_x2MaSecondLength = Param(nameof(X2MaSecondLength), 5)
 		.SetGreaterThanZero()
@@ -392,7 +392,7 @@ public class ExpSkyscraperFixColorAmlX2MaCandleMmRecStrategy : Strategy
 	}
 
 	/// <summary>First smoothing method used by X2MA.</summary>
-	public X2MaSmoothMethod X2MaFirstMethod
+	public X2MaSmoothMethods X2MaFirstMethod
 	{
 		get => _x2MaFirstMethod.Value;
 		set => _x2MaFirstMethod.Value = value;
@@ -413,7 +413,7 @@ public class ExpSkyscraperFixColorAmlX2MaCandleMmRecStrategy : Strategy
 	}
 
 	/// <summary>Second smoothing method used by X2MA.</summary>
-	public X2MaSmoothMethod X2MaSecondMethod
+	public X2MaSmoothMethods X2MaSecondMethod
 	{
 		get => _x2MaSecondMethod.Value;
 		set => _x2MaSecondMethod.Value = value;
@@ -1008,10 +1008,10 @@ public class ExpSkyscraperFixColorAmlX2MaCandleMmRecStrategy : Strategy
 							private decimal? _previousClose;
 
 							public X2MaCandleColorIndicator(
-							X2MaSmoothMethod firstMethod,
+							X2MaSmoothMethods firstMethod,
 							int firstLength,
 							int firstPhase,
-							X2MaSmoothMethod secondMethod,
+							X2MaSmoothMethods secondMethod,
 							int secondLength,
 							int secondPhase,
 							decimal gap)
@@ -1060,10 +1060,10 @@ public class ExpSkyscraperFixColorAmlX2MaCandleMmRecStrategy : Strategy
 								private readonly IIndicator _second;
 
 								public MovingAveragePipeline(
-								X2MaSmoothMethod firstMethod,
+								X2MaSmoothMethods firstMethod,
 								int firstLength,
 								int firstPhase,
-								X2MaSmoothMethod secondMethod,
+								X2MaSmoothMethods secondMethod,
 								int secondLength,
 								int secondPhase)
 								{
@@ -1082,15 +1082,15 @@ public class ExpSkyscraperFixColorAmlX2MaCandleMmRecStrategy : Strategy
 									return secondValue.IsFinal ? secondValue.ToDecimal() : null;
 								}
 
-								private static IIndicator CreateMovingAverage(X2MaSmoothMethod method, int length, int phase)
+								private static IIndicator CreateMovingAverage(X2MaSmoothMethods method, int length, int phase)
 								{
 									return method switch
 									{
-										X2MaSmoothMethod.Simple => new SimpleMovingAverage { Length = Math.Max(1, length) },
-										X2MaSmoothMethod.Exponential => new ExponentialMovingAverage { Length = Math.Max(1, length) },
-										X2MaSmoothMethod.Smoothed => new SmoothedMovingAverage { Length = Math.Max(1, length) },
-										X2MaSmoothMethod.Weighted => new WeightedMovingAverage { Length = Math.Max(1, length) },
-										X2MaSmoothMethod.Jurik => CreateJurik(length, phase),
+										X2MaSmoothMethods.Simple => new SimpleMovingAverage { Length = Math.Max(1, length) },
+										X2MaSmoothMethods.Exponential => new ExponentialMovingAverage { Length = Math.Max(1, length) },
+										X2MaSmoothMethods.Smoothed => new SmoothedMovingAverage { Length = Math.Max(1, length) },
+										X2MaSmoothMethods.Weighted => new WeightedMovingAverage { Length = Math.Max(1, length) },
+										X2MaSmoothMethods.Jurik => CreateJurik(length, phase),
 										_ => new SimpleMovingAverage { Length = Math.Max(1, length) }
 									};
 								}
@@ -1112,7 +1112,7 @@ public class ExpSkyscraperFixColorAmlX2MaCandleMmRecStrategy : Strategy
 					}
 
 					/// <summary>Supported smoothing methods for the X2MA candle indicator.</summary>
-					public enum X2MaSmoothMethod
+					public enum X2MaSmoothMethods
 					{
 						/// <summary>Simple moving average.</summary>
 						Simple,

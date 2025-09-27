@@ -32,7 +32,7 @@ private readonly StrategyParam<bool> _useLeavingSignal;
 private readonly StrategyParam<bool> _useCrossingSignal;
 private readonly StrategyParam<bool> _useClosedCandles;
 private readonly StrategyParam<bool> _reverseSignals;
-private readonly StrategyParam<TradeModeOption> _tradeMode;
+private readonly StrategyParam<TradeModeOptions> _tradeMode;
 
 private RelativeStrengthIndex _fastRsi = null!;
 private RelativeStrengthIndex _slowRsi = null!;
@@ -45,7 +45,7 @@ private bool _isInitialized;
 /// <summary>
 /// Defines how the strategy may open positions.
 /// </summary>
-public enum TradeModeOption
+public enum TradeModeOptions
 {
 Both,
 LongOnly,
@@ -163,7 +163,7 @@ set => _reverseSignals.Value = value;
 /// <summary>
 /// Defines the allowed trade direction.
 /// </summary>
-public TradeModeOption TradeMode
+public TradeModeOptions TradeMode
 {
 get => _tradeMode.Value;
 set => _tradeMode.Value = value;
@@ -221,7 +221,7 @@ _useClosedCandles = Param(nameof(UseClosedCandles), true)
 _reverseSignals = Param(nameof(ReverseSignals), false)
 .SetDisplay("Reverse", "Invert the signal direction", "Trading");
 
-_tradeMode = Param(nameof(TradeMode), TradeModeOption.Both)
+_tradeMode = Param(nameof(TradeMode), TradeModeOptions.Both)
 .SetDisplay("Trade Mode", "Allowed trade direction", "Trading");
 }
 
@@ -362,7 +362,7 @@ return false;
 private void HandleLongEntry()
 {
 // Respect trade mode restrictions.
-if (TradeMode == TradeModeOption.ShortOnly)
+if (TradeMode == TradeModeOptions.ShortOnly)
 return;
 
 // Close a short position before opening a long one.
@@ -376,7 +376,7 @@ BuyMarket(OrderVolume);
 private void HandleShortEntry()
 {
 // Respect trade mode restrictions.
-if (TradeMode == TradeModeOption.LongOnly)
+if (TradeMode == TradeModeOptions.LongOnly)
 return;
 
 // Close a long position before opening a short one.

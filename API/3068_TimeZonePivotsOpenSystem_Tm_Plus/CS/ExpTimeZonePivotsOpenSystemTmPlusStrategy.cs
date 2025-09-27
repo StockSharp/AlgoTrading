@@ -22,7 +22,7 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 {
 	// Parameters from the original expert controlling size, stops and permissions.
 	private readonly StrategyParam<decimal> _moneyManagement;
-	private readonly StrategyParam<MoneyManagementMode> _moneyMode;
+	private readonly StrategyParam<MoneyManagementModes> _moneyMode;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _deviationPoints;
@@ -74,7 +74,7 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 		set => _moneyManagement.Value = value;
 	}
 
-	public MoneyManagementMode MoneyMode
+	public MoneyManagementModes MoneyMode
 	{
 		get => _moneyMode.Value;
 		set => _moneyMode.Value = value;
@@ -164,7 +164,7 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 			.SetDisplay("Money Management", "Base value used for position sizing", "Trading")
 			.SetGreaterThanZero();
 
-		_moneyMode = Param(nameof(MoneyMode), MoneyManagementMode.Lot)
+		_moneyMode = Param(nameof(MoneyMode), MoneyManagementModes.Lot)
 			.SetDisplay("Money Mode", "Position sizing model", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
@@ -305,12 +305,12 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 		var closeShort = false;
 
 		// Previous candle closed above the upper band – schedule long entry and close shorts.
-		if (confirmSnapshot.State == ZoneSignal.Above)
+		if (confirmSnapshot.State == ZoneSignals.Above)
 		{
 			if (SellPosClose)
 				closeShort = true;
 
-			if (BuyPosOpen && signalSnapshot.State != ZoneSignal.Above && (_lastLongSignalOrigin != confirmSnapshot.CloseTime))
+			if (BuyPosOpen && signalSnapshot.State != ZoneSignals.Above && (_lastLongSignalOrigin != confirmSnapshot.CloseTime))
 			{
 				_pendingLongEntry = true;
 				_longSignalTime = confirmSnapshot.CloseTime + (_timeFrame ?? TimeSpan.Zero);
@@ -318,12 +318,12 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 			}
 		}
 		// Previous candle closed below the lower band – schedule short entry and close longs.
-		else if (confirmSnapshot.State == ZoneSignal.Below)
+		else if (confirmSnapshot.State == ZoneSignals.Below)
 		{
 			if (BuyPosClose)
 				closeLong = true;
 
-			if (SellPosOpen && signalSnapshot.State != ZoneSignal.Below && (_lastShortSignalOrigin != confirmSnapshot.CloseTime))
+			if (SellPosOpen && signalSnapshot.State != ZoneSignals.Below && (_lastShortSignalOrigin != confirmSnapshot.CloseTime))
 			{
 				_pendingShortEntry = true;
 				_shortSignalTime = confirmSnapshot.CloseTime + (_timeFrame ?? TimeSpan.Zero);
@@ -517,18 +517,18 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 	}
 
 	// Classify the candle relative to the offset bands.
-	private ZoneSignal DetermineState(ICandleMessage candle)
+	private ZoneSignals DetermineState(ICandleMessage candle)
 	{
 		if (!_sessionOpenPrice.HasValue || !_upperBand.HasValue || !_lowerBand.HasValue)
-			return ZoneSignal.Inside;
+			return ZoneSignals.Inside;
 
 		if (candle.ClosePrice > _upperBand.Value)
-			return ZoneSignal.Above;
+			return ZoneSignals.Above;
 
 		if (candle.ClosePrice < _lowerBand.Value)
-			return ZoneSignal.Below;
+			return ZoneSignals.Below;
 
-		return ZoneSignal.Inside;
+		return ZoneSignals.Inside;
 	}
 
 	// Translate the money management mode into an executable volume.
@@ -544,13 +544,13 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 
 		switch (MoneyMode)
 		{
-			case MoneyManagementMode.Lot:
+			case MoneyManagementModes.Lot:
 				return mmValue;
-			case MoneyManagementMode.Balance:
-			case MoneyManagementMode.FreeMargin:
+			case MoneyManagementModes.Balance:
+			case MoneyManagementModes.FreeMargin:
 				return capital > 0m ? capital * mmValue / price : 0m;
-			case MoneyManagementMode.LossBalance:
-			case MoneyManagementMode.LossFreeMargin:
+			case MoneyManagementModes.LossBalance:
+			case MoneyManagementModes.LossFreeMargin:
 				if (stopDistance > 0m)
 					return capital > 0m ? capital * mmValue / stopDistance : 0m;
 
@@ -627,7 +627,7 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 		}
 	}
 
-	public enum MoneyManagementMode
+	public enum MoneyManagementModes
 	{
 		FreeMargin,
 		Balance,
@@ -636,7 +636,7 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 		Lot
 	}
 
-	private enum ZoneSignal
+	private enum ZoneSignals
 	{
 		Inside,
 		Above,
@@ -645,7 +645,7 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 
 	private sealed class ZoneSnapshot
 	{
-		public ZoneSignal State { get; init; }
+		public ZoneSignals State { get; init; }
 		public DateTimeOffset OpenTime { get; init; }
 		public DateTimeOffset CloseTime { get; init; }
 	}

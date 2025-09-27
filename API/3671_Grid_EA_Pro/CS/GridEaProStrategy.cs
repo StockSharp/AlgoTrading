@@ -21,22 +21,22 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class GridEaProStrategy : Strategy
 {
-	public enum GridTradeMode
+	public enum GridTradeModes
 	{
 		Buy,
 		Sell,
 		Both,
 	}
 
-	public enum GridEntryMode
+	public enum GridEntryModes
 	{
 		Rsi,
 		FixedPoints,
 		Manual,
 	}
 
-	private readonly StrategyParam<GridTradeMode> _mode;
-	private readonly StrategyParam<GridEntryMode> _entryMode;
+	private readonly StrategyParam<GridTradeModes> _mode;
+	private readonly StrategyParam<GridEntryModes> _entryMode;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<decimal> _rsiUpperLevel;
 	private readonly StrategyParam<decimal> _rsiLowerLevel;
@@ -95,7 +95,7 @@ public class GridEaProStrategy : Strategy
 	/// <summary>
 	/// Trade direction filter.
 	/// </summary>
-	public GridTradeMode Mode
+	public GridTradeModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -104,7 +104,7 @@ public class GridEaProStrategy : Strategy
 	/// <summary>
 	/// Entry mode selection.
 	/// </summary>
-	public GridEntryMode EntryMode
+	public GridEntryModes EntryMode
 	{
 		get => _entryMode.Value;
 		set => _entryMode.Value = value;
@@ -331,10 +331,10 @@ public class GridEaProStrategy : Strategy
 	/// </summary>
 	public GridEaProStrategy()
 	{
-		_mode = Param(nameof(Mode), GridTradeMode.Both)
+		_mode = Param(nameof(Mode), GridTradeModes.Both)
 		.SetDisplay("Mode", "Allowed trade direction", "General");
 
-		_entryMode = Param(nameof(EntryMode), GridEntryMode.Rsi)
+		_entryMode = Param(nameof(EntryMode), GridEntryModes.Rsi)
 		.SetDisplay("Entry Mode", "Signal source", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 10)
@@ -504,13 +504,13 @@ public class GridEaProStrategy : Strategy
 	{
 		switch (EntryMode)
 		{
-			case GridEntryMode.Rsi:
+			case GridEntryModes.Rsi:
 				HandleRsiEntries(candle, rsi);
 				break;
-			case GridEntryMode.FixedPoints:
+			case GridEntryModes.FixedPoints:
 				ScheduleBreakoutLevels(candle);
 				break;
-			case GridEntryMode.Manual:
+			case GridEntryModes.Manual:
 				break;
 		}
 	}
@@ -929,12 +929,12 @@ public class GridEaProStrategy : Strategy
 
 	private bool AllowLongEntries()
 	{
-		return Mode == GridTradeMode.Both || Mode == GridTradeMode.Buy;
+		return Mode == GridTradeModes.Both || Mode == GridTradeModes.Buy;
 	}
 
 	private bool AllowShortEntries()
 	{
-		return Mode == GridTradeMode.Both || Mode == GridTradeMode.Sell;
+		return Mode == GridTradeModes.Both || Mode == GridTradeModes.Sell;
 	}
 
 	private bool IsWithinTradingHours(DateTimeOffset time)

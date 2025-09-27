@@ -16,7 +16,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Determines how trades should be filtered before aggregating statistics.
 /// </summary>
-public enum HistoryInfoFilterType
+public enum HistoryInfoFilterTypes
 {
 	/// <summary>
 	/// Count trades whose <see cref="Order.UserOrderId"/> equals <see cref="HistoryInfoEaStrategy.MagicNumber"/>.
@@ -39,7 +39,7 @@ public enum HistoryInfoFilterType
 /// </summary>
 public class HistoryInfoEaStrategy : Strategy
 {
-	private readonly StrategyParam<HistoryInfoFilterType> _filterType;
+	private readonly StrategyParam<HistoryInfoFilterTypes> _filterType;
 	private readonly StrategyParam<string> _magicNumberParam;
 	private readonly StrategyParam<string> _orderCommentParam;
 	private readonly StrategyParam<string> _securityIdParam;
@@ -60,14 +60,14 @@ public class HistoryInfoEaStrategy : Strategy
 	/// <summary>
 	/// Trade filtering mode that controls which deals enter the summary.
 	/// </summary>
-	public HistoryInfoFilterType FilterType
+	public HistoryInfoFilterTypes FilterType
 	{
 		get => _filterType.Value;
 		set => _filterType.Value = value;
 	}
 
 	/// <summary>
-	/// Expected <see cref="Order.UserOrderId"/> when <see cref="FilterType"/> equals <see cref="HistoryInfoFilterType.CountByUserOrderId"/>.
+	/// Expected <see cref="Order.UserOrderId"/> when <see cref="FilterType"/> equals <see cref="HistoryInfoFilterTypes.CountByUserOrderId"/>.
 	/// </summary>
 	public string MagicNumber
 	{
@@ -98,7 +98,7 @@ public class HistoryInfoEaStrategy : Strategy
 	/// </summary>
 	public HistoryInfoEaStrategy()
 	{
-		_filterType = Param(nameof(FilterType), HistoryInfoFilterType.CountBySecurity)
+		_filterType = Param(nameof(FilterType), HistoryInfoFilterTypes.CountBySecurity)
 		.SetDisplay("Filter Type", "How trades are selected for aggregation", "General");
 
 		_magicNumberParam = Param(nameof(MagicNumber), string.Empty)
@@ -159,9 +159,9 @@ public class HistoryInfoEaStrategy : Strategy
 
 		return FilterType switch
 		{
-			HistoryInfoFilterType.CountByUserOrderId => !MagicNumber.IsEmpty() && order.UserOrderId.EqualsIgnoreCase(MagicNumber),
-			HistoryInfoFilterType.CountByComment => !OrderComment.IsEmpty() && order.Comment != null && order.Comment.StartsWith(OrderComment, StringComparison.Ordinal),
-			HistoryInfoFilterType.CountBySecurity => !SecurityId.IsEmpty() && order.Security?.Id != null && order.Security.Id.EqualsIgnoreCase(SecurityId),
+			HistoryInfoFilterTypes.CountByUserOrderId => !MagicNumber.IsEmpty() && order.UserOrderId.EqualsIgnoreCase(MagicNumber),
+			HistoryInfoFilterTypes.CountByComment => !OrderComment.IsEmpty() && order.Comment != null && order.Comment.StartsWith(OrderComment, StringComparison.Ordinal),
+			HistoryInfoFilterTypes.CountBySecurity => !SecurityId.IsEmpty() && order.Security?.Id != null && order.Security.Id.EqualsIgnoreCase(SecurityId),
 			_ => false
 		};
 	}

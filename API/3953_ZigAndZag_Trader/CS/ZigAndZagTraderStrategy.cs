@@ -50,7 +50,7 @@ public class ZigAndZagTraderStrategy : Strategy
 	private bool _sellArmed;
 	private bool _limitArmed;
 
-	private PivotType _lastPivot;
+	private PivotTypes _lastPivot;
 
 	/// <summary>
 	/// Trading candles.
@@ -173,7 +173,7 @@ public class ZigAndZagTraderStrategy : Strategy
 		_buyArmed = false;
 		_sellArmed = false;
 		_limitArmed = false;
-		_lastPivot = PivotType.None;
+		_lastPivot = PivotTypes.None;
 	}
 
 	/// <inheritdoc />
@@ -258,7 +258,7 @@ public class ZigAndZagTraderStrategy : Strategy
 		{
 			if (candle.LowPrice == shortLow && (_lastShortLow == null || shortLow != _lastShortLow))
 			{
-				_lastPivot = PivotType.Low;
+				_lastPivot = PivotTypes.Low;
 				_lastShortLow = shortLow;
 				_lastSlalomZig = navel;
 				_buyArmed = false;
@@ -268,7 +268,7 @@ public class ZigAndZagTraderStrategy : Strategy
 
 			if (candle.HighPrice == shortHigh && (_lastShortHigh == null || shortHigh != _lastShortHigh))
 			{
-				_lastPivot = PivotType.High;
+				_lastPivot = PivotTypes.High;
 				_lastShortHigh = shortHigh;
 				_lastSlalomZag = navel;
 				_buyArmed = false;
@@ -286,7 +286,7 @@ public class ZigAndZagTraderStrategy : Strategy
 
 		switch (_lastPivot)
 		{
-			case PivotType.Low when _lastSlalomZig != null:
+			case PivotTypes.Low when _lastSlalomZig != null:
 			{
 				if (_trendUp)
 				{
@@ -322,7 +322,7 @@ public class ZigAndZagTraderStrategy : Strategy
 
 				break;
 			}
-			case PivotType.High when _lastSlalomZag != null:
+			case PivotTypes.High when _lastSlalomZag != null:
 			{
 				if (!_trendUp)
 				{
@@ -400,7 +400,7 @@ public class ZigAndZagTraderStrategy : Strategy
 			CloseAll();
 	}
 
-	private enum PivotType
+	private enum PivotTypes
 	{
 		None,
 		Low,

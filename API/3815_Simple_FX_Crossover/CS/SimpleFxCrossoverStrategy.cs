@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SimpleFxCrossoverStrategy : Strategy
 {
-	private enum TrendDirection
+	private enum TrendDirections
 	{
 		None,
 		Bullish,
@@ -39,7 +39,7 @@ public class SimpleFxCrossoverStrategy : Strategy
 
 	private decimal? _previousShortValue;
 	private decimal? _previousLongValue;
-	private TrendDirection _lastTrend = TrendDirection.None;
+	private TrendDirections _lastTrend = TrendDirections.None;
 
 	/// <summary>
 /// Initializes a new instance of the <see cref="SimpleFxCrossoverStrategy"/> class.
@@ -130,7 +130,7 @@ public SimpleFxCrossoverStrategy()
 
 		_previousShortValue = null;
 		_previousLongValue = null;
-		_lastTrend = TrendDirection.None;
+		_lastTrend = TrendDirections.None;
 	}
 
 	/// <inheritdoc />
@@ -173,27 +173,27 @@ public SimpleFxCrossoverStrategy()
 		var previousShort = _previousShortValue;
 		var previousLong = _previousLongValue;
 
-		TrendDirection currentTrend = TrendDirection.None;
+		TrendDirections currentTrend = TrendDirections.None;
 
 		if (previousShort is decimal prevShort && previousLong is decimal prevLong)
 		{
 			if (shortMaValue > longMaValue && prevShort > prevLong)
 			{
-				currentTrend = TrendDirection.Bullish;
+				currentTrend = TrendDirections.Bullish;
 			}
 			else if (shortMaValue < longMaValue && prevShort < prevLong)
 			{
-				currentTrend = TrendDirection.Bearish;
+				currentTrend = TrendDirections.Bearish;
 			}
 		}
 
 		_previousShortValue = shortMaValue;
 		_previousLongValue = longMaValue;
 
-		if (currentTrend == TrendDirection.None)
+		if (currentTrend == TrendDirections.None)
 			return;
 
-		if (_lastTrend == TrendDirection.None)
+		if (_lastTrend == TrendDirections.None)
 		{
 			_lastTrend = currentTrend;
 			return;
@@ -203,16 +203,16 @@ public SimpleFxCrossoverStrategy()
 			return;
 
 		// Close the opposite position before opening a new trade.
-		if (Position > 0 && currentTrend == TrendDirection.Bearish)
+		if (Position > 0 && currentTrend == TrendDirections.Bearish)
 		{
 			ClosePosition();
 		}
-		else if (Position < 0 && currentTrend == TrendDirection.Bullish)
+		else if (Position < 0 && currentTrend == TrendDirections.Bullish)
 		{
 			ClosePosition();
 		}
 
-		if (currentTrend == TrendDirection.Bullish && Position <= 0)
+		if (currentTrend == TrendDirections.Bullish && Position <= 0)
 		{
 			// Fast MA crossed above the slow MA for at least two candles -> open long.
 			BuyMarket(Volume);
@@ -221,7 +221,7 @@ public SimpleFxCrossoverStrategy()
 			return;
 		}
 
-		if (currentTrend == TrendDirection.Bearish && Position >= 0)
+		if (currentTrend == TrendDirections.Bearish && Position >= 0)
 		{
 			// Fast MA crossed below the slow MA for at least two candles -> open short.
 			SellMarket(Volume);

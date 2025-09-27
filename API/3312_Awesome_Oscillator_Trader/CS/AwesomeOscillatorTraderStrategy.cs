@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies;
 public class AwesomeOscillatorTraderStrategy : Strategy
 {
 	private readonly StrategyParam<bool> _closeOnReversal;
-	private readonly StrategyParam<ProfitCloseMode> _profitFilter;
+	private readonly StrategyParam<ProfitCloseModes> _profitFilter;
 	private readonly StrategyParam<int> _bollingerPeriod;
 	private readonly StrategyParam<decimal> _bollingerSigma;
 	private readonly StrategyParam<decimal> _bollingerSpreadLower;
@@ -67,7 +67,7 @@ public class AwesomeOscillatorTraderStrategy : Strategy
 	/// <summary>
 	/// How to filter position exits based on profit when signals reverse.
 	/// </summary>
-	public ProfitCloseMode ProfitFilter
+	public ProfitCloseModes ProfitFilter
 	{
 		get => _profitFilter.Value;
 		set => _profitFilter.Value = value;
@@ -111,7 +111,7 @@ public class AwesomeOscillatorTraderStrategy : Strategy
 		_closeOnReversal = Param(nameof(CloseOnReversal), true)
 			.SetDisplay("Close On Reversal", "Close trades when the opposite AO setup appears", "Risk");
 
-		_profitFilter = Param(nameof(ProfitFilter), ProfitCloseMode.OnlyProfitable)
+		_profitFilter = Param(nameof(ProfitFilter), ProfitCloseModes.OnlyProfitable)
 			.SetDisplay("Profit Filter", "Filter which positions can be closed by signals", "Risk");
 
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
@@ -654,9 +654,9 @@ public class AwesomeOscillatorTraderStrategy : Strategy
 	{
 	return ProfitFilter switch
 	{
-	ProfitCloseMode.Any => true,
-	ProfitCloseMode.OnlyProfitable => profit >= 0m,
-	ProfitCloseMode.OnlyLosing => profit <= 0m,
+	ProfitCloseModes.Any => true,
+	ProfitCloseModes.OnlyProfitable => profit >= 0m,
+	ProfitCloseModes.OnlyLosing => profit <= 0m,
 	_ => true,
 	};
 	}
@@ -674,7 +674,7 @@ public class AwesomeOscillatorTraderStrategy : Strategy
 	/// <summary>
 	/// Profit filter options used when closing trades on reversals.
 	/// </summary>
-	public enum ProfitCloseMode
+	public enum ProfitCloseModes
 	{
 	/// <summary>
 	/// Close trades regardless of their current profit.

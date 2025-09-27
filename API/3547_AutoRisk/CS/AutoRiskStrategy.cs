@@ -20,7 +20,7 @@ namespace StockSharp.Samples.Strategies;
 public class AutoRiskStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _riskFactor;
-	private readonly StrategyParam<AutoRiskCalculationMode> _calculationMode;
+	private readonly StrategyParam<AutoRiskCalculationModes> _calculationMode;
 	private readonly StrategyParam<bool> _roundUp;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -37,7 +37,7 @@ public class AutoRiskStrategy : Strategy
 			.SetDisplay("Risk % on daily ATR")
 			.SetCanOptimize(true);
 
-		_calculationMode = Param(nameof(CalculationMode), AutoRiskCalculationMode.Balance)
+		_calculationMode = Param(nameof(CalculationMode), AutoRiskCalculationModes.Balance)
 			.SetDisplay("Account metric used in the lot size formula");
 
 		_roundUp = Param(nameof(RoundUp), true)
@@ -59,7 +59,7 @@ public class AutoRiskStrategy : Strategy
 	/// <summary>
 	/// Determines which portfolio metric is used for the calculation.
 	/// </summary>
-	public AutoRiskCalculationMode CalculationMode
+	public AutoRiskCalculationModes CalculationMode
 	{
 		get => _calculationMode.Value;
 		set => _calculationMode.Value = value;
@@ -135,7 +135,7 @@ public class AutoRiskStrategy : Strategy
 
 		var equity = portfolio.CurrentValue ?? portfolio.BeginValue ?? 0m;
 		var balance = portfolio.BeginValue ?? portfolio.CurrentValue ?? 0m;
-		var basis = CalculationMode == AutoRiskCalculationMode.Balance ? balance : equity;
+		var basis = CalculationMode == AutoRiskCalculationModes.Balance ? balance : equity;
 
 		if (basis <= 0m)
 			return;
@@ -207,7 +207,7 @@ public class AutoRiskStrategy : Strategy
 /// <summary>
 /// Available account metrics for the AutoRisk sizing logic.
 /// </summary>
-public enum AutoRiskCalculationMode
+public enum AutoRiskCalculationModes
 {
 	/// <summary>
 	/// Uses portfolio equity (current value) for the calculation.

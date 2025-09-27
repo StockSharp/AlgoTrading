@@ -28,7 +28,7 @@ public class ColorSchaffJccxTrendCycleMmrecDuplexStrategy : Strategy
 	private readonly StrategyParam<int> _longPhase;
 	private readonly StrategyParam<int> _longCycle;
 	private readonly StrategyParam<int> _longSignalBar;
-	private readonly StrategyParam<AppliedPrice> _longAppliedPrice;
+	private readonly StrategyParam<AppliedPrices> _longAppliedPrice;
 	private readonly StrategyParam<bool> _longAllowOpen;
 	private readonly StrategyParam<bool> _longAllowClose;
 	private readonly StrategyParam<int> _longTotalTrigger;
@@ -45,7 +45,7 @@ public class ColorSchaffJccxTrendCycleMmrecDuplexStrategy : Strategy
 	private readonly StrategyParam<int> _shortPhase;
 	private readonly StrategyParam<int> _shortCycle;
 	private readonly StrategyParam<int> _shortSignalBar;
-	private readonly StrategyParam<AppliedPrice> _shortAppliedPrice;
+	private readonly StrategyParam<AppliedPrices> _shortAppliedPrice;
 	private readonly StrategyParam<bool> _shortAllowOpen;
 	private readonly StrategyParam<bool> _shortAllowClose;
 	private readonly StrategyParam<int> _shortTotalTrigger;
@@ -134,7 +134,7 @@ public class ColorSchaffJccxTrendCycleMmrecDuplexStrategy : Strategy
 	/// <summary>
 	/// Price source used for the long calculations.
 	/// </summary>
-	public AppliedPrice LongAppliedPrice
+	public AppliedPrices LongAppliedPrice
 	{
 		get => _longAppliedPrice.Value;
 		set => _longAppliedPrice.Value = value;
@@ -278,7 +278,7 @@ public class ColorSchaffJccxTrendCycleMmrecDuplexStrategy : Strategy
 	/// <summary>
 	/// Price source used for the short calculations.
 	/// </summary>
-	public AppliedPrice ShortAppliedPrice
+	public AppliedPrices ShortAppliedPrice
 	{
 		get => _shortAppliedPrice.Value;
 		set => _shortAppliedPrice.Value = value;
@@ -398,7 +398,7 @@ public class ColorSchaffJccxTrendCycleMmrecDuplexStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(0, 3, 1);
 
-		_longAppliedPrice = Param(nameof(LongAppliedPrice), AppliedPrice.Close)
+		_longAppliedPrice = Param(nameof(LongAppliedPrice), AppliedPrices.Close)
 		.SetDisplay("Long Applied Price", "Price source for long logic", "Long");
 
 		_longAllowOpen = Param(nameof(LongAllowOpen), true)
@@ -472,7 +472,7 @@ public class ColorSchaffJccxTrendCycleMmrecDuplexStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(0, 3, 1);
 
-		_shortAppliedPrice = Param(nameof(ShortAppliedPrice), AppliedPrice.Close)
+		_shortAppliedPrice = Param(nameof(ShortAppliedPrice), AppliedPrices.Close)
 		.SetDisplay("Short Applied Price", "Price source for short logic", "Short");
 
 		_shortAllowOpen = Param(nameof(ShortAllowOpen), true)
@@ -870,21 +870,21 @@ public class ColorSchaffJccxTrendCycleMmrecDuplexStrategy : Strategy
 		return step is { } value && value > 0m ? value : 1m;
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrice price)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrices price)
 	{
 		return price switch
 		{
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
-			AppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			AppliedPrice.Quarter => (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
-			AppliedPrice.TrendFollow0 => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
-			AppliedPrice.TrendFollow1 => (candle.HighPrice + candle.LowPrice + candle.OpenPrice + candle.OpenPrice) / 4m,
-			AppliedPrice.DeMark => candle.ClosePrice < candle.OpenPrice
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			AppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			AppliedPrices.Quarter => (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
+			AppliedPrices.TrendFollow0 => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
+			AppliedPrices.TrendFollow1 => (candle.HighPrice + candle.LowPrice + candle.OpenPrice + candle.OpenPrice) / 4m,
+			AppliedPrices.DeMark => candle.ClosePrice < candle.OpenPrice
 			? (candle.HighPrice + 2m * candle.LowPrice + candle.ClosePrice) / 4m
 			: candle.ClosePrice > candle.OpenPrice
 			? (2m * candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m
@@ -903,7 +903,7 @@ public class ColorSchaffJccxTrendCycleMmrecDuplexStrategy : Strategy
 		return factor;
 	}
 
-	private enum AppliedPrice
+	private enum AppliedPrices
 	{
 		Close,
 		Open,

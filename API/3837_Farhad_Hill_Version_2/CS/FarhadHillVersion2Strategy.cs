@@ -57,8 +57,8 @@ public class FarhadHillVersion2Strategy : Strategy
 	private readonly StrategyParam<decimal> _momentumLow;
 	private readonly StrategyParam<int> _slowMaPeriod;
 	private readonly StrategyParam<int> _fastMaPeriod;
-	private readonly StrategyParam<MovingAverageMode> _maMode;
-	private readonly StrategyParam<AppliedPriceMode> _maPrice;
+	private readonly StrategyParam<MovingAverageModes> _maMode;
+	private readonly StrategyParam<AppliedPriceModes> _maPrice;
 
 	private LengthIndicator<decimal> _fastMa;
 	private LengthIndicator<decimal> _slowMa;
@@ -212,10 +212,10 @@ public class FarhadHillVersion2Strategy : Strategy
 		_fastMaPeriod.SetGreaterThanZero();
 		_fastMaPeriod.SetDisplay("Fast MA", "Fast moving average period", "Indicators");
 
-		_maMode = Param(nameof(MaMode), MovingAverageMode.Smoothed);
+		_maMode = Param(nameof(MaMode), MovingAverageModes.Smoothed);
 		_maMode.SetDisplay("MA Mode", "Moving average calculation", "Indicators");
 
-		_maPrice = Param(nameof(MaPrice), AppliedPriceMode.Typical);
+		_maPrice = Param(nameof(MaPrice), AppliedPriceModes.Typical);
 		_maPrice.SetDisplay("MA Price", "Applied price for moving averages", "Indicators");
 	}
 
@@ -439,17 +439,17 @@ public class FarhadHillVersion2Strategy : Strategy
 		return true;
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceMode mode)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceModes mode)
 	{
 		return mode switch
 		{
-			AppliedPriceMode.Close => candle.ClosePrice,
-			AppliedPriceMode.Open => candle.OpenPrice,
-			AppliedPriceMode.High => candle.HighPrice,
-			AppliedPriceMode.Low => candle.LowPrice,
-			AppliedPriceMode.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceMode.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceMode.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
+			AppliedPriceModes.Close => candle.ClosePrice,
+			AppliedPriceModes.Open => candle.OpenPrice,
+			AppliedPriceModes.High => candle.HighPrice,
+			AppliedPriceModes.Low => candle.LowPrice,
+			AppliedPriceModes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceModes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceModes.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
@@ -883,16 +883,16 @@ public class FarhadHillVersion2Strategy : Strategy
 		}
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMode mode, int length, out LinearRegression lsma)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageModes mode, int length, out LinearRegression lsma)
 	{
 		lsma = null;
 		return mode switch
 		{
-			MovingAverageMode.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMode.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMode.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMode.LinearWeighted => new WeightedMovingAverage { Length = length },
-			MovingAverageMode.LeastSquares => lsma = new LinearRegression { Length = length },
+			MovingAverageModes.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageModes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageModes.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageModes.LinearWeighted => new WeightedMovingAverage { Length = length },
+			MovingAverageModes.LeastSquares => lsma = new LinearRegression { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -933,13 +933,13 @@ public class FarhadHillVersion2Strategy : Strategy
 	private decimal MomentumLow => _momentumLow.Value;
 	private int SlowMaPeriod => _slowMaPeriod.Value;
 	private int FastMaPeriod => _fastMaPeriod.Value;
-	private MovingAverageMode MaMode => _maMode.Value;
-	private AppliedPriceMode MaPrice => _maPrice.Value;
+	private MovingAverageModes MaMode => _maMode.Value;
+	private AppliedPriceModes MaPrice => _maPrice.Value;
 
 	/// <summary>
 	/// Moving average modes compatible with the original EA options.
 	/// </summary>
-	public enum MovingAverageMode
+	public enum MovingAverageModes
 	{
 		Simple = 0,
 		Exponential = 1,
@@ -951,7 +951,7 @@ public class FarhadHillVersion2Strategy : Strategy
 	/// <summary>
 	/// Applied price selection for moving averages.
 	/// </summary>
-	public enum AppliedPriceMode
+	public enum AppliedPriceModes
 	{
 		Close = 0,
 		Open = 1,

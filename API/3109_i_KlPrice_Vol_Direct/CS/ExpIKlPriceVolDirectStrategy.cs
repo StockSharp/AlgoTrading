@@ -23,15 +23,15 @@ namespace StockSharp.Samples.Strategies;
 public class ExpIKlPriceVolDirectStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<VolumeMode> _volumeMode;
-	private readonly StrategyParam<SmoothingMethod> _priceMethod;
+	private readonly StrategyParam<VolumeModes> _volumeMode;
+	private readonly StrategyParam<SmoothingMethods> _priceMethod;
 	private readonly StrategyParam<int> _priceLength;
 	private readonly StrategyParam<int> _pricePhase;
-	private readonly StrategyParam<SmoothingMethod> _rangeMethod;
+	private readonly StrategyParam<SmoothingMethods> _rangeMethod;
 	private readonly StrategyParam<int> _rangeLength;
 	private readonly StrategyParam<int> _rangePhase;
 	private readonly StrategyParam<int> _resultLength;
-	private readonly StrategyParam<AppliedPrice> _appliedPrice;
+	private readonly StrategyParam<AppliedPrices> _appliedPrice;
 	private readonly StrategyParam<decimal> _highLevel2;
 	private readonly StrategyParam<decimal> _highLevel1;
 	private readonly StrategyParam<decimal> _lowLevel1;
@@ -60,10 +60,10 @@ public class ExpIKlPriceVolDirectStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for the KlPrice calculations", "Indicator");
 
-		_volumeMode = Param(nameof(VolumeSource), VolumeMode.Tick)
+		_volumeMode = Param(nameof(VolumeSource), VolumeModes.Tick)
 		.SetDisplay("Volume Source", "Volume stream used to weight the oscillator", "Indicator");
 
-		_priceMethod = Param(nameof(PriceMethod), SmoothingMethod.Sma)
+		_priceMethod = Param(nameof(PriceMethod), SmoothingMethods.Sma)
 		.SetDisplay("Price Method", "Smoothing applied to the base price", "Indicator");
 
 		_priceLength = Param(nameof(PriceLength), 100)
@@ -73,7 +73,7 @@ public class ExpIKlPriceVolDirectStrategy : Strategy
 		_pricePhase = Param(nameof(PricePhase), 15)
 		.SetDisplay("Price Phase", "Phase parameter used by Jurik-based price smoothing", "Indicator");
 
-		_rangeMethod = Param(nameof(RangeMethod), SmoothingMethod.Jjma)
+		_rangeMethod = Param(nameof(RangeMethod), SmoothingMethods.Jjma)
 		.SetDisplay("Range Method", "Smoothing applied to the high-low range", "Indicator");
 
 		_rangeLength = Param(nameof(RangeLength), 20)
@@ -87,7 +87,7 @@ public class ExpIKlPriceVolDirectStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Result Length", "Length of the Jurik smoother applied to the weighted oscillator", "Indicator");
 
-		_appliedPrice = Param(nameof(PriceMode), AppliedPrice.Close)
+		_appliedPrice = Param(nameof(PriceMode), AppliedPrices.Close)
 		.SetDisplay("Applied Price", "Price source processed by the indicator", "Indicator");
 
 		_highLevel2 = Param(nameof(HighLevel2), 0m)
@@ -137,7 +137,7 @@ public class ExpIKlPriceVolDirectStrategy : Strategy
 	/// <summary>
 	/// Volume stream used to weight the oscillator (tick or real volume).
 	/// </summary>
-	public VolumeMode VolumeSource
+	public VolumeModes VolumeSource
 	{
 		get => _volumeMode.Value;
 		set => _volumeMode.Value = value;
@@ -146,7 +146,7 @@ public class ExpIKlPriceVolDirectStrategy : Strategy
 	/// <summary>
 	/// Smoothing method applied to the base price.
 	/// </summary>
-	public SmoothingMethod PriceMethod
+	public SmoothingMethods PriceMethod
 	{
 		get => _priceMethod.Value;
 		set => _priceMethod.Value = value;
@@ -173,7 +173,7 @@ public class ExpIKlPriceVolDirectStrategy : Strategy
 	/// <summary>
 	/// Smoothing method applied to the price range (high-low).
 	/// </summary>
-	public SmoothingMethod RangeMethod
+	public SmoothingMethods RangeMethod
 	{
 		get => _rangeMethod.Value;
 		set => _rangeMethod.Value = value;
@@ -209,7 +209,7 @@ public class ExpIKlPriceVolDirectStrategy : Strategy
 	/// <summary>
 	/// Applied price processed by the indicator.
 	/// </summary>
-	public AppliedPrice PriceMode
+	public AppliedPrices PriceMode
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -493,28 +493,28 @@ public class ExpIKlPriceVolDirectStrategy : Strategy
 	{
 		return VolumeSource switch
 		{
-			VolumeMode.Tick => candle.TotalVolume,
-			VolumeMode.Real => candle.TotalVolume,
+			VolumeModes.Tick => candle.TotalVolume,
+			VolumeModes.Real => candle.TotalVolume,
 			_ => candle.TotalVolume,
 		};
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrice priceMode)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrices priceMode)
 	{
 		return priceMode switch
 		{
-			AppliedPrice.Close => candle.ClosePrice,
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
-			AppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			AppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
-			AppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
-			AppliedPrice.Demark => CalculateDemarkPrice(candle),
+			AppliedPrices.Close => candle.ClosePrice,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
+			AppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			AppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
+			AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
+			AppliedPrices.Demark => CalculateDemarkPrice(candle),
 			_ => candle.ClosePrice,
 		};
 	}
@@ -533,7 +533,7 @@ public class ExpIKlPriceVolDirectStrategy : Strategy
 		return ((sum - candle.LowPrice) + (sum - candle.HighPrice)) / 2m;
 	}
 
-	private static IIndicator CreateSmoother(SmoothingMethod method, int length, int phase)
+	private static IIndicator CreateSmoother(SmoothingMethods method, int length, int phase)
 	{
 		var normalizedLength = Math.Max(1, length);
 		var offset = 0.5m + phase / 200m;
@@ -541,16 +541,16 @@ public class ExpIKlPriceVolDirectStrategy : Strategy
 
 		return method switch
 		{
-			SmoothingMethod.Sma => new SimpleMovingAverage { Length = normalizedLength },
-			SmoothingMethod.Ema => new ExponentialMovingAverage { Length = normalizedLength },
-			SmoothingMethod.Smma => new SmoothedMovingAverage { Length = normalizedLength },
-			SmoothingMethod.Lwma => new WeightedMovingAverage { Length = normalizedLength },
-			SmoothingMethod.Jjma => CreateJurik(normalizedLength, phase),
-			SmoothingMethod.Jurx => new ZeroLagExponentialMovingAverage { Length = normalizedLength },
-			SmoothingMethod.Parma => new ArnaudLegouxMovingAverage { Length = normalizedLength, Offset = offset, Sigma = 6m },
-			SmoothingMethod.T3 => new TripleExponentialMovingAverage { Length = normalizedLength },
-			SmoothingMethod.Vidya => new ExponentialMovingAverage { Length = normalizedLength },
-			SmoothingMethod.Ama => new KaufmanAdaptiveMovingAverage { Length = normalizedLength },
+			SmoothingMethods.Sma => new SimpleMovingAverage { Length = normalizedLength },
+			SmoothingMethods.Ema => new ExponentialMovingAverage { Length = normalizedLength },
+			SmoothingMethods.Smma => new SmoothedMovingAverage { Length = normalizedLength },
+			SmoothingMethods.Lwma => new WeightedMovingAverage { Length = normalizedLength },
+			SmoothingMethods.Jjma => CreateJurik(normalizedLength, phase),
+			SmoothingMethods.Jurx => new ZeroLagExponentialMovingAverage { Length = normalizedLength },
+			SmoothingMethods.Parma => new ArnaudLegouxMovingAverage { Length = normalizedLength, Offset = offset, Sigma = 6m },
+			SmoothingMethods.T3 => new TripleExponentialMovingAverage { Length = normalizedLength },
+			SmoothingMethods.Vidya => new ExponentialMovingAverage { Length = normalizedLength },
+			SmoothingMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = normalizedLength },
 			_ => new SimpleMovingAverage { Length = normalizedLength },
 		};
 	}
@@ -572,7 +572,7 @@ public class ExpIKlPriceVolDirectStrategy : Strategy
 /// <summary>
 /// Supported smoothing methods mirroring the original SmoothAlgorithms library.
 /// </summary>
-public enum SmoothingMethod
+public enum SmoothingMethods
 {
 	/// <summary>Simple moving average.</summary>
 	Sma,
@@ -608,7 +608,7 @@ public enum SmoothingMethod
 /// <summary>
 /// Applied price options provided by the original indicator.
 /// </summary>
-public enum AppliedPrice
+public enum AppliedPrices
 {
 	/// <summary>Close price.</summary>
 	Close,
@@ -650,7 +650,7 @@ public enum AppliedPrice
 /// <summary>
 /// Volume mode used to weight the oscillator.
 /// </summary>
-public enum VolumeMode
+public enum VolumeModes
 {
 	/// <summary>Tick volume.</summary>
 	Tick,

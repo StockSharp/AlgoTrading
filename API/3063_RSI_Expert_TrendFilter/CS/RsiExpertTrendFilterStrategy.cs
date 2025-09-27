@@ -24,7 +24,7 @@ public class RsiExpertTrendFilterStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _trailingStopPips;
 	private readonly StrategyParam<int> _trailingStepPips;
-	private readonly StrategyParam<MoneyManagementMode> _moneyMode;
+	private readonly StrategyParam<MoneyManagementModes> _moneyMode;
 	private readonly StrategyParam<decimal> _volumeOrRiskValue;
 	private readonly StrategyParam<bool> _useMartingale;
 	private readonly StrategyParam<int> _fastMaPeriod;
@@ -32,7 +32,7 @@ public class RsiExpertTrendFilterStrategy : Strategy
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<decimal> _rsiLevelUp;
 	private readonly StrategyParam<decimal> _rsiLevelDown;
-	private readonly StrategyParam<MaTradeMode> _maMode;
+	private readonly StrategyParam<MaTradeModes> _maMode;
 
 	private RelativeStrengthIndex _rsi = null!;
 	private SimpleMovingAverage _fastMa = null!;
@@ -51,7 +51,7 @@ public class RsiExpertTrendFilterStrategy : Strategy
 	/// <summary>
 	/// Money management modes supported by the strategy.
 	/// </summary>
-	public enum MoneyManagementMode
+	public enum MoneyManagementModes
 	{
 		/// <summary>
 		/// Use a fixed volume for every trade.
@@ -67,7 +67,7 @@ public class RsiExpertTrendFilterStrategy : Strategy
 	/// <summary>
 	/// Moving average filter configuration copied from the original EA.
 	/// </summary>
-	public enum MaTradeMode
+	public enum MaTradeModes
 	{
 		/// <summary>
 		/// Ignore the moving average filter.
@@ -113,7 +113,7 @@ public RsiExpertTrendFilterStrategy()
 			.SetDisplay("Trailing Step (pips)", "Additional pips required before trailing moves again", "Risk Management")
 			.SetCanOptimize(true);
 
-		_moneyMode = Param(nameof(MoneyMode), MoneyManagementMode.FixedVolume)
+		_moneyMode = Param(nameof(MoneyMode), MoneyManagementModes.FixedVolume)
 			.SetDisplay("Money Mode", "Choose fixed volume or percent risk sizing", "Money Management");
 
 		_volumeOrRiskValue = Param(nameof(VolumeOrRiskValue), 1m)
@@ -149,7 +149,7 @@ public RsiExpertTrendFilterStrategy()
 			.SetDisplay("RSI Level Down", "Lower RSI threshold for longs", "Indicators")
 			.SetCanOptimize(true);
 
-		_maMode = Param(nameof(MaMode), MaTradeMode.Forward)
+		_maMode = Param(nameof(MaMode), MaTradeModes.Forward)
 			.SetDisplay("MA Trade Mode", "Direction of the moving average confirmation", "Indicators");
 	}
 
@@ -201,14 +201,14 @@ public RsiExpertTrendFilterStrategy()
 	/// <summary>
 	/// Selected money management approach.
 	/// </summary>
-	public MoneyManagementMode MoneyMode
+	public MoneyManagementModes MoneyMode
 	{
 		get => _moneyMode.Value;
 		set => _moneyMode.Value = value;
 	}
 
 	/// <summary>
-	/// Lot size in fixed mode or risk percent when money mode equals <see cref="MoneyManagementMode.RiskPercent"/>.
+	/// Lot size in fixed mode or risk percent when money mode equals <see cref="MoneyManagementModes.RiskPercent"/>.
 	/// </summary>
 	public decimal VolumeOrRiskValue
 	{
@@ -273,7 +273,7 @@ public RsiExpertTrendFilterStrategy()
 	/// <summary>
 	/// Moving average confirmation mode.
 	/// </summary>
-	public MaTradeMode MaMode
+	public MaTradeModes MaMode
 	{
 		get => _maMode.Value;
 		set => _maMode.Value = value;
@@ -357,7 +357,7 @@ public RsiExpertTrendFilterStrategy()
 		var previousRsi = _previousRsi;
 
 		// Wait until indicators have accumulated enough history.
-		if (!_rsi.IsFormed || (MaMode != MaTradeMode.Off && (!_fastMa.IsFormed || !_slowMa.IsFormed)))
+		if (!_rsi.IsFormed || (MaMode != MaTradeModes.Off && (!_fastMa.IsFormed || !_slowMa.IsFormed)))
 		{
 			_previousRsi = currentRsi;
 			return;
@@ -381,13 +381,13 @@ public RsiExpertTrendFilterStrategy()
 		var maSignal = 0;
 		switch (MaMode)
 		{
-			case MaTradeMode.Forward:
+			case MaTradeModes.Forward:
 				if (fastValue > slowValue)
 					maSignal = 1;
 				else if (fastValue < slowValue)
 					maSignal = -1;
 				break;
-			case MaTradeMode.Reverse:
+			case MaTradeModes.Reverse:
 				if (fastValue < slowValue)
 					maSignal = 1;
 				else if (fastValue > slowValue)
@@ -396,9 +396,9 @@ public RsiExpertTrendFilterStrategy()
 		}
 
 		var finalSignal = 0;
-		if (rsiSignal == 1 && (MaMode == MaTradeMode.Off || maSignal == 1))
+		if (rsiSignal == 1 && (MaMode == MaTradeModes.Off || maSignal == 1))
 			finalSignal = 1;
-		else if (rsiSignal == -1 && (MaMode == MaTradeMode.Off || maSignal == -1))
+		else if (rsiSignal == -1 && (MaMode == MaTradeModes.Off || maSignal == -1))
 			finalSignal = -1;
 
 		if (finalSignal > 0 && AllowLong())
@@ -539,7 +539,7 @@ public RsiExpertTrendFilterStrategy()
 
 	private decimal GetOrderVolume()
 	{
-		var volume = MoneyMode == MoneyManagementMode.FixedVolume
+		var volume = MoneyMode == MoneyManagementModes.FixedVolume
 			? VolumeOrRiskValue
 			: CalculateRiskVolume();
 

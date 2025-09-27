@@ -25,8 +25,8 @@ private readonly StrategyParam<DataType> _longCandleType;
 private readonly StrategyParam<DataType> _shortCandleType;
 private readonly StrategyParam<decimal> _longEmaLength;
 private readonly StrategyParam<decimal> _shortEmaLength;
-private readonly StrategyParam<AppliedPrice> _longPriceMode;
-private readonly StrategyParam<AppliedPrice> _shortPriceMode;
+private readonly StrategyParam<AppliedPrices> _longPriceMode;
+private readonly StrategyParam<AppliedPrices> _shortPriceMode;
 private readonly StrategyParam<int> _longDigits;
 private readonly StrategyParam<int> _shortDigits;
 private readonly StrategyParam<int> _longSignalBar;
@@ -73,10 +73,10 @@ _shortEmaLength = Param(nameof(ShortEmaLength), 50.01m)
 .SetCanOptimize(true)
 .SetOptimize(20m, 100m, 5m);
 
-_longPriceMode = Param(nameof(LongPriceMode), AppliedPrice.Close)
+_longPriceMode = Param(nameof(LongPriceMode), AppliedPrices.Close)
 .SetDisplay("Long Price Mode", "Price source for long pentuple EMA", "Indicators");
 
-_shortPriceMode = Param(nameof(ShortPriceMode), AppliedPrice.Close)
+_shortPriceMode = Param(nameof(ShortPriceMode), AppliedPrices.Close)
 .SetDisplay("Short Price Mode", "Price source for short pentuple EMA", "Indicators");
 
 _longDigits = Param(nameof(LongDigits), 2)
@@ -175,7 +175,7 @@ set => _shortEmaLength.Value = value;
 /// <summary>
 /// Price selection mode for the long stream.
 /// </summary>
-public AppliedPrice LongPriceMode
+public AppliedPrices LongPriceMode
 {
 get => _longPriceMode.Value;
 set => _longPriceMode.Value = value;
@@ -184,7 +184,7 @@ set => _longPriceMode.Value = value;
 /// <summary>
 /// Price selection mode for the short stream.
 /// </summary>
-public AppliedPrice ShortPriceMode
+public AppliedPrices ShortPriceMode
 {
 get => _shortPriceMode.Value;
 set => _shortPriceMode.Value = value;
@@ -355,14 +355,14 @@ Volume = TradeVolume;
 _longPema = new PentupleExponentialMovingAverageIndicator
 {
 Length = LongEmaLength,
-AppliedPrice = LongPriceMode,
+AppliedPrices = LongPriceMode,
 Digits = LongDigits
 };
 
 _shortPema = new PentupleExponentialMovingAverageIndicator
 {
 Length = ShortEmaLength,
-AppliedPrice = ShortPriceMode,
+AppliedPrices = ShortPriceMode,
 Digits = ShortDigits
 };
 
@@ -527,7 +527,7 @@ return index >= 0 && index < source.Count ? source[index] : IndicatorColor.Neutr
 /// <summary>
 /// Enumeration for applied price selection.
 /// </summary>
-public enum AppliedPrice
+public enum AppliedPrices
 {
 /// <summary>
 /// Candle close price.
@@ -622,7 +622,7 @@ public decimal Length { get; set; } = 50.01m;
 /// <summary>
 /// Gets or sets the applied price mode.
 /// </summary>
-public ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrice AppliedPrice { get; set; } = ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrice.Close;
+public ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrices AppliedPrices { get; set; } = ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrices.Close;
 
 /// <summary>
 /// Gets or sets rounding digits.
@@ -681,20 +681,20 @@ return previous is null ? value : previous.Value + alpha * (value - previous.Val
 
 private decimal GetAppliedPrice(ICandleMessage candle)
 {
-return AppliedPrice switch
+return AppliedPrices switch
 {
-ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrice.Close => candle.ClosePrice,
-ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrice.Open => candle.OpenPrice,
-ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrice.High => candle.HighPrice,
-ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrice.Low => candle.LowPrice,
-ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
-ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrice.Quarter => (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
-ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
-ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
-ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrice.Demark => CalculateDemarkPrice(candle),
+ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrices.Close => candle.ClosePrice,
+ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrices.Open => candle.OpenPrice,
+ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrices.High => candle.HighPrice,
+ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrices.Low => candle.LowPrice,
+ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrices.Quarter => (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
+ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
+ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
+ExpColorPemaDigitTmPlusMmrecDuplexStrategy.AppliedPrices.Demark => CalculateDemarkPrice(candle),
 _ => candle.ClosePrice,
 };
 }

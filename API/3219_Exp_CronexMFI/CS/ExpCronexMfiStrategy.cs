@@ -24,7 +24,7 @@ public class ExpCronexMfiStrategy : Strategy
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _signalShift;
-	private readonly StrategyParam<SmoothingMethod> _smoothing;
+	private readonly StrategyParam<SmoothingMethods> _smoothing;
 	private readonly StrategyParam<bool> _enableLongEntries;
 	private readonly StrategyParam<bool> _enableShortEntries;
 	private readonly StrategyParam<bool> _enableLongExits;
@@ -39,7 +39,7 @@ public class ExpCronexMfiStrategy : Strategy
 	/// <summary>
 	/// Available smoothing options for the Cronex MFI lines.
 	/// </summary>
-	public enum SmoothingMethod
+	public enum SmoothingMethods
 	{
 		/// <summary>
 		/// Simple moving average (SMA).
@@ -131,7 +131,7 @@ public class ExpCronexMfiStrategy : Strategy
 	/// <summary>
 	/// Gets or sets the smoothing method applied to both Cronex lines.
 	/// </summary>
-	public SmoothingMethod Smoothing
+	public SmoothingMethods Smoothing
 	{
 		get => _smoothing.Value;
 		set => _smoothing.Value = value;
@@ -210,7 +210,7 @@ public class ExpCronexMfiStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(0, 3, 1);
 
-		_smoothing = Param(nameof(Smoothing), SmoothingMethod.Simple)
+		_smoothing = Param(nameof(Smoothing), SmoothingMethods.Simple)
 			.SetDisplay("Smoothing", "Moving-average algorithm applied to both Cronex lines", "Indicators");
 
 		_enableLongEntries = Param(nameof(EnableLongEntries), true)
@@ -354,20 +354,20 @@ public class ExpCronexMfiStrategy : Strategy
 		}
 	}
 
-	private static LengthIndicator<decimal> CreateSmoother(SmoothingMethod method, int length)
+	private static LengthIndicator<decimal> CreateSmoother(SmoothingMethods method, int length)
 	{
 		return method switch
 		{
-			SmoothingMethod.Simple => new SimpleMovingAverage { Length = length },
-			SmoothingMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			SmoothingMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			SmoothingMethod.Weighted => new WeightedMovingAverage { Length = length },
-			SmoothingMethod.DoubleExponential => new DoubleExponentialMovingAverage { Length = length },
-			SmoothingMethod.TripleExponential => new TripleExponentialMovingAverage { Length = length },
-			SmoothingMethod.Hull => new HullMovingAverage { Length = length },
-			SmoothingMethod.ZeroLagExponential => new ZeroLagExponentialMovingAverage { Length = length },
-			SmoothingMethod.ArnaudLegoux => new ArnaudLegouxMovingAverage { Length = length },
-			SmoothingMethod.KaufmanAdaptive => new KaufmanAdaptiveMovingAverage { Length = length },
+			SmoothingMethods.Simple => new SimpleMovingAverage { Length = length },
+			SmoothingMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			SmoothingMethods.Weighted => new WeightedMovingAverage { Length = length },
+			SmoothingMethods.DoubleExponential => new DoubleExponentialMovingAverage { Length = length },
+			SmoothingMethods.TripleExponential => new TripleExponentialMovingAverage { Length = length },
+			SmoothingMethods.Hull => new HullMovingAverage { Length = length },
+			SmoothingMethods.ZeroLagExponential => new ZeroLagExponentialMovingAverage { Length = length },
+			SmoothingMethods.ArnaudLegoux => new ArnaudLegouxMovingAverage { Length = length },
+			SmoothingMethods.KaufmanAdaptive => new KaufmanAdaptiveMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}

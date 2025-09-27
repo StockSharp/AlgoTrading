@@ -24,7 +24,7 @@ public class IvidyaSimpleStrategy : Strategy
 	private readonly StrategyParam<int> _cmoPeriod;
 	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<AppliedPriceType> _appliedPrice;
+	private readonly StrategyParam<AppliedPriceTypes> _appliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private ChandeMomentumOscillator _cmo = null!;
@@ -63,7 +63,7 @@ public class IvidyaSimpleStrategy : Strategy
 	/// <summary>
 	/// Candle price used as input for the VIDYA calculation.
 	/// </summary>
-	public AppliedPriceType AppliedPrice { get => _appliedPrice.Value; set => _appliedPrice.Value = value; }
+	public AppliedPriceTypes AppliedPrice { get => _appliedPrice.Value; set => _appliedPrice.Value = value; }
 
 	/// <summary>
 	/// Candle type processed by the strategy.
@@ -102,7 +102,7 @@ public class IvidyaSimpleStrategy : Strategy
 			.SetNotNegative()
 			.SetCanOptimize(true);
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceType.Close)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Close)
 			.SetDisplay("Applied Price", "Price source for VIDYA", "Indicator")
 			.SetCanOptimize(true);
 
@@ -218,12 +218,12 @@ public class IvidyaSimpleStrategy : Strategy
 	{
 		return AppliedPrice switch
 		{
-			AppliedPriceType.Open => candle.OpenPrice,
-			AppliedPriceType.High => candle.HighPrice,
-			AppliedPriceType.Low => candle.LowPrice,
-			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			AppliedPriceTypes.Open => candle.OpenPrice,
+			AppliedPriceTypes.High => candle.HighPrice,
+			AppliedPriceTypes.Low => candle.LowPrice,
+			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
@@ -231,7 +231,7 @@ public class IvidyaSimpleStrategy : Strategy
 	/// <summary>
 	/// Price sources compatible with MetaTrader applied price options.
 	/// </summary>
-	public enum AppliedPriceType
+	public enum AppliedPriceTypes
 	{
 		Close,
 		Open,

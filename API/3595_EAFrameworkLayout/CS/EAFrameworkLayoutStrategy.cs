@@ -23,7 +23,7 @@ public class EAFrameworkLayoutStrategy : Strategy
 	private readonly StrategyParam<decimal> _tradeInitLots;
 	private readonly StrategyParam<int> _autoCloseAfterXH1;
 	private readonly StrategyParam<bool> _isReverse;
-	private readonly StrategyParam<DealDirectionAllow> _dealDirectionAllow;
+	private readonly StrategyParam<DealDirectionAllows> _dealDirectionAllow;
 	private readonly StrategyParam<double> _usTimeLeftBound;
 	private readonly StrategyParam<double> _usTimeRightBound;
 	private readonly StrategyParam<double> _nonUsTimeLeftBound;
@@ -43,7 +43,7 @@ public class EAFrameworkLayoutStrategy : Strategy
 	/// <summary>
 	/// Deal direction permissions.
 	/// </summary>
-	public enum DealDirectionAllow
+	public enum DealDirectionAllows
 	{
 		Both,
 		Up,
@@ -71,7 +71,7 @@ public class EAFrameworkLayoutStrategy : Strategy
 		_isReverse = Param(nameof(IsReverse), false)
 			.SetDisplay("Reverse", "Whether the strategy should attempt to reverse positions", "General");
 
-		_dealDirectionAllow = Param(nameof(DirectionAllow), DealDirectionAllow.Both)
+		_dealDirectionAllow = Param(nameof(DirectionAllow), DealDirectionAllows.Both)
 			.SetDisplay("Direction", "Allowed trade direction when managing positions", "General");
 
 		_usTimeLeftBound = Param(nameof(UsTimeLeftBound), 2.0)
@@ -129,7 +129,7 @@ public class EAFrameworkLayoutStrategy : Strategy
 	/// <summary>
 	/// Allowed trade direction when managing positions.
 	/// </summary>
-	public DealDirectionAllow DirectionAllow
+	public DealDirectionAllows DirectionAllow
 	{
 		get => _dealDirectionAllow.Value;
 		set => _dealDirectionAllow.Value = value;
@@ -293,9 +293,9 @@ public class EAFrameworkLayoutStrategy : Strategy
 	{
 		return DirectionAllow switch
 		{
-			DealDirectionAllow.Both => true,
-			DealDirectionAllow.Up => positionSign > 0,
-			DealDirectionAllow.Down => positionSign < 0,
+			DealDirectionAllows.Both => true,
+			DealDirectionAllows.Up => positionSign > 0,
+			DealDirectionAllows.Down => positionSign < 0,
 			_ => true,
 		};
 	}

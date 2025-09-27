@@ -376,7 +376,7 @@ public class SampleDetectEconomicCalendarStrategy : Strategy
 		if (!evt.Currency.EqualsIgnoreCase(BaseCurrency))
 		return;
 
-		if (evt.Importance != NewsImportance.High)
+		if (evt.Importance != NewsImportances.High)
 		return;
 
 		if (BuyDistancePoints <= 0 || SellDistancePoints <= 0)
@@ -613,33 +613,33 @@ public class SampleDetectEconomicCalendarStrategy : Strategy
 		return false;
 	}
 
-	private static bool TryParseImportance(string value, out NewsImportance importance)
+	private static bool TryParseImportance(string value, out NewsImportances importance)
 	{
 		if (value.EqualsIgnoreCase("high"))
 		{
-			importance = NewsImportance.High;
+			importance = NewsImportances.High;
 			return true;
 		}
 
 		if (value.EqualsIgnoreCase("medium"))
 		{
-			importance = NewsImportance.Medium;
+			importance = NewsImportances.Medium;
 			return true;
 		}
 
 		if (value.EqualsIgnoreCase("low"))
 		{
-			importance = NewsImportance.Low;
+			importance = NewsImportances.Low;
 			return true;
 		}
 
 		if (value.EqualsIgnoreCase("nfp") || value.EqualsIgnoreCase("non-farm"))
 		{
-			importance = NewsImportance.Nfp;
+			importance = NewsImportances.Nfp;
 			return true;
 		}
 
-		importance = NewsImportance.Low;
+		importance = NewsImportances.Low;
 		return false;
 	}
 
@@ -647,7 +647,7 @@ public class SampleDetectEconomicCalendarStrategy : Strategy
 	{
 		public DateTimeOffset Time { get; init; }
 		public string Currency { get; init; } = string.Empty;
-		public NewsImportance Importance { get; init; }
+		public NewsImportances Importance { get; init; }
 		public string Title { get; init; } = string.Empty;
 		public bool OrdersPlaced { get; set; }
 		public bool Completed { get; set; }
@@ -656,7 +656,7 @@ public class SampleDetectEconomicCalendarStrategy : Strategy
 		public Order SellOrder { get; set; }
 	}
 
-	private enum NewsImportance
+	private enum NewsImportances
 	{
 		Low,
 		Medium,

@@ -15,7 +15,7 @@ using StockSharp.Messages;
 
 public class SpearmanRankCorrelationHistogramTimeWeekPeriodStrategy : Strategy
 {
-	public enum SpearmanTradeMode
+	public enum SpearmanTradeModes
 	{
 		Mode1 = 0,
 		Mode2 = 1,
@@ -31,7 +31,7 @@ public class SpearmanRankCorrelationHistogramTimeWeekPeriodStrategy : Strategy
 	private readonly StrategyParam<bool> _sellOpen;
 	private readonly StrategyParam<bool> _buyClose;
 	private readonly StrategyParam<bool> _sellClose;
-	private readonly StrategyParam<SpearmanTradeMode> _tradeMode;
+	private readonly StrategyParam<SpearmanTradeModes> _tradeMode;
 	private readonly StrategyParam<bool> _timeTrade;
 	private readonly StrategyParam<DayOfWeek> _startDay;
 	private readonly StrategyParam<int> _startHour;
@@ -116,7 +116,7 @@ public class SpearmanRankCorrelationHistogramTimeWeekPeriodStrategy : Strategy
 		set => _sellClose.Value = value;
 	}
 
-	public SpearmanTradeMode TradeMode
+	public SpearmanTradeModes TradeMode
 	{
 		get => _tradeMode.Value;
 		set => _tradeMode.Value = value;
@@ -250,7 +250,7 @@ public class SpearmanRankCorrelationHistogramTimeWeekPeriodStrategy : Strategy
 		_sellClose = Param(nameof(SellClose), true)
 		.SetDisplay("Allow Short Exits", "Allow closing short positions on signals.", "Trading");
 
-		_tradeMode = Param(nameof(TradeMode), SpearmanTradeMode.Mode1)
+		_tradeMode = Param(nameof(TradeMode), SpearmanTradeModes.Mode1)
 		.SetDisplay("Trade Mode", "Signal interpretation mode for the histogram colors.", "Trading");
 
 		_timeTrade = Param(nameof(TimeTrade), true)
@@ -422,7 +422,7 @@ public class SpearmanRankCorrelationHistogramTimeWeekPeriodStrategy : Strategy
 
 		switch (TradeMode)
 		{
-			case SpearmanTradeMode.Mode1:
+			case SpearmanTradeModes.Mode1:
 			{
 				if (currentColor > 2)
 				{
@@ -446,7 +446,7 @@ public class SpearmanRankCorrelationHistogramTimeWeekPeriodStrategy : Strategy
 
 				break;
 			}
-			case SpearmanTradeMode.Mode2:
+			case SpearmanTradeModes.Mode2:
 			{
 				if (currentColor == 4)
 				{
@@ -476,7 +476,7 @@ public class SpearmanRankCorrelationHistogramTimeWeekPeriodStrategy : Strategy
 
 				break;
 			}
-			case SpearmanTradeMode.Mode3:
+			case SpearmanTradeModes.Mode3:
 			{
 				if (currentColor == 4)
 				{

@@ -302,14 +302,14 @@ public class BackKickStrategy : Strategy
 		// Stop loss check for the long leg.
 		if (position.StopPrice is decimal stop && stop > 0m && price <= stop)
 		{
-			ClosePosition(position, CloseReason.StopLoss);
+			ClosePosition(position, CloseReasons.StopLoss);
 			return;
 		}
 
 		// Take profit check for the long leg.
 		if (position.TakePrice is decimal take && take > 0m && price >= take)
 		{
-			ClosePosition(position, CloseReason.TakeProfit);
+			ClosePosition(position, CloseReasons.TakeProfit);
 		}
 	}
 
@@ -329,14 +329,14 @@ public class BackKickStrategy : Strategy
 		// Stop loss check for the short leg.
 		if (position.StopPrice is decimal stop && stop > 0m && price >= stop)
 		{
-			ClosePosition(position, CloseReason.StopLoss);
+			ClosePosition(position, CloseReasons.StopLoss);
 			return;
 		}
 
 		// Take profit check for the short leg.
 		if (position.TakePrice is decimal take && take > 0m && price <= take)
 		{
-			ClosePosition(position, CloseReason.TakeProfit);
+			ClosePosition(position, CloseReasons.TakeProfit);
 		}
 	}
 
@@ -347,7 +347,7 @@ public class BackKickStrategy : Strategy
 			Position = position,
 			IsEntry = true,
 			RemainingVolume = order.Volume,
-			CloseReason = CloseReason.None
+			CloseReasons = CloseReasons.None
 		};
 
 		_pendingEntryOrders++;
@@ -355,14 +355,14 @@ public class BackKickStrategy : Strategy
 		RegisterOrder(order);
 	}
 
-	private void RegisterExitOrder(Order order, PositionState position, CloseReason reason)
+	private void RegisterExitOrder(Order order, PositionState position, CloseReasons reason)
 	{
 		_pendingOrders[order] = new PendingOrderInfo
 		{
 			Position = position,
 			IsEntry = false,
 			RemainingVolume = order.Volume,
-			CloseReason = reason
+			CloseReasons = reason
 		};
 
 		RegisterOrder(order);
@@ -381,7 +381,7 @@ public class BackKickStrategy : Strategy
 		};
 	}
 
-	private void ClosePosition(PositionState position, CloseReason reason)
+	private void ClosePosition(PositionState position, CloseReasons reason)
 	{
 		if (Security == null || Portfolio == null)
 		{
@@ -401,7 +401,7 @@ public class BackKickStrategy : Strategy
 		}
 
 		var exitSide = position.Side == Sides.Buy ? Sides.Sell : Sides.Buy;
-		var order = CreateMarketOrder(exitSide, volume, reason == CloseReason.TakeProfit ? "BackKick:TakeProfit" : "BackKick:StopLoss");
+		var order = CreateMarketOrder(exitSide, volume, reason == CloseReasons.TakeProfit ? "BackKick:TakeProfit" : "BackKick:StopLoss");
 
 		position.IsClosing = true;
 		RegisterExitOrder(order, position, reason);
@@ -481,7 +481,7 @@ public class BackKickStrategy : Strategy
 		else
 		{
 			ReleasePosition(position);
-			LogTrade($"{position.Side} exit filled at {averagePrice} with volume {info.FilledVolume} ({info.CloseReason})");
+			LogTrade($"{position.Side} exit filled at {averagePrice} with volume {info.FilledVolume} ({info.CloseReasons})");
 		}
 	}
 
@@ -562,7 +562,7 @@ public class BackKickStrategy : Strategy
 		}
 	}
 
-	private enum CloseReason
+	private enum CloseReasons
 	{
 		None,
 		StopLoss,
@@ -587,7 +587,7 @@ public class BackKickStrategy : Strategy
 		public decimal RemainingVolume { get; set; }
 		public decimal FilledVolume { get; set; }
 		public decimal WeightedPrice { get; set; }
-		public CloseReason CloseReason { get; init; }
+		public CloseReasons CloseReasons { get; init; }
 	}
 }
 

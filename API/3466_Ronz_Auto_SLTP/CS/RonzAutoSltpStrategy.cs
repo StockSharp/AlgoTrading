@@ -37,7 +37,7 @@ public class RonzAutoSltpStrategy : Strategy
 	private readonly StrategyParam<bool> _enableLockProfit;
 	private readonly StrategyParam<int> _lockProfitAfterPips;
 	private readonly StrategyParam<int> _profitLockPips;
-	private readonly StrategyParam<TrailingMode> _trailingMode;
+	private readonly StrategyParam<TrailingModes> _trailingMode;
 	private readonly StrategyParam<int> _trailingStopPips;
 	private readonly StrategyParam<int> _trailingStepPips;
 	private readonly StrategyParam<bool> _enableAlerts;
@@ -81,7 +81,7 @@ public class RonzAutoSltpStrategy : Strategy
 		.SetDisplay("Locked Profit (pips)", "Profit preserved once the lock is active.", "Trailing")
 		.SetCanOptimize(true);
 
-		_trailingMode = Param(nameof(TrailingStopMode), TrailingMode.Classic)
+		_trailingMode = Param(nameof(TrailingStopMode), TrailingModes.Classic)
 		.SetDisplay("Trailing Mode", "Style of the trailing stop used after the lock threshold.", "Trailing");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 50)
@@ -164,7 +164,7 @@ public class RonzAutoSltpStrategy : Strategy
 	/// <summary>
 	/// Trailing stop style.
 	/// </summary>
-	public TrailingMode TrailingStopMode
+	public TrailingModes TrailingStopMode
 	{
 		get => _trailingMode.Value;
 		set => _trailingMode.Value = value;
@@ -624,12 +624,12 @@ public class RonzAutoSltpStrategy : Strategy
 		decimal candidate;
 		switch (TrailingStopMode)
 		{
-			case TrailingMode.None:
+			case TrailingModes.None:
 			return null;
-			case TrailingMode.Classic:
+			case TrailingModes.Classic:
 			candidate = isLong ? currentPrice - distance : currentPrice + distance;
 			break;
-			case TrailingMode.StepDistance:
+			case TrailingModes.StepDistance:
 			{
 				var adjusted = distance - stepDistance;
 				if (adjusted <= 0m)
@@ -637,7 +637,7 @@ public class RonzAutoSltpStrategy : Strategy
 				candidate = isLong ? currentPrice - adjusted : currentPrice + adjusted;
 				break;
 			}
-			case TrailingMode.StepByStep:
+			case TrailingModes.StepByStep:
 			{
 				if (stepDistance <= 0m)
 				return null;
@@ -716,7 +716,7 @@ public class RonzAutoSltpStrategy : Strategy
 	/// <summary>
 	/// Trailing stop options that match the MetaTrader implementation.
 	/// </summary>
-	public enum TrailingMode
+	public enum TrailingModes
 	{
 		None,
 		Classic,

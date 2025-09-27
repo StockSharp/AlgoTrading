@@ -26,7 +26,7 @@ public class BreakOut15Strategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<bool> _useTrailingStop;
-	private readonly StrategyParam<TrailingStopMode> _trailingStopType;
+	private readonly StrategyParam<TrailingStopModes> _trailingStopType;
 	private readonly StrategyParam<decimal> _trailingStopPips;
 	private readonly StrategyParam<decimal> _level1TriggerPips;
 	private readonly StrategyParam<decimal> _level1StopPips;
@@ -34,15 +34,15 @@ public class BreakOut15Strategy : Strategy
 	private readonly StrategyParam<decimal> _level2StopPips;
 	private readonly StrategyParam<decimal> _level3TriggerPips;
 	private readonly StrategyParam<decimal> _level3TrailingPips;
-	private readonly StrategyParam<MovingAverageMethod> _fastMethod;
+	private readonly StrategyParam<MovingAverageMethods> _fastMethod;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _fastShift;
-	private readonly StrategyParam<AppliedPrice> _fastPriceType;
-	private readonly StrategyParam<MovingAverageMethod> _slowMethod;
+	private readonly StrategyParam<AppliedPrices> _fastPriceType;
+	private readonly StrategyParam<MovingAverageMethods> _slowMethod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _slowShift;
 	private readonly StrategyParam<int> _signalBarShift;
-	private readonly StrategyParam<AppliedPrice> _slowPriceType;
+	private readonly StrategyParam<AppliedPrices> _slowPriceType;
 	private readonly StrategyParam<decimal> _breakoutLevelPips;
 	private readonly StrategyParam<bool> _useTimeLimit;
 	private readonly StrategyParam<int> _startHour;
@@ -96,7 +96,7 @@ public class BreakOut15Strategy : Strategy
 		_useTrailingStop = Param(nameof(UseTrailingStop), true)
 			.SetDisplay("Use Trailing Stop", "Activate trailing stop logic", "Risk");
 
-		_trailingStopType = Param(nameof(TrailingStopType), TrailingStopMode.Delayed)
+		_trailingStopType = Param(nameof(TrailingStopType), TrailingStopModes.Delayed)
 			.SetDisplay("Trailing Stop Type", "Select trailing stop behavior", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 45m)
@@ -120,7 +120,7 @@ public class BreakOut15Strategy : Strategy
 		_level3TrailingPips = Param(nameof(Level3TrailingPips), 20m)
 			.SetDisplay("Level 3 Trailing", "Distance maintained once the third level is active", "Risk");
 
-		_fastMethod = Param(nameof(FastMethod), MovingAverageMethod.Exponential)
+		_fastMethod = Param(nameof(FastMethod), MovingAverageMethods.Exponential)
 			.SetDisplay("Fast MA Method", "Calculation method for the fast average", "Indicators");
 
 		_fastPeriod = Param(nameof(FastPeriod), 10)
@@ -130,10 +130,10 @@ public class BreakOut15Strategy : Strategy
 		_fastShift = Param(nameof(FastShift), 0)
 			.SetDisplay("Fast MA Shift", "Bar shift applied to the fast average", "Indicators");
 
-		_fastPriceType = Param(nameof(FastPriceType), AppliedPrice.Close)
+		_fastPriceType = Param(nameof(FastPriceType), AppliedPrices.Close)
 			.SetDisplay("Fast MA Price", "Applied price for the fast average", "Indicators");
 
-		_slowMethod = Param(nameof(SlowMethod), MovingAverageMethod.Exponential)
+		_slowMethod = Param(nameof(SlowMethod), MovingAverageMethods.Exponential)
 			.SetDisplay("Slow MA Method", "Calculation method for the slow average", "Indicators");
 
 		_slowPeriod = Param(nameof(SlowPeriod), 80)
@@ -146,7 +146,7 @@ public class BreakOut15Strategy : Strategy
 			.SetDisplay("Signal Bar Shift", "Offset applied when evaluating breakout signals", "Indicators")
 			.SetNotNegative();
 
-		_slowPriceType = Param(nameof(SlowPriceType), AppliedPrice.Close)
+		_slowPriceType = Param(nameof(SlowPriceType), AppliedPrices.Close)
 			.SetDisplay("Slow MA Price", "Applied price for the slow average", "Indicators");
 
 		_breakoutLevelPips = Param(nameof(BreakoutLevelPips), 35m)
@@ -241,7 +241,7 @@ public class BreakOut15Strategy : Strategy
 	/// <summary>
 	/// Trailing stop behavior type.
 	/// </summary>
-	public TrailingStopMode TrailingStopType
+	public TrailingStopModes TrailingStopType
 	{
 		get => _trailingStopType.Value;
 		set => _trailingStopType.Value = value;
@@ -313,7 +313,7 @@ public class BreakOut15Strategy : Strategy
 	/// <summary>
 	/// Moving average method for the fast line.
 	/// </summary>
-	public MovingAverageMethod FastMethod
+	public MovingAverageMethods FastMethod
 	{
 		get => _fastMethod.Value;
 		set => _fastMethod.Value = value;
@@ -340,7 +340,7 @@ public class BreakOut15Strategy : Strategy
 	/// <summary>
 	/// Applied price for the fast moving average.
 	/// </summary>
-	public AppliedPrice FastPriceType
+	public AppliedPrices FastPriceType
 	{
 		get => _fastPriceType.Value;
 		set => _fastPriceType.Value = value;
@@ -349,7 +349,7 @@ public class BreakOut15Strategy : Strategy
 	/// <summary>
 	/// Moving average method for the slow line.
 	/// </summary>
-	public MovingAverageMethod SlowMethod
+	public MovingAverageMethods SlowMethod
 	{
 		get => _slowMethod.Value;
 		set => _slowMethod.Value = value;
@@ -384,7 +384,7 @@ public class BreakOut15Strategy : Strategy
 	/// <summary>
 	/// Applied price for the slow moving average.
 	/// </summary>
-	public AppliedPrice SlowPriceType
+	public AppliedPrices SlowPriceType
 	{
 		get => _slowPriceType.Value;
 		set => _slowPriceType.Value = value;
@@ -713,13 +713,13 @@ var takeHit = _shortTakeProfitPrice.HasValue && candle.LowPrice <= _shortTakePro
 
 		switch (TrailingStopType)
 		{
-			case TrailingStopMode.Immediate:
+			case TrailingStopModes.Immediate:
 				ApplyLongImmediateTrailing(current, step);
 				break;
-			case TrailingStopMode.Delayed:
+			case TrailingStopModes.Delayed:
 				ApplyLongDelayedTrailing(current, step, entry);
 				break;
-			case TrailingStopMode.MultiLevel:
+			case TrailingStopModes.MultiLevel:
 				ApplyLongMultiLevelTrailing(entry, current, step);
 				break;
 		}
@@ -788,13 +788,13 @@ var takeHit = _shortTakeProfitPrice.HasValue && candle.LowPrice <= _shortTakePro
 
 		switch (TrailingStopType)
 		{
-			case TrailingStopMode.Immediate:
+			case TrailingStopModes.Immediate:
 				ApplyShortImmediateTrailing(current, step);
 				break;
-			case TrailingStopMode.Delayed:
+			case TrailingStopModes.Delayed:
 				ApplyShortDelayedTrailing(current, step, entry);
 				break;
-			case TrailingStopMode.MultiLevel:
+			case TrailingStopModes.MultiLevel:
 				ApplyShortMultiLevelTrailing(entry, current, step);
 				break;
 		}
@@ -960,17 +960,17 @@ var takeHit = _shortTakeProfitPrice.HasValue && candle.LowPrice <= _shortTakePro
 		return Security?.PriceStep ?? 0m;
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrice priceType)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrices priceType)
 	{
 		return priceType switch
 		{
-			AppliedPrice.Close => candle.ClosePrice,
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
+			AppliedPrices.Close => candle.ClosePrice,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
@@ -1004,15 +1004,15 @@ var takeHit = _shortTakeProfitPrice.HasValue && candle.LowPrice <= _shortTakePro
 		return index >= 0 ? history[index] : null;
 	}
 
-	private static IndicatorBase<decimal> CreateMovingAverage(MovingAverageMethod method, int length)
+	private static IndicatorBase<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.LinearWeighted => new WeightedMovingAverage { Length = length },
-			MovingAverageMethod.LeastSquares => new LinearRegression { Length = length },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.LeastSquares => new LinearRegression { Length = length },
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
@@ -1020,7 +1020,7 @@ var takeHit = _shortTakeProfitPrice.HasValue && candle.LowPrice <= _shortTakePro
 	/// <summary>
 	/// Supported moving average calculation methods.
 	/// </summary>
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		/// <summary>Simple moving average.</summary>
 		Simple,
@@ -1037,7 +1037,7 @@ var takeHit = _shortTakeProfitPrice.HasValue && candle.LowPrice <= _shortTakePro
 	/// <summary>
 	/// Price selection compatible with MetaTrader applied price modes.
 	/// </summary>
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		/// <summary>Use the closing price of the candle.</summary>
 		Close,
@@ -1058,7 +1058,7 @@ var takeHit = _shortTakeProfitPrice.HasValue && candle.LowPrice <= _shortTakePro
 	/// <summary>
 	/// Trailing stop configurations available in the strategy.
 	/// </summary>
-	public enum TrailingStopMode
+	public enum TrailingStopModes
 	{
 		/// <summary>Adjust stops as soon as price moves by the stop-loss distance.</summary>
 		Immediate,

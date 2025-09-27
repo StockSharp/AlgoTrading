@@ -23,10 +23,10 @@ namespace StockSharp.Samples.Strategies;
 public class ExpX2MaCandleMmRecStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<SmoothMethod> _firstMethod;
+	private readonly StrategyParam<SmoothMethods> _firstMethod;
 	private readonly StrategyParam<int> _firstLength;
 	private readonly StrategyParam<int> _firstPhase;
-	private readonly StrategyParam<SmoothMethod> _secondMethod;
+	private readonly StrategyParam<SmoothMethods> _secondMethod;
 	private readonly StrategyParam<int> _secondLength;
 	private readonly StrategyParam<int> _secondPhase;
 	private readonly StrategyParam<int> _gapPoints;
@@ -60,7 +60,7 @@ public class ExpX2MaCandleMmRecStrategy : Strategy
 	/// <summary>
 	/// Method for the first smoothing stage.
 	/// </summary>
-	public SmoothMethod FirstMethod
+	public SmoothMethods FirstMethod
 	{
 		get => _firstMethod.Value;
 		set => _firstMethod.Value = value;
@@ -87,7 +87,7 @@ public class ExpX2MaCandleMmRecStrategy : Strategy
 	/// <summary>
 	/// Method for the second smoothing stage.
 	/// </summary>
-	public SmoothMethod SecondMethod
+	public SmoothMethods SecondMethod
 	{
 		get => _secondMethod.Value;
 		set => _secondMethod.Value = value;
@@ -209,7 +209,7 @@ public class ExpX2MaCandleMmRecStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for the smoothed candle indicator", "General");
 
-		_firstMethod = Param(nameof(FirstMethod), SmoothMethod.Simple)
+		_firstMethod = Param(nameof(FirstMethod), SmoothMethods.Simple)
 		.SetDisplay("Primary Method", "Method for the first smoothing stage", "Indicator");
 
 		_firstLength = Param(nameof(FirstLength), 12)
@@ -219,7 +219,7 @@ public class ExpX2MaCandleMmRecStrategy : Strategy
 		_firstPhase = Param(nameof(FirstPhase), 15)
 		.SetDisplay("Primary Phase", "Phase for Jurik based smoothing", "Indicator");
 
-		_secondMethod = Param(nameof(SecondMethod), SmoothMethod.Jurik)
+		_secondMethod = Param(nameof(SecondMethod), SmoothMethods.Jurik)
 		.SetDisplay("Secondary Method", "Method for the second smoothing stage", "Indicator");
 
 		_secondLength = Param(nameof(SecondLength), 5)
@@ -424,7 +424,7 @@ public class ExpX2MaCandleMmRecStrategy : Strategy
 	/// <summary>
 	/// Supported smoothing methods.
 	/// </summary>
-	public enum SmoothMethod
+	public enum SmoothMethods
 	{
 	/// <summary>
 	/// Simple moving average.
@@ -498,10 +498,10 @@ public class ExpX2MaCandleMmRecStrategy : Strategy
 	private decimal? _previousClose;
 
 	public X2MaCandleColorIndicator(
-	SmoothMethod firstMethod,
+	SmoothMethods firstMethod,
 	int firstLength,
 	int firstPhase,
-	SmoothMethod secondMethod,
+	SmoothMethods secondMethod,
 	int secondLength,
 	int secondPhase,
 	decimal gap)
@@ -552,10 +552,10 @@ public class ExpX2MaCandleMmRecStrategy : Strategy
 	private readonly IIndicator _second;
 
 	public MovingAveragePipeline(
-	SmoothMethod firstMethod,
+	SmoothMethods firstMethod,
 	int firstLength,
 	int firstPhase,
-	SmoothMethod secondMethod,
+	SmoothMethods secondMethod,
 	int secondLength,
 	int secondPhase)
 	{
@@ -575,15 +575,15 @@ public class ExpX2MaCandleMmRecStrategy : Strategy
 	return secondValue.IsFinal ? secondValue.ToDecimal() : null;
 	}
 
-	private static IIndicator CreateMovingAverage(SmoothMethod method, int length, int phase)
+	private static IIndicator CreateMovingAverage(SmoothMethods method, int length, int phase)
 	{
 	return method switch
 	{
-	SmoothMethod.Simple => new SimpleMovingAverage { Length = Math.Max(1, length) },
-	SmoothMethod.Exponential => new ExponentialMovingAverage { Length = Math.Max(1, length) },
-	SmoothMethod.Smoothed => new SmoothedMovingAverage { Length = Math.Max(1, length) },
-	SmoothMethod.Weighted => new WeightedMovingAverage { Length = Math.Max(1, length) },
-	SmoothMethod.Jurik => CreateJurik(length, phase),
+	SmoothMethods.Simple => new SimpleMovingAverage { Length = Math.Max(1, length) },
+	SmoothMethods.Exponential => new ExponentialMovingAverage { Length = Math.Max(1, length) },
+	SmoothMethods.Smoothed => new SmoothedMovingAverage { Length = Math.Max(1, length) },
+	SmoothMethods.Weighted => new WeightedMovingAverage { Length = Math.Max(1, length) },
+	SmoothMethods.Jurik => CreateJurik(length, phase),
 	_ => new SimpleMovingAverage { Length = Math.Max(1, length) }
 	};
 	}

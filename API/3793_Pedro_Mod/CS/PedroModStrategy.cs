@@ -34,7 +34,7 @@ public class PedroModStrategy : Strategy
 	private decimal _pointValue;
 	private decimal? _entryPrice;
 	private decimal? _reEntryPrice;
-	private TradeSide _lastDirection;
+	private TradeSides _lastDirection;
 	private decimal _bestBid;
 	private decimal _bestAsk;
 	private decimal _previousPosition;
@@ -223,7 +223,7 @@ public class PedroModStrategy : Strategy
 		_pointValue = 0m;
 		_entryPrice = null;
 		_reEntryPrice = null;
-		_lastDirection = TradeSide.None;
+		_lastDirection = TradeSides.None;
 		_bestBid = 0m;
 		_bestAsk = 0m;
 		_previousPosition = 0m;
@@ -255,7 +255,7 @@ public class PedroModStrategy : Strategy
 
 		if (Position == 0m)
 		{
-			_lastDirection = TradeSide.None;
+			_lastDirection = TradeSides.None;
 		}
 	}
 
@@ -313,7 +313,7 @@ public class PedroModStrategy : Strategy
 				_entryPrice = _bestAsk;
 				// When a fresh session starts no averaging is allowed yet.
 				_reEntryPrice = null;
-				_lastDirection = TradeSide.None;
+				_lastDirection = TradeSides.None;
 			}
 			else
 			{
@@ -336,7 +336,7 @@ public class PedroModStrategy : Strategy
 			// Price moved up far enough to trigger a contrarian sell order.
 			if (TryOpenSell())
 			{
-				_lastDirection = TradeSide.Sell;
+				_lastDirection = TradeSides.Sell;
 				_reEntryPrice = _bestAsk;
 				_entryPrice = null;
 			}
@@ -348,7 +348,7 @@ public class PedroModStrategy : Strategy
 			// Price dropped enough to trigger a contrarian buy order.
 			if (TryOpenBuy())
 			{
-				_lastDirection = TradeSide.Buy;
+				_lastDirection = TradeSides.Buy;
 				_reEntryPrice = _bestAsk;
 				_entryPrice = null;
 			}
@@ -369,7 +369,7 @@ public class PedroModStrategy : Strategy
 		var reference = _reEntryPrice.Value;
 		var nextCount = openTrades + 1;
 
-		if (_lastDirection == TradeSide.Buy)
+		if (_lastDirection == TradeSides.Buy)
 		{
 			// Keep adding to the long basket while the price stays near the reference.
 			if (_bestAsk <= reference + reEntryDistance && TryOpenBuy())
@@ -377,7 +377,7 @@ public class PedroModStrategy : Strategy
 				_reEntryPrice = nextCount < MaxTrades ? _bestAsk : null;
 			}
 		}
-		else if (_lastDirection == TradeSide.Sell)
+		else if (_lastDirection == TradeSides.Sell)
 		{
 			// Mirror logic for the short basket.
 			if (_bestAsk >= reference - reEntryDistance && TryOpenSell())
@@ -567,10 +567,10 @@ public class PedroModStrategy : Strategy
 	{
 		_entryPrice = null;
 		_reEntryPrice = null;
-		_lastDirection = TradeSide.None;
+		_lastDirection = TradeSides.None;
 	}
 
-	private enum TradeSide
+	private enum TradeSides
 	{
 		None,
 		Buy,

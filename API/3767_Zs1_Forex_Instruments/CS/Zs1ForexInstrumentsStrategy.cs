@@ -31,7 +31,7 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 	private readonly StrategyParam<decimal> _initialVolume;
 	private readonly StrategyParam<decimal> _volumeTolerance;
 
-	private readonly Dictionary<Order, OrderIntent> _orderIntents = new();
+	private readonly Dictionary<Order, OrderIntents> _orderIntents = new();
 	private readonly List<Entry> _longEntries = new();
 	private readonly List<Entry> _shortEntries = new();
 
@@ -49,7 +49,7 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 	private bool _hasBestBid;
 	private bool _hasBestAsk;
 
-	private enum OrderIntent
+	private enum OrderIntents
 	{
 		OpenLong,
 		OpenShort,
@@ -186,21 +186,21 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 
 		switch (intent)
 		{
-			case OrderIntent.OpenLong:
+			case OrderIntents.OpenLong:
 				_longEntries.Add(new Entry(price, volume));
 				_lastOrderDirection = Sides.Buy;
 				break;
 
-			case OrderIntent.OpenShort:
+			case OrderIntents.OpenShort:
 				_shortEntries.Add(new Entry(price, volume));
 				_lastOrderDirection = Sides.Sell;
 				break;
 
-			case OrderIntent.CloseLong:
+			case OrderIntents.CloseLong:
 				ReduceEntries(_longEntries, volume);
 				break;
 
-			case OrderIntent.CloseShort:
+			case OrderIntents.CloseShort:
 				ReduceEntries(_shortEntries, volume);
 				break;
 		}
@@ -396,13 +396,13 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 		var buyOrder = BuyMarket(volume);
 		if (buyOrder != null)
 		{
-			_orderIntents[buyOrder] = OrderIntent.OpenLong;
+			_orderIntents[buyOrder] = OrderIntents.OpenLong;
 		}
 
 		var sellOrder = SellMarket(volume);
 		if (sellOrder != null)
 		{
-			_orderIntents[sellOrder] = OrderIntent.OpenShort;
+			_orderIntents[sellOrder] = OrderIntents.OpenShort;
 		}
 
 		_firstStage = 1;
@@ -445,7 +445,7 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 		var order = BuyMarket(volume);
 		if (order != null)
 		{
-			_orderIntents[order] = OrderIntent.OpenLong;
+			_orderIntents[order] = OrderIntents.OpenLong;
 		}
 	}
 
@@ -460,7 +460,7 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 		var order = SellMarket(volume);
 		if (order != null)
 		{
-			_orderIntents[order] = OrderIntent.OpenShort;
+			_orderIntents[order] = OrderIntents.OpenShort;
 		}
 	}
 
@@ -518,13 +518,13 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 		{
 			order = SellMarket(totalVolume);
 			if (order != null)
-				_orderIntents[order] = OrderIntent.CloseLong;
+				_orderIntents[order] = OrderIntents.CloseLong;
 		}
 		else
 		{
 			order = BuyMarket(totalVolume);
 			if (order != null)
-				_orderIntents[order] = OrderIntent.CloseShort;
+				_orderIntents[order] = OrderIntents.CloseShort;
 		}
 	}
 
@@ -539,13 +539,13 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 		{
 			order = SellMarket(volume);
 			if (order != null)
-				_orderIntents[order] = OrderIntent.CloseLong;
+				_orderIntents[order] = OrderIntents.CloseLong;
 		}
 		else
 		{
 			order = BuyMarket(volume);
 			if (order != null)
-				_orderIntents[order] = OrderIntent.CloseShort;
+				_orderIntents[order] = OrderIntents.CloseShort;
 		}
 	}
 

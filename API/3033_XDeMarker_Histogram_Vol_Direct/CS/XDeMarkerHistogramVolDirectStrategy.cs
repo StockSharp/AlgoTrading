@@ -22,12 +22,12 @@ public class XDeMarkerHistogramVolDirectStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _deMarkerPeriod;
-	private readonly StrategyParam<VolumeSource> _volumeSource;
+	private readonly StrategyParam<VolumeSources> _volumeSource;
 	private readonly StrategyParam<int> _highLevel2;
 	private readonly StrategyParam<int> _highLevel1;
 	private readonly StrategyParam<int> _lowLevel1;
 	private readonly StrategyParam<int> _lowLevel2;
-	private readonly StrategyParam<SmoothingMethod> _smoothingMethod;
+	private readonly StrategyParam<SmoothingMethods> _smoothingMethod;
 	private readonly StrategyParam<int> _smoothingLength;
 	private readonly StrategyParam<int> _smoothingPhase;
 	private readonly StrategyParam<int> _signalBar;
@@ -52,7 +52,7 @@ public class XDeMarkerHistogramVolDirectStrategy : Strategy
 		.SetDisplay("DeMarker Period", "Length of the base DeMarker oscillator", "Indicator")
 		.SetCanOptimize(true);
 
-		_volumeSource = Param(nameof(VolumeSource), VolumeSource.Tick)
+		_volumeSource = Param(nameof(VolumeSources), VolumeSources.Tick)
 		.SetDisplay("Volume Source", "Volume stream used in calculations", "Indicator");
 
 		_highLevel2 = Param(nameof(HighLevel2), 0)
@@ -67,7 +67,7 @@ public class XDeMarkerHistogramVolDirectStrategy : Strategy
 		_lowLevel2 = Param(nameof(LowLevel2), 0)
 		.SetDisplay("Low Level 2", "Lower extreme multiplier", "Levels");
 
-		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothingMethod.Sma)
+		_smoothingMethod = Param(nameof(SmoothingMethods), SmoothingMethods.Sma)
 		.SetDisplay("Smoothing Method", "Moving average used for smoothing", "Indicator");
 
 		_smoothingLength = Param(nameof(SmoothingLength), 12)
@@ -115,7 +115,7 @@ public class XDeMarkerHistogramVolDirectStrategy : Strategy
 	/// <summary>
 	/// Source of volume used in indicator calculations.
 	/// </summary>
-	public VolumeSource VolumeSource
+	public VolumeSources VolumeSources
 	{
 		get => _volumeSource.Value;
 		set => _volumeSource.Value = value;
@@ -160,7 +160,7 @@ public class XDeMarkerHistogramVolDirectStrategy : Strategy
 	/// <summary>
 	/// Moving average type applied to the histogram and volume.
 	/// </summary>
-	public SmoothingMethod SmoothingMethod
+	public SmoothingMethods SmoothingMethods
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -255,12 +255,12 @@ public class XDeMarkerHistogramVolDirectStrategy : Strategy
 		_indicator = new XDeMarkerHistogramVolDirectIndicator
 		{
 			Period = DeMarkerPeriod,
-			VolumeSource = VolumeSource,
+			VolumeSources = VolumeSources,
 			HighLevel2 = HighLevel2,
 			HighLevel1 = HighLevel1,
 			LowLevel1 = LowLevel1,
 			LowLevel2 = LowLevel2,
-			Method = SmoothingMethod,
+			Method = SmoothingMethods,
 			Length = SmoothingLength,
 			Phase = SmoothingPhase
 		};
@@ -301,10 +301,10 @@ public class XDeMarkerHistogramVolDirectStrategy : Strategy
 
 		var previousDirection = _directionHistory[^2];
 
-		var closeShort = SellCloseEnabled && previousDirection == (int)DirectionColor.Up && Position < 0;
-		var closeLong = BuyCloseEnabled && previousDirection == (int)DirectionColor.Down && Position > 0;
-		var openLong = BuyOpenEnabled && previousDirection == (int)DirectionColor.Up && currentDirection == (int)DirectionColor.Down && Position <= 0;
-		var openShort = SellOpenEnabled && previousDirection == (int)DirectionColor.Down && currentDirection == (int)DirectionColor.Up && Position >= 0;
+		var closeShort = SellCloseEnabled && previousDirection == (int)DirectionColors.Up && Position < 0;
+		var closeLong = BuyCloseEnabled && previousDirection == (int)DirectionColors.Down && Position > 0;
+		var openLong = BuyOpenEnabled && previousDirection == (int)DirectionColors.Up && currentDirection == (int)DirectionColors.Down && Position <= 0;
+		var openShort = SellOpenEnabled && previousDirection == (int)DirectionColors.Down && currentDirection == (int)DirectionColors.Up && Position >= 0;
 
 		decimal? targetPosition = null;
 
@@ -344,7 +344,7 @@ public class XDeMarkerHistogramVolDirectStrategy : Strategy
 /// <summary>
 /// Source of volume for the indicator calculations.
 /// </summary>
-public enum VolumeSource
+public enum VolumeSources
 {
 	/// <summary>
 	/// Use tick count (number of trades).
@@ -360,7 +360,7 @@ public enum VolumeSource
 /// <summary>
 /// Moving average types supported by the custom indicator.
 /// </summary>
-public enum SmoothingMethod
+public enum SmoothingMethods
 {
 	/// <summary>
 	/// Simple moving average.
@@ -386,7 +386,7 @@ public enum SmoothingMethod
 /// <summary>
 /// Direction labels produced by the indicator.
 /// </summary>
-public enum DirectionColor
+public enum DirectionColors
 {
 	/// <summary>
 	/// Histogram is rising compared to the previous bar.
@@ -411,7 +411,7 @@ public class XDeMarkerHistogramVolDirectIndicator : BaseIndicator<decimal>
 	private decimal? _prevHigh;
 	private decimal? _prevLow;
 	private decimal? _prevSmoothedValue;
-	private int _prevDirection = (int)DirectionColor.Up;
+	private int _prevDirection = (int)DirectionColors.Up;
 	private IIndicator _histogramMa = null!;
 	private IIndicator _volumeMa = null!;
 
@@ -423,7 +423,7 @@ public class XDeMarkerHistogramVolDirectIndicator : BaseIndicator<decimal>
 	/// <summary>
 	/// Source of volume used for scaling the histogram.
 	/// </summary>
-	public VolumeSource VolumeSource { get; set; } = VolumeSource.Tick;
+	public VolumeSources VolumeSources { get; set; } = VolumeSources.Tick;
 
 	/// <summary>
 	/// Upper extreme multiplier.
@@ -448,7 +448,7 @@ public class XDeMarkerHistogramVolDirectIndicator : BaseIndicator<decimal>
 	/// <summary>
 	/// Moving average type for smoothing.
 	/// </summary>
-	public SmoothingMethod Method { get; set; } = SmoothingMethod.Sma;
+	public SmoothingMethods Method { get; set; } = SmoothingMethods.Sma;
 
 	/// <summary>
 	/// Length of the smoothing windows for histogram and volume.
@@ -471,7 +471,7 @@ public class XDeMarkerHistogramVolDirectIndicator : BaseIndicator<decimal>
 		_prevHigh = null;
 		_prevLow = null;
 		_prevSmoothedValue = null;
-		_prevDirection = (int)DirectionColor.Up;
+		_prevDirection = (int)DirectionColors.Up;
 		_histogramMa?.Reset();
 		_volumeMa?.Reset();
 	}
@@ -532,9 +532,9 @@ public class XDeMarkerHistogramVolDirectIndicator : BaseIndicator<decimal>
 		var demarker = denom == 0m ? 0m : _sumDeMax / denom;
 		var histogram = (demarker * 100m) - 50m;
 
-		var volume = VolumeSource switch
+		var volume = VolumeSources switch
 		{
-			VolumeSource.Tick => candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : candle.TotalVolume ?? 0m,
+			VolumeSources.Tick => candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : candle.TotalVolume ?? 0m,
 			_ => candle.TotalVolume ?? 0m
 		};
 
@@ -572,9 +572,9 @@ public class XDeMarkerHistogramVolDirectIndicator : BaseIndicator<decimal>
 		var direction = _prevSmoothedValue is null
 		? _prevDirection
 		: histogramValue > _prevSmoothedValue.Value
-		? (int)DirectionColor.Up
+		? (int)DirectionColors.Up
 		: histogramValue < _prevSmoothedValue.Value
-		? (int)DirectionColor.Down
+		? (int)DirectionColors.Down
 		: _prevDirection;
 
 		_prevSmoothedValue = histogramValue;
@@ -595,14 +595,14 @@ public class XDeMarkerHistogramVolDirectIndicator : BaseIndicator<decimal>
 		histogramColor);
 	}
 
-	private static IIndicator CreateMovingAverage(SmoothingMethod method, int length)
+	private static IIndicator CreateMovingAverage(SmoothingMethods method, int length)
 	{
 		return method switch
 		{
-			SmoothingMethod.Sma => new SimpleMovingAverage { Length = length },
-			SmoothingMethod.Ema => new ExponentialMovingAverage { Length = length },
-			SmoothingMethod.Smma => new SmoothedMovingAverage { Length = length },
-			SmoothingMethod.Wma => new WeightedMovingAverage { Length = length },
+			SmoothingMethods.Sma => new SimpleMovingAverage { Length = length },
+			SmoothingMethods.Ema => new ExponentialMovingAverage { Length = length },
+			SmoothingMethods.Smma => new SmoothedMovingAverage { Length = length },
+			SmoothingMethods.Wma => new WeightedMovingAverage { Length = length },
 			_ => throw new ArgumentOutOfRangeException(nameof(method), method, null)
 		};
 	}

@@ -25,7 +25,7 @@ public class JsSignalBaesStrategy : Strategy
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<int> _fastMaPeriod;
 	private readonly StrategyParam<int> _slowMaPeriod;
-	private readonly StrategyParam<MovingAverageKind> _maMethod;
+	private readonly StrategyParam<MovingAverageKinds> _maMethod;
 	private readonly StrategyParam<int> _macdFastPeriod;
 	private readonly StrategyParam<int> _macdSlowPeriod;
 	private readonly StrategyParam<int> _macdSignalPeriod;
@@ -74,7 +74,7 @@ public int SlowMaPeriod
 /// <summary>
 /// Smoothing method used by moving averages.
 /// </summary>
-public MovingAverageKind MaMethod
+public MovingAverageKinds MaMethod
 {
 	get => _maMethod.Value;
 	set => _maMethod.Value = value;
@@ -226,7 +226,7 @@ public JsSignalBaesStrategy()
 	.SetDisplay("Slow MA", "Slow moving average length", "Moving Averages")
 	.SetCanOptimize(true);
 
-	_maMethod = Param(nameof(MaMethod), MovingAverageKind.LinearWeighted)
+	_maMethod = Param(nameof(MaMethod), MovingAverageKinds.LinearWeighted)
 	.SetDisplay("MA Method", "Smoothing method for the two averages", "Moving Averages");
 
 	_macdFastPeriod = Param(nameof(MacdFastPeriod), 8)
@@ -377,14 +377,14 @@ var stochastic = new StochasticOscillator
 return new TimeframeState(dataType, fastMa, slowMa, macd, rsi, cci, stochastic);
 }
 
-private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageKind type, int length)
+private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageKinds type, int length)
 {
 	return type switch
 	{
-		MovingAverageKind.Simple => new SimpleMovingAverage { Length = length },
-		MovingAverageKind.Exponential => new ExponentialMovingAverage { Length = length },
-		MovingAverageKind.Smoothed => new SmoothedMovingAverage { Length = length },
-		MovingAverageKind.LinearWeighted => new WeightedMovingAverage { Length = length },
+		MovingAverageKinds.Simple => new SimpleMovingAverage { Length = length },
+		MovingAverageKinds.Exponential => new ExponentialMovingAverage { Length = length },
+		MovingAverageKinds.Smoothed => new SmoothedMovingAverage { Length = length },
+		MovingAverageKinds.LinearWeighted => new WeightedMovingAverage { Length = length },
 		_ => new SimpleMovingAverage { Length = length }
 	};
 }
@@ -448,7 +448,7 @@ private void EvaluateSignals()
 /// <summary>
 /// Moving average types supported by the original expert advisor.
 /// </summary>
-public enum MovingAverageKind
+public enum MovingAverageKinds
 {
 	Simple,
 	Exponential,

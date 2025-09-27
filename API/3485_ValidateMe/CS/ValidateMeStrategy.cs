@@ -24,7 +24,7 @@ public class ValidateMeStrategy : Strategy
 	private readonly StrategyParam<int> _orderTakePips;
 	private readonly StrategyParam<int> _orderStopPips;
 	private readonly StrategyParam<decimal> _lots;
-	private readonly StrategyParam<TradeDirection> _direction;
+	private readonly StrategyParam<TradeDirections> _direction;
 
 	private decimal _pipSize;
 
@@ -62,7 +62,7 @@ public class ValidateMeStrategy : Strategy
 	/// <summary>
 	/// Trade direction to execute when no open position exists.
 	/// </summary>
-	public TradeDirection Direction
+	public TradeDirections Direction
 	{
 		get => _direction.Value;
 		set => _direction.Value = value;
@@ -71,7 +71,7 @@ public class ValidateMeStrategy : Strategy
 	/// <summary>
 	/// Available trade directions.
 	/// </summary>
-	public enum TradeDirection
+	public enum TradeDirections
 	{
 		Buy,
 		Sell,
@@ -94,7 +94,7 @@ public class ValidateMeStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Lots", "Order volume in lots", "General");
 
-		_direction = Param(nameof(Direction), TradeDirection.Buy)
+		_direction = Param(nameof(Direction), TradeDirections.Buy)
 			.SetDisplay("Direction", "Trade direction when signals align", "General");
 	}
 
@@ -150,7 +150,7 @@ public class ValidateMeStrategy : Strategy
 
 		var volume = Lots;
 
-		if (Direction == TradeDirection.Buy)
+		if (Direction == TradeDirections.Buy)
 		{
 			BuyMarket(volume);
 		}

@@ -27,8 +27,8 @@ public class MaTrendStrategy : Strategy
 	private readonly StrategyParam<int> _trailingStepPips;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageKind> _maMethod;
-	private readonly StrategyParam<AppliedPriceMode> _appliedPrice;
+	private readonly StrategyParam<MovingAverageKinds> _maMethod;
+	private readonly StrategyParam<AppliedPriceModes> _appliedPrice;
 	private readonly StrategyParam<bool> _onlyOnePosition;
 	private readonly StrategyParam<bool> _reverseSignals;
 	private readonly StrategyParam<bool> _closeOpposite;
@@ -79,10 +79,10 @@ public class MaTrendStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("MA Shift", "Forward shift (in bars) applied to the moving average.", "Indicator");
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageKind.Weighted)
+		_maMethod = Param(nameof(MaMethod), MovingAverageKinds.Weighted)
 			.SetDisplay("MA Method", "Moving average calculation mode.", "Indicator");
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceMode.Weighted)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceModes.Weighted)
 			.SetDisplay("Applied Price", "Candle price source fed into the moving average.", "Indicator");
 
 		_onlyOnePosition = Param(nameof(OnlyOnePosition), false)
@@ -164,7 +164,7 @@ public class MaTrendStrategy : Strategy
 	/// <summary>
 	/// Moving average calculation method.
 	/// </summary>
-	public MovingAverageKind MaMethod
+	public MovingAverageKinds MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -173,7 +173,7 @@ public class MaTrendStrategy : Strategy
 	/// <summary>
 	/// Candle price source passed into the moving average.
 	/// </summary>
-	public AppliedPriceMode AppliedPrice
+	public AppliedPriceModes AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -486,28 +486,28 @@ public class MaTrendStrategy : Strategy
 		return digits;
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceMode mode)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceModes mode)
 	{
 		return mode switch
 		{
-			AppliedPriceMode.Open => candle.OpenPrice,
-			AppliedPriceMode.High => candle.HighPrice,
-			AppliedPriceMode.Low => candle.LowPrice,
-			AppliedPriceMode.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceMode.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceMode.Weighted => (candle.ClosePrice * 2m + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPriceModes.Open => candle.OpenPrice,
+			AppliedPriceModes.High => candle.HighPrice,
+			AppliedPriceModes.Low => candle.LowPrice,
+			AppliedPriceModes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceModes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceModes.Weighted => (candle.ClosePrice * 2m + candle.HighPrice + candle.LowPrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
 
-	private static MovingAverage CreateMovingAverage(MovingAverageKind kind, int length)
+	private static MovingAverage CreateMovingAverage(MovingAverageKinds kind, int length)
 	{
 		return kind switch
 		{
-			MovingAverageKind.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageKind.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageKind.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageKind.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageKinds.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageKinds.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageKinds.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageKinds.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new WeightedMovingAverage { Length = length },
 		};
 	}
@@ -516,7 +516,7 @@ public class MaTrendStrategy : Strategy
 /// <summary>
 /// Moving average methods supported by <see cref="MaTrendStrategy"/>.
 /// </summary>
-public enum MovingAverageKind
+public enum MovingAverageKinds
 {
 	/// <summary>
 	/// Simple moving average.
@@ -539,7 +539,7 @@ public enum MovingAverageKind
 /// <summary>
 /// Candle price modes compatible with <see cref="MaTrendStrategy"/>.
 /// </summary>
-public enum AppliedPriceMode
+public enum AppliedPriceModes
 {
 	/// <summary>
 	/// Close price of the candle.

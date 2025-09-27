@@ -277,7 +277,7 @@ public class DoublerStrategy : Strategy
 			Position = position,
 			IsEntry = true,
 			RemainingVolume = order.Volume,
-			CloseReason = CloseReason.None
+			CloseReasons = CloseReasons.None
 		};
 
 		_pendingEntryOrders++;
@@ -285,14 +285,14 @@ public class DoublerStrategy : Strategy
 		RegisterOrder(order);
 	}
 
-	private void RegisterExitOrder(Order order, PositionState position, CloseReason reason)
+	private void RegisterExitOrder(Order order, PositionState position, CloseReasons reason)
 	{
 		_pendingOrders[order] = new PendingOrderInfo
 		{
 			Position = position,
 			IsEntry = false,
 			RemainingVolume = order.Volume,
-			CloseReason = reason
+			CloseReasons = reason
 		};
 
 		RegisterOrder(order);
@@ -322,13 +322,13 @@ public class DoublerStrategy : Strategy
 
 		if (position.StopPrice is decimal stop && stop > 0m && price <= stop)
 		{
-			ClosePosition(position, CloseReason.StopLoss);
+			ClosePosition(position, CloseReasons.StopLoss);
 			return;
 		}
 
 		if (position.TakePrice is decimal take && take > 0m && price >= take)
 		{
-			ClosePosition(position, CloseReason.TakeProfit);
+			ClosePosition(position, CloseReasons.TakeProfit);
 			return;
 		}
 
@@ -346,13 +346,13 @@ public class DoublerStrategy : Strategy
 
 		if (position.StopPrice is decimal stop && stop > 0m && price >= stop)
 		{
-			ClosePosition(position, CloseReason.StopLoss);
+			ClosePosition(position, CloseReasons.StopLoss);
 			return;
 		}
 
 		if (position.TakePrice is decimal take && take > 0m && price <= take)
 		{
-			ClosePosition(position, CloseReason.TakeProfit);
+			ClosePosition(position, CloseReasons.TakeProfit);
 			return;
 		}
 
@@ -403,7 +403,7 @@ public class DoublerStrategy : Strategy
 		}
 	}
 
-	private void ClosePosition(PositionState position, CloseReason reason)
+	private void ClosePosition(PositionState position, CloseReasons reason)
 	{
 		if (Security == null || Portfolio == null)
 			return;
@@ -419,7 +419,7 @@ public class DoublerStrategy : Strategy
 		}
 
 		var exitSide = position.Side == Sides.Buy ? Sides.Sell : Sides.Buy;
-		var comment = reason == CloseReason.TakeProfit ? "Doubler:TakeProfit" : "Doubler:StopLoss";
+		var comment = reason == CloseReasons.TakeProfit ? "Doubler:TakeProfit" : "Doubler:StopLoss";
 
 		var order = CreateMarketOrder(exitSide, volume, comment);
 		position.IsClosing = true;
@@ -496,7 +496,7 @@ public class DoublerStrategy : Strategy
 			else
 				_shortPosition = null;
 
-			LogTrade($"{position.Side} exit filled at {averagePrice} with volume {info.FilledVolume} ({info.CloseReason})");
+			LogTrade($"{position.Side} exit filled at {averagePrice} with volume {info.FilledVolume} ({info.CloseReasons})");
 		}
 	}
 
@@ -561,7 +561,7 @@ public class DoublerStrategy : Strategy
 			LogInfo(message);
 	}
 
-	private enum CloseReason
+	private enum CloseReasons
 	{
 		None,
 		StopLoss,
@@ -588,7 +588,7 @@ public class DoublerStrategy : Strategy
 		public decimal RemainingVolume { get; set; }
 		public decimal FilledVolume { get; set; }
 		public decimal WeightedPrice { get; set; }
-		public CloseReason CloseReason { get; init; }
+		public CloseReasons CloseReasons { get; init; }
 	}
 }
 

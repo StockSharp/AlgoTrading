@@ -28,7 +28,7 @@ public class AutoSetStopLossTakeProfitStrategy : Strategy
 
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _takeProfitPips;
-	private readonly StrategyParam<TradeDirection> _tradeDirection;
+	private readonly StrategyParam<TradeDirections> _tradeDirection;
 
 	private decimal? _bestBid;
 	private decimal? _bestAsk;
@@ -52,7 +52,7 @@ public class AutoSetStopLossTakeProfitStrategy : Strategy
 			.SetDisplay("Take profit (pips)", "Distance from price to the protective take profit in MetaTrader pips.", "Risk")
 			.SetCanOptimize(true);
 
-		_tradeDirection = Param(nameof(DirectionFilter), TradeDirection.Buy)
+		_tradeDirection = Param(nameof(DirectionFilter), TradeDirections.Buy)
 			.SetDisplay("Managed side", "Which position direction should receive automatic stop/take placement.", "Execution");
 	}
 
@@ -76,7 +76,7 @@ public class AutoSetStopLossTakeProfitStrategy : Strategy
 		}
 	}
 
-	public TradeDirection DirectionFilter
+	public TradeDirections DirectionFilter
 	{
 		get => _tradeDirection.Value;
 		set
@@ -392,9 +392,9 @@ public class AutoSetStopLossTakeProfitStrategy : Strategy
 	{
 		return DirectionFilter switch
 		{
-			TradeDirection.Buy => isLong,
-			TradeDirection.Sell => !isLong,
-			TradeDirection.BuySell => true,
+			TradeDirections.Buy => isLong,
+			TradeDirections.Sell => !isLong,
+			TradeDirections.BuySell => true,
 			_ => true,
 		};
 	}
@@ -421,7 +421,7 @@ public class AutoSetStopLossTakeProfitStrategy : Strategy
 		};
 	}
 
-	public enum TradeDirection
+	public enum TradeDirections
 	{
 		Buy,
 		Sell,

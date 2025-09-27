@@ -14,7 +14,7 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum ExpSslNrtrSmoothingMethod
+public enum ExpSslNrtrSmoothingMethods
 {
 	Sma,
 	Ema,
@@ -28,7 +28,7 @@ public enum ExpSslNrtrSmoothingMethod
 	Ama,
 }
 
-public enum MarginMode
+public enum MarginModes
 {
 	FreeMargin,
 	Balance,
@@ -42,7 +42,7 @@ public class ExpSslNrtrTmPlusStrategy : Strategy
 
 	// Store only a limited number of indicator states for signal comparisons.
 	private readonly StrategyParam<decimal> _moneyManagement;
-	private readonly StrategyParam<MarginMode> _marginMode;
+	private readonly StrategyParam<MarginModes> _marginMode;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _slippagePoints;
@@ -53,7 +53,7 @@ public class ExpSslNrtrTmPlusStrategy : Strategy
 	private readonly StrategyParam<bool> _useTimeExit;
 	private readonly StrategyParam<int> _timeExitMinutes;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<ExpSslNrtrSmoothingMethod> _smoothingMethod;
+	private readonly StrategyParam<ExpSslNrtrSmoothingMethods> _smoothingMethod;
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<int> _phase;
 	private readonly StrategyParam<int> _signalBar;
@@ -80,7 +80,7 @@ public class ExpSslNrtrTmPlusStrategy : Strategy
 		set => _moneyManagement.Value = value;
 	}
 
-	public MarginMode MarginMode
+	public MarginModes MarginModes
 	{
 		get => _marginMode.Value;
 		set => _marginMode.Value = value;
@@ -146,7 +146,7 @@ public class ExpSslNrtrTmPlusStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	public ExpSslNrtrSmoothingMethod SmoothingMethod
+	public ExpSslNrtrSmoothingMethods SmoothingMethod
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -185,7 +185,7 @@ public class ExpSslNrtrTmPlusStrategy : Strategy
 		_moneyManagement = Param(nameof(MoneyManagement), 0.1m)
 			.SetDisplay("Money Management", "Fraction of capital or direct lots", "Trading");
 
-		_marginMode = Param(nameof(MarginMode), MarginMode.Lot)
+		_marginMode = Param(nameof(MarginModes), MarginModes.Lot)
 			.SetDisplay("Margin Mode", "Mode used to convert money management into volume", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
@@ -222,7 +222,7 @@ public class ExpSslNrtrTmPlusStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Working timeframe", "Data");
 
-		_smoothingMethod = Param(nameof(SmoothingMethod), ExpSslNrtrSmoothingMethod.T3)
+		_smoothingMethod = Param(nameof(SmoothingMethod), ExpSslNrtrSmoothingMethods.T3)
 			.SetDisplay("Smoothing Method", "Type of moving average used inside SSL", "Indicator");
 
 		_length = Param(nameof(Length), 12)
@@ -521,17 +521,17 @@ public class ExpSslNrtrTmPlusStrategy : Strategy
 
 		decimal volume;
 
-		switch (MarginMode)
+		switch (MarginModes)
 		{
-			case MarginMode.FreeMargin:
-			case MarginMode.Balance:
+			case MarginModes.FreeMargin:
+			case MarginModes.Balance:
 			{
 				var amount = capital * mm;
 				volume = amount / price;
 				break;
 			}
-			case MarginMode.LossFreeMargin:
-			case MarginMode.LossBalance:
+			case MarginModes.LossFreeMargin:
+			case MarginModes.LossBalance:
 			{
 				var step = Security?.PriceStep ?? 1m;
 				var risk = StopLossPoints * step;
@@ -542,7 +542,7 @@ public class ExpSslNrtrTmPlusStrategy : Strategy
 				volume = lossAmount / risk;
 				break;
 			}
-			case MarginMode.Lot:
+			case MarginModes.Lot:
 			default:
 				volume = mm;
 				break;
@@ -589,16 +589,16 @@ public class ExpSslNrtrTmPlusStrategy : Strategy
 		// Build the smoothing engine requested by the user.
 		return SmoothingMethod switch
 		{
-			ExpSslNrtrSmoothingMethod.Sma => new IndicatorSmoother(new SimpleMovingAverage { Length = Length }),
-			ExpSslNrtrSmoothingMethod.Ema => new IndicatorSmoother(new ExponentialMovingAverage { Length = Length }),
-			ExpSslNrtrSmoothingMethod.Smma => new IndicatorSmoother(new SmoothedMovingAverage { Length = Length }),
-			ExpSslNrtrSmoothingMethod.Lwma => new IndicatorSmoother(new WeightedMovingAverage { Length = Length }),
-			ExpSslNrtrSmoothingMethod.Jjma => new IndicatorSmoother(new JurikMovingAverage { Length = Length }),
-			ExpSslNrtrSmoothingMethod.Jurx => new IndicatorSmoother(new JurikMovingAverage { Length = Length }), // Fallback to Jurik MA.
-			ExpSslNrtrSmoothingMethod.Parma => new IndicatorSmoother(new ExponentialMovingAverage { Length = Length }), // Approximated with EMA.
-			ExpSslNrtrSmoothingMethod.T3 => new TillsonT3Smoother(Length, Phase / 100m),
-			ExpSslNrtrSmoothingMethod.Vidya => new VidyaSmoother(Length, Math.Max(1, Phase)),
-			ExpSslNrtrSmoothingMethod.Ama => new AmaSmoother(Length, Math.Max(1, Phase)),
+			ExpSslNrtrSmoothingMethods.Sma => new IndicatorSmoother(new SimpleMovingAverage { Length = Length }),
+			ExpSslNrtrSmoothingMethods.Ema => new IndicatorSmoother(new ExponentialMovingAverage { Length = Length }),
+			ExpSslNrtrSmoothingMethods.Smma => new IndicatorSmoother(new SmoothedMovingAverage { Length = Length }),
+			ExpSslNrtrSmoothingMethods.Lwma => new IndicatorSmoother(new WeightedMovingAverage { Length = Length }),
+			ExpSslNrtrSmoothingMethods.Jjma => new IndicatorSmoother(new JurikMovingAverage { Length = Length }),
+			ExpSslNrtrSmoothingMethods.Jurx => new IndicatorSmoother(new JurikMovingAverage { Length = Length }), // Fallback to Jurik MA.
+			ExpSslNrtrSmoothingMethods.Parma => new IndicatorSmoother(new ExponentialMovingAverage { Length = Length }), // Approximated with EMA.
+			ExpSslNrtrSmoothingMethods.T3 => new TillsonT3Smoother(Length, Phase / 100m),
+			ExpSslNrtrSmoothingMethods.Vidya => new VidyaSmoother(Length, Math.Max(1, Phase)),
+			ExpSslNrtrSmoothingMethods.Ama => new AmaSmoother(Length, Math.Max(1, Phase)),
 			_ => new IndicatorSmoother(new ExponentialMovingAverage { Length = Length }),
 		};
 	}

@@ -23,7 +23,7 @@ public class DayTradingPamxaStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _trailingStopPips;
 	private readonly StrategyParam<int> _trailingStepPips;
-	private readonly StrategyParam<PositionSizingMode> _moneyMode;
+	private readonly StrategyParam<PositionSizingModes> _moneyMode;
 	private readonly StrategyParam<decimal> _moneyValue;
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<int> _stochasticKPeriod;
@@ -93,7 +93,7 @@ public class DayTradingPamxaStrategy : Strategy
 	/// <summary>
 	/// Position sizing approach.
 	/// </summary>
-	public PositionSizingMode MoneyMode
+	public PositionSizingModes MoneyMode
 	{
 		get => _moneyMode.Value;
 		set => _moneyMode.Value = value;
@@ -109,7 +109,7 @@ public class DayTradingPamxaStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Fixed trading volume used when <see cref="MoneyMode"/> is <see cref="PositionSizingMode.FixedVolume"/>.
+	/// Fixed trading volume used when <see cref="MoneyMode"/> is <see cref="PositionSizingModes.FixedVolume"/>.
 	/// </summary>
 	public decimal OrderVolume
 	{
@@ -236,7 +236,7 @@ public class DayTradingPamxaStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(1, 50, 1);
 
-		_moneyMode = Param(nameof(MoneyMode), PositionSizingMode.FixedVolume)
+		_moneyMode = Param(nameof(MoneyMode), PositionSizingModes.FixedVolume)
 			.SetDisplay("Money Mode", "Choose between fixed volume or risk percentage", "Risk Management");
 
 		_moneyValue = Param(nameof(MoneyValue), 1m)
@@ -596,7 +596,7 @@ public class DayTradingPamxaStrategy : Strategy
 
 	private decimal CalculateEntryVolume()
 	{
-		if (MoneyMode == PositionSizingMode.RiskPercent)
+		if (MoneyMode == PositionSizingModes.RiskPercent)
 		{
 			// Convert the configured risk percentage into trade size using the stop distance.
 			if (_stopLossDistance <= 0m)
@@ -647,7 +647,7 @@ public class DayTradingPamxaStrategy : Strategy
 /// <summary>
 /// Position sizing modes supported by <see cref="DayTradingPamxaStrategy"/>.
 /// </summary>
-public enum PositionSizingMode
+public enum PositionSizingModes
 {
 	/// <summary>
 	/// Always trade a fixed volume regardless of the stop distance.

@@ -31,9 +31,9 @@ public class ExtremeEaStrategy : Strategy
 	private readonly StrategyParam<decimal> _cciLowerLevel;
 	private readonly StrategyParam<DataType> _maCandleType;
 	private readonly StrategyParam<DataType> _cciCandleType;
-	private readonly StrategyParam<MaMethod> _maMethod;
-	private readonly StrategyParam<AppliedPriceMode> _maPriceMode;
-	private readonly StrategyParam<AppliedPriceMode> _cciPriceMode;
+	private readonly StrategyParam<MaMethods> _maMethod;
+	private readonly StrategyParam<AppliedPriceModes> _maPriceMode;
+	private readonly StrategyParam<AppliedPriceModes> _cciPriceMode;
 
 	private LengthIndicator<decimal> _fastMa;
 	private LengthIndicator<decimal> _slowMa;
@@ -100,13 +100,13 @@ public class ExtremeEaStrategy : Strategy
 		_cciCandleType = Param(nameof(CciCandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("CCI timeframe", "Timeframe used to evaluate the CCI filter.", "Data");
 
-		_maMethod = Param(nameof(MaMethod), MaMethod.Exponential)
+		_maMethod = Param(nameof(MaMethods), MaMethods.Exponential)
 			.SetDisplay("MA method", "Smoothing method applied to both moving averages.", "Indicator");
 
-		_maPriceMode = Param(nameof(MaPriceMode), AppliedPriceMode.Median)
+		_maPriceMode = Param(nameof(MaPriceMode), AppliedPriceModes.Median)
 			.SetDisplay("MA price", "Price source supplied to the moving averages.", "Indicator");
 
-		_cciPriceMode = Param(nameof(CciPriceMode), AppliedPriceMode.Typical)
+		_cciPriceMode = Param(nameof(CciPriceMode), AppliedPriceModes.Typical)
 			.SetDisplay("CCI price", "Price source supplied to the CCI indicator.", "Indicator");
 	}
 
@@ -212,7 +212,7 @@ public class ExtremeEaStrategy : Strategy
 	/// <summary>
 	/// Moving average smoothing method.
 	/// </summary>
-	public MaMethod MaMethod
+	public MaMethods MaMethods
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -221,7 +221,7 @@ public class ExtremeEaStrategy : Strategy
 	/// <summary>
 	/// Price source for moving averages.
 	/// </summary>
-	public AppliedPriceMode MaPriceMode
+	public AppliedPriceModes MaPriceMode
 	{
 		get => _maPriceMode.Value;
 		set => _maPriceMode.Value = value;
@@ -230,7 +230,7 @@ public class ExtremeEaStrategy : Strategy
 	/// <summary>
 	/// Price source for the CCI indicator.
 	/// </summary>
-	public AppliedPriceMode CciPriceMode
+	public AppliedPriceModes CciPriceMode
 	{
 		get => _cciPriceMode.Value;
 		set => _cciPriceMode.Value = value;
@@ -273,8 +273,8 @@ public class ExtremeEaStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_fastMa = CreateMovingAverage(MaMethod, FastMaPeriod);
-		_slowMa = CreateMovingAverage(MaMethod, SlowMaPeriod);
+		_fastMa = CreateMovingAverage(MaMethods, FastMaPeriod);
+		_slowMa = CreateMovingAverage(MaMethods, SlowMaPeriod);
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 
 		var maSubscription = SubscribeCandles(MaCandleType);
@@ -497,29 +497,29 @@ public class ExtremeEaStrategy : Strategy
 		return 0m;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MaMethod method, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MaMethods method, int length)
 	{
 		return method switch
 		{
-			MaMethod.Simple => new SimpleMovingAverage { Length = length },
-			MaMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			MaMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MaMethod.LinearWeighted => new WeightedMovingAverage { Length = length },
+			MaMethods.Simple => new SimpleMovingAverage { Length = length },
+			MaMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MaMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new ExponentialMovingAverage { Length = length }
 		};
 	}
 
-	private static decimal GetPrice(ICandleMessage candle, AppliedPriceMode priceMode)
+	private static decimal GetPrice(ICandleMessage candle, AppliedPriceModes priceMode)
 	{
 		return priceMode switch
 		{
-			AppliedPriceMode.Close => candle.ClosePrice,
-			AppliedPriceMode.Open => candle.OpenPrice,
-			AppliedPriceMode.High => candle.HighPrice,
-			AppliedPriceMode.Low => candle.LowPrice,
-			AppliedPriceMode.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceMode.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceMode.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			AppliedPriceModes.Close => candle.ClosePrice,
+			AppliedPriceModes.Open => candle.OpenPrice,
+			AppliedPriceModes.High => candle.HighPrice,
+			AppliedPriceModes.Low => candle.LowPrice,
+			AppliedPriceModes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceModes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceModes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}
@@ -579,7 +579,7 @@ public class ExtremeEaStrategy : Strategy
 /// <summary>
 /// Moving average methods supported by the strategy.
 /// </summary>
-public enum MaMethod
+public enum MaMethods
 {
 	Simple,
 	Exponential,
@@ -590,7 +590,7 @@ public enum MaMethod
 /// <summary>
 /// Price sources compatible with the indicators used by the strategy.
 /// </summary>
-public enum AppliedPriceMode
+public enum AppliedPriceModes
 {
 	Close,
 	Open,

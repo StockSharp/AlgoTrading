@@ -23,7 +23,7 @@ public class RrsTangledEaStrategy : Strategy
 	/// <summary>
 	/// Risk handling modes that mirror the original MetaTrader inputs.
 	/// </summary>
-	public enum RiskMode
+	public enum RiskModes
 	{
 		/// <summary>
 		/// Risk a fixed monetary amount.
@@ -43,7 +43,7 @@ public class RrsTangledEaStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingGapPips;
 	private readonly StrategyParam<decimal> _maxSpreadPips;
 	private readonly StrategyParam<int> _maxOpenTrades;
-	private readonly StrategyParam<RiskMode> _riskMode;
+	private readonly StrategyParam<RiskModes> _riskMode;
 	private readonly StrategyParam<decimal> _riskAmount;
 	private readonly StrategyParam<string> _tradeComment;
 	private readonly StrategyParam<string> _notes;
@@ -96,7 +96,7 @@ public class RrsTangledEaStrategy : Strategy
 			.SetDisplay("Max Open Trades", "Maximum simultaneous random entries", "General")
 			.SetRange(1, 1000);
 
-		_riskMode = Param(nameof(RiskManagementMode), RiskMode.BalancePercentage)
+		_riskMode = Param(nameof(RiskManagementMode), RiskModes.BalancePercentage)
 			.SetDisplay("Risk Mode", "Select fixed risk or balance percentage", "Risk");
 
 		_riskAmount = Param(nameof(RiskAmount), 5m)
@@ -188,7 +188,7 @@ public class RrsTangledEaStrategy : Strategy
 	/// <summary>
 	/// Risk handling mode.
 	/// </summary>
-	public RiskMode RiskManagementMode
+	public RiskModes RiskManagementMode
 	{
 		get => _riskMode.Value;
 		set => _riskMode.Value = value;
@@ -547,7 +547,7 @@ public class RrsTangledEaStrategy : Strategy
 
 		return mode switch
 		{
-			RiskMode.BalancePercentage => -GetCurrentBalance() * risk / 100m,
+			RiskModes.BalancePercentage => -GetCurrentBalance() * risk / 100m,
 			_ => -risk,
 		};
 	}
@@ -567,7 +567,7 @@ public class RrsTangledEaStrategy : Strategy
 	private void UpdateStatus(decimal price, decimal floating)
 	{
 		var balance = GetCurrentBalance();
-		var modeDescription = RiskManagementMode == RiskMode.BalancePercentage
+		var modeDescription = RiskManagementMode == RiskModes.BalancePercentage
 			? $"Balance % ({RiskAmount:F2})"
 			: $"Fixed ({RiskAmount:F2})";
 
