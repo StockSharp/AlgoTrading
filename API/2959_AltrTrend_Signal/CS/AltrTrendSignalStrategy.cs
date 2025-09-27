@@ -392,12 +392,12 @@ public class AltrTrendSignalStrategy : Strategy
 		if (openVolume > 0m)
 		{
 			_entryPrice = currentPrice;
-			LogInfo($"Buy signal at {signalCandle.OpenTime:O}. Volume={totalVolume}, Arrow={arrowPrice?.ToString() ?? "n/a"}");
+			LogInfo($"Buy signal at {signalCandle.OpenTime:O}. Volume={totalVolume}, Arrow={arrowPrice ?? "n/a"}");
 		}
 		else
 		{
 			_entryPrice = 0m;
-			LogInfo($"Closing short due to buy signal at {signalCandle.OpenTime:O}. Volume={totalVolume}, Arrow={arrowPrice?.ToString() ?? "n/a"}");
+			LogInfo($"Closing short due to buy signal at {signalCandle.OpenTime:O}. Volume={totalVolume}, Arrow={arrowPrice ?? "n/a"}");
 		}
 	}
 
@@ -431,12 +431,12 @@ public class AltrTrendSignalStrategy : Strategy
 		if (openVolume > 0m)
 		{
 			_entryPrice = currentPrice;
-			LogInfo($"Sell signal at {signalCandle.OpenTime:O}. Volume={totalVolume}, Arrow={arrowPrice?.ToString() ?? "n/a"}");
+			LogInfo($"Sell signal at {signalCandle.OpenTime:O}. Volume={totalVolume}, Arrow={arrowPrice ?? "n/a"}");
 		}
 		else
 		{
 			_entryPrice = 0m;
-			LogInfo($"Closing long due to sell signal at {signalCandle.OpenTime:O}. Volume={totalVolume}, Arrow={arrowPrice?.ToString() ?? "n/a"}");
+			LogInfo($"Closing long due to sell signal at {signalCandle.OpenTime:O}. Volume={totalVolume}, Arrow={arrowPrice ?? "n/a"}");
 		}
 	}
 

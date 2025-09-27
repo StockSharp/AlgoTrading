@@ -507,7 +507,7 @@ public class CloseAllMt5Strategy : Strategy
 				if (TicketNumber == 0L)
 					return false;
 
-				var positionId = position.Id?.ToString();
+				var positionId = position.Id;
 				if (string.IsNullOrEmpty(positionId))
 					return false;
 
@@ -546,7 +546,7 @@ public class CloseAllMt5Strategy : Strategy
 	private static string TryGetStrategyId(Position position)
 	{
 		var value = position.StrategyId;
-		return value?.ToString();
+		return value;
 	}
 
 	/// <summary>

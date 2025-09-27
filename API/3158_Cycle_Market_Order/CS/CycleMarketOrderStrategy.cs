@@ -481,7 +481,7 @@ public class CycleMarketOrderStrategy : Strategy
 		slot.PendingExitVolume += slot.OpenVolume;
 		_orderIntents[order] = new OrderIntent(index, true, slot.Direction);
 
-		LogInfo($"Slot {slot.MagicNumber} closing at trailing stop {slot.TrailingStopPrice?.ToString() ?? "n/a"}.");
+		LogInfo($"Slot {slot.MagicNumber} closing at trailing stop {slot.TrailingStopPrice ?? "n/a"}.");
 	}
 
 	private void InitializeSlots()

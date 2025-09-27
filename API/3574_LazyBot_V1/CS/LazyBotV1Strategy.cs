@@ -471,7 +471,7 @@ public class LazyBotV1Strategy : Strategy
 
 	private string CreateOrderComment(DateTime signalDate)
 	{
-		var symbol = Security?.Id?.ToString() ?? string.Empty;
+		var symbol = Security?.Id ?? string.Empty;
 		var barsInfo = signalDate.ToString("yyyyMMdd");
 		return string.IsNullOrEmpty(symbol)
 		? BotName

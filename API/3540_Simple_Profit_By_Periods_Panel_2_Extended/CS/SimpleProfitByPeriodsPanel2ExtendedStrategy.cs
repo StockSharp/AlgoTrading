@@ -145,7 +145,7 @@ public class SimpleProfitByPeriodsPanel2ExtendedStrategy : Strategy
 		var weekPercent = CalculatePercent(currentBalance, currentBalance - weekProfit);
 		var monthPercent = CalculatePercent(currentBalance, currentBalance - monthProfit);
 		
-		var currency = Portfolio?.Currency?.ToString() ?? Security?.Currency?.ToString() ?? string.Empty;
+		var currency = Portfolio?.Currency ?? Security?.Currency ?? string.Empty;
 		var currencyPrefix = string.IsNullOrEmpty(currency) ? string.Empty : currency + " ";
 		
 		Comment = string.Join(Environment.NewLine,

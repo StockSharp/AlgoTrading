@@ -317,7 +317,7 @@ public class TradeCopierStrategy : Strategy
 	{
 		var trade = myTrade.Trade;
 		var order = myTrade.Order;
-		var tradeId = trade?.Id?.ToString() ?? trade?.StringId ?? string.Empty;
+		var tradeId = trade?.Id ?? trade?.StringId ?? string.Empty;
 		return $"{order?.TransactionId}:{tradeId}:{trade?.ServerTime.UtcTicks}";
 	}
 

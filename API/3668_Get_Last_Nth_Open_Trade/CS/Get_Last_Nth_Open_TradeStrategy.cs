@@ -201,7 +201,7 @@ public class Get_Last_Nth_Open_TradeStrategy : Strategy
 	private static string TryGetStrategyId(Position position)
 	{
 		var value = position.StrategyId;
-		return value?.ToString();
+		return value;
 	}
 
 	private static string FormatDecimal(decimal? value)

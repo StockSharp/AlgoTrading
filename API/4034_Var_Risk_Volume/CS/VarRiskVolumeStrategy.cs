@@ -238,8 +238,8 @@ public class VarRiskVolumeStrategy : Strategy
 	private void LogDetailedOutput(Security security, OperationVolumeResult result)
 	{
 		var portfolio = Portfolio;
-		var accountCurrency = portfolio?.Currency?.ToString() ?? "N/A";
-		var securityCurrency = security.Currency?.ToString() ?? "N/A";
+		var accountCurrency = portfolio?.Currency ?? "N/A";
+		var securityCurrency = security.Currency ?? "N/A";
 
 		LogInfo(string.Empty);
 		LogInfo($"Computed operation volume = {result.OperationVolume:0.####} lots.");

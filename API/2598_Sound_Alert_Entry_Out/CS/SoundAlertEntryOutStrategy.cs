@@ -114,7 +114,7 @@ public class SoundAlertEntryOutStrategy : Strategy
 		var profit = _previousPnL - pnlBeforeTrade;
 		var directionText = orderDirection == Sides.Buy ? "buy" : "sell";
 
-		LogInfo($"Deal #{tradeId?.ToString() ?? "N/A"} {directionText} {tradeVolume:F2} {symbol}, profit: {profit:F2}");
+		LogInfo($"Deal #{tradeId ?? "N/A"} {directionText} {tradeVolume:F2} {symbol}, profit: {profit:F2}");
 	}
 
 	private static string GetSoundFileName(NotificationSound sound)

@@ -171,6 +171,6 @@ public class ListPositionsStrategy : Strategy
 	private static string TryGetStrategyId(Position position)
 	{
 		var value = position.StrategyId;
-		return value?.ToString();
+		return value;
 	}
 }

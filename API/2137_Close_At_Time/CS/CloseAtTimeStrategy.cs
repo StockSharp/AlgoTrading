@@ -205,7 +205,7 @@ public class CloseAtTimeStrategy : Strategy
 		if (CloseBySymbol && order.Security?.Code == SymbolToClose)
 			return true;
 
-		if (CloseByTicket && order.Id?.ToString() == TicketNumber)
+		if (CloseByTicket && order.Id == TicketNumber)
 			return true;
 
 		if (CloseByMagicNumber && order.UserOrderId == MagicNumber)

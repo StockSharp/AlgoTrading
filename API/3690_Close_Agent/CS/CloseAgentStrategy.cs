@@ -337,7 +337,7 @@ public class CloseAgentStrategy : Strategy
 	private static string TryGetStrategyId(Position position)
 	{
 		var value = position.StrategyId;
-		return value?.ToString();
+		return value;
 	}
 
 	private void ClosePosition(Position position, decimal bidPrice, decimal askPrice, string reason)

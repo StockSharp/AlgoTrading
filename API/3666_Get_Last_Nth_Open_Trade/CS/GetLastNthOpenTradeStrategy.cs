@@ -235,11 +235,11 @@ public class GetLastNthOpenTradeStrategy : Strategy
 
 	private static string TryGetStrategyId(Position position)
 	{
-		return position.StrategyId?.ToString();
+		return position.StrategyId;
 	}
 
 	private static string TryGetComment(Position position)
 	{
-		return position.StrategyId?.ToString();
+		return position.StrategyId;
 	}
 }

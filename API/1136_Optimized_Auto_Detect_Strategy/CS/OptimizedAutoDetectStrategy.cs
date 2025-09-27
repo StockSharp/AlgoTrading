@@ -148,7 +148,7 @@ public class OptimizedAutoDetectStrategy : Strategy
 		_customAtrMult = AtrMultiplier;
 		_customRr = RiskReward;
 		
-		var symbol = Security?.Id?.ToString();
+		var symbol = Security?.Id;
 		switch (symbol)
 		{
 			case "OANDA:EURUSD":

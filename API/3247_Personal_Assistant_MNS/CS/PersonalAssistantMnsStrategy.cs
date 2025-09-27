@@ -364,7 +364,7 @@ public class PersonalAssistantMnsStrategy : Strategy
 		{
 			_longManualTakeProfit = TakeProfitPips > 0m ? ask + 0.25m * TakeProfitPips * _pipSize : null;
 			_longManualStopLoss = StopLossPips > 0m ? ask - 4.25m * StopLossPips * _pipSize : null;
-			LogInfo($"Long order requested with TP={_longManualTakeProfit?.ToString() ?? "none"}, SL={_longManualStopLoss?.ToString() ?? "none"}.");
+			LogInfo($"Long order requested with TP={_longManualTakeProfit ?? "none"}, SL={_longManualStopLoss ?? "none"}.");
 		}
 		else
 		{
@@ -385,7 +385,7 @@ public class PersonalAssistantMnsStrategy : Strategy
 		{
 			_shortManualTakeProfit = TakeProfitPips > 0m ? bid - 0.25m * TakeProfitPips * _pipSize : null;
 			_shortManualStopLoss = StopLossPips > 0m ? bid + 3.25m * StopLossPips * _pipSize : null;
-			LogInfo($"Short order requested with TP={_shortManualTakeProfit?.ToString() ?? "none"}, SL={_shortManualStopLoss?.ToString() ?? "none"}.");
+			LogInfo($"Short order requested with TP={_shortManualTakeProfit ?? "none"}, SL={_shortManualStopLoss ?? "none"}.");
 		}
 		else
 		{

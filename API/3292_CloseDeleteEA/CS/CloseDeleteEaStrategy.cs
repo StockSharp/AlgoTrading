@@ -336,12 +336,12 @@ public class CloseDeleteEaStrategy : Strategy
 	private static string TryGetStrategyId(Position position)
 	{
 		var value = position.StrategyId;
-		return value?.ToString();
+		return value;
 	}
 
 	private static string TryGetStrategyId(Order order)
 	{
 		var value = order.StrategyId;
-		return value?.ToString();
+		return value;
 	}
 }

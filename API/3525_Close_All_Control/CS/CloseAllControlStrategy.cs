@@ -317,7 +317,7 @@ public class CloseAllControlStrategy : Strategy
 
 	private bool MatchesMagicOrTicket(Position position)
 	{
-		return MatchesIdentifier(position.Id?.ToString()) || MatchesIdentifier(TryGetStrategyId(position));
+		return MatchesIdentifier(position.Id) || MatchesIdentifier(TryGetStrategyId(position));
 	}
 
 	private bool MatchesMagicOrTicket(Order order)
@@ -336,7 +336,7 @@ public class CloseAllControlStrategy : Strategy
 
 	private bool MatchesTicket(Position position)
 	{
-		return MatchesIdentifier(position.Id?.ToString());
+		return MatchesIdentifier(position.Id);
 	}
 
 	private bool MatchesIdentifier(string value)
@@ -368,11 +368,11 @@ public class CloseAllControlStrategy : Strategy
 
 	private static string TryGetStrategyId(Position position)
 	{
-		return position.StrategyId?.ToString();
+		return position.StrategyId;
 	}
 
 	private static string TryGetStrategyId(Order order)
 	{
-		return order.StrategyId?.ToString();
+		return order.StrategyId;
 	}
 }

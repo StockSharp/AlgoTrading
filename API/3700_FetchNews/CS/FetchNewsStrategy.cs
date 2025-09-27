@@ -458,7 +458,7 @@ public class FetchNewsStrategy : Strategy
 			_instrumentCurrencies.Add(upper[^3..]);
 		}
 
-		var currency = Security?.Currency?.ToString();
+		var currency = Security?.Currency;
 		if (!string.IsNullOrWhiteSpace(currency))
 		_instrumentCurrencies.Add(currency!.ToUpperInvariant());
 	}
