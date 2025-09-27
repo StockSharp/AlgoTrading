@@ -94,7 +94,7 @@ public class DailyTargetStrategy : Strategy
 			.Start();
 
 		// Subscribe to trades to refresh the last dealt price when bid/ask quotes are missing.
-		SubscribeTrades()
+		SubscribeTicks()
 			.Bind(ProcessTrade)
 			.Start();
 
@@ -131,7 +131,7 @@ public class DailyTargetStrategy : Strategy
 		EvaluateDailyThresholds();
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		var price = trade.TradePrice;
 		if (price is decimal tradePrice)

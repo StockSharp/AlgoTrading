@@ -557,7 +557,7 @@ public class VirtPoTestBedScalpStrategy : Strategy
 			.Bind(ProcessLevel1)
 			.Start();
 
-		SubscribeTrades()
+		SubscribeTicks()
 			.Bind(ProcessTrade)
 			.Start();
 
@@ -581,7 +581,7 @@ public class VirtPoTestBedScalpStrategy : Strategy
 			_lastAsk = askPrice;
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		var price = trade.TradePrice;
 		if (price is null || price <= 0m)

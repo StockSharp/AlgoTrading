@@ -140,7 +140,7 @@ public class EqualVolumeRangeBarsStrategy : Strategy
 				.Start();
 		}
 
-		SubscribeTrades()
+		SubscribeTicks()
 			.Bind(ProcessTrade)
 			.Start();
 	}
@@ -201,7 +201,7 @@ public class EqualVolumeRangeBarsStrategy : Strategy
 		ProcessTick(price, volume, time);
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		if (trade.TradePrice is not decimal price)
 			return;

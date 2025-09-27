@@ -105,12 +105,12 @@ public class ClosePanelStrategy : Strategy
 			CloseAllPositions("Close all command triggered on start");
 		}
 
-		SubscribeTrades()
+		SubscribeTicks()
 			.Bind(ProcessTrade)
 			.Start();
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;

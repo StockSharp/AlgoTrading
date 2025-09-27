@@ -103,23 +103,7 @@ public class TradeCopierStrategy : Strategy
 		_processedHistory.Clear();
 	}
 
-	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time)
-	{
-		base.OnStarted(time);
-
-		Connector.NewMyTrade += OnNewMyTrade;
-	}
-
-	/// <inheritdoc />
-	protected override void OnStopped()
-	{
-		Connector.NewMyTrade -= OnNewMyTrade;
-
-		base.OnStopped();
-	}
-
-	private void OnNewMyTrade(MyTrade myTrade)
+	protected override void OnOwnTradeReceived(MyTrade myTrade)
 	{
 		if (myTrade.Order is null || myTrade.Trade is null)
 		return;
@@ -280,7 +264,7 @@ public class TradeCopierStrategy : Strategy
 		if (Slippage <= 0m)
 		return true;
 
-		var lastTradePrice = security.LastTrade?.Price;
+		var lastTradePrice = security.LastTick?.Price;
 
 		if (lastTradePrice is null)
 		return true;

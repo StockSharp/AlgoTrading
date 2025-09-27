@@ -81,7 +81,7 @@ public class NSecondsNPointsStrategy : Strategy
 		_pipSize = CalculatePipSize();
 
 		// Subscribe to real-time trades to maintain the most recent market price.
-		SubscribeTrades()
+		SubscribeTicks()
 			.Bind(ProcessTrade)
 			.Start();
 
@@ -100,7 +100,7 @@ public class NSecondsNPointsStrategy : Strategy
 		return priceStep.Value * adjust;
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		var price = trade.TradePrice;
 		if (price == null)

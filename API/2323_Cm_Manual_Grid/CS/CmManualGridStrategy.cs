@@ -62,7 +62,7 @@ public class CmManualGridStrategy : Strategy
 {
 	base.OnStarted(time);
 	StartProtection();
-	SubscribeTrades().Bind(ProcessTrade).Start();
+	SubscribeTicks().Bind(ProcessTrade).Start();
 }
 
 	private void ProcessTrade(ITradeMessage t)

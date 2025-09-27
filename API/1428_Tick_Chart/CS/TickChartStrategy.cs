@@ -34,10 +34,10 @@ public class TickChartStrategy : Strategy
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);
-		SubscribeTrades().Bind(ProcessTrade).Start();
+		SubscribeTicks().Bind(ProcessTrade).Start();
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		var price = trade.TradePrice ?? 0m;
 		var vol = trade.Volume ?? 0m;

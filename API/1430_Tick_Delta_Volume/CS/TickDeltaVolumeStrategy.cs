@@ -90,7 +90,7 @@ public class TickDeltaVolumeStrategy : Strategy
 		.Start();
 	}
 
-	private void ProcessTick(ExecutionMessage trade)
+	private void ProcessTick(ITickTradeMessage trade)
 	{
 		var volumeDelta = trade.Volume;
 		var priceDelta = trade.Price - _prevPrice;

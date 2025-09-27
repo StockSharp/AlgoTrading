@@ -197,7 +197,7 @@ public class ITradeStrategy : Strategy
 		if (_priceStep <= 0m || _stepPrice <= 0m)
 			throw new InvalidOperationException("Security must provide valid PriceStep and StepPrice values.");
 
-		SubscribeTrades()
+		SubscribeTicks()
 			.Bind(ProcessTrade)
 			.Start();
 
@@ -241,7 +241,7 @@ public class ITradeStrategy : Strategy
 		}
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		if (trade.TradePrice is decimal price)
 			_lastTradePrice = price;

@@ -197,7 +197,7 @@ public class McmControlPanelStrategy : Strategy
 		LogCandleEvent(candle, _activeTertiaryType, ref _lastTertiaryEvent);
 	}
 
-	private void ProcessTick(ExecutionMessage trade)
+	private void ProcessTick(ITickTradeMessage trade)
 	{
 		var eventTime = trade.ServerTime;
 		if (_lastTickEvent == eventTime)

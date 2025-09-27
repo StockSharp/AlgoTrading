@@ -102,7 +102,7 @@ public class MoneyFixedRiskStrategy : Strategy
 
 		_pipSize = priceStep * pipMultiplier;
 
-		var trades = SubscribeTrades();
+		var trades = SubscribeTicks();
 		trades
 		.Bind(ProcessTrade)
 		.Start();
@@ -110,7 +110,7 @@ public class MoneyFixedRiskStrategy : Strategy
 		StartProtection();
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		var price = trade.TradePrice;
 		if (price is null || price.Value <= 0m)

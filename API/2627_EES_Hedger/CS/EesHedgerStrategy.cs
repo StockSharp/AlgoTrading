@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 
+using Ecng.Common;
+
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -147,39 +149,28 @@ public class EesHedgerStrategy : Strategy
 
 		if (TrailingStopPips > 0 && TrailingStepPips <= 0)
 		{
-		LogError("Trailing Step must be greater than zero when Trailing Stop is enabled.");
-		Stop();
-		return;
+			LogError("Trailing Step must be greater than zero when Trailing Stop is enabled.");
+			Stop();
+			return;
 		}
 
 		if (Security == null)
 		{
-		LogError("Security is not assigned to the strategy.");
-		Stop();
-		return;
+			LogError("Security is not assigned to the strategy.");
+			Stop();
+			return;
 		}
 
 		if (Connector == null)
 		{
-		LogError("Connector is not available for subscription.");
-		Stop();
-		return;
+			LogError("Connector is not available for subscription.");
+			Stop();
+			return;
 		}
 
 		_pipSize = CalculatePipSize();
 
-		Connector.NewMyTrade += OnConnectorNewMyTrade;
-
-		SubscribeTrades().Bind(ProcessTrade).Start();
-	}
-
-	/// <inheritdoc />
-	protected override void OnStopped()
-	{
-	if (Connector != null)
-	Connector.NewMyTrade -= OnConnectorNewMyTrade;
-
-	base.OnStopped();
+		SubscribeTicks().Bind(ProcessTrade).Start();
 	}
 
 	/// <inheritdoc />
@@ -188,21 +179,16 @@ public class EesHedgerStrategy : Strategy
 		base.OnOwnTradeReceived(trade);
 
 		if (trade.Order.Security != Security)
-		return;
+			return;
 
 		if (trade.Order.TransactionId != 0)
-		_ownOrderTransactions.Add(trade.Order.TransactionId);
+			_ownOrderTransactions.Add(trade.Order.TransactionId);
 
-		RefreshProtection();
-	}
-
-	private void OnConnectorNewMyTrade(MyTrade trade)
-	{
 		if (trade.Order == null || trade.Order.Security != Security)
-		return;
+			return;
 
 		if (trade.Order.TransactionId != 0 && _ownOrderTransactions.Contains(trade.Order.TransactionId))
-		return;
+			return;
 
 		if (!HedgerOrderComment.IsEmpty())
 		{
@@ -213,22 +199,22 @@ public class EesHedgerStrategy : Strategy
 
 		if (!OriginalOrderComment.IsEmpty())
 		{
-		var comment = trade.Order.Comment ?? string.Empty;
-		if (!comment.Equals(OriginalOrderComment, StringComparison.InvariantCultureIgnoreCase))
-		return;
+			var comment = trade.Order.Comment ?? string.Empty;
+			if (!comment.Equals(OriginalOrderComment, StringComparison.InvariantCultureIgnoreCase))
+				return;
 		}
 
 		var tradeId = trade.Trade?.Id ?? 0;
 		if (tradeId != 0 && !_processedTradeIds.Add(tradeId))
-		return;
+			return;
 
 		if (trade.Order.Side == Sides.Buy)
 		{
-		OpenHedge(Sides.Sell);
+			OpenHedge(Sides.Sell);
 		}
 		else if (trade.Order.Side == Sides.Sell)
 		{
-		OpenHedge(Sides.Buy);
+			OpenHedge(Sides.Buy);
 		}
 	}
 
@@ -237,24 +223,20 @@ public class EesHedgerStrategy : Strategy
 		var volume = HedgeVolume;
 		if (volume <= 0m)
 		{
-		LogWarning("Hedge volume must be greater than zero.");
-		return;
+			LogWarning("Hedge volume must be greater than zero.");
+			return;
 		}
 
 
 		if (side == Sides.Buy)
-		BuyMarket(volume);
+			BuyMarket(volume);
 		else
-		SellMarket(volume);
+			SellMarket(volume);
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
-		var price = trade.TradePrice;
-		if (price == null)
-		return;
-
-		UpdateTrailingStop(price.Value);
+		UpdateTrailingStop(trade.Price);
 	}
 
 	private void RefreshProtection()
@@ -267,7 +249,7 @@ public class EesHedgerStrategy : Strategy
 
 		var position = Position;
 		if (position == 0m)
-		return;
+			return;
 
 		var volume = Math.Abs(position);
 		var stopDistance = StopLossPips * _pipSize;
@@ -275,65 +257,65 @@ public class EesHedgerStrategy : Strategy
 
 		if (position > 0m)
 		{
-		if (StopLossPips > 0)
-		{
-		var price = PositionPrice - stopDistance;
-		_stopOrder = SellStop(volume, price);
-		_currentStopPrice = price;
-		}
+			if (StopLossPips > 0)
+			{
+				var price = PositionPrice - stopDistance;
+				_stopOrder = SellStop(volume, price);
+				_currentStopPrice = price;
+			}
 
-		if (TakeProfitPips > 0)
-		{
-		var price = PositionPrice + takeDistance;
-		_takeProfitOrder = SellLimit(volume, price);
-		_currentTakeProfitPrice = price;
-		}
+			if (TakeProfitPips > 0)
+			{
+				var price = PositionPrice + takeDistance;
+				_takeProfitOrder = SellLimit(volume, price);
+				_currentTakeProfitPrice = price;
+			}
 		}
 		else
 		{
-		if (StopLossPips > 0)
-		{
-		var price = PositionPrice + stopDistance;
-		_stopOrder = BuyStop(volume, price);
-		_currentStopPrice = price;
-		}
+			if (StopLossPips > 0)
+			{
+				var price = PositionPrice + stopDistance;
+				_stopOrder = BuyStop(volume, price);
+				_currentStopPrice = price;
+			}
 
-		if (TakeProfitPips > 0)
-		{
-		var price = PositionPrice - takeDistance;
-		_takeProfitOrder = BuyLimit(volume, price);
-		_currentTakeProfitPrice = price;
-		}
+			if (TakeProfitPips > 0)
+			{
+				var price = PositionPrice - takeDistance;
+				_takeProfitOrder = BuyLimit(volume, price);
+				_currentTakeProfitPrice = price;
+			}
 		}
 	}
 
 	private void UpdateTrailingStop(decimal currentPrice)
 	{
 		if (TrailingStopPips <= 0 || Position == 0m)
-		return;
+			return;
 
 		var trailingDistance = TrailingStopPips * _pipSize;
 		var trailingStep = TrailingStepPips * _pipSize;
 
 		if (Position > 0m)
 		{
-		var move = currentPrice - PositionPrice;
-		if (move <= trailingDistance + trailingStep)
-		return;
+			var move = currentPrice - PositionPrice;
+			if (move <= trailingDistance + trailingStep)
+				return;
 
-		var newStop = currentPrice - trailingDistance;
-		if (!_currentStopPrice.HasValue || _currentStopPrice.Value < currentPrice - (trailingDistance + trailingStep))
-		UpdateStopOrder(true, newStop, Math.Abs(Position));
+			var newStop = currentPrice - trailingDistance;
+			if (!_currentStopPrice.HasValue || _currentStopPrice.Value < currentPrice - (trailingDistance + trailingStep))
+				UpdateStopOrder(true, newStop, Math.Abs(Position));
 		}
 		else
 		{
-		var move = PositionPrice - currentPrice;
-		if (move <= trailingDistance + trailingStep)
-		return;
+			var move = PositionPrice - currentPrice;
+			if (move <= trailingDistance + trailingStep)
+				return;
 
-		var newStop = currentPrice + trailingDistance;
-		if (!_currentStopPrice.HasValue || _currentStopPrice.Value > currentPrice + trailingDistance + trailingStep)
-		UpdateStopOrder(false, newStop, Math.Abs(Position));
+			var newStop = currentPrice + trailingDistance;
+			if (!_currentStopPrice.HasValue || _currentStopPrice.Value > currentPrice + trailingDistance + trailingStep)
+				UpdateStopOrder(false, newStop, Math.Abs(Position));
 		}
 	}
 
@@ -343,8 +325,8 @@ public class EesHedgerStrategy : Strategy
 
 		if (volume <= 0m)
 		{
-		_currentStopPrice = null;
-		return;
+			_currentStopPrice = null;
+			return;
 		}
 
 		_stopOrder = isLongPosition
@@ -357,28 +339,28 @@ public class EesHedgerStrategy : Strategy
 	private void CancelOrderIfActive(ref Order order)
 	{
 		if (order == null)
-		return;
+			return;
 
 		if (order.State == OrderStates.Active)
-		CancelOrder(order);
+			CancelOrder(order);
 
 		order = null;
 	}
 
 	private decimal CalculatePipSize()
 	{
-	var step = Security?.PriceStep ?? 0m;
-	if (step <= 0m)
-	return 1m;
+		var step = Security?.PriceStep ?? 0m;
+		if (step <= 0m)
+			return 1m;
 
-	var decimals = GetDecimalPlaces(step);
-	return decimals == 3 || decimals == 5 ? step * 10m : step;
+		var decimals = GetDecimalPlaces(step);
+		return decimals == 3 || decimals == 5 ? step * 10m : step;
 	}
 
 	private static int GetDecimalPlaces(decimal value)
 	{
-	var text = Math.Abs(value).ToString(CultureInfo.InvariantCulture);
-	var index = text.IndexOf('.');
-	return index >= 0 ? text.Length - index - 1 : 0;
+		var text = Math.Abs(value).ToString(CultureInfo.InvariantCulture);
+		var index = text.IndexOf('.');
+		return index >= 0 ? text.Length - index - 1 : 0;
 	}
 }

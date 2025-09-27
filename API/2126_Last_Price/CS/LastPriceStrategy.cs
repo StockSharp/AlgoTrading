@@ -86,7 +86,7 @@ public class LastPriceStrategy : Strategy
 		StartProtection(stopLoss: new Unit(_stopLossPrice, UnitTypes.Absolute));
 
 		SubscribeLevel1().Bind(ProcessLevel1).Start();
-		SubscribeTrades().Bind(ProcessTrade).Start();
+		SubscribeTicks().Bind(ProcessTrade).Start();
 	}
 
 	private void ProcessLevel1(Level1ChangeMessage level1)
@@ -98,7 +98,7 @@ public class LastPriceStrategy : Strategy
 			_bestBid = (decimal)bid;
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		_lastPrice = trade.TradePrice ?? 0m;
 		_lastVolume = trade.Volume ?? 0m;

@@ -103,7 +103,7 @@ public class VrStealsStrategy : Strategy
 
 		ResetState();
 
-		SubscribeTrades().Bind(ProcessTrade).Start();
+		SubscribeTicks().Bind(ProcessTrade).Start();
 	}
 
 	/// <inheritdoc />
@@ -133,7 +133,7 @@ public class VrStealsStrategy : Strategy
 		}
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		if (trade.TradePrice is not decimal price)
 			return;

@@ -138,7 +138,7 @@ public class RenkoChartStrategy : Strategy
 		}
 		else
 		{
-			SubscribeTrades()
+			SubscribeTicks()
 				.Bind(ProcessTrade)
 				.Start();
 		}
@@ -155,7 +155,7 @@ public class RenkoChartStrategy : Strategy
 		LogInfo($"{RenkoPrefix}{Security.Id} initialized with brick size {_boxSize} and start time {StartTime:O}.");
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		if (trade.TradePrice is not decimal price)
 		return;

@@ -36,12 +36,12 @@ public class HiddenSlStrategy : Strategy
 
 		StartProtection();
 
-		SubscribeTrades()
+		SubscribeTicks()
 			.Bind(ProcessTrade)
 			.Start();
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		var price = trade.TradePrice;
 		if (price is null)

@@ -62,7 +62,7 @@ public class TrailingProfitStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		SubscribeTrades().Bind(ProcessTrade).Start();
+		SubscribeTicks().Bind(ProcessTrade).Start();
 		StartProtection();
 	}
 
@@ -75,7 +75,7 @@ public class TrailingProfitStrategy : Strategy
 			ResetState();
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		if (trade.TradePrice is not decimal price)
 			return;

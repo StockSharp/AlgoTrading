@@ -217,7 +217,7 @@ public class TrailingCloseManagerStrategy : Strategy
 
 		_pipSize = CalculatePipSize();
 
-		SubscribeTrades()
+		SubscribeTicks()
 		.Bind(ProcessTrade)
 		.Start();
 
@@ -254,7 +254,7 @@ public class TrailingCloseManagerStrategy : Strategy
 		UpdatePositionTargets();
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		var price = trade.TradePrice;
 		if (price == null || price.Value <= 0m)

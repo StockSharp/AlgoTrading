@@ -95,7 +95,7 @@ public class HedgerStrategy : Strategy
 		
 		RegisterEntryOrders();
 		
-		SubscribeTrades().Bind(ProcessTrade).Start();
+		SubscribeTicks().Bind(ProcessTrade).Start();
 	}
 	
 	private void RegisterEntryOrders()
@@ -131,7 +131,7 @@ public class HedgerStrategy : Strategy
 		_protectivePlaced = true;
 		}
 		
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		var price = trade.TradePrice ?? 0m;
 		

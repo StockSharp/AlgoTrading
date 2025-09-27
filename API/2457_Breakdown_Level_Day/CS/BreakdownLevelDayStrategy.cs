@@ -105,7 +105,7 @@ public class BreakdownLevelDayStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		SubscribeTrades().Bind(ProcessTrade).Start();
+		SubscribeTicks().Bind(ProcessTrade).Start();
 		SubscribeCandles(TimeSpan.FromDays(1).TimeFrame()).Bind(ProcessDaily).Start();
 	}
 
@@ -120,7 +120,7 @@ public class BreakdownLevelDayStrategy : Strategy
 		_levelsPlaced = false;
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		var price = trade.TradePrice ?? 0m;
 		var time = trade.ServerTime;

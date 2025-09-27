@@ -221,7 +221,7 @@ SubscribeTicks()
 .Start();
 }
 
-private void ProcessTrade(ExecutionMessage trade)
+private void ProcessTrade(ITickTradeMessage trade)
 {
 var value = trade.Volume * trade.Price;
 var bucket = DetermineBucket(value);

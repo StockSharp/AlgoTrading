@@ -219,7 +219,7 @@ public class PreviousCandleBreakdownStrategy : Strategy
 		var candleSubscription = SubscribeCandles(CandleType);
 		candleSubscription.Bind(ProcessCandle).Start();
 
-		SubscribeTrades().Bind(ProcessTrade).Start();
+		SubscribeTicks().Bind(ProcessTrade).Start();
 	}
 
 	/// <inheritdoc />
@@ -272,7 +272,7 @@ public class PreviousCandleBreakdownStrategy : Strategy
 		EvaluateRisk(candle.ClosePrice);
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		if (trade.TradePrice is not decimal price || price <= 0m)
 			return;

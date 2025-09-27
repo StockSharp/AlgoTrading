@@ -56,7 +56,7 @@ public class TpSlPanelStrategy : Strategy
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		// Subscribe to trades for real-time price updates
-		SubscribeTrades().Bind(ProcessTrade).Start();
+		SubscribeTicks().Bind(ProcessTrade).Start();
 
 		// Enable protection for position management
 		StartProtection();
@@ -64,7 +64,7 @@ public class TpSlPanelStrategy : Strategy
 		base.OnStarted(time);
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		var price = trade.TradePrice ?? 0m;
 

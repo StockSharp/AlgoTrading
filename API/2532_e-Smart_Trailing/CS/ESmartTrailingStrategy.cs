@@ -74,12 +74,12 @@ public class ESmartTrailingStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		SubscribeTrades()
+		SubscribeTicks()
 			.Bind(ProcessTrade)
 			.Start();
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		var tradePrice = trade.TradePrice;
 

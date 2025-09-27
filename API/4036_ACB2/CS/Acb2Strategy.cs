@@ -140,7 +140,7 @@ public class Acb2Strategy : Strategy
 		_frameInitialized = true;
 	}
 
-	private void ProcessTick(ExecutionMessage trade)
+	private void ProcessTick(ITickTradeMessage trade)
 	{
 		if (!_frameInitialized)
 		return;

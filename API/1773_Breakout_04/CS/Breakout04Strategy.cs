@@ -65,7 +65,7 @@ public class Breakout04Strategy : Strategy
 	{
 		base.OnStarted(time);
 
-		SubscribeTrades().Bind(ProcessTrade).Start();
+		SubscribeTicks().Bind(ProcessTrade).Start();
 		SubscribeCandles(TimeSpan.FromDays(1).TimeFrame()).Bind(ProcessDaily).Start();
 
 		StartProtection();
@@ -94,7 +94,7 @@ public class Breakout04Strategy : Strategy
 		_lastDaily = candle.OpenTime;
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;

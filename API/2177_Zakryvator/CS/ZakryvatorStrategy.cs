@@ -70,10 +70,10 @@ public class ZakryvatorStrategy : Strategy
 		base.OnStarted(time);
 
 		// Subscribe to trade ticks for real-time price updates.
-		SubscribeTrades().Bind(ProcessTrade).Start();
+		SubscribeTicks().Bind(ProcessTrade).Start();
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		// Only act when there is an open position.
 		if (Position == 0)

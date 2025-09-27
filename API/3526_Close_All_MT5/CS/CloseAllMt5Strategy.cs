@@ -238,13 +238,13 @@ public class CloseAllMt5Strategy : Strategy
 		if (!_subscriptions.Add(security))
 			return;
 
-		var subscription = SubscribeTrades(security);
+		var subscription = SubscribeTicks(security);
 		subscription
 		.Bind(trade => ProcessTrade(security, trade))
 		.Start();
 	}
 
-	private void ProcessTrade(Security security, ExecutionMessage trade)
+	private void ProcessTrade(Security security, ITickTradeMessage trade)
 	{
 		if (trade.TradePrice is decimal price)
 			_lastPrices[security] = price;

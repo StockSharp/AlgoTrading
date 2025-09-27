@@ -109,10 +109,10 @@ public class LockerStrategy : Strategy
 
 		UpdatePipSize();
 
-		SubscribeTrades().Bind(ProcessTrade).Start();
+		SubscribeTicks().Bind(ProcessTrade).Start();
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		var price = trade.TradePrice ?? 0m;
 		if (price <= 0m)

@@ -91,7 +91,7 @@ public class JimsClosePositionsStrategy : Strategy
 			ProcessPrice(lastPrice);
 
 		// Subscribe to trades to react on every new tick.
-		_tradeSubscription = SubscribeTrades();
+		_tradeSubscription = SubscribeTicks();
 		_tradeSubscription.Bind(ProcessTrade).Start();
 	}
 
@@ -123,7 +123,7 @@ public class JimsClosePositionsStrategy : Strategy
 		return false;
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		if (trade.TradePrice is not decimal tradePrice)
 			return;

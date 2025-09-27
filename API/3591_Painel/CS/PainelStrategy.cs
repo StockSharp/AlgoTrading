@@ -36,7 +36,7 @@ public class PainelStrategy : Strategy
 		SubscribeLevel1().Bind(ProcessLevel1).Start();
 
 		// Listen for trade prints to capture the last traded price when available.
-		SubscribeTrades().Bind(ProcessTrade).Start();
+		SubscribeTicks().Bind(ProcessTrade).Start();
 
 		// Periodically log the collected information to emulate the original dashboard.
 		Timer.Start(TimeSpan.FromSeconds(1), OnTimer);
@@ -75,7 +75,7 @@ public class PainelStrategy : Strategy
 		}
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		// Store the price from the most recent trade to keep the panel accurate.
 		if (trade.TradePrice is decimal price)

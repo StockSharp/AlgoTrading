@@ -110,7 +110,7 @@ public class ValidateMeStrategy : Strategy
 
 		StartProtection(new Unit(takeProfitOffset, UnitTypes.Absolute), new Unit(stopLossOffset, UnitTypes.Absolute));
 
-		SubscribeTrades()
+		SubscribeTicks()
 			.Bind(ProcessTrade)
 			.Start();
 	}
@@ -130,7 +130,7 @@ public class ValidateMeStrategy : Strategy
 		return priceStep;
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;

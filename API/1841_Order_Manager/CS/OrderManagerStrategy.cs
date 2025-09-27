@@ -97,10 +97,10 @@ public class OrderManagerStrategy : Strategy
 		base.OnStarted(time);
 
 		StartProtection();
-		SubscribeTrades().Bind(OnTrade).Start();
+		SubscribeTicks().Bind(OnTrade).Start();
 	}
 
-	private void OnTrade(ExecutionMessage trade)
+	private void OnTrade(ITickTradeMessage trade)
 	{
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;

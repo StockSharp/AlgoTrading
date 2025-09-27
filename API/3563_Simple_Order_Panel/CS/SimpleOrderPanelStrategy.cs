@@ -381,7 +381,7 @@ public class SimpleOrderPanelStrategy : Strategy
 		.Bind(ProcessLevel1)
 		.Start();
 
-		SubscribeTrades()
+		SubscribeTicks()
 		.Bind(ProcessTrade)
 		.Start();
 
@@ -883,7 +883,7 @@ public class SimpleOrderPanelStrategy : Strategy
 		CheckProtectiveLevels();
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		if (trade.TradePrice is decimal tradePrice)
 		{

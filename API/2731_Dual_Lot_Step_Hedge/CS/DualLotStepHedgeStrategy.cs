@@ -185,10 +185,10 @@ public class DualLotStepHedgeStrategy : Strategy
 		_currentVolume = ScalingMode == LotScalingMode.HighToLow ? _maxVolume : _volumeStep;
 		_pipValue = CalculatePipValue();
 
-		SubscribeTrades().Bind(ProcessTrade).Start();
+		SubscribeTicks().Bind(ProcessTrade).Start();
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		if (trade.TradePrice is not decimal price || price <= 0m)
 		return;

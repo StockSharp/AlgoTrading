@@ -186,7 +186,7 @@ public class TrainingSimulatorStrategy : Strategy
 
 		_pointSize = CalculatePointSize();
 
-		SubscribeTrades()
+		SubscribeTicks()
 			.Bind(ProcessTrade)
 			.Start();
 
@@ -340,7 +340,7 @@ public class TrainingSimulatorStrategy : Strategy
 		_takeProfitDistance = TakeProfitPoints > 0m ? TakeProfitPoints * _pointSize : 0m;
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		if (trade.TradePrice is not decimal price)
 			return;

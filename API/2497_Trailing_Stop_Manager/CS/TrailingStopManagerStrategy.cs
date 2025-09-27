@@ -95,7 +95,7 @@ public class TrailingStopManagerStrategy : Strategy
 			_priceStep = 1m;
 
 		// Subscribe to trade ticks so the trailing stop reacts to real-time price changes.
-		SubscribeTrades()
+		SubscribeTicks()
 			.Bind(ProcessTrade)
 			.Start();
 
@@ -151,7 +151,7 @@ public class TrailingStopManagerStrategy : Strategy
 			ResetTrailing();
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		var price = trade.TradePrice;
 		if (price == null || price.Value <= 0m)

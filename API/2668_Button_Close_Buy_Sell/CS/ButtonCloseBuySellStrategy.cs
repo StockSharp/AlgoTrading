@@ -113,7 +113,7 @@ public class ButtonCloseBuySellStrategy : Strategy
 		base.OnStarted(time);
 
 		// Use trades to keep track of the most recent market price.
-		SubscribeTrades()
+		SubscribeTicks()
 			.Bind(ProcessTrade)
 			.Start();
 	}
@@ -122,7 +122,7 @@ public class ButtonCloseBuySellStrategy : Strategy
 	/// Update the latest traded price from the exchange feed.
 	/// </summary>
 	/// <param name="trade">Incoming trade message.</param>
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		if (trade.TradePrice is not decimal price)
 			return;

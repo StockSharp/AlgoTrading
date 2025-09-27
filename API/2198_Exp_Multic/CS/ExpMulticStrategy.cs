@@ -90,12 +90,12 @@ _volume[sec] = MinVolume;
 _entryPrice[sec] = 0m;
 _lastPrice[sec] = 0m;
 
-var subscription = SubscribeTrades(sec);
+var subscription = SubscribeTicks(sec);
 subscription.Bind(trade => ProcessTrade(sec, trade)).Start();
 }
 }
 
-private void ProcessTrade(Security sec, ExecutionMessage trade)
+private void ProcessTrade(Security sec, ITickTradeMessage trade)
 {
 _lastPrice[sec] = trade.TradePrice ?? 0m;
 Process(sec);

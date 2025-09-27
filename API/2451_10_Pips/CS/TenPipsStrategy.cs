@@ -52,7 +52,7 @@ public class TenPipsStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		var trades = SubscribeTrades();
+		var trades = SubscribeTicks();
 		trades.Bind(ProcessTrade).Start();
 
 		BuyMarket(Volume);

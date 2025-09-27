@@ -88,12 +88,12 @@ public class TrailingProfitStrategy : Strategy
 
 		ResetForValue(Portfolio?.CurrentValue ?? 0m);
 
-		SubscribeTrades()
+		SubscribeTicks()
 			.Bind(ProcessTrade)
 			.Start();
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		var now = trade.ServerTime != default ? trade.ServerTime : CurrentTime;
 

@@ -234,7 +234,7 @@ public class RrsRandomnessStrategy : Strategy
 			.Bind(ProcessLevel1)
 			.Start();
 
-		SubscribeTrades()
+		SubscribeTicks()
 			.Bind(ProcessTrade)
 			.Start();
 
@@ -260,7 +260,7 @@ public class RrsRandomnessStrategy : Strategy
 		}
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		if (trade.TradePrice > 0m)
 			_lastTradePrice = trade.TradePrice;

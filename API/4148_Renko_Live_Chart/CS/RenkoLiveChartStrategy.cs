@@ -186,7 +186,7 @@ public class RenkoLiveChartStrategy : Strategy
 		.Bind(ProcessCandle)
 		.Start();
 
-		SubscribeTrades()
+		SubscribeTicks()
 		.Bind(ProcessTrade)
 		.Start();
 
@@ -229,7 +229,7 @@ public class RenkoLiveChartStrategy : Strategy
 		UpdateActiveBrick(candle.ClosePrice, candle.CloseTime);
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		if (trade.TradePrice is not decimal price)
 		// Skip trade messages that do not contain an actual price.

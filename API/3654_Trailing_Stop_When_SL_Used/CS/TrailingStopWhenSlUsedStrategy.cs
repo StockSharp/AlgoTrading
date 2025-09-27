@@ -57,7 +57,7 @@ public class TrailingStopWhenSlUsedStrategy : Strategy
 			_priceStep = 1m;
 
 		// React to every trade tick just like the original MetaTrader trailing logic.
-		SubscribeTrades()
+		SubscribeTicks()
 			.Bind(ProcessTrade)
 			.Start();
 	}
@@ -88,7 +88,7 @@ public class TrailingStopWhenSlUsedStrategy : Strategy
 			ResetTrailingState();
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		var price = trade.TradePrice;
 		if (price == null || price.Value <= 0m)

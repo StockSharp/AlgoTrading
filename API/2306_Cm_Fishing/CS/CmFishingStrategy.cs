@@ -144,10 +144,10 @@ public class CmFishingStrategy : Strategy
 		_level = lastTrade?.Price ?? 0m;
 		_entryPrice = 0m;
 
-		SubscribeTrades().Bind(ProcessTrade).Start();
+		SubscribeTicks().Bind(ProcessTrade).Start();
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;

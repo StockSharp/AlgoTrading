@@ -149,7 +149,7 @@ public class EliteEfiboTraderV21Strategy : Strategy
 
 		StartProtection();
 
-		var trades = SubscribeTrades();
+		var trades = SubscribeTicks();
 		trades.Bind(ProcessTrade).Start();
 	}
 
@@ -222,7 +222,7 @@ public class EliteEfiboTraderV21Strategy : Strategy
 		CleanupLevels();
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		if (trade.TradePrice is not decimal price)
 			return;

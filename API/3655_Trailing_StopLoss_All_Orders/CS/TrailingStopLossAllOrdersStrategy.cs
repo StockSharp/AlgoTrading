@@ -82,7 +82,7 @@ public class TrailingStopLossAllOrdersStrategy : Strategy
 
 		RecalculateDistances();
 
-		SubscribeTrades()
+		SubscribeTicks()
 			.Bind(ProcessTrade)
 			.Start();
 	}
@@ -96,7 +96,7 @@ public class TrailingStopLossAllOrdersStrategy : Strategy
 			ResetState();
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		var price = trade.TradePrice;
 		if (price is null || price.Value <= 0m)

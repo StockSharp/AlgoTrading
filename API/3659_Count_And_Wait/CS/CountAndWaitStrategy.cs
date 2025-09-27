@@ -67,10 +67,10 @@ public class CountAndWaitStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		SubscribeTrades().Bind(ProcessTrade).Start();
+		SubscribeTicks().Bind(ProcessTrade).Start();
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		var limit = CountLimit;
 

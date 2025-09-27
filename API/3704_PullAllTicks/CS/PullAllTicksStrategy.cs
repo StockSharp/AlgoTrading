@@ -109,12 +109,12 @@ public class PullAllTicksStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		SubscribeTrades().Bind(ProcessTrade).Start();
+		SubscribeTicks().Bind(ProcessTrade).Start();
 
 		UpdateStatusComment();
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		var tradeTime = trade.ServerTime;
 		if (tradeTime == default)

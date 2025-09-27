@@ -70,7 +70,7 @@ public class OnTickMultisymbolStrategy : Strategy
 		{
 			var localSecurity = security;
 
-			SubscribeTrades(localSecurity)
+			SubscribeTicks(localSecurity)
 				.Bind(trade => OnTrade(localSecurity, trade))
 				.Start();
 		}
@@ -132,7 +132,7 @@ public class OnTickMultisymbolStrategy : Strategy
 		}
 	}
 
-	private void OnTrade(Security security, ExecutionMessage trade)
+	private void OnTrade(Security security, ITickTradeMessage trade)
 	{
 		if (trade.TradePrice is not decimal price)
 			return;

@@ -100,12 +100,12 @@ public class BreakevenTrailingStopStrategy : Strategy
 
 		_pointValue = CalculateAdjustedPoint();
 
-		SubscribeTrades()
+		SubscribeTicks()
 			.Bind(ProcessTrade)
 			.Start();
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		var price = trade.TradePrice;
 		if (price is null || price <= 0m)
@@ -126,7 +126,7 @@ public class BreakevenTrailingStopStrategy : Strategy
 			UpdateShortTrailing(price.Value);
 	}
 
-	private void TryCreateDemoEntry(ExecutionMessage trade, decimal price)
+	private void TryCreateDemoEntry(ITickTradeMessage trade, decimal price)
 	{
 		if (Position != 0 || _exitOrderPending)
 			return;

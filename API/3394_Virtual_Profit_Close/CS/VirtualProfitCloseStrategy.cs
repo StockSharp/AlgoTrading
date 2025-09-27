@@ -184,7 +184,7 @@ public class VirtualProfitCloseStrategy : Strategy
 		_trailingActivation = TrailingActivationPips > 0m ? TrailingActivationPips * _pipSize : 0m;
 		_demoStopDistance = DemoStopPips > 0m ? DemoStopPips * _pipSize : 0m;
 
-		_tradeSubscription = SubscribeTrades();
+		_tradeSubscription = SubscribeTicks();
 		_tradeSubscription.Bind(ProcessTrade).Start();
 
 		TryOpenDemoOrder();
@@ -215,7 +215,7 @@ public class VirtualProfitCloseStrategy : Strategy
 		}
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		var lastPrice = trade.TradePrice;
 		if (lastPrice is null)

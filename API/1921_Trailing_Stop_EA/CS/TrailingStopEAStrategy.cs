@@ -58,10 +58,10 @@ public class TrailingStopEAStrategy : Strategy
 
 		_trailDistance = TrailingPoints * (Security?.PriceStep ?? 1m);
 
-		SubscribeTrades().Bind(ProcessTrade).Start();
+		SubscribeTicks().Bind(ProcessTrade).Start();
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		var price = trade.TradePrice ?? 0m;
 

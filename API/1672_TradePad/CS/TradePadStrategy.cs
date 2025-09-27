@@ -34,7 +34,7 @@ public class TradePadStrategy : Strategy
 
 		_userPanel.OnInit(this);
 
-		SubscribeTrades().Bind(_userPanel.OnTick).Start();
+		SubscribeTicks().Bind(_userPanel.OnTick).Start();
 
 		Timer.Start(TimeSpan.FromSeconds(1), _userPanel.OnTimer);
 	}
@@ -72,7 +72,7 @@ public class TradePadStrategy : Strategy
 			_strategy = strategy;
 		}
 
-		public void OnTick(ExecutionMessage trade)
+		public void OnTick(ITickTradeMessage trade)
 		{
 			// Handle each trade tick update.
 		}

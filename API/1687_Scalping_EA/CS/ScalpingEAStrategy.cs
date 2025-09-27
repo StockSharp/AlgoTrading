@@ -58,7 +58,7 @@ public class ScalpingEAStrategy : Strategy
 		var step = Security.PriceStep ?? 1m;
 		StartProtection(new Unit(ProfitTarget * step, UnitTypes.Price), new Unit(StopLoss * step, UnitTypes.Price));
 
-		SubscribeTrades().Bind(ProcessTrade).Start();
+		SubscribeTicks().Bind(ProcessTrade).Start();
 
 		PlaceOrders();
 	}
@@ -75,7 +75,7 @@ public class ScalpingEAStrategy : Strategy
 		_sellOrder = SellStop(Volume, sellPrice);
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		var price = trade.TradePrice ?? 0m;
 		var step = Security.PriceStep ?? 1m;

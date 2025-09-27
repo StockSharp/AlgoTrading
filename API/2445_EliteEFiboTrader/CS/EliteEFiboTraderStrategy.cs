@@ -310,10 +310,10 @@ public class EliteEFiboTraderStrategy : Strategy
 		_prevPositionPrice = PositionPrice;
 		UpdateStepSizes();
 
-		SubscribeTrades().Bind(ProcessTrade).Start();
+		SubscribeTicks().Bind(ProcessTrade).Start();
 	}
 
-	private void ProcessTrade(ExecutionMessage trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		if (trade.TradePrice is not decimal price)
 		return;

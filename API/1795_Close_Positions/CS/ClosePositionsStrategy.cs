@@ -43,10 +43,10 @@ public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 protected override void OnStarted(DateTimeOffset time)
 {
 base.OnStarted(time);
-SubscribeTrades().Bind(ProcessTrade).Start();
+SubscribeTicks().Bind(ProcessTrade).Start();
 }
 
-private void ProcessTrade(ExecutionMessage trade)
+private void ProcessTrade(ITickTradeMessage trade)
 {
 var price = trade.TradePrice ?? 0m;
 
