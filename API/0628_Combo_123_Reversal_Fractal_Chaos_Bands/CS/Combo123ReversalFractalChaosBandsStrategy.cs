@@ -12,7 +12,7 @@ namespace StockSharp.Samples.Strategies;
 /// Combo Strategy 123 Reversal & Fractal Chaos Bands.
 /// Generates signals when both a 123 reversal and Fractal Chaos Bands breakout align.
 /// </summary>
-public class ComboStrategy123ReversalFractalChaosBandsStrategy : Strategy
+public class Combo123ReversalFractalChaosBandsStrategy : Strategy
 {
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<int> _kSmoothing;
@@ -86,9 +86,9 @@ public class ComboStrategy123ReversalFractalChaosBandsStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize <see cref="ComboStrategy123ReversalFractalChaosBandsStrategy"/>.
+	/// Initialize <see cref="Combo123ReversalFractalChaosBandsStrategy"/>.
 	/// </summary>
-	public ComboStrategy123ReversalFractalChaosBandsStrategy()
+	public Combo123ReversalFractalChaosBandsStrategy()
 	{
 		_length = Param(nameof(Length), 15)
 			.SetGreaterThanZero()

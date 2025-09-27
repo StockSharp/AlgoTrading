@@ -11,7 +11,7 @@ namespace StockSharp.Samples.Strategies;
 /// Strategy 1 uses fixed or trailing take profit.
 /// Strategy 2 adds higher timeframe trend filter, ATR stop and partial take profit.
 /// </summary>
-public class DualStrategySelectorV2CryptogyaniStrategy : Strategy
+public class DualSelectorV2CryptogyaniStrategy : Strategy
 {
 	private readonly StrategyParam<string> _strategyOption;
 
@@ -43,7 +43,7 @@ public class DualStrategySelectorV2CryptogyaniStrategy : Strategy
 
 	private bool _hasPartialExit;
 
-	public DualStrategySelectorV2CryptogyaniStrategy()
+	public DualSelectorV2CryptogyaniStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle type", "Main timeframe for strategy.", "General");

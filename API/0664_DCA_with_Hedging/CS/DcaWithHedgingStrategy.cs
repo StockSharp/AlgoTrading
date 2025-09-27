@@ -11,7 +11,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Dollar cost averaging strategy that adds positions at price intervals and hedges with short entries.
 /// </summary>
-public class DcaStrategyWithHedgingStrategy : Strategy
+public class DcaWithHedgingStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _emaLength;
@@ -79,9 +79,9 @@ public class DcaStrategyWithHedgingStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of <see cref="DcaStrategyWithHedgingStrategy"/>.
+	/// Initializes a new instance of <see cref="DcaWithHedgingStrategy"/>.
 	/// </summary>
-	public DcaStrategyWithHedgingStrategy()
+	public DcaWithHedgingStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculation", "General");

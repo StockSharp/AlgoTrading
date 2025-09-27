@@ -12,7 +12,7 @@ using StockSharp.Messages;
 /// Pin bar reversal strategy converted from the original MQL expert.
 /// Combines pin bar detection with higher timeframe momentum and MACD confirmation.
 /// </summary>
-public class PinbarReversalStrategy : Strategy
+public class PinbarReversal2Strategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<DataType> _trendCandleType;
@@ -68,9 +68,9 @@ public class PinbarReversalStrategy : Strategy
 	private int _barCount;
 
 	/// <summary>
-	/// Initialize <see cref="PinbarReversalStrategy"/>.
+	/// Initialize <see cref="PinbarReversal2Strategy"/>.
 	/// </summary>
-	public PinbarReversalStrategy()
+	public PinbarReversal2Strategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Primary Candle", "Candle type used for entries", "General");

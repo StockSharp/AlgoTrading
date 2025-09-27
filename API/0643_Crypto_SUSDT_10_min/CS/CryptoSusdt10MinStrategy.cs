@@ -11,7 +11,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Crypto Strategy SUSDT 10 min - EMA based long/short strategy with fixed risk parameters.
 /// </summary>
-public class CryptoStrategySusdt10MinStrategy : Strategy
+public class CryptoSusdt10MinStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _emaLength;
@@ -67,9 +67,9 @@ public class CryptoStrategySusdt10MinStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of <see cref="CryptoStrategySusdt10MinStrategy"/>.
+	/// Initializes a new instance of <see cref="CryptoSusdt10MinStrategy"/>.
 	/// </summary>
-	public CryptoStrategySusdt10MinStrategy()
+	public CryptoSusdt10MinStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");

@@ -11,7 +11,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Strategy Tester - combines momentum and ADX for entry signals with ATR-based risk management
 /// </summary>
-public class StrategyTesterStrategy : Strategy
+public class AdxTesterStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _momentumLength;
@@ -128,7 +128,7 @@ public class StrategyTesterStrategy : Strategy
 	/// <summary>
 	/// Constructor.
 	/// </summary>
-	public StrategyTesterStrategy()
+	public AdxTesterStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");

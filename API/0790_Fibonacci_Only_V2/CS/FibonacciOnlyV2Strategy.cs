@@ -11,7 +11,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Trades around 19% and 82.56% Fibonacci retracement levels.
 /// </summary>
-public class FibonacciOnlyStrategyV2Strategy : Strategy
+public class FibonacciOnlyV2Strategy : Strategy
 {
 	private readonly StrategyParam<bool> _useBreakStrategy;
 	private readonly StrategyParam<decimal> _stopLossPercent;
@@ -94,7 +94,7 @@ public class FibonacciOnlyStrategyV2Strategy : Strategy
 	/// <summary>
 	/// Constructor.
 	/// </summary>
-	public FibonacciOnlyStrategyV2Strategy()
+	public FibonacciOnlyV2Strategy()
 	{
 		_useBreakStrategy = Param(nameof(UseBreakStrategy), true)
 			.SetDisplay("Use Break Strategy", "Allow entries on level breakouts", "General");
