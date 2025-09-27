@@ -1,6 +1,12 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -558,3 +564,4 @@ public class MartingaleTradeSimulatorStrategy : Strategy
 		return step > 0m ? step / 2m : 0.0000001m;
 	}
 }
+

@@ -1,10 +1,19 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
+using System.Collections.Generic;
 
-using StockSharp.Algo.Candles;
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
+using StockSharp.Messages;
+
+using StockSharp.Algo.Candles;
 
 /// <summary>
 /// ZigAndZagScalpel translation that trades on breakouts from short-term pivots confirmed by a long-term ZigZag trend.
@@ -302,3 +311,4 @@ public class ZigAndZagScalpelStrategy : Strategy
 		High
 	}
 }
+

@@ -1,15 +1,19 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
 
-using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using StockSharp.Algo;
 
 /// <summary>
 /// Port of the "MACD 1 MIN SCALPER" MetaTrader expert advisor.
@@ -575,3 +579,4 @@ public class Macd1MinScalperStrategy : Strategy
 		return security.Decimals is 3 or 5 ? priceStep * 10m : priceStep;
 	}
 }
+

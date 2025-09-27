@@ -1,6 +1,14 @@
 using System;
+using System.Linq;
+using System.Collections.Generic;
 
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
@@ -233,3 +241,4 @@ private void PrintYearSummary(int year)
 LogInfo($"Year={year} Spread<={FirstBucketPoints}pts={_lessThanFirst} Spread_{FirstBucketPoints}_{SecondBucketPoints}pts={_betweenFirstSecond} Spread_{SecondBucketPoints}_{ThirdBucketPoints}pts={_betweenSecondThird} Spread_{ThirdBucketPoints}_{FourthBucketPoints}pts={_betweenThirdFourth} Spread_{FourthBucketPoints}_{FifthBucketPoints}pts={_betweenFourthFifth} Spread>{FifthBucketPoints}pts={_greaterThanFifth}");
 }
 }
+

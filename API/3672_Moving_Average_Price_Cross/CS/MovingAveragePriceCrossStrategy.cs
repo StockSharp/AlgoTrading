@@ -1,12 +1,19 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
-using StockSharp.Algo;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using StockSharp.Algo;
 
 /// <summary>
 /// Simple moving average price crossover strategy converted from the MT5 "MovingAverage" expert advisor.
@@ -248,3 +255,4 @@ public class MovingAveragePriceCrossStrategy : Strategy
 		return step;
 	}
 }
+

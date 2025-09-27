@@ -1,5 +1,10 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -682,3 +687,4 @@ private static bool IsOrderActive(Order order)
 return order != null && (order.State == OrderStates.Active || order.State == OrderStates.Pending);
 }
 }
+

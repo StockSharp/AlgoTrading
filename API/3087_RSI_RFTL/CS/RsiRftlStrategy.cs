@@ -1,13 +1,19 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
-using StockSharp.Algo.Candles;
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using StockSharp.Algo.Candles;
 
 /// <summary>
 /// RSI plus Recursive Filter Trend Line (RFTL) strategy converted from the MetaTrader 5 expert advisor.
@@ -622,3 +628,4 @@ public sealed class RftlIndicator : BaseIndicator<decimal>
 		_prices.Clear();
 	}
 }
+

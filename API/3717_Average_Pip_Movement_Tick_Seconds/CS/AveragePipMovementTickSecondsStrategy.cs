@@ -1,9 +1,16 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
+using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
@@ -195,3 +202,4 @@ public class AveragePipMovementTickSecondsStrategy : Strategy
 		LogInfo($"Interval report ({CheckIntervalSeconds}s) -> Avg pip movement: {pipAverage:0.#####}, Avg spread: {spreadAverage:0.#####}");
 	}
 }
+

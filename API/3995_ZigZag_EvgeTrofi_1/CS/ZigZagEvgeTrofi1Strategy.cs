@@ -1,13 +1,19 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
-using StockSharp.Algo;
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using StockSharp.Algo;
 
 /// <summary>
 /// ZigZag swing strategy that reproduces the ZigZagEvgeTrofi 1 expert advisor.
@@ -306,3 +312,4 @@ public class ZigZagEvgeTrofi1Strategy : Strategy
 		return 1m;
 	}
 }
+

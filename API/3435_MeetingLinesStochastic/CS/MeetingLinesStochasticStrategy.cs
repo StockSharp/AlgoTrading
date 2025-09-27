@@ -1,15 +1,20 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
+using System.Collections.Generic;
 
 using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using StockSharp.Algo;
+using StockSharp.Algo.Candles;
 
 /// <summary>
 /// Strategy that replicates the MetaTrader "Expert_AML_Stoch" logic using the StockSharp high-level API.
@@ -321,3 +326,4 @@ public class MeetingLinesStochasticStrategy : Strategy
 		return previous > level && current < level;
 	}
 }
+

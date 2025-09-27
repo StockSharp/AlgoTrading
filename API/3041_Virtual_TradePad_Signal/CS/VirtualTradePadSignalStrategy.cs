@@ -1,5 +1,10 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -822,3 +827,4 @@ public class VirtualTradePadSignalStrategy : Strategy
 		return step is null or 0m ? 1m : step.Value;
 		}
 		}
+

@@ -1,13 +1,19 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
-using StockSharp.Algo;
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using StockSharp.Algo;
 
 /// <summary>
 /// Adaptive FIR/ARMA crossover strategy converted from MetaTrader.
@@ -523,3 +529,4 @@ public sealed class AfirmaValue : ComplexIndicatorValue
 	/// </summary>
 	public decimal Arma => (decimal)GetValue(nameof(Arma));
 }
+

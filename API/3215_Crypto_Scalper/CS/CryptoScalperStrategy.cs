@@ -1,8 +1,12 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -372,3 +376,4 @@ public class CryptoScalperStrategy : Strategy
 		return 0.0001m;
 	}
 }
+

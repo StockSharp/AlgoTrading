@@ -1,6 +1,12 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -395,3 +401,4 @@ public class AutoTpManagerStrategy : Strategy
 		_pipSize = step > 0m ? step * 10m : 1m;
 	}
 }
+

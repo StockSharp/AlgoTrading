@@ -1,12 +1,20 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Text;
 
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Messages;
+
+using System.Globalization;
+using System.Text;
 
 /// <summary>
 /// Strategy that reports the Nth most recent closed order handled by the strategy instance.
@@ -293,3 +301,4 @@ public class GetLastNthCloseTradeStrategy : Strategy
 		public decimal Profit;
 	}
 }
+

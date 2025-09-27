@@ -1,9 +1,14 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Collections.Generic;
 
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -223,3 +228,4 @@ public class Refresh28ChartsV3Strategy : Strategy
 		return frame.TotalMinutes == 1 ? "1 minute" : $"{frame.TotalMinutes:0} minutes";
 	}
 }
+

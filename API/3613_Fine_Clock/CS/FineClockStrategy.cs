@@ -1,11 +1,18 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
-using StockSharp.Algo;
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
-using StockSharp.Charting;
 using StockSharp.Messages;
+
+using StockSharp.Algo;
+using StockSharp.Charting;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -428,3 +435,4 @@ public class FineClockStrategy : Strategy
 		return Format == ClockFormat.Seconds ? TimeSpan.FromSeconds(1) : TimeSpan.FromMinutes(1);
 	}
 }
+

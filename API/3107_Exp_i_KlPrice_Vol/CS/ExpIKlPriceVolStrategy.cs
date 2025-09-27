@@ -1,12 +1,19 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
-using System.Reflection;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using System.Reflection;
+using StockSharp.Algo;
+using StockSharp.Algo.Candles;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -886,3 +893,4 @@ public class ExpIKlPriceVolStrategy : Strategy
 
 	private readonly record struct KlPriceVolResult(decimal Value, decimal Volume, int Color);
 }
+
