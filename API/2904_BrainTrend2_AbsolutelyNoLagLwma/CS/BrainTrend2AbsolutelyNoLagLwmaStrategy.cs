@@ -19,6 +19,7 @@ public class BrainTrend2AbsolutelyNoLagLwmaStrategy : Strategy
 	private readonly StrategyParam<bool> _brainTrendBuyAllowed;
 	private readonly StrategyParam<bool> _brainTrendSellAllowed;
 	private readonly StrategyParam<decimal> _brainTrendVolume;
+	private readonly StrategyParam<decimal> _brainTrendCoefficient;
 	private readonly StrategyParam<DataType> _brainTrendCandleType;
 
 	private readonly StrategyParam<int> _lwmaLength;
@@ -83,6 +84,15 @@ public class BrainTrend2AbsolutelyNoLagLwmaStrategy : Strategy
 	{
 		get => _brainTrendVolume.Value;
 		set => _brainTrendVolume.Value = value;
+	}
+
+	/// <summary>
+	/// ATR coefficient that scales the BrainTrend2 channel width.
+	/// </summary>
+	public decimal BrainTrendCoefficient
+	{
+		get => _brainTrendCoefficient.Value;
+		set => _brainTrendCoefficient.Value = value;
 	}
 
 	/// <summary>
@@ -198,6 +208,10 @@ public class BrainTrend2AbsolutelyNoLagLwmaStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("BrainTrend Volume", "Volume for BrainTrend2 trades", "BrainTrend2");
 
+		_brainTrendCoefficient = Param(nameof(BrainTrendCoefficient), 0.7m)
+		.SetGreaterThanZero()
+		.SetDisplay("BrainTrend Coefficient", "ATR multiplier used in BrainTrend2", "BrainTrend2");
+
 		_brainTrendCandleType = Param(nameof(BrainTrendCandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("BrainTrend Candle", "Candle type for BrainTrend2", "BrainTrend2");
 
@@ -267,6 +281,7 @@ public class BrainTrend2AbsolutelyNoLagLwmaStrategy : Strategy
 		_brainTrendIndicator = new BrainTrend2Indicator
 		{
 			AtrPeriod = BrainTrendAtrPeriod,
+			Coefficient = BrainTrendCoefficient,
 		};
 
 		_lwmaIndicator = new AbsolutelyNoLagLwmaIndicator
@@ -473,7 +488,7 @@ public class BrainTrend2AbsolutelyNoLagLwmaStrategy : Strategy
 
 	private class BrainTrend2Indicator : Indicator<ICandleMessage>
 	{
-		private const decimal Coefficient = 0.7m;
+		private decimal _coefficient = 0.7m;
 
 		private decimal[] _trValues = Array.Empty<decimal>();
 		private int _index;
@@ -485,6 +500,12 @@ public class BrainTrend2AbsolutelyNoLagLwmaStrategy : Strategy
 		private decimal? _prevPrevClose;
 
 		public int AtrPeriod { get; set; } = 7;
+
+		public decimal Coefficient
+		{
+			get => _coefficient;
+			set => _coefficient = value;
+		}
 
 		protected override IIndicatorValue OnProcess(IIndicatorValue input)
 		{
@@ -542,7 +563,7 @@ public class BrainTrend2AbsolutelyNoLagLwmaStrategy : Strategy
 				}
 			}
 
-			var widcha = Coefficient * atr;
+			var widcha = _coefficient * atr;
 
 			if (_river)
 			{
