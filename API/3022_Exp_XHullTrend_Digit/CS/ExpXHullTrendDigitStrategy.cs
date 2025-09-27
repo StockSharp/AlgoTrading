@@ -31,7 +31,7 @@ public class ExpXHullTrendDigitStrategy : Strategy
 	private readonly StrategyParam<int> _baseLength;
 	private readonly StrategyParam<int> _signalLength;
 	private readonly StrategyParam<CandlePrice> _priceSource;
-	private readonly StrategyParam<SmoothMethod> _smoothMethod;
+	private readonly StrategyParam<SmoothMethods> _smoothMethod;
 	private readonly StrategyParam<int> _phase;
 	private readonly StrategyParam<int> _roundDigits;
 	private readonly StrategyParam<int> _signalBar;
@@ -141,7 +141,7 @@ public class ExpXHullTrendDigitStrategy : Strategy
 	/// <summary>
 	/// Smoothing method used by the internal moving averages.
 	/// </summary>
-	public SmoothMethod SmoothMethod
+	public SmoothMethods SmoothMethods
 	{
 		get => _smoothMethod.Value;
 		set => _smoothMethod.Value = value;
@@ -217,7 +217,7 @@ public class ExpXHullTrendDigitStrategy : Strategy
 		_priceSource = Param(nameof(PriceSource), CandlePrice.Close)
 			.SetDisplay("Price Source", "Candle price used in calculations", "Indicator");
 
-		_smoothMethod = Param(nameof(SmoothMethod), SmoothMethod.Weighted)
+		_smoothMethod = Param(nameof(SmoothMethods), SmoothMethods.Weighted)
 			.SetDisplay("Smoothing Method", "Moving average used inside the indicator", "Indicator");
 
 		_phase = Param(nameof(Phase), 15)
@@ -255,7 +255,7 @@ public class ExpXHullTrendDigitStrategy : Strategy
 			BaseLength = BaseLength,
 			SignalLength = SignalLength,
 			PriceType = PriceSource,
-			Method = SmoothMethod,
+			Method = SmoothMethods,
 			Phase = Phase,
 			RoundingDigits = RoundingDigits,
 			PriceStep = Security?.PriceStep ?? 0.0001m
@@ -349,7 +349,7 @@ public class ExpXHullTrendDigitStrategy : Strategy
 /// <summary>
 /// Available smoothing methods for the indicator internals.
 /// </summary>
-public enum SmoothMethod
+public enum SmoothMethods
 {
 	/// <summary>
 	/// Simple moving average.
@@ -385,7 +385,7 @@ public class XHullTrendDigitIndicator : BaseIndicator<decimal>
 	public int BaseLength { get; set; } = 20;
 	public int SignalLength { get; set; } = 5;
 	public CandlePrice PriceType { get; set; } = CandlePrice.Close;
-	public SmoothMethod Method { get; set; } = SmoothMethod.Weighted;
+	public SmoothMethods Method { get; set; } = SmoothMethods.Weighted;
 	public int Phase { get; set; }
 	public int RoundingDigits { get; set; } = 2;
 	public decimal PriceStep { get; set; } = 0.0001m;
@@ -460,9 +460,9 @@ public class XHullTrendDigitIndicator : BaseIndicator<decimal>
 	{
 		return Method switch
 		{
-			SmoothMethod.Simple => new SimpleMovingAverage { Length = length },
-			SmoothMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			SmoothMethod.Smoothed => new SmoothedMovingAverage { Length = length },
+			SmoothMethods.Simple => new SimpleMovingAverage { Length = length },
+			SmoothMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			SmoothMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			_ => new WeightedMovingAverage { Length = length },
 		};
 	}

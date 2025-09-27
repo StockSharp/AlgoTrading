@@ -23,7 +23,7 @@ public class CoupleHedgeStrategy : Strategy
 	/// <summary>
 	/// Operating mode for the strategy.
 	/// </summary>
-	public enum Oper
+	public enum Operations
 	{
 		StandByMode,
 		NormalOperation,
@@ -34,7 +34,7 @@ public class CoupleHedgeStrategy : Strategy
 	/// <summary>
 	/// Behaviour for opening additional orders while in drawdown.
 	/// </summary>
-	public enum StepMode
+	public enum StepModes
 	{
 		NotOpenInLoss,
 		OpenWithManualStep,
@@ -44,7 +44,7 @@ public class CoupleHedgeStrategy : Strategy
 	/// <summary>
 	/// Profit closing logic.
 	/// </summary>
-	public enum CloseProfitMode
+	public enum CloseProfitModes
 	{
 		TicketOrders,
 		BasketOrders,
@@ -54,7 +54,7 @@ public class CoupleHedgeStrategy : Strategy
 	/// <summary>
 	/// Loss closing logic.
 	/// </summary>
-	public enum CloseLossMode
+	public enum CloseLossModes
 	{
 		WholeTicket,
 		OnlyFirstOrder,
@@ -64,7 +64,7 @@ public class CoupleHedgeStrategy : Strategy
 	/// <summary>
 	/// Progression type for spacing between additional entries.
 	/// </summary>
-	public enum StepProgression
+	public enum StepProgressions
 	{
 		StaticalStep,
 		GeometricalStep,
@@ -74,7 +74,7 @@ public class CoupleHedgeStrategy : Strategy
 	/// <summary>
 	/// Progression type for order size scaling.
 	/// </summary>
-	public enum LotProgression
+	public enum LotProgressions
 	{
 		StaticalLot,
 		GeometricalLot,
@@ -84,7 +84,7 @@ public class CoupleHedgeStrategy : Strategy
 	/// <summary>
 	/// Which sides are allowed to trade.
 	/// </summary>
-	public enum SideMode
+	public enum SideModes
 	{
 		TradeOnlyPlus,
 		TradeOnlyMinus,
@@ -104,13 +104,13 @@ public class CoupleHedgeStrategy : Strategy
 		public decimal BaseVolume { get; set; }
 	}
 
-	private readonly StrategyParam<Oper> _typeOperation;
-	private readonly StrategyParam<StepMode> _openOrdersInLoss;
-	private readonly StrategyParam<CloseProfitMode> _typeCloseInProfit;
-	private readonly StrategyParam<CloseLossMode> _typeCloseInLoss;
-	private readonly StrategyParam<StepProgression> _stepOrdersProgress;
-	private readonly StrategyParam<LotProgression> _lotOrdersProgress;
-	private readonly StrategyParam<SideMode> _sideToOpenOrders;
+	private readonly StrategyParam<Operations> _typeOperation;
+	private readonly StrategyParam<StepModes> _openOrdersInLoss;
+	private readonly StrategyParam<CloseProfitModes> _typeCloseInProfit;
+	private readonly StrategyParam<CloseLossModes> _typeCloseInLoss;
+	private readonly StrategyParam<StepProgressions> _stepOrdersProgress;
+	private readonly StrategyParam<LotProgressions> _lotOrdersProgress;
+	private readonly StrategyParam<SideModes> _sideToOpenOrders;
 	private readonly StrategyParam<string> _currencyTrade;
 	private readonly StrategyParam<decimal> _stepOpenNextOrders;
 	private readonly StrategyParam<decimal> _targetCloseProfit;
@@ -134,31 +134,31 @@ public class CoupleHedgeStrategy : Strategy
 	/// </summary>
 	public CoupleHedgeStrategy()
 	{
-		_typeOperation = Param(nameof(TypeOperation), Oper.NormalOperation)
+		_typeOperation = Param(nameof(TypeOperation), Operations.NormalOperation)
 		.SetDisplay("Operation Mode", "Overall operating mode for the hedging engine", "Operation")
 		.SetCanOptimize(true);
 
-		_openOrdersInLoss = Param(nameof(OpenOrdersInLoss), StepMode.OpenWithAutoStep)
+		_openOrdersInLoss = Param(nameof(OpenOrdersInLoss), StepModes.OpenWithAutoStep)
 		.SetDisplay("Open Orders In Loss", "How additional orders are triggered during drawdown", "Grid")
 		.SetCanOptimize(true);
 
-		_typeCloseInProfit = Param(nameof(TypeCloseInProfit), CloseProfitMode.BasketOrders)
+		_typeCloseInProfit = Param(nameof(TypeCloseInProfit), CloseProfitModes.BasketOrders)
 		.SetDisplay("Profit Close Mode", "How profits trigger position exits", "Risk Management")
 		.SetCanOptimize(true);
 
-		_typeCloseInLoss = Param(nameof(TypeCloseInLoss), CloseLossMode.NotCloseInLoss)
+		_typeCloseInLoss = Param(nameof(TypeCloseInLoss), CloseLossModes.NotCloseInLoss)
 		.SetDisplay("Loss Close Mode", "How losses are handled", "Risk Management")
 		.SetCanOptimize(true);
 
-		_stepOrdersProgress = Param(nameof(StepOrdersProgress), StepProgression.GeometricalStep)
+		_stepOrdersProgress = Param(nameof(StepOrdersProgress), StepProgressions.GeometricalStep)
 		.SetDisplay("Step Progression", "Progression for distance between entries", "Grid")
 		.SetCanOptimize(true);
 
-		_lotOrdersProgress = Param(nameof(LotOrdersProgress), LotProgression.StaticalLot)
+		_lotOrdersProgress = Param(nameof(LotOrdersProgress), LotProgressions.StaticalLot)
 		.SetDisplay("Lot Progression", "How order sizes scale when adding layers", "Grid")
 		.SetCanOptimize(true);
 
-		_sideToOpenOrders = Param(nameof(SideToOpenOrders), SideMode.TradePlusAndMinus)
+		_sideToOpenOrders = Param(nameof(SideToOpenOrders), SideModes.TradePlusAndMinus)
 		.SetDisplay("Sides", "Allowed trading direction", "Operation")
 		.SetCanOptimize(true);
 
@@ -223,7 +223,7 @@ public class CoupleHedgeStrategy : Strategy
 	/// <summary>
 	/// Selected operation mode.
 	/// </summary>
-	public Oper TypeOperation
+	public Operations TypeOperation
 	{
 		get => _typeOperation.Value;
 		set => _typeOperation.Value = value;
@@ -232,7 +232,7 @@ public class CoupleHedgeStrategy : Strategy
 	/// <summary>
 	/// How to open additional orders when the basket is in loss.
 	/// </summary>
-	public StepMode OpenOrdersInLoss
+	public StepModes OpenOrdersInLoss
 	{
 		get => _openOrdersInLoss.Value;
 		set => _openOrdersInLoss.Value = value;
@@ -241,7 +241,7 @@ public class CoupleHedgeStrategy : Strategy
 	/// <summary>
 	/// Profit closing mode.
 	/// </summary>
-	public CloseProfitMode TypeCloseInProfit
+	public CloseProfitModes TypeCloseInProfit
 	{
 		get => _typeCloseInProfit.Value;
 		set => _typeCloseInProfit.Value = value;
@@ -250,7 +250,7 @@ public class CoupleHedgeStrategy : Strategy
 	/// <summary>
 	/// Loss closing mode.
 	/// </summary>
-	public CloseLossMode TypeCloseInLoss
+	public CloseLossModes TypeCloseInLoss
 	{
 		get => _typeCloseInLoss.Value;
 		set => _typeCloseInLoss.Value = value;
@@ -259,7 +259,7 @@ public class CoupleHedgeStrategy : Strategy
 	/// <summary>
 	/// Step progression.
 	/// </summary>
-	public StepProgression StepOrdersProgress
+	public StepProgressions StepOrdersProgress
 	{
 		get => _stepOrdersProgress.Value;
 		set => _stepOrdersProgress.Value = value;
@@ -268,7 +268,7 @@ public class CoupleHedgeStrategy : Strategy
 	/// <summary>
 	/// Lot progression.
 	/// </summary>
-	public LotProgression LotOrdersProgress
+	public LotProgressions LotOrdersProgress
 	{
 		get => _lotOrdersProgress.Value;
 		set => _lotOrdersProgress.Value = value;
@@ -277,7 +277,7 @@ public class CoupleHedgeStrategy : Strategy
 	/// <summary>
 	/// Allowed trading side.
 	/// </summary>
-	public SideMode SideToOpenOrders
+	public SideModes SideToOpenOrders
 	{
 		get => _sideToOpenOrders.Value;
 		set => _sideToOpenOrders.Value = value;
@@ -430,7 +430,7 @@ public class CoupleHedgeStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		if (TypeOperation == Oper.CloseImmediatelyAllOrders)
+		if (TypeOperation == Operations.CloseImmediatelyAllOrders)
 		{
 			CloseAllPairs(time);
 			Stop();
@@ -499,12 +499,12 @@ public class CoupleHedgeStrategy : Strategy
 
 	private void TryOpenInitialOrder(ICandleMessage candle, PairState pair, decimal trend, decimal atr)
 	{
-		if (TypeOperation == Oper.StandByMode)
+		if (TypeOperation == Operations.StandByMode)
 		return;
 
 		var deviation = atr > 0m ? (candle.ClosePrice - trend) / atr : 0m;
-		var desireLong = deviation >= SignalThreshold && (SideToOpenOrders == SideMode.TradePlusAndMinus || SideToOpenOrders == SideMode.TradeOnlyPlus);
-		var desireShort = deviation <= -SignalThreshold && (SideToOpenOrders == SideMode.TradePlusAndMinus || SideToOpenOrders == SideMode.TradeOnlyMinus);
+		var desireLong = deviation >= SignalThreshold && (SideToOpenOrders == SideModes.TradePlusAndMinus || SideToOpenOrders == SideModes.TradeOnlyPlus);
+		var desireShort = deviation <= -SignalThreshold && (SideToOpenOrders == SideModes.TradePlusAndMinus || SideToOpenOrders == SideModes.TradeOnlyMinus);
 
 		if (!desireLong && !desireShort)
 		return;
@@ -529,7 +529,7 @@ public class CoupleHedgeStrategy : Strategy
 
 	private void HandleScaling(PairState pair, decimal profit, decimal absVolume, decimal atr)
 	{
-		if (OpenOrdersInLoss == StepMode.NotOpenInLoss)
+		if (OpenOrdersInLoss == StepModes.NotOpenInLoss)
 		return;
 
 		var lotLoss = absVolume > 0m ? -profit / absVolume : 0m;
@@ -570,14 +570,14 @@ public class CoupleHedgeStrategy : Strategy
 		var targetPerLot = TargetCloseProfit * GetLotMultiplier(absVolume);
 		var profitReached = profit >= targetPerLot;
 
-		if (TypeCloseInProfit == CloseProfitMode.BasketOrders)
+		if (TypeCloseInProfit == CloseProfitModes.BasketOrders)
 		{
 			HandleBasketProfitExit();
 			pair.ProfitDelayCounter = 0;
 			return;
 		}
 
-		if (TypeCloseInProfit == CloseProfitMode.HybridMode)
+		if (TypeCloseInProfit == CloseProfitModes.HybridMode)
 		{
 			HandleBasketProfitExit();
 		}
@@ -596,7 +596,7 @@ public class CoupleHedgeStrategy : Strategy
 
 		ClosePair(pair);
 
-		if (TypeOperation == Oper.CloseInProfitAndStop)
+		if (TypeOperation == Operations.CloseInProfitAndStop)
 		{
 			Stop();
 		}
@@ -631,7 +631,7 @@ public class CoupleHedgeStrategy : Strategy
 
 		CloseAllPairs(CurrentTime);
 
-		if (TypeOperation == Oper.CloseInProfitAndStop)
+		if (TypeOperation == Operations.CloseInProfitAndStop)
 		{
 			Stop();
 		}
@@ -662,13 +662,13 @@ public class CoupleHedgeStrategy : Strategy
 
 		switch (TypeCloseInLoss)
 		{
-			case CloseLossMode.NotCloseInLoss:
+			case CloseLossModes.NotCloseInLoss:
 			pair.LossDelayCounter = 0;
 			return;
-			case CloseLossMode.WholeTicket:
+			case CloseLossModes.WholeTicket:
 			ClosePair(pair);
 			break;
-			case CloseLossMode.OnlyFirstOrder:
+			case CloseLossModes.OnlyFirstOrder:
 			var baseVolume = pair.BaseVolume;
 			if (baseVolume <= 0m)
 			return;
@@ -733,15 +733,15 @@ public class CoupleHedgeStrategy : Strategy
 
 	private bool IsTradingAllowedForNewOrders()
 	{
-		return TypeOperation == Oper.NormalOperation || TypeOperation == Oper.CloseInProfitAndStop;
+		return TypeOperation == Operations.NormalOperation || TypeOperation == Operations.CloseInProfitAndStop;
 	}
 
 	private decimal CalculateStepThreshold(int levelIndex, decimal atr)
 	{
 		var baseThreshold = OpenOrdersInLoss switch
 		{
-			StepMode.OpenWithAutoStep => atr * StepOpenNextOrders,
-			StepMode.OpenWithManualStep => StepOpenNextOrders,
+			StepModes.OpenWithAutoStep => atr * StepOpenNextOrders,
+			StepModes.OpenWithManualStep => StepOpenNextOrders,
 			_ => 0m
 		};
 
@@ -750,9 +750,9 @@ public class CoupleHedgeStrategy : Strategy
 
 		var multiplier = StepOrdersProgress switch
 		{
-			StepProgression.StaticalStep => 1m,
-			StepProgression.GeometricalStep => 1m + levelIndex,
-			StepProgression.ExponentialStep => (decimal)Math.Pow(2, levelIndex),
+			StepProgressions.StaticalStep => 1m,
+			StepProgressions.GeometricalStep => 1m + levelIndex,
+			StepProgressions.ExponentialStep => (decimal)Math.Pow(2, levelIndex),
 			_ => 1m
 		};
 
@@ -767,9 +767,9 @@ public class CoupleHedgeStrategy : Strategy
 
 		var multiplier = LotOrdersProgress switch
 		{
-			LotProgression.StaticalLot => 1m,
-			LotProgression.GeometricalLot => 1m + levelIndex,
-			LotProgression.ExponentialLot => (decimal)Math.Pow(2, levelIndex),
+			LotProgressions.StaticalLot => 1m,
+			LotProgressions.GeometricalLot => 1m + levelIndex,
+			LotProgressions.ExponentialLot => (decimal)Math.Pow(2, levelIndex),
 			_ => 1m
 		};
 

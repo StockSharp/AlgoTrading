@@ -22,7 +22,7 @@ public class RsiMaOnRsiFillingStepStrategy : Strategy
 	/// <summary>
 	/// Trade direction selection.
 	/// </summary>
-	public enum TradeMode
+	public enum TradeModes
 	{
 		/// <summary>
 		/// Only long trades are allowed.
@@ -46,7 +46,7 @@ public class RsiMaOnRsiFillingStepStrategy : Strategy
 	private readonly StrategyParam<MovingAverageTypes> _maType;
 	private readonly StrategyParam<decimal> _middleLevel;
 	private readonly StrategyParam<bool> _reverseSignals;
-	private readonly StrategyParam<TradeMode> _tradeMode;
+	private readonly StrategyParam<TradeModes> _tradeMode;
 	private readonly StrategyParam<bool> _closeOppositePositions;
 	private readonly StrategyParam<bool> _onlyOnePosition;
 	private readonly StrategyParam<bool> _useTimeWindow;
@@ -90,7 +90,7 @@ public class RsiMaOnRsiFillingStepStrategy : Strategy
 		_reverseSignals = Param(nameof(ReverseSignals), false)
 		.SetDisplay("Reverse Signals", "Swap buy and sell conditions.", "Signals");
 
-		_tradeMode = Param(nameof(Mode), TradeMode.Both)
+		_tradeMode = Param(nameof(Mode), TradeModes.Both)
 		.SetDisplay("Trade Mode", "Restrict trading direction.", "Signals");
 
 		_closeOppositePositions = Param(nameof(CloseOppositePositions), false)
@@ -166,7 +166,7 @@ public class RsiMaOnRsiFillingStepStrategy : Strategy
 	/// <summary>
 	/// Trade direction restriction.
 	/// </summary>
-	public TradeMode Mode
+	public TradeModes Mode
 	{
 		get => _tradeMode.Value;
 		set => _tradeMode.Value = value;
@@ -308,11 +308,11 @@ public class RsiMaOnRsiFillingStepStrategy : Strategy
 
 		if (crossUp && belowMiddle)
 		{
-			signalTriggered = TryExecuteSignal(TradeDirection.Long, candle, rsiValue, signalValue);
+			signalTriggered = TryExecuteSignal(TradeDirections.Long, candle, rsiValue, signalValue);
 		}
 		else if (crossDown && aboveMiddle)
 		{
-			signalTriggered = TryExecuteSignal(TradeDirection.Short, candle, rsiValue, signalValue);
+			signalTriggered = TryExecuteSignal(TradeDirections.Short, candle, rsiValue, signalValue);
 		}
 
 		if (signalTriggered)
@@ -324,17 +324,17 @@ public class RsiMaOnRsiFillingStepStrategy : Strategy
 		_previousSignal = signalValue;
 	}
 
-	private bool TryExecuteSignal(TradeDirection direction, ICandleMessage candle, decimal rsiValue, decimal signalValue)
+	private bool TryExecuteSignal(TradeDirections direction, ICandleMessage candle, decimal rsiValue, decimal signalValue)
 	{
 		if (ReverseSignals)
 		{
-			direction = direction == TradeDirection.Long ? TradeDirection.Short : TradeDirection.Long;
+			direction = direction == TradeDirections.Long ? TradeDirections.Short : TradeDirections.Long;
 		}
 
 		switch (direction)
 		{
-		case TradeDirection.Long:
-			if (Mode == TradeMode.SellOnly)
+		case TradeDirections.Long:
+			if (Mode == TradeModes.SellOnly)
 			return false;
 
 			if (!EnsureCapacityForNewPosition(isLong: true))
@@ -344,8 +344,8 @@ public class RsiMaOnRsiFillingStepStrategy : Strategy
 			LogInfo($"Buy signal: RSI {rsiValue:F2} crossed above MA {signalValue:F2} below middle level {MiddleLevel:F2}.");
 			return true;
 
-		case TradeDirection.Short:
-			if (Mode == TradeMode.BuyOnly)
+		case TradeDirections.Short:
+			if (Mode == TradeModes.BuyOnly)
 			return false;
 
 			if (!EnsureCapacityForNewPosition(isLong: false))
@@ -401,7 +401,7 @@ public class RsiMaOnRsiFillingStepStrategy : Strategy
 		return current >= start || current < end;
 	}
 
-	private enum TradeDirection
+	private enum TradeDirections
 	{
 		Long,
 		Short,

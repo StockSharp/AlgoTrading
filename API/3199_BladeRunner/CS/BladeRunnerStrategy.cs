@@ -53,7 +53,7 @@ public class BladeRunnerStrategy : Strategy
 	private decimal? _macdMain;
 	private decimal? _macdSignal;
 
-	private FractalDirection _latestFractalDirection = FractalDirection.None;
+	private FractalDirections _latestFractalDirection = FractalDirections.None;
 	private decimal? _latestFractalPrice;
 
 	/// <summary>
@@ -358,7 +358,7 @@ public class BladeRunnerStrategy : Strategy
 
 			if (validationOpen < center.High && validationOpen < validationMa)
 			{
-				_latestFractalDirection = FractalDirection.Upper;
+				_latestFractalDirection = FractalDirections.Upper;
 				_latestFractalPrice = center.High;
 			}
 		}
@@ -369,7 +369,7 @@ public class BladeRunnerStrategy : Strategy
 
 			if (validationOpen > center.Low && validationOpen > validationMa)
 			{
-				_latestFractalDirection = FractalDirection.Lower;
+				_latestFractalDirection = FractalDirections.Lower;
 				_latestFractalPrice = center.Low;
 			}
 		}
@@ -420,20 +420,20 @@ public class BladeRunnerStrategy : Strategy
 		if (!momentumOk)
 			return;
 
-		if (_latestFractalDirection == FractalDirection.Upper && fast > slow && macd > macdSignal)
+		if (_latestFractalDirection == FractalDirections.Upper && fast > slow && macd > macdSignal)
 		{
 			if (_latestFractalPrice is decimal level && candle.ClosePrice > level)
 			{
 				HandleLongEntry();
-				_latestFractalDirection = FractalDirection.None;
+				_latestFractalDirection = FractalDirections.None;
 			}
 		}
-		else if (_latestFractalDirection == FractalDirection.Lower && fast < slow && macd < macdSignal)
+		else if (_latestFractalDirection == FractalDirections.Lower && fast < slow && macd < macdSignal)
 		{
 			if (_latestFractalPrice is decimal level && candle.ClosePrice < level)
 			{
 				HandleShortEntry();
-				_latestFractalDirection = FractalDirection.None;
+				_latestFractalDirection = FractalDirections.None;
 			}
 		}
 	}
@@ -517,7 +517,7 @@ public class BladeRunnerStrategy : Strategy
 		public decimal Close { get; }
 	}
 
-	private enum FractalDirection
+	private enum FractalDirections
 	{
 		None,
 		Upper,

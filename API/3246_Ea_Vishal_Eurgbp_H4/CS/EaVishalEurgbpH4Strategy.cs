@@ -287,7 +287,7 @@ public class EaVishalEurgbpH4Strategy : Strategy
 			}
 			else
 			{
-				UpdateTrailingStop(PositionSide.Long, candle);
+				UpdateTrailingStop(PositionSides.Long, candle);
 				if (TryExitLongByRisk(candle))
 				{
 					ResetProtection();
@@ -302,7 +302,7 @@ public class EaVishalEurgbpH4Strategy : Strategy
 			}
 			else
 			{
-				UpdateTrailingStop(PositionSide.Short, candle);
+				UpdateTrailingStop(PositionSides.Short, candle);
 				if (TryExitShortByRisk(candle))
 				{
 					ResetProtection();
@@ -454,7 +454,7 @@ public class EaVishalEurgbpH4Strategy : Strategy
 		SellMarket(Volume);
 	}
 
-	private void UpdateTrailingStop(PositionSide side, ICandleMessage candle)
+	private void UpdateTrailingStop(PositionSides side, ICandleMessage candle)
 	{
 		if (!UseTrailingStop || StopLossPips <= 0 || _pipSize <= 0m)
 			return;
@@ -463,7 +463,7 @@ public class EaVishalEurgbpH4Strategy : Strategy
 
 		switch (side)
 		{
-			case PositionSide.Long when _prevHigh1 is decimal prevHigh:
+			case PositionSides.Long when _prevHigh1 is decimal prevHigh:
 			{
 				var desiredStop = prevHigh - distance;
 				if (_longStopPrice is not decimal currentStop || desiredStop > currentStop)
@@ -472,7 +472,7 @@ public class EaVishalEurgbpH4Strategy : Strategy
 				}
 				break;
 			}
-			case PositionSide.Short when _prevLow1 is decimal prevLow:
+			case PositionSides.Short when _prevLow1 is decimal prevLow:
 			{
 				var desiredStop = prevLow + distance;
 				if (_shortStopPrice is not decimal currentStop || desiredStop < currentStop)
@@ -503,7 +503,7 @@ public class EaVishalEurgbpH4Strategy : Strategy
 		return step;
 	}
 
-	private enum PositionSide
+	private enum PositionSides
 	{
 		Long,
 		Short

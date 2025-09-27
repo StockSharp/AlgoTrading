@@ -21,7 +21,7 @@ public class IlanImaStrategy : Strategy
 {
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageMethod> _maMethod;
+	private readonly StrategyParam<MovingAverageMethods> _maMethod;
 	private readonly StrategyParam<CandlePrice> _priceMode;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
@@ -62,7 +62,7 @@ public class IlanImaStrategy : Strategy
 	/// <summary>
 	/// Moving-average smoothing method.
 	/// </summary>
-	public MovingAverageMethod MaMethod
+	public MovingAverageMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -184,7 +184,7 @@ public class IlanImaStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(0, 10, 1);
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.Weighted)
+		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Weighted)
 			.SetDisplay("MA Method", "Moving average smoothing type", "Indicators");
 
 		_priceMode = Param(nameof(PriceMode), CandlePrice.Weighted)
@@ -587,13 +587,13 @@ public class IlanImaStrategy : Strategy
 		return point.Value;
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethod method, int length)
+	private LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			_ => new WeightedMovingAverage { Length = length },
 		};
 	}
@@ -601,7 +601,7 @@ public class IlanImaStrategy : Strategy
 	/// <summary>
 	/// Supported moving-average modes that mirror the MetaTrader options.
 	/// </summary>
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		Simple,
 		Exponential,

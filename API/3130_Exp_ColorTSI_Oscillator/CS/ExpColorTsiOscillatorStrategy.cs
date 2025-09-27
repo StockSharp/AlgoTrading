@@ -24,13 +24,13 @@ using StockSharp.Algo;
 public class ExpColorTsiOscillatorStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<ColorTsiSmoothingMethod> _firstMethod;
+	private readonly StrategyParam<ColorTsiSmoothingMethods> _firstMethod;
 	private readonly StrategyParam<int> _firstLength;
 	private readonly StrategyParam<int> _firstPhase;
-	private readonly StrategyParam<ColorTsiSmoothingMethod> _secondMethod;
+	private readonly StrategyParam<ColorTsiSmoothingMethods> _secondMethod;
 	private readonly StrategyParam<int> _secondLength;
 	private readonly StrategyParam<int> _secondPhase;
-	private readonly StrategyParam<ColorTsiAppliedPrice> _priceMode;
+	private readonly StrategyParam<ColorTsiAppliedPrices> _priceMode;
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<int> _triggerShift;
 	private readonly StrategyParam<bool> _enableLongEntries;
@@ -62,7 +62,7 @@ public class ExpColorTsiOscillatorStrategy : Strategy
 		.SetDisplay("Candle Type", "Timeframe used for signal calculations", "General");
 
 
-		_firstMethod = Param(nameof(FirstMethod), ColorTsiSmoothingMethod.Sma)
+		_firstMethod = Param(nameof(FirstMethod), ColorTsiSmoothingMethods.Sma)
 		.SetDisplay("Momentum Smoother", "Smoothing method applied to price momentum", "Indicator");
 
 		_firstLength = Param(nameof(FirstLength), 12)
@@ -75,7 +75,7 @@ public class ExpColorTsiOscillatorStrategy : Strategy
 		.SetDisplay("Momentum Phase", "Phase parameter for Jurik-style averages", "Indicator")
 		.SetRange(-100, 100);
 
-		_secondMethod = Param(nameof(SecondMethod), ColorTsiSmoothingMethod.Sma)
+		_secondMethod = Param(nameof(SecondMethod), ColorTsiSmoothingMethods.Sma)
 		.SetDisplay("Signal Smoother", "Smoothing method applied to the second stage", "Indicator");
 
 		_secondLength = Param(nameof(SecondLength), 12)
@@ -88,7 +88,7 @@ public class ExpColorTsiOscillatorStrategy : Strategy
 		.SetDisplay("Signal Phase", "Phase parameter for the second stage", "Indicator")
 		.SetRange(-100, 100);
 
-		_priceMode = Param(nameof(PriceMode), ColorTsiAppliedPrice.Close)
+		_priceMode = Param(nameof(PriceMode), ColorTsiAppliedPrices.Close)
 		.SetDisplay("Applied Price", "Price source fed to the oscillator", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -133,7 +133,7 @@ public DataType CandleType
 /// <summary>
 /// Smoothing algorithm applied to raw momentum values.
 /// </summary>
-public ColorTsiSmoothingMethod FirstMethod
+public ColorTsiSmoothingMethods FirstMethod
 {
 get => _firstMethod.Value;
 set => _firstMethod.Value = value;
@@ -160,7 +160,7 @@ set => _firstPhase.Value = value;
 /// <summary>
 /// Smoothing algorithm applied to the second stage.
 /// </summary>
-public ColorTsiSmoothingMethod SecondMethod
+public ColorTsiSmoothingMethods SecondMethod
 {
 get => _secondMethod.Value;
 set => _secondMethod.Value = value;
@@ -187,7 +187,7 @@ set => _secondPhase.Value = value;
 /// <summary>
 /// Applied price used as oscillator input.
 /// </summary>
-public ColorTsiAppliedPrice PriceMode
+public ColorTsiAppliedPrices PriceMode
 {
 get => _priceMode.Value;
 set => _priceMode.Value = value;
@@ -450,22 +450,22 @@ _lastLongEntryTime = null;
 _lastShortEntryTime = null;
 }
 
-private static decimal GetAppliedPrice(ICandleMessage candle, ColorTsiAppliedPrice priceMode)
+private static decimal GetAppliedPrice(ICandleMessage candle, ColorTsiAppliedPrices priceMode)
 {
 return priceMode switch
 {
-ColorTsiAppliedPrice.Close => candle.ClosePrice,
-ColorTsiAppliedPrice.Open => candle.OpenPrice,
-ColorTsiAppliedPrice.High => candle.HighPrice,
-ColorTsiAppliedPrice.Low => candle.LowPrice,
-ColorTsiAppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-ColorTsiAppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-ColorTsiAppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
-ColorTsiAppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-ColorTsiAppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-ColorTsiAppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
-ColorTsiAppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
-ColorTsiAppliedPrice.Demark => CalculateDemarkPrice(candle),
+ColorTsiAppliedPrices.Close => candle.ClosePrice,
+ColorTsiAppliedPrices.Open => candle.OpenPrice,
+ColorTsiAppliedPrices.High => candle.HighPrice,
+ColorTsiAppliedPrices.Low => candle.LowPrice,
+ColorTsiAppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+ColorTsiAppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+ColorTsiAppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
+ColorTsiAppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+ColorTsiAppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+ColorTsiAppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
+ColorTsiAppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
+ColorTsiAppliedPrices.Demark => CalculateDemarkPrice(candle),
 _ => candle.ClosePrice,
 };
 }
@@ -484,7 +484,7 @@ sum = (sum + candle.ClosePrice) / 2m;
 return ((sum - candle.LowPrice) + (sum - candle.HighPrice)) / 2m;
 }
 
-private static IIndicator CreateSmoother(ColorTsiSmoothingMethod method, int length, int phase)
+private static IIndicator CreateSmoother(ColorTsiSmoothingMethods method, int length, int phase)
 {
 var normalizedLength = Math.Max(1, length);
 var offset = 0.5m + phase / 200m;
@@ -492,16 +492,16 @@ offset = Math.Max(0m, Math.Min(1m, offset));
 
 return method switch
 {
-ColorTsiSmoothingMethod.Sma => new SimpleMovingAverage { Length = normalizedLength },
-ColorTsiSmoothingMethod.Ema => new ExponentialMovingAverage { Length = normalizedLength },
-ColorTsiSmoothingMethod.Smma => new SmoothedMovingAverage { Length = normalizedLength },
-ColorTsiSmoothingMethod.Lwma => new WeightedMovingAverage { Length = normalizedLength },
-ColorTsiSmoothingMethod.Jjma => CreateJurik(normalizedLength, phase),
-ColorTsiSmoothingMethod.Jurx => new ZeroLagExponentialMovingAverage { Length = normalizedLength },
-ColorTsiSmoothingMethod.Parma => new ArnaudLegouxMovingAverage { Length = normalizedLength, Offset = offset, Sigma = 6m },
-ColorTsiSmoothingMethod.T3 => new TripleExponentialMovingAverage { Length = normalizedLength },
-ColorTsiSmoothingMethod.Vidya => new ExponentialMovingAverage { Length = normalizedLength },
-ColorTsiSmoothingMethod.Ama => new KaufmanAdaptiveMovingAverage { Length = normalizedLength },
+ColorTsiSmoothingMethods.Sma => new SimpleMovingAverage { Length = normalizedLength },
+ColorTsiSmoothingMethods.Ema => new ExponentialMovingAverage { Length = normalizedLength },
+ColorTsiSmoothingMethods.Smma => new SmoothedMovingAverage { Length = normalizedLength },
+ColorTsiSmoothingMethods.Lwma => new WeightedMovingAverage { Length = normalizedLength },
+ColorTsiSmoothingMethods.Jjma => CreateJurik(normalizedLength, phase),
+ColorTsiSmoothingMethods.Jurx => new ZeroLagExponentialMovingAverage { Length = normalizedLength },
+ColorTsiSmoothingMethods.Parma => new ArnaudLegouxMovingAverage { Length = normalizedLength, Offset = offset, Sigma = 6m },
+ColorTsiSmoothingMethods.T3 => new TripleExponentialMovingAverage { Length = normalizedLength },
+ColorTsiSmoothingMethods.Vidya => new ExponentialMovingAverage { Length = normalizedLength },
+ColorTsiSmoothingMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = normalizedLength },
 _ => new SimpleMovingAverage { Length = normalizedLength },
 };
 }
@@ -523,7 +523,7 @@ return jurik;
 /// <summary>
 /// Supported smoothing methods for the ColorTSI oscillator.
 /// </summary>
-public enum ColorTsiSmoothingMethod
+public enum ColorTsiSmoothingMethods
 {
 /// <summary>Simple moving average.</summary>
 Sma,
@@ -550,7 +550,7 @@ Ama
 /// <summary>
 /// Applied price options mirroring the original indicator.
 /// </summary>
-public enum ColorTsiAppliedPrice
+public enum ColorTsiAppliedPrices
 {
 /// <summary>Close price.</summary>
 Close,

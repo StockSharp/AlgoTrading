@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class PotentialEntriesStrategy : Strategy
 {
-	private readonly StrategyParam<PatternMode> _patternMode;
+	private readonly StrategyParam<PatternModes> _patternMode;
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -30,7 +30,7 @@ public class PotentialEntriesStrategy : Strategy
 	/// <summary>
 	/// Pattern direction to evaluate.
 	/// </summary>
-	public PatternMode PatternSide
+	public PatternModes PatternSide
 	{
 		get => _patternMode.Value;
 		set => _patternMode.Value = value;
@@ -59,7 +59,7 @@ public class PotentialEntriesStrategy : Strategy
 	/// </summary>
 	public PotentialEntriesStrategy()
 	{
-		_patternMode = Param(nameof(PatternSide), PatternMode.Bullish)
+		_patternMode = Param(nameof(PatternSide), PatternModes.Bullish)
 		.SetDisplay("Pattern Side", "Candlestick direction to scan", "General")
 		.SetCanOptimize(true);
 
@@ -122,7 +122,7 @@ public class PotentialEntriesStrategy : Strategy
 
 		if (_previousCandle is CandleSnapshot previous)
 		{
-			if (PatternSide == PatternMode.Bullish)
+			if (PatternSide == PatternModes.Bullish)
 			{
 				if (IsBullishHammer(current, previous))
 				{
@@ -137,7 +137,7 @@ public class PotentialEntriesStrategy : Strategy
 					EnterLong(current, previous);
 				}
 			}
-			else if (PatternSide == PatternMode.Bearish)
+			else if (PatternSide == PatternModes.Bearish)
 			{
 				if (IsBearishShootingStar(current, previous))
 				{
@@ -305,7 +305,7 @@ public class PotentialEntriesStrategy : Strategy
 	/// <summary>
 	/// Directional mode for candlestick patterns.
 	/// </summary>
-	public enum PatternMode
+	public enum PatternModes
 	{
 		/// <summary>
 		/// Evaluate bullish reversal and momentum signals only.

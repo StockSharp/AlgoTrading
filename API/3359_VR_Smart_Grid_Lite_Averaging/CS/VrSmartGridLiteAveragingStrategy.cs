@@ -21,7 +21,7 @@ public class VrSmartGridLiteAveragingStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _startVolume;
 	private readonly StrategyParam<decimal> _maxVolume;
-	private readonly StrategyParam<CloseMode> _closeMode;
+	private readonly StrategyParam<CloseModes> _closeMode;
 	private readonly StrategyParam<decimal> _orderStepPips;
 	private readonly StrategyParam<decimal> _minimalProfitPips;
 	private readonly StrategyParam<DataType> _candleType;
@@ -34,7 +34,7 @@ public class VrSmartGridLiteAveragingStrategy : Strategy
 	/// <summary>
 	/// Defines how the strategy exits grid positions.
 	/// </summary>
-	public enum CloseMode
+	public enum CloseModes
 	{
 		/// <summary>
 		/// Close the most extreme pair using the weighted average price.
@@ -66,7 +66,7 @@ public class VrSmartGridLiteAveragingStrategy : Strategy
 			.SetDisplay("Max Volume", "Maximum allowed trade volume per order", "Risk")
 			.SetCanOptimize(true);
 
-		_closeMode = Param(nameof(Mode), CloseMode.Average)
+		_closeMode = Param(nameof(Mode), CloseModes.Average)
 			.SetDisplay("Close Mode", "Averaging or partial close logic for managing the grid", "Risk Management");
 
 		_orderStepPips = Param(nameof(OrderStepPips), 390m)
@@ -113,7 +113,7 @@ public class VrSmartGridLiteAveragingStrategy : Strategy
 	/// <summary>
 	/// Exit logic applied when multiple grid orders are active.
 	/// </summary>
-	public CloseMode Mode
+	public CloseModes Mode
 	{
 		get => _closeMode.Value;
 		set => _closeMode.Value = value;
@@ -222,10 +222,10 @@ public class VrSmartGridLiteAveragingStrategy : Strategy
 	{
 		switch (Mode)
 		{
-			case CloseMode.Average:
+			case CloseModes.Average:
 				HandleAverageMode(candle);
 				break;
-			case CloseMode.PartialClose:
+			case CloseModes.PartialClose:
 				HandlePartialCloseMode(candle);
 				break;
 		}

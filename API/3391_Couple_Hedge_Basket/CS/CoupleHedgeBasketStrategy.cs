@@ -23,22 +23,22 @@ public class CoupleHedgeBasketStrategy : Strategy
 	private readonly GroupSlot[] _groups;
 	private readonly StrategyParam<int> _groupCount;
 
-	private readonly StrategyParam<OperationMode> _operationMode;
-	private readonly StrategyParam<SideSelection> _sideSelection;
-	private readonly StrategyParam<StepMode> _stepMode;
-	private readonly StrategyParam<StepProgression> _stepProgression;
+	private readonly StrategyParam<OperationModes> _operationMode;
+	private readonly StrategyParam<SideSelections> _sideSelection;
+	private readonly StrategyParam<StepModes> _stepMode;
+	private readonly StrategyParam<StepProgressions> _stepProgression;
 	private readonly StrategyParam<int> _minutesBetweenOrders;
 	private readonly StrategyParam<int> _maximumGroups;
-	private readonly StrategyParam<CloseProfitMode> _closeProfitMode;
+	private readonly StrategyParam<CloseProfitModes> _closeProfitMode;
 	private readonly StrategyParam<decimal> _targetCloseProfit;
 	private readonly StrategyParam<int> _delayCloseProfit;
-	private readonly StrategyParam<CloseLossMode> _closeLossMode;
+	private readonly StrategyParam<CloseLossModes> _closeLossMode;
 	private readonly StrategyParam<decimal> _targetCloseLoss;
 	private readonly StrategyParam<int> _delayCloseLoss;
 	private readonly StrategyParam<bool> _autoLot;
 	private readonly StrategyParam<decimal> _riskFactor;
 	private readonly StrategyParam<decimal> _manualLotSize;
-	private readonly StrategyParam<LotProgression> _lotProgression;
+	private readonly StrategyParam<LotProgressions> _lotProgression;
 	private readonly StrategyParam<decimal> _lotProgressionFactor;
 	private readonly StrategyParam<decimal> _stepProgressionFactor;
 	private readonly StrategyParam<bool> _useFairLotSize;
@@ -57,7 +57,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 	/// <summary>
 	/// Mode that controls how the strategy should behave.
 	/// </summary>
-	public OperationMode OperationMode
+	public OperationModes OperationModes
 	{
 		get => _operationMode.Value;
 		set => _operationMode.Value = value;
@@ -66,7 +66,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 	/// <summary>
 	/// Selects which sides of the hedge should be traded.
 	/// </summary>
-	public SideSelection SideSelection
+	public SideSelections SideSelections
 	{
 		get => _sideSelection.Value;
 		set => _sideSelection.Value = value;
@@ -75,7 +75,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 	/// <summary>
 	/// Defines how new entries in loss should be opened.
 	/// </summary>
-	public StepMode StepMode
+	public StepModes StepModes
 	{
 		get => _stepMode.Value;
 		set => _stepMode.Value = value;
@@ -84,7 +84,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 	/// <summary>
 	/// Pattern used to extend the entry step when averaging down.
 	/// </summary>
-	public StepProgression StepProgression
+	public StepProgressions StepProgressions
 	{
 		get => _stepProgression.Value;
 		set => _stepProgression.Value = value;
@@ -117,7 +117,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 	/// <summary>
 	/// Determines the closing behaviour when the basket is profitable.
 	/// </summary>
-	public CloseProfitMode CloseProfitMode
+	public CloseProfitModes CloseProfitModes
 	{
 		get => _closeProfitMode.Value;
 		set => _closeProfitMode.Value = value;
@@ -144,7 +144,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 	/// <summary>
 	/// Determines how to close the basket when it is losing.
 	/// </summary>
-	public CloseLossMode CloseLossMode
+	public CloseLossModes CloseLossModes
 	{
 		get => _closeLossMode.Value;
 		set => _closeLossMode.Value = value;
@@ -198,7 +198,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 	/// <summary>
 	/// Progression applied to volumes when scaling into a basket.
 	/// </summary>
-	public LotProgression LotProgression
+	public LotProgressions LotProgressions
 	{
 		get => _lotProgression.Value;
 		set => _lotProgression.Value = value;
@@ -335,16 +335,16 @@ public class CoupleHedgeBasketStrategy : Strategy
 	/// </summary>
 	public CoupleHedgeBasketStrategy()
 	{
-		_operationMode = Param(nameof(OperationMode), OperationMode.NormalOperation)
+		_operationMode = Param(nameof(OperationModes), OperationModes.NormalOperation)
 		.SetDisplay("Operation Mode", "Select how the robot behaves", "General");
 
-		_sideSelection = Param(nameof(SideSelection), SideSelection.OpenPlusAndMinus)
+		_sideSelection = Param(nameof(SideSelections), SideSelections.OpenPlusAndMinus)
 		.SetDisplay("Side Selection", "Choose which sides should be traded", "General");
 
-		_stepMode = Param(nameof(StepMode), StepMode.OpenWithManualStep)
+		_stepMode = Param(nameof(StepModes), StepModes.OpenWithManualStep)
 		.SetDisplay("Step Mode", "How new baskets are opened", "Risk Management");
 
-		_stepProgression = Param(nameof(StepProgression), StepProgression.Geometrical)
+		_stepProgression = Param(nameof(StepProgressions), StepProgressions.Geometrical)
 		.SetDisplay("Step Progression", "How the step grows when adding baskets", "Risk Management");
 
 		_minutesBetweenOrders = Param(nameof(MinutesBetweenOrders), 5)
@@ -355,7 +355,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Maximum Groups", "Limit the number of simultaneously trading groups", "General");
 
-		_closeProfitMode = Param(nameof(CloseProfitMode), CloseProfitMode.BothSides)
+		_closeProfitMode = Param(nameof(CloseProfitModes), CloseProfitModes.BothSides)
 		.SetDisplay("Close Profit Mode", "How baskets are closed when profitable", "Exits");
 
 		_targetCloseProfit = Param(nameof(TargetCloseProfit), 100m)
@@ -367,7 +367,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Profit Delay", "Seconds to wait before closing in profit", "Exits");
 
-		_closeLossMode = Param(nameof(CloseLossMode), CloseLossMode.NotCloseInLoss)
+		_closeLossMode = Param(nameof(CloseLossModes), CloseLossModes.NotCloseInLoss)
 		.SetDisplay("Close Loss Mode", "How baskets are closed when losing", "Exits");
 
 		_targetCloseLoss = Param(nameof(TargetCloseLoss), 1000m)
@@ -391,7 +391,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 		.SetDisplay("Manual Lot", "Fixed volume when auto lot is disabled", "Position Sizing")
 		.SetCanOptimize(true);
 
-		_lotProgression = Param(nameof(LotProgression), LotProgression.Geometrical)
+		_lotProgression = Param(nameof(LotProgressions), LotProgressions.Geometrical)
 		.SetDisplay("Lot Progression", "How volume grows for additional baskets", "Position Sizing");
 
 		_lotProgressionFactor = Param(nameof(ProgressionFactor), 1.5m)
@@ -537,16 +537,16 @@ public class CoupleHedgeBasketStrategy : Strategy
 		if (!IsTradingAllowed(now))
 		return;
 
-		var operation = OperationMode;
+		var operation = OperationModes;
 
-		if (operation == OperationMode.StandBy)
+		if (operation == OperationModes.StandBy)
 		return;
 
 		var plusVolume = slot.GetPositionVolume(slot.PlusSecurity, Portfolio, this);
 		var minusVolume = slot.GetPositionVolume(slot.MinusSecurity, Portfolio, this);
 		var hasOpenPositions = plusVolume != 0m || minusVolume != 0m;
 
-		if (operation == OperationMode.CloseImmediatelyAllOrders)
+		if (operation == OperationModes.CloseImmediatelyAllOrders)
 		{
 			// Emergency flatten request from the parameter set.
 			if (hasOpenPositions)
@@ -554,7 +554,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 			return;
 		}
 
-		if (operation == OperationMode.CloseInProfitAndStop && !hasOpenPositions && slot.HasCompletedCycle)
+		if (operation == OperationModes.CloseInProfitAndStop && !hasOpenPositions && slot.HasCompletedCycle)
 		return;
 
 		var groupProfit = GetGroupProfit(slot);
@@ -573,7 +573,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 			return;
 		}
 
-		if (operation == OperationMode.CloseInProfitAndStop)
+		if (operation == OperationModes.CloseInProfitAndStop)
 		return;
 
 		// Abort if the infrastructure is not ready (for example during reconnects).
@@ -584,7 +584,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 		if (!CanOpenMoreBaskets(slot, now))
 		return;
 
-		var stepTrigger = slot.GetNextOpenTrigger(StepMode, StepOpenNext, StepProgression, StepProgressionFactor);
+		var stepTrigger = slot.GetNextOpenTrigger(StepModes, StepOpenNext, StepProgressions, StepProgressionFactor);
 
 		if (!ShouldAverage(groupProfit, stepTrigger, hasOpenPositions))
 		return;
@@ -603,7 +603,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 
 	private bool ShouldAverage(decimal groupProfit, decimal trigger, bool hasOpenPositions)
 	{
-		if (StepMode == StepMode.NotOpenInLoss && hasOpenPositions)
+		if (StepModes == StepModes.NotOpenInLoss && hasOpenPositions)
 		return false;
 
 		if (!hasOpenPositions)
@@ -633,7 +633,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 		var plus = slot.PlusSecurity!;
 		var minus = slot.MinusSecurity!;
 
-		var side = SideSelection;
+		var side = SideSelections;
 
 		var plusVolume = lot;
 		var minusVolume = lot;
@@ -661,7 +661,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 
 		switch (side)
 		{
-			case SideSelection.OpenPlusAndMinus:
+			case SideSelections.OpenPlusAndMinus:
 			if (plusVolume > 0m)
 			BuyMarket(plusVolume, security: plus);
 
@@ -669,18 +669,18 @@ public class CoupleHedgeBasketStrategy : Strategy
 			SellMarket(minusVolume, security: minus);
 			break;
 
-			case SideSelection.OpenOnlyPlus:
+			case SideSelections.OpenOnlyPlus:
 			if (plusVolume > 0m)
 			BuyMarket(plusVolume, security: plus);
 			break;
 
-			case SideSelection.OpenOnlyMinus:
+			case SideSelections.OpenOnlyMinus:
 			if (minusVolume > 0m)
 			SellMarket(minusVolume, security: minus);
 			break;
 		}
 
-		slot.RegisterOpen(time, StepMode, StepProgression, StepProgressionFactor, StepOpenNext);
+		slot.RegisterOpen(time, StepModes, StepProgressions, StepProgressionFactor, StepOpenNext);
 	}
 
 	private void CloseGroup(GroupSlot slot, decimal plusVolume, decimal minusVolume)
@@ -727,7 +727,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 			lot = ManualLotSize;
 		}
 
-		var multiplier = slot.GetLotMultiplier(LotProgression, ProgressionFactor);
+		var multiplier = slot.GetLotMultiplier(LotProgressions, ProgressionFactor);
 
 		lot *= multiplier;
 
@@ -739,22 +739,22 @@ public class CoupleHedgeBasketStrategy : Strategy
 		if (TargetCloseProfit <= 0m)
 		return false;
 
-		return CloseProfitMode switch
+		return CloseProfitModes switch
 		{
-			CloseProfitMode.SideBySide => slot.EvaluateSideClose(TargetCloseProfit, plusProfit, minusProfit, DelayCloseProfit, now, true),
+			CloseProfitModes.SideBySide => slot.EvaluateSideClose(TargetCloseProfit, plusProfit, minusProfit, DelayCloseProfit, now, true),
 			_ => slot.EvaluateBasketClose(TargetCloseProfit, groupProfit, DelayCloseProfit, now, true),
 		};
 	}
 
 	private bool ShouldCloseInLoss(GroupSlot slot, decimal groupProfit, decimal plusProfit, decimal minusProfit, DateTimeOffset now)
 	{
-		if (TargetCloseLoss <= 0m || CloseLossMode == CloseLossMode.NotCloseInLoss)
+		if (TargetCloseLoss <= 0m || CloseLossModes == CloseLossModes.NotCloseInLoss)
 		return false;
 
-		return CloseLossMode switch
+		return CloseLossModes switch
 		{
-			CloseLossMode.WholeSide => slot.EvaluateSideClose(TargetCloseLoss, plusProfit, minusProfit, DelayCloseLoss, now, false),
-			CloseLossMode.PartialSide => slot.EvaluateBasketClose(TargetCloseLoss, groupProfit, DelayCloseLoss, now, false),
+			CloseLossModes.WholeSide => slot.EvaluateSideClose(TargetCloseLoss, plusProfit, minusProfit, DelayCloseLoss, now, false),
+			CloseLossModes.PartialSide => slot.EvaluateBasketClose(TargetCloseLoss, groupProfit, DelayCloseLoss, now, false),
 			_ => false,
 		};
 	}
@@ -1038,19 +1038,19 @@ public class CoupleHedgeBasketStrategy : Strategy
 			return step > 0m ? step : 1m;
 		}
 
-		public decimal GetLotMultiplier(LotProgression mode, decimal factor)
+		public decimal GetLotMultiplier(LotProgressions mode, decimal factor)
 		{
 			return mode switch
 			{
-				LotProgression.StaticalLot => 1m,
-				LotProgression.GeometricalLot => (decimal)Math.Pow((double)factor, BasketNumber),
-				LotProgression.ExponentialLot => (decimal)Math.Exp(BasketNumber * Math.Log((double)Math.Max(factor, 1.0001m))),
-				LotProgression.DecreasesLot => 1m / (decimal)Math.Pow((double)factor, BasketNumber),
+				LotProgressions.StaticalLot => 1m,
+				LotProgressions.GeometricalLot => (decimal)Math.Pow((double)factor, BasketNumber),
+				LotProgressions.ExponentialLot => (decimal)Math.Exp(BasketNumber * Math.Log((double)Math.Max(factor, 1.0001m))),
+				LotProgressions.DecreasesLot => 1m / (decimal)Math.Pow((double)factor, BasketNumber),
 				_ => 1m,
 			};
 		}
 
-		public decimal GetNextOpenTrigger(StepMode mode, decimal initial, StepProgression progression, decimal factor)
+		public decimal GetNextOpenTrigger(StepModes mode, decimal initial, StepProgressions progression, decimal factor)
 		{
 			if (BasketNumber == 0 || _nextTrigger == 0m)
 			{
@@ -1061,16 +1061,16 @@ public class CoupleHedgeBasketStrategy : Strategy
 			return _nextTrigger;
 		}
 
-		private decimal CalculateBaseStep(StepMode mode, decimal initial)
+		private decimal CalculateBaseStep(StepModes mode, decimal initial)
 		{
 			return mode switch
 			{
-				StepMode.OpenWithAutoStep => _rangeAverage > 0m ? Math.Max(initial, _rangeAverage) : initial,
+				StepModes.OpenWithAutoStep => _rangeAverage > 0m ? Math.Max(initial, _rangeAverage) : initial,
 				_ => initial,
 			};
 		}
 
-		public void RegisterOpen(DateTimeOffset time, StepMode mode, StepProgression progression, decimal factor, decimal initial)
+		public void RegisterOpen(DateTimeOffset time, StepModes mode, StepProgressions progression, decimal factor, decimal initial)
 		{
 			LastOpenTime = time;
 			BasketNumber++;
@@ -1082,9 +1082,9 @@ public class CoupleHedgeBasketStrategy : Strategy
 
 			var multiplier = progression switch
 			{
-				StepProgression.StaticalStep => 1m,
-				StepProgression.GeometricalStep => (decimal)Math.Pow((double)factor, BasketNumber),
-				StepProgression.ExponentialStep => (decimal)Math.Exp(BasketNumber * Math.Log((double)Math.Max(factor, 1.0001m))),
+				StepProgressions.StaticalStep => 1m,
+				StepProgressions.GeometricalStep => (decimal)Math.Pow((double)factor, BasketNumber),
+				StepProgressions.ExponentialStep => (decimal)Math.Exp(BasketNumber * Math.Log((double)Math.Max(factor, 1.0001m))),
 				_ => 1m,
 			};
 
@@ -1183,7 +1183,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 	/// <summary>
 	/// Trading modes available for the strategy.
 	/// </summary>
-	public enum OperationMode
+	public enum OperationModes
 	{
 		StandBy,
 		NormalOperation,
@@ -1194,7 +1194,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 	/// <summary>
 	/// Which sides of the hedge should be traded.
 	/// </summary>
-	public enum SideSelection
+	public enum SideSelections
 	{
 		OpenOnlyPlus,
 		OpenOnlyMinus,
@@ -1204,7 +1204,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 	/// <summary>
 	/// Defines how new baskets should be opened when the current basket is losing.
 	/// </summary>
-	public enum StepMode
+	public enum StepModes
 	{
 		NotOpenInLoss,
 		OpenWithManualStep,
@@ -1214,7 +1214,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 	/// <summary>
 	/// Progression rules used to grow the step.
 	/// </summary>
-	public enum StepProgression
+	public enum StepProgressions
 	{
 		StaticalStep,
 		GeometricalStep,
@@ -1224,7 +1224,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 	/// <summary>
 	/// Closing behaviour for profitable baskets.
 	/// </summary>
-	public enum CloseProfitMode
+	public enum CloseProfitModes
 	{
 		SideBySide,
 		BothSides,
@@ -1236,7 +1236,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 	/// <summary>
 	/// Closing behaviour for losing baskets.
 	/// </summary>
-	public enum CloseLossMode
+	public enum CloseLossModes
 	{
 		WholeSide,
 		PartialSide,
@@ -1246,7 +1246,7 @@ public class CoupleHedgeBasketStrategy : Strategy
 	/// <summary>
 	/// Lot progression rules when scaling into a basket.
 	/// </summary>
-	public enum LotProgression
+	public enum LotProgressions
 	{
 		StaticalLot,
 		GeometricalLot,

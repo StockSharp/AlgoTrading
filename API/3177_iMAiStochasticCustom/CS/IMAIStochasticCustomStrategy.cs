@@ -22,11 +22,11 @@ public class IMAIStochasticCustomStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _trailingStopPips;
 	private readonly StrategyParam<int> _trailingStepPips;
-	private readonly StrategyParam<VolumeMode> _volumeMode;
+	private readonly StrategyParam<VolumeModes> _volumeMode;
 	private readonly StrategyParam<decimal> _volumeValue;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MaMethod> _maMethod;
+	private readonly StrategyParam<MaMethods> _maMethod;
 	private readonly StrategyParam<int> _levelUpPips;
 	private readonly StrategyParam<int> _levelDownPips;
 	private readonly StrategyParam<int> _stochasticKPeriod;
@@ -76,7 +76,7 @@ public class IMAIStochasticCustomStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(0, 50, 5);
 
-		_volumeMode = Param(nameof(ManagementMode), VolumeMode.RiskPercent)
+		_volumeMode = Param(nameof(ManagementMode), VolumeModes.RiskPercent)
 		.SetDisplay("Money Management", "Volume sizing rule applied to new orders.", "Risk");
 
 		_volumeValue = Param(nameof(VolumeValue), 1m)
@@ -93,7 +93,7 @@ public class IMAIStochasticCustomStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("MA Shift", "Number of completed bars used to shift the moving average.", "Indicators");
 
-		_maMethod = Param(nameof(MaMethod), MaMethod.Smoothed)
+		_maMethod = Param(nameof(MaMethods), MaMethods.Smoothed)
 		.SetDisplay("MA Method", "Calculation method for the moving average envelope.", "Indicators");
 
 		_levelUpPips = Param(nameof(LevelUpPips), 80)
@@ -164,7 +164,7 @@ public class IMAIStochasticCustomStrategy : Strategy
 		set => _trailingStepPips.Value = value;
 	}
 
-	public VolumeMode ManagementMode
+	public VolumeModes ManagementMode
 	{
 		get => _volumeMode.Value;
 		set => _volumeMode.Value = value;
@@ -188,7 +188,7 @@ public class IMAIStochasticCustomStrategy : Strategy
 		set => _maShift.Value = value;
 	}
 
-	public MaMethod MaMethod
+	public MaMethods MaMethods
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -264,7 +264,7 @@ public class IMAIStochasticCustomStrategy : Strategy
 
 		_pipSize = GetPipSize();
 
-		_movingAverage = CreateMovingAverage(MaMethod, Math.Max(1, MaPeriod));
+		_movingAverage = CreateMovingAverage(MaMethods, Math.Max(1, MaPeriod));
 		_stochastic = new StochasticOscillator
 		{
 			Length = Math.Max(1, StochasticKPeriod),
@@ -474,10 +474,10 @@ public class IMAIStochasticCustomStrategy : Strategy
 
 	private decimal CalculateOrderVolume()
 	{
-		if (ManagementMode == VolumeMode.FixedLot)
+		if (ManagementMode == VolumeModes.FixedLot)
 		return VolumeValue;
 
-		if (ManagementMode != VolumeMode.RiskPercent)
+		if (ManagementMode != VolumeModes.RiskPercent)
 		return 0m;
 
 		if (VolumeValue <= 0m)
@@ -570,24 +570,24 @@ public class IMAIStochasticCustomStrategy : Strategy
 		return decimals >= 3 ? step * 10m : step;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MaMethod method, int period)
+	private static LengthIndicator<decimal> CreateMovingAverage(MaMethods method, int period)
 	{
 		return method switch
 		{
-			MaMethod.Simple => new SimpleMovingAverage { Length = period },
-			MaMethod.Exponential => new ExponentialMovingAverage { Length = period },
-			MaMethod.LinearWeighted => new LinearWeightedMovingAverage { Length = period },
+			MaMethods.Simple => new SimpleMovingAverage { Length = period },
+			MaMethods.Exponential => new ExponentialMovingAverage { Length = period },
+			MaMethods.LinearWeighted => new LinearWeightedMovingAverage { Length = period },
 			_ => new SmoothedMovingAverage { Length = period }
 		};
 	}
 
-	public enum VolumeMode
+	public enum VolumeModes
 	{
 		FixedLot,
 		RiskPercent
 	}
 
-	public enum MaMethod
+	public enum MaMethods
 	{
 		Simple,
 		Exponential,

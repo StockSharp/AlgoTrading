@@ -19,17 +19,17 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class RrsNonDirectionalStrategy : Strategy
 {
-	private readonly StrategyParam<RrsTradingMode> _tradingMode;
+	private readonly StrategyParam<RrsTradingModes> _tradingMode;
 	private readonly StrategyParam<bool> _allowNewTrades;
 	private readonly StrategyParam<decimal> _tradeVolume;
-	private readonly StrategyParam<RrsStopMode> _stopMode;
+	private readonly StrategyParam<RrsStopModes> _stopMode;
 	private readonly StrategyParam<int> _stopLossPoints;
-	private readonly StrategyParam<RrsTakeMode> _takeMode;
+	private readonly StrategyParam<RrsTakeModes> _takeMode;
 	private readonly StrategyParam<int> _takeProfitPoints;
-	private readonly StrategyParam<RrsTrailingMode> _trailingMode;
+	private readonly StrategyParam<RrsTrailingModes> _trailingMode;
 	private readonly StrategyParam<int> _trailingStartPoints;
 	private readonly StrategyParam<int> _trailingGapPoints;
-	private readonly StrategyParam<RrsRiskMode> _riskMode;
+	private readonly StrategyParam<RrsRiskModes> _riskMode;
 	private readonly StrategyParam<decimal> _moneyInRisk;
 	private readonly StrategyParam<int> _maxSpreadPoints;
 	private readonly StrategyParam<int> _slippagePoints;
@@ -56,7 +56,7 @@ public class RrsNonDirectionalStrategy : Strategy
 	/// </summary>
 	public RrsNonDirectionalStrategy()
 	{
-		_tradingMode = Param(nameof(TradingMode), RrsTradingMode.HedgeStyle)
+		_tradingMode = Param(nameof(TradingMode), RrsTradingModes.HedgeStyle)
 		.SetDisplay("Trading Strategy", "Entry style reproduced from the MT4 extern Trading_Strategy", "General")
 		.SetCanOptimize(true);
 
@@ -68,7 +68,7 @@ public class RrsNonDirectionalStrategy : Strategy
 		.SetDisplay("Trade Volume", "Base volume used for market orders", "General")
 		.SetCanOptimize(true);
 
-		_stopMode = Param(nameof(StopMode), RrsStopMode.Virtual)
+		_stopMode = Param(nameof(StopMode), RrsStopModes.Virtual)
 		.SetDisplay("Stop-Loss Type", "Chooses between virtual or classic stop-loss handling", "Risk")
 		.SetCanOptimize(false);
 
@@ -76,7 +76,7 @@ public class RrsNonDirectionalStrategy : Strategy
 		.SetDisplay("Stop-Loss (points)", "MetaTrader points converted with the instrument price step", "Risk")
 		.SetCanOptimize(true);
 
-		_takeMode = Param(nameof(TakeMode), RrsTakeMode.Virtual)
+		_takeMode = Param(nameof(TakeMode), RrsTakeModes.Virtual)
 		.SetDisplay("Take-Profit Type", "Chooses between virtual or classic take-profit handling", "Risk")
 		.SetCanOptimize(false);
 
@@ -84,7 +84,7 @@ public class RrsNonDirectionalStrategy : Strategy
 		.SetDisplay("Take-Profit (points)", "MetaTrader points converted with the instrument price step", "Risk")
 		.SetCanOptimize(true);
 
-		_trailingMode = Param(nameof(TrailingMode), RrsTrailingMode.Virtual)
+		_trailingMode = Param(nameof(TrailingMode), RrsTrailingModes.Virtual)
 		.SetDisplay("Trailing Type", "Switch between virtual and classic trailing implementation", "Risk")
 		.SetCanOptimize(false);
 
@@ -96,7 +96,7 @@ public class RrsNonDirectionalStrategy : Strategy
 		.SetDisplay("Trailing Gap (points)", "Distance maintained behind the best price once trailing is active", "Risk")
 		.SetCanOptimize(true);
 
-		_riskMode = Param(nameof(RiskMode), RrsRiskMode.BalancePercentage)
+		_riskMode = Param(nameof(RiskMode), RrsRiskModes.BalancePercentage)
 		.SetDisplay("Risk Mode", "Determines how MoneyInRisk is interpreted", "Risk")
 		.SetCanOptimize(false);
 
@@ -120,7 +120,7 @@ public class RrsNonDirectionalStrategy : Strategy
 	/// <summary>
 	/// Selected entry mode from the original EA.
 	/// </summary>
-	public RrsTradingMode TradingMode
+	public RrsTradingModes TradingMode
 	{
 		get => _tradingMode.Value;
 		set => _tradingMode.Value = value;
@@ -147,7 +147,7 @@ public class RrsNonDirectionalStrategy : Strategy
 	/// <summary>
 	/// Stop-loss handling mode.
 	/// </summary>
-	public RrsStopMode StopMode
+	public RrsStopModes StopMode
 	{
 		get => _stopMode.Value;
 		set => _stopMode.Value = value;
@@ -165,7 +165,7 @@ public class RrsNonDirectionalStrategy : Strategy
 	/// <summary>
 	/// Take-profit handling mode.
 	/// </summary>
-	public RrsTakeMode TakeMode
+	public RrsTakeModes TakeMode
 	{
 		get => _takeMode.Value;
 		set => _takeMode.Value = value;
@@ -183,7 +183,7 @@ public class RrsNonDirectionalStrategy : Strategy
 	/// <summary>
 	/// Trailing management mode.
 	/// </summary>
-	public RrsTrailingMode TrailingMode
+	public RrsTrailingModes TrailingMode
 	{
 		get => _trailingMode.Value;
 		set => _trailingMode.Value = value;
@@ -210,7 +210,7 @@ public class RrsNonDirectionalStrategy : Strategy
 	/// <summary>
 	/// Risk management interpretation for <see cref="MoneyInRisk"/>.
 	/// </summary>
-	public RrsRiskMode RiskMode
+	public RrsRiskModes RiskMode
 	{
 		get => _riskMode.Value;
 		set => _riskMode.Value = value;
@@ -296,7 +296,7 @@ public class RrsNonDirectionalStrategy : Strategy
 		if (_tickValue <= 0m)
 		_tickValue = 1m;
 
-		if (TradingMode == RrsTradingMode.AutoSwap)
+		if (TradingMode == RrsTradingModes.AutoSwap)
 		InitializeAutoSwap();
 
 		SubscribeLevel1()
@@ -308,7 +308,7 @@ public class RrsNonDirectionalStrategy : Strategy
 
 	private void InitializeAutoSwap()
 	{
-		TradingMode = RrsTradingMode.HedgeStyle;
+		TradingMode = RrsTradingModes.HedgeStyle;
 		LogInfo("AutoSwap mode falls back to HedgeStyle because swap rates are not available through Level1 data.");
 	}
 
@@ -359,7 +359,7 @@ public class RrsNonDirectionalStrategy : Strategy
 
 	private void UpdateTrailingForLong(decimal bid)
 	{
-		if (TrailingMode == RrsTrailingMode.Disabled)
+		if (TrailingMode == RrsTrailingModes.Disabled)
 		return;
 
 		var activation = GetPriceDistance(TrailingStartPoints);
@@ -387,7 +387,7 @@ public class RrsNonDirectionalStrategy : Strategy
 
 	private void UpdateTrailingForShort(decimal ask)
 	{
-		if (TrailingMode == RrsTrailingMode.Disabled)
+		if (TrailingMode == RrsTrailingModes.Disabled)
 		return;
 
 		var activation = GetPriceDistance(TrailingStartPoints);
@@ -454,7 +454,7 @@ public class RrsNonDirectionalStrategy : Strategy
 	private decimal GetRiskThreshold()
 	{
 		var balance = GetPortfolioValue();
-		if (RiskMode == RrsRiskMode.BalancePercentage)
+		if (RiskMode == RrsRiskModes.BalancePercentage)
 		return -Math.Abs(balance * (MoneyInRisk / 100m));
 
 		return -Math.Abs(MoneyInRisk);
@@ -493,23 +493,23 @@ public class RrsNonDirectionalStrategy : Strategy
 
 		switch (TradingMode)
 		{
-			case RrsTradingMode.HedgeStyle:
-			case RrsTradingMode.AutoSwap:
+			case RrsTradingModes.HedgeStyle:
+			case RrsTradingModes.AutoSwap:
 				OpenHedgeReplacement();
 				break;
-			case RrsTradingMode.BuyOrder:
+			case RrsTradingModes.BuyOrder:
 				OpenLong();
 				break;
-			case RrsTradingMode.SellOrder:
+			case RrsTradingModes.SellOrder:
 				OpenShort();
 				break;
-			case RrsTradingMode.BuySellRandom:
+			case RrsTradingModes.BuySellRandom:
 				if (_random.Next(0, 2) == 0)
 				OpenLong();
 				else
 				OpenShort();
 				break;
-			case RrsTradingMode.BuySell:
+			case RrsTradingModes.BuySell:
 				if (_lastClosedSide == Sides.Sell || _lastClosedSide is null)
 				OpenLong();
 				else
@@ -558,8 +558,8 @@ public class RrsNonDirectionalStrategy : Strategy
 		var stopDistance = GetPriceDistance(StopLossPoints);
 		var takeDistance = GetPriceDistance(TakeProfitPoints);
 
-		_longStopPrice = StopMode == RrsStopMode.Disabled || stopDistance <= 0m ? null : entryPrice - stopDistance;
-		_longTakePrice = TakeMode == RrsTakeMode.Disabled || takeDistance <= 0m ? null : entryPrice + takeDistance;
+		_longStopPrice = StopMode == RrsStopModes.Disabled || stopDistance <= 0m ? null : entryPrice - stopDistance;
+		_longTakePrice = TakeMode == RrsTakeModes.Disabled || takeDistance <= 0m ? null : entryPrice + takeDistance;
 		_longTrailingStop = null;
 	}
 
@@ -572,8 +572,8 @@ public class RrsNonDirectionalStrategy : Strategy
 		var stopDistance = GetPriceDistance(StopLossPoints);
 		var takeDistance = GetPriceDistance(TakeProfitPoints);
 
-		_shortStopPrice = StopMode == RrsStopMode.Disabled || stopDistance <= 0m ? null : entryPrice + stopDistance;
-		_shortTakePrice = TakeMode == RrsTakeMode.Disabled || takeDistance <= 0m ? null : entryPrice - takeDistance;
+		_shortStopPrice = StopMode == RrsStopModes.Disabled || stopDistance <= 0m ? null : entryPrice + stopDistance;
+		_shortTakePrice = TakeMode == RrsTakeModes.Disabled || takeDistance <= 0m ? null : entryPrice - takeDistance;
 		_shortTrailingStop = null;
 	}
 
@@ -623,7 +623,7 @@ public class RrsNonDirectionalStrategy : Strategy
 /// <summary>
 /// Entry modes reproduced from the MT4 enumerations.
 /// </summary>
-public enum RrsTradingMode
+public enum RrsTradingModes
 {
 	HedgeStyle,
 	BuySellRandom,
@@ -636,7 +636,7 @@ public enum RrsTradingMode
 /// <summary>
 /// Stop-loss handling options.
 /// </summary>
-public enum RrsStopMode
+public enum RrsStopModes
 {
 	Disabled,
 	Virtual,
@@ -646,7 +646,7 @@ public enum RrsStopMode
 /// <summary>
 /// Take-profit handling options.
 /// </summary>
-public enum RrsTakeMode
+public enum RrsTakeModes
 {
 	Disabled,
 	Virtual,
@@ -656,7 +656,7 @@ public enum RrsTakeMode
 /// <summary>
 /// Trailing management options.
 /// </summary>
-public enum RrsTrailingMode
+public enum RrsTrailingModes
 {
 	Disabled,
 	Virtual,
@@ -666,7 +666,7 @@ public enum RrsTrailingMode
 /// <summary>
 /// Interpretation modes for the risk threshold.
 /// </summary>
-public enum RrsRiskMode
+public enum RrsRiskModes
 {
 	BalancePercentage,
 	FixedMoney,

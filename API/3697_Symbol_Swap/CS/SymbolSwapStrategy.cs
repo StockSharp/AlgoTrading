@@ -24,7 +24,7 @@ public class SymbolSwapStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<string> _watchedSecurityId;
-	private readonly StrategyParam<PanelOutputMode> _outputMode;
+	private readonly StrategyParam<PanelOutputModes> _outputMode;
 
 	private ISubscription _candleSubscription;
 	private ISubscription _level1Subscription;
@@ -47,7 +47,7 @@ public class SymbolSwapStrategy : Strategy
 	/// <summary>
 	/// Defines how the status panel is rendered.
 	/// </summary>
-	public enum PanelOutputMode
+	public enum PanelOutputModes
 	{
 		/// <summary>
 		/// Write updates to the strategy log like MetaTrader's Comment window.
@@ -71,7 +71,7 @@ public class SymbolSwapStrategy : Strategy
 		_watchedSecurityId = Param(nameof(WatchedSecurityId), string.Empty)
 		.SetDisplay("Watched security id", "Optional identifier resolved through the SecurityProvider to override Strategy.Security.", "General");
 
-		_outputMode = Param(nameof(OutputMode), PanelOutputMode.Chart)
+		_outputMode = Param(nameof(OutputMode), PanelOutputModes.Chart)
 		.SetDisplay("Output mode", "Controls whether the panel is drawn on the chart or written to the log.", "Visualization");
 	}
 
@@ -96,7 +96,7 @@ public class SymbolSwapStrategy : Strategy
 	/// <summary>
 	/// Controls the rendering destination of the information block.
 	/// </summary>
-	public PanelOutputMode OutputMode
+	public PanelOutputModes OutputMode
 	{
 		get => _outputMode.Value;
 		set => _outputMode.Value = value;
@@ -200,7 +200,7 @@ public class SymbolSwapStrategy : Strategy
 		_level1Subscription = SubscribeLevel1(security);
 		_level1Subscription.Bind(level1 => ProcessLevel1(level1, security)).Start();
 
-		if (OutputMode == PanelOutputMode.Chart)
+		if (OutputMode == PanelOutputModes.Chart)
 		{
 			_chartArea ??= CreateChartArea();
 
@@ -252,7 +252,7 @@ public class SymbolSwapStrategy : Strategy
 
 		switch (OutputMode)
 		{
-			case PanelOutputMode.Log:
+			case PanelOutputModes.Log:
 			{
 				if (text == _lastLoggedText)
 					return;
@@ -261,7 +261,7 @@ public class SymbolSwapStrategy : Strategy
 				_lastLoggedText = text;
 				break;
 			}
-			case PanelOutputMode.Chart:
+			case PanelOutputModes.Chart:
 			{
 				var area = _chartArea;
 				if (area == null)

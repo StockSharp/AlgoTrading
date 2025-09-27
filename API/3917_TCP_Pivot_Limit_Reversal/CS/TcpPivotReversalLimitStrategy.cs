@@ -45,7 +45,7 @@ public class TcpPivotReversalLimitStrategy : Strategy
 	private ICandleMessage _previousCandle;
 	private ICandleMessage _previousPreviousCandle;
 
-	private PositionSide _positionSide = PositionSide.Flat;
+	private PositionSides _positionSide = PositionSides.Flat;
 	private decimal? _currentStopPrice;
 	private decimal? _currentTargetPrice;
 	private decimal? _trailingExtreme;
@@ -150,7 +150,7 @@ public class TcpPivotReversalLimitStrategy : Strategy
 		_previousDayClose = 0m;
 		_previousCandle = null;
 		_previousPreviousCandle = null;
-		_positionSide = PositionSide.Flat;
+		_positionSide = PositionSides.Flat;
 		_currentStopPrice = null;
 		_currentTargetPrice = null;
 		_trailingExtreme = null;
@@ -253,8 +253,8 @@ public class TcpPivotReversalLimitStrategy : Strategy
 			return;
 		}
 
-		if (_positionSide == PositionSide.Flat)
-		_positionSide = Position > 0m ? PositionSide.Long : PositionSide.Short;
+		if (_positionSide == PositionSides.Flat)
+		_positionSide = Position > 0m ? PositionSides.Long : PositionSides.Short;
 
 		if (IntradayTrading && candle.CloseTime.Hour == 23)
 		{
@@ -264,7 +264,7 @@ public class TcpPivotReversalLimitStrategy : Strategy
 			return;
 		}
 
-		if (_positionSide == PositionSide.Long)
+		if (_positionSide == PositionSides.Long)
 		{
 			if (_currentStopPrice.HasValue && candle.LowPrice <= _currentStopPrice.Value)
 			{
@@ -284,7 +284,7 @@ public class TcpPivotReversalLimitStrategy : Strategy
 
 			UpdateLongTrailing(candle);
 		}
-		else if (_positionSide == PositionSide.Short)
+		else if (_positionSide == PositionSides.Short)
 		{
 			if (_currentStopPrice.HasValue && candle.HighPrice >= _currentStopPrice.Value)
 			{
@@ -382,7 +382,7 @@ public class TcpPivotReversalLimitStrategy : Strategy
 		{
 			LogInfo($"Opening short. Level={sellLevel:F5}, Stop={sellStop:F5}, Target={sellTarget:F5}");
 			SellMarket(Volume);
-			_positionSide = PositionSide.Short;
+			_positionSide = PositionSides.Short;
 			_currentStopPrice = sellStop;
 			_currentTargetPrice = sellTarget;
 			_trailingExtreme = null;
@@ -393,7 +393,7 @@ public class TcpPivotReversalLimitStrategy : Strategy
 		{
 			LogInfo($"Opening long. Level={buyLevel:F5}, Stop={buyStop:F5}, Target={buyTarget:F5}");
 			BuyMarket(Volume);
-			_positionSide = PositionSide.Long;
+			_positionSide = PositionSides.Long;
 			_currentStopPrice = buyStop;
 			_currentTargetPrice = buyTarget;
 			_trailingExtreme = null;
@@ -444,14 +444,14 @@ public class TcpPivotReversalLimitStrategy : Strategy
 	{
 		if (Position == 0m)
 		{
-			_positionSide = PositionSide.Flat;
+			_positionSide = PositionSides.Flat;
 			_currentStopPrice = null;
 			_currentTargetPrice = null;
 			_trailingExtreme = null;
 		}
 	}
 
-	private enum PositionSide
+	private enum PositionSides
 	{
 		Flat,
 		Long,

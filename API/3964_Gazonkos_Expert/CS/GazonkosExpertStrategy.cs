@@ -18,7 +18,7 @@ using StockSharp.Messages;
 /// </summary>
 public class GazonkosExpertStrategy : Strategy
 {
-	private enum TradeState
+	private enum TradeStates
 	{
 		WaitingForSlot,
 		WaitingForImpulse,
@@ -38,7 +38,7 @@ public class GazonkosExpertStrategy : Strategy
 
 	private readonly List<decimal> _closeHistory = new();
 
-	private TradeState _state = TradeState.WaitingForSlot;
+	private TradeStates _state = TradeStates.WaitingForSlot;
 	private Sides? _pendingDirection;
 	private decimal _extremePrice;
 	private int? _lastTradeHour;
@@ -187,7 +187,7 @@ public class GazonkosExpertStrategy : Strategy
 		base.OnReseted();
 
 		_closeHistory.Clear();
-		_state = TradeState.WaitingForSlot;
+		_state = TradeStates.WaitingForSlot;
 		_pendingDirection = null;
 		_extremePrice = 0m;
 		_lastTradeHour = null;
@@ -223,16 +223,16 @@ public class GazonkosExpertStrategy : Strategy
 
 		switch (_state)
 		{
-			case TradeState.WaitingForSlot:
+			case TradeStates.WaitingForSlot:
 				ProcessWaitingForSlot(candle);
 				break;
-			case TradeState.WaitingForImpulse:
+			case TradeStates.WaitingForImpulse:
 				ProcessWaitingForImpulse(candle, t1Close, t2Close);
 				break;
-			case TradeState.MonitoringRetracement:
+			case TradeStates.MonitoringRetracement:
 				ProcessMonitoringRetracement(candle);
 				break;
-			case TradeState.AwaitingExecution:
+			case TradeStates.AwaitingExecution:
 				ProcessAwaitingExecution(candle);
 				break;
 		}
@@ -242,7 +242,7 @@ public class GazonkosExpertStrategy : Strategy
 	{
 		if (CanStartNewCycle(candle.CloseTime))
 		{
-			_state = TradeState.WaitingForImpulse;
+			_state = TradeStates.WaitingForImpulse;
 			LogInfo($"Slot available at {candle.CloseTime:u}.");
 		}
 	}
@@ -260,7 +260,7 @@ public class GazonkosExpertStrategy : Strategy
 			_pendingDirection = Sides.Buy;
 			_extremePrice = Math.Max(candle.HighPrice, candle.ClosePrice);
 			_lastSignalHour = candle.CloseTime.Hour;
-			_state = TradeState.MonitoringRetracement;
+			_state = TradeStates.MonitoringRetracement;
 			LogInfo($"Bullish impulse detected at {candle.CloseTime:u} with diff {difference}.");
 			return;
 		}
@@ -270,7 +270,7 @@ public class GazonkosExpertStrategy : Strategy
 			_pendingDirection = Sides.Sell;
 			_extremePrice = candle.LowPrice > 0m ? Math.Min(candle.LowPrice, candle.ClosePrice) : candle.ClosePrice;
 			_lastSignalHour = candle.CloseTime.Hour;
-			_state = TradeState.MonitoringRetracement;
+			_state = TradeStates.MonitoringRetracement;
 			LogInfo($"Bearish impulse detected at {candle.CloseTime:u} with diff {difference}.");
 		}
 	}
@@ -303,7 +303,7 @@ public class GazonkosExpertStrategy : Strategy
 			var triggerPrice = _extremePrice - retracementDistance;
 			if (candle.ClosePrice <= triggerPrice)
 			{
-				_state = TradeState.AwaitingExecution;
+				_state = TradeStates.AwaitingExecution;
 				LogInfo($"Bullish pullback confirmed at {candle.CloseTime:u}. Trigger price {triggerPrice}.");
 			}
 		}
@@ -313,7 +313,7 @@ public class GazonkosExpertStrategy : Strategy
 			var triggerPrice = _extremePrice + retracementDistance;
 			if (candle.ClosePrice >= triggerPrice)
 			{
-				_state = TradeState.AwaitingExecution;
+				_state = TradeStates.AwaitingExecution;
 				LogInfo($"Bearish pullback confirmed at {candle.CloseTime:u}. Trigger price {triggerPrice}.");
 			}
 		}
@@ -387,7 +387,7 @@ public class GazonkosExpertStrategy : Strategy
 
 	private void ResetState()
 	{
-		_state = TradeState.WaitingForSlot;
+		_state = TradeStates.WaitingForSlot;
 		_pendingDirection = null;
 		_extremePrice = 0m;
 		_lastSignalHour = null;

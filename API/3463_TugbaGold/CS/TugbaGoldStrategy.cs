@@ -22,7 +22,7 @@ public class TugbaGoldStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _startVolume;
 	private readonly StrategyParam<decimal> _maxVolume;
-	private readonly StrategyParam<CloseOrderMode> _closeMode;
+	private readonly StrategyParam<CloseOrderModes> _closeMode;
 	private readonly StrategyParam<decimal> _pointOrderStepPips;
 	private readonly StrategyParam<decimal> _minimalProfitPips;
 	private readonly StrategyParam<DataType> _candleType;
@@ -63,7 +63,7 @@ public class TugbaGoldStrategy : Strategy
 	/// <summary>
 	/// Averaging exit mode.
 	/// </summary>
-	public CloseOrderMode CloseMode
+	public CloseOrderModes CloseMode
 	{
 		get => _closeMode.Value;
 		set => _closeMode.Value = value;
@@ -113,7 +113,7 @@ public class TugbaGoldStrategy : Strategy
 			.SetDisplay("Max Volume", "Upper cap for order volume (0 disables)", "Trading")
 			.SetGreaterThanOrEqualZero();
 
-		_closeMode = Param(nameof(CloseMode), CloseOrderMode.Average)
+		_closeMode = Param(nameof(CloseMode), CloseOrderModes.Average)
 			.SetDisplay("Close Mode", "Averaging exit logic", "Trading");
 
 		_pointOrderStepPips = Param(nameof(PointOrderStepPips), 390m)
@@ -215,7 +215,7 @@ public class TugbaGoldStrategy : Strategy
 			}
 		}
 
-		if (CloseMode == CloseOrderMode.Average)
+		if (CloseMode == CloseOrderModes.Average)
 		{
 			if (buyTarget is decimal bt && buyCount >= 2 && bid >= bt)
 			{
@@ -362,7 +362,7 @@ public class TugbaGoldStrategy : Strategy
 		if (denominator <= 0m)
 			return null;
 
-		if (CloseMode == CloseOrderMode.Average)
+		if (CloseMode == CloseOrderModes.Average)
 		{
 			return (maxEntry.Price * maxEntry.Volume + minEntry.Price * minEntry.Volume) / denominator + minimalProfit;
 		}
@@ -381,7 +381,7 @@ public class TugbaGoldStrategy : Strategy
 		if (denominator <= 0m)
 			return null;
 
-		if (CloseMode == CloseOrderMode.Average)
+		if (CloseMode == CloseOrderModes.Average)
 		{
 			return (maxEntry.Price * maxEntry.Volume + minEntry.Price * minEntry.Volume) / denominator - minimalProfit;
 		}
@@ -593,7 +593,7 @@ public class TugbaGoldStrategy : Strategy
 	/// <summary>
 	/// Exit mode for averaging positions.
 	/// </summary>
-	public enum CloseOrderMode
+	public enum CloseOrderModes
 	{
 		Average,
 		Partial,

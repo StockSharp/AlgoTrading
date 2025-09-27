@@ -21,7 +21,7 @@ public class MaOnMomentumMinProfitStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _momentumPeriod;
 	private readonly StrategyParam<int> _momentumMaPeriod;
-	private readonly StrategyParam<MomentumMovingAverageType> _momentumMaType;
+	private readonly StrategyParam<MomentumMovingAverageTypes> _momentumMaType;
 	private readonly StrategyParam<bool> _reverseSignals;
 	private readonly StrategyParam<bool> _closeOpposite;
 	private readonly StrategyParam<bool> _onlyOnePosition;
@@ -66,7 +66,7 @@ public class MaOnMomentumMinProfitStrategy : Strategy
 	/// <summary>
 	/// Moving average calculation mode applied to momentum.
 	/// </summary>
-	public MomentumMovingAverageType MomentumMovingAverageType
+	public MomentumMovingAverageTypes MomentumMovingAverageTypes
 	{
 		get => _momentumMaType.Value;
 		set => _momentumMaType.Value = value;
@@ -155,7 +155,7 @@ public class MaOnMomentumMinProfitStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(3, 30, 3);
 
-		_momentumMaType = Param(nameof(MomentumMovingAverageType), MomentumMovingAverageType.Smoothed)
+		_momentumMaType = Param(nameof(MomentumMovingAverageTypes), MomentumMovingAverageTypes.Smoothed)
 			.SetDisplay("MA Type", "Moving-average algorithm applied to momentum", "Momentum");
 
 		_reverseSignals = Param(nameof(ReverseSignals), false)
@@ -208,7 +208,7 @@ public class MaOnMomentumMinProfitStrategy : Strategy
 			Length = MomentumPeriod
 		};
 
-		_momentumAverage = CreateMovingAverage(MomentumMovingAverageType, MomentumMovingAveragePeriod);
+		_momentumAverage = CreateMovingAverage(MomentumMovingAverageTypes, MomentumMovingAveragePeriod);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -361,14 +361,14 @@ public class MaOnMomentumMinProfitStrategy : Strategy
 		}
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MomentumMovingAverageType type, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MomentumMovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MomentumMovingAverageType.Simple => new SimpleMovingAverage { Length = length },
-			MomentumMovingAverageType.Exponential => new ExponentialMovingAverage { Length = length },
-			MomentumMovingAverageType.Smoothed => new SmoothedMovingAverage { Length = length },
-			MomentumMovingAverageType.Weighted => new WeightedMovingAverage { Length = length },
+			MomentumMovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
+			MomentumMovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MomentumMovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
+			MomentumMovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
 			_ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
 		};
 	}
@@ -376,7 +376,7 @@ public class MaOnMomentumMinProfitStrategy : Strategy
 	/// <summary>
 	/// Moving-average calculation modes available for momentum smoothing.
 	/// </summary>
-	public enum MomentumMovingAverageType
+	public enum MomentumMovingAverageTypes
 	{
 		Simple,
 		Exponential,

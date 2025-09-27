@@ -27,8 +27,8 @@ public class AmaTraderV21Strategy : Strategy
 	private readonly StrategyParam<decimal> _amaThreshold;
 	private readonly StrategyParam<int> _firstMaPeriod;
 	private readonly StrategyParam<int> _secondMaPeriod;
-	private readonly StrategyParam<HeikenMaMethod> _firstMaMethod;
-	private readonly StrategyParam<HeikenMaMethod> _secondMaMethod;
+	private readonly StrategyParam<HeikenMaMethods> _firstMaMethod;
+	private readonly StrategyParam<HeikenMaMethods> _secondMaMethod;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<decimal> _partialClosePercent;
 	private readonly StrategyParam<int> _stopLossSteps;
@@ -84,10 +84,10 @@ public class AmaTraderV21Strategy : Strategy
 		.SetDisplay("Heiken Second MA", "Length of the second smoothing moving average.", "Heiken")
 		.SetGreaterThanZero();
 
-		_firstMaMethod = Param(nameof(FirstMaMethod), HeikenMaMethod.Smoothed)
+		_firstMaMethod = Param(nameof(FirstMaMethod), HeikenMaMethods.Smoothed)
 		.SetDisplay("First MA Method", "Moving average applied to raw prices before Heiken Ashi calculation.", "Heiken");
 
-		_secondMaMethod = Param(nameof(SecondMaMethod), HeikenMaMethod.LinearWeighted)
+		_secondMaMethod = Param(nameof(SecondMaMethod), HeikenMaMethods.LinearWeighted)
 		.SetDisplay("Second MA Method", "Moving average used to smooth the Heiken Ashi buffers.", "Heiken");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -195,7 +195,7 @@ public class AmaTraderV21Strategy : Strategy
 	/// <summary>
 	/// First smoothing moving average method.
 	/// </summary>
-	public HeikenMaMethod FirstMaMethod
+	public HeikenMaMethods FirstMaMethod
 	{
 		get => _firstMaMethod.Value;
 		set => _firstMaMethod.Value = value;
@@ -204,7 +204,7 @@ public class AmaTraderV21Strategy : Strategy
 	/// <summary>
 	/// Second smoothing moving average method.
 	/// </summary>
-	public HeikenMaMethod SecondMaMethod
+	public HeikenMaMethods SecondMaMethod
 	{
 		get => _secondMaMethod.Value;
 		set => _secondMaMethod.Value = value;
@@ -483,7 +483,7 @@ public class AmaTraderV21Strategy : Strategy
 	/// <summary>
 	/// Available moving average methods for Heiken Ashi smoothing.
 	/// </summary>
-	public enum HeikenMaMethod
+	public enum HeikenMaMethods
 	{
 		Simple,
 		Exponential,
@@ -505,7 +505,7 @@ public class AmaTraderV21Strategy : Strategy
 		private decimal? _previousHaOpen;
 		private decimal? _previousHaClose;
 
-		public HeikenAshiSmoothedCalculator(HeikenMaMethod firstMethod, HeikenMaMethod secondMethod, int firstLength, int secondLength)
+		public HeikenAshiSmoothedCalculator(HeikenMaMethods firstMethod, HeikenMaMethods secondMethod, int firstLength, int secondLength)
 		{
 			_openMa = CreateMovingAverage(firstMethod, firstLength);
 			_closeMa = CreateMovingAverage(firstMethod, firstLength);
@@ -566,14 +566,14 @@ public class AmaTraderV21Strategy : Strategy
 			};
 		}
 
-		private static IIndicator CreateMovingAverage(HeikenMaMethod method, int length)
+		private static IIndicator CreateMovingAverage(HeikenMaMethods method, int length)
 		{
 			return method switch
 			{
-				HeikenMaMethod.Simple => new SimpleMovingAverage { Length = length },
-				HeikenMaMethod.Exponential => new ExponentialMovingAverage { Length = length },
-				HeikenMaMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-				HeikenMaMethod.LinearWeighted => new WeightedMovingAverage { Length = length },
+				HeikenMaMethods.Simple => new SimpleMovingAverage { Length = length },
+				HeikenMaMethods.Exponential => new ExponentialMovingAverage { Length = length },
+				HeikenMaMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+				HeikenMaMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 				_ => new SimpleMovingAverage { Length = length }
 			};
 		}

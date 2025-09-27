@@ -22,7 +22,7 @@ namespace StockSharp.Samples.Strategies;
 public class LoongClockStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<ClockTimeSource> _timeSource;
+	private readonly StrategyParam<ClockTimeSources> _timeSource;
 	private readonly StrategyParam<TimeSpan> _hourTimeRadius;
 	private readonly StrategyParam<TimeSpan> _minuteTimeRadius;
 	private readonly StrategyParam<TimeSpan> _secondTimeRadius;
@@ -42,7 +42,7 @@ public class LoongClockStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles used to anchor the drawing area.", "General");
 
-		_timeSource = Param(nameof(TimeSource), ClockTimeSource.Local)
+		_timeSource = Param(nameof(TimeSource), ClockTimeSources.Local)
 		.SetDisplay("Time Source", "Select which time base should be shown by the clock.", "Clock");
 
 		_hourTimeRadius = Param(nameof(HourTimeRadius), TimeSpan.FromMinutes(8))
@@ -76,7 +76,7 @@ public class LoongClockStrategy : Strategy
 	/// <summary>
 	/// Selects which time base should be visualized.
 	/// </summary>
-	public ClockTimeSource TimeSource
+	public ClockTimeSources TimeSource
 	{
 		get => _timeSource.Value;
 		set => _timeSource.Value = value;
@@ -251,8 +251,8 @@ public class LoongClockStrategy : Strategy
 	{
 		return TimeSource switch
 		{
-			ClockTimeSource.Server => CurrentTime,
-			ClockTimeSource.Utc => DateTimeOffset.UtcNow,
+			ClockTimeSources.Server => CurrentTime,
+			ClockTimeSources.Utc => DateTimeOffset.UtcNow,
 			_ => DateTimeOffset.Now,
 		};
 	}
@@ -261,7 +261,7 @@ public class LoongClockStrategy : Strategy
 /// <summary>
 /// Defines available sources for the displayed clock time.
 /// </summary>
-public enum ClockTimeSource
+public enum ClockTimeSources
 {
 	/// <summary>
 	/// Uses the local machine time.

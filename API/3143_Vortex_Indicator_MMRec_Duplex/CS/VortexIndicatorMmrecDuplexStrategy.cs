@@ -37,8 +37,8 @@ public class VortexIndicatorMmrecDuplexStrategy : Strategy
 	private readonly StrategyParam<decimal> _shortSmallMoneyManagement;
 	private readonly StrategyParam<decimal> _longMoneyManagement;
 	private readonly StrategyParam<decimal> _shortMoneyManagement;
-	private readonly StrategyParam<MarginModeOption> _longMarginMode;
-	private readonly StrategyParam<MarginModeOption> _shortMarginMode;
+	private readonly StrategyParam<MarginModeOptions> _longMarginMode;
+	private readonly StrategyParam<MarginModeOptions> _shortMarginMode;
 	private readonly StrategyParam<decimal> _longStopLossSteps;
 	private readonly StrategyParam<decimal> _shortStopLossSteps;
 	private readonly StrategyParam<decimal> _longTakeProfitSteps;
@@ -141,10 +141,10 @@ public class VortexIndicatorMmrecDuplexStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Short Base MM", "Default money-management setting for short trades.", "Risk");
 
-		_longMarginMode = Param(nameof(LongMarginMode), MarginModeOption.Lot)
+		_longMarginMode = Param(nameof(LongMarginMode), MarginModeOptions.Lot)
 		.SetDisplay("Long Margin Mode", "Interpretation of the long money-management value.", "Risk");
 
-		_shortMarginMode = Param(nameof(ShortMarginMode), MarginModeOption.Lot)
+		_shortMarginMode = Param(nameof(ShortMarginMode), MarginModeOptions.Lot)
 		.SetDisplay("Short Margin Mode", "Interpretation of the short money-management value.", "Risk");
 
 		_longStopLossSteps = Param(nameof(LongStopLossSteps), 1000m)
@@ -337,7 +337,7 @@ public class VortexIndicatorMmrecDuplexStrategy : Strategy
 	/// <summary>
 	/// Margin interpretation for long trades.
 	/// </summary>
-	public MarginModeOption LongMarginMode
+	public MarginModeOptions LongMarginMode
 	{
 		get => _longMarginMode.Value;
 		set => _longMarginMode.Value = value;
@@ -346,7 +346,7 @@ public class VortexIndicatorMmrecDuplexStrategy : Strategy
 	/// <summary>
 	/// Margin interpretation for short trades.
 	/// </summary>
-	public MarginModeOption ShortMarginMode
+	public MarginModeOptions ShortMarginMode
 	{
 		get => _shortMarginMode.Value;
 		set => _shortMarginMode.Value = value;
@@ -742,7 +742,7 @@ public class VortexIndicatorMmrecDuplexStrategy : Strategy
 		return true;
 	}
 
-	private decimal CalculateVolume(decimal mmValue, MarginModeOption mode, decimal stopSteps, decimal price)
+	private decimal CalculateVolume(decimal mmValue, MarginModeOptions mode, decimal stopSteps, decimal price)
 	{
 		if (mmValue <= 0m)
 		{
@@ -750,7 +750,7 @@ public class VortexIndicatorMmrecDuplexStrategy : Strategy
 		}
 
 		var capital = Portfolio?.CurrentValue ?? 0m;
-		if (mode == MarginModeOption.Lot)
+		if (mode == MarginModeOptions.Lot)
 		{
 			return NormalizeVolume(mmValue);
 		}
@@ -764,14 +764,14 @@ public class VortexIndicatorMmrecDuplexStrategy : Strategy
 
 		switch (mode)
 		{
-			case MarginModeOption.FreeMargin:
-			case MarginModeOption.Balance:
+			case MarginModeOptions.FreeMargin:
+			case MarginModeOptions.Balance:
 			{
 				volume = price > 0m ? capital * mmValue / price : 0m;
 				break;
 			}
-			case MarginModeOption.LossFreeMargin:
-			case MarginModeOption.LossBalance:
+			case MarginModeOptions.LossFreeMargin:
+			case MarginModeOptions.LossBalance:
 			{
 				var distance = stopSteps > 0m ? GetStepValue(stopSteps) : 0m;
 				if (distance <= 0m && price > 0m)
@@ -900,7 +900,7 @@ public class VortexIndicatorMmrecDuplexStrategy : Strategy
 	/// <summary>
 	/// Margin interpretation modes reproduced from the MetaTrader expert.
 	/// </summary>
-	public enum MarginModeOption
+	public enum MarginModeOptions
 	{
 		/// <summary>
 		/// Treat the money-management value as a share of free margin or balance.

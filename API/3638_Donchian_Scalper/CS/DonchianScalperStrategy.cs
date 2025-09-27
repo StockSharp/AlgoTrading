@@ -26,8 +26,8 @@ public class DonchianScalperStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<ProfitTargetMode> _profitTargetMode;
-	private readonly StrategyParam<TrailingProfitMode> _trailingMode;
+	private readonly StrategyParam<ProfitTargetModes> _profitTargetMode;
+	private readonly StrategyParam<TrailingProfitModes> _trailingMode;
 	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
@@ -56,16 +56,16 @@ public class DonchianScalperStrategy : Strategy
 	/// <summary>
 	/// Determines how the strategy manages profitable positions.
 	/// </summary>
-	public enum ProfitTargetMode
+	public enum ProfitTargetModes
 	{
 		CloseAtProfit,
 		Trailing,
 	}
 
 	/// <summary>
-	/// Selects the trailing stop engine when <see cref="ProfitTargetMode.Trailing"/> is active.
+	/// Selects the trailing stop engine when <see cref="ProfitTargetModes.Trailing"/> is active.
 	/// </summary>
-	public enum TrailingProfitMode
+	public enum TrailingProfitModes
 	{
 		DonchianBoundary,
 		MovingAverage,
@@ -109,7 +109,7 @@ public class DonchianScalperStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Profit target distance expressed in points. Only used when <see cref="ProfitTargetMode.CloseAtProfit"/> is selected.
+	/// Profit target distance expressed in points. Only used when <see cref="ProfitTargetModes.CloseAtProfit"/> is selected.
 	/// </summary>
 	public decimal TakeProfitPoints
 	{
@@ -129,16 +129,16 @@ public class DonchianScalperStrategy : Strategy
 	/// <summary>
 	/// Selected profit management style.
 	/// </summary>
-	public ProfitTargetMode ProfitMode
+	public ProfitTargetModes ProfitMode
 	{
 		get => _profitTargetMode.Value;
 		set => _profitTargetMode.Value = value;
 	}
 
 	/// <summary>
-	/// Selected trailing engine when profit mode is set to <see cref="ProfitTargetMode.Trailing"/>.
+	/// Selected trailing engine when profit mode is set to <see cref="ProfitTargetModes.Trailing"/>.
 	/// </summary>
-	public TrailingProfitMode TrailingMode
+	public TrailingProfitModes TrailingMode
 	{
 		get => _trailingMode.Value;
 		set => _trailingMode.Value = value;
@@ -154,7 +154,7 @@ public class DonchianScalperStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR period used by the trailing stop when <see cref="TrailingProfitMode.AverageTrueRange"/> is active.
+	/// ATR period used by the trailing stop when <see cref="TrailingProfitModes.AverageTrueRange"/> is active.
 	/// </summary>
 	public int AtrPeriod
 	{
@@ -213,10 +213,10 @@ public class DonchianScalperStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe used for calculations", "General");
 
-		_profitTargetMode = Param(nameof(ProfitMode), ProfitTargetMode.CloseAtProfit)
+		_profitTargetMode = Param(nameof(ProfitMode), ProfitTargetModes.CloseAtProfit)
 		.SetDisplay("Profit Mode", "Close at a fixed profit or trail a stop", "Risk");
 
-		_trailingMode = Param(nameof(TrailingMode), TrailingProfitMode.AverageTrueRange)
+		_trailingMode = Param(nameof(TrailingMode), TrailingProfitModes.AverageTrueRange)
 		.SetDisplay("Trailing Mode", "Trailing engine used when profit mode equals Trailing", "Risk");
 
 		_cooldownBars = Param(nameof(CooldownBars), 3)
@@ -476,7 +476,7 @@ public class DonchianScalperStrategy : Strategy
 			return;
 		}
 
-		if (ProfitMode == ProfitTargetMode.CloseAtProfit)
+		if (ProfitMode == ProfitTargetModes.CloseAtProfit)
 		{
 			var distance = TakeProfitPoints * _pointSize;
 			if (distance <= 0m)
@@ -541,9 +541,9 @@ public class DonchianScalperStrategy : Strategy
 		{
 			var target = TrailingMode switch
 			{
-				TrailingProfitMode.DonchianBoundary => CalculateLongStop(lower),
-				TrailingProfitMode.MovingAverage => AlignPrice(ema, false),
-				TrailingProfitMode.AverageTrueRange => AlignPrice(candle.ClosePrice - _lastAtr * AtrMultiplier, false),
+				TrailingProfitModes.DonchianBoundary => CalculateLongStop(lower),
+				TrailingProfitModes.MovingAverage => AlignPrice(ema, false),
+				TrailingProfitModes.AverageTrueRange => AlignPrice(candle.ClosePrice - _lastAtr * AtrMultiplier, false),
 				_ => null,
 			};
 
@@ -556,9 +556,9 @@ public class DonchianScalperStrategy : Strategy
 		{
 			var target = TrailingMode switch
 			{
-				TrailingProfitMode.DonchianBoundary => CalculateShortStop(upper),
-				TrailingProfitMode.MovingAverage => AlignPrice(ema, true),
-				TrailingProfitMode.AverageTrueRange => AlignPrice(candle.ClosePrice + _lastAtr * AtrMultiplier, true),
+				TrailingProfitModes.DonchianBoundary => CalculateShortStop(upper),
+				TrailingProfitModes.MovingAverage => AlignPrice(ema, true),
+				TrailingProfitModes.AverageTrueRange => AlignPrice(candle.ClosePrice + _lastAtr * AtrMultiplier, true),
 				_ => null,
 			};
 

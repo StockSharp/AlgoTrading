@@ -40,13 +40,13 @@ public class MaMacdPositionAveragingStrategy : Strategy
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageMethod> _maMethod;
-	private readonly StrategyParam<AppliedPriceType> _maAppliedPrice;
+	private readonly StrategyParam<MovingAverageMethods> _maMethod;
+	private readonly StrategyParam<AppliedPriceTypes> _maAppliedPrice;
 	private readonly StrategyParam<int> _indentPips;
 	private readonly StrategyParam<int> _macdFastPeriod;
 	private readonly StrategyParam<int> _macdSlowPeriod;
 	private readonly StrategyParam<int> _macdSignalPeriod;
-	private readonly StrategyParam<AppliedPriceType> _macdAppliedPrice;
+	private readonly StrategyParam<AppliedPriceTypes> _macdAppliedPrice;
 	private readonly StrategyParam<decimal> _macdRatio;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _bufferCapacity;
@@ -158,7 +158,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 	/// <summary>
 	/// Moving average calculation method.
 	/// </summary>
-	public MovingAverageMethod MaMethod
+	public MovingAverageMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -167,7 +167,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 	/// <summary>
 	/// Price source supplied to the moving average.
 	/// </summary>
-	public AppliedPriceType MaAppliedPrice
+	public AppliedPriceTypes MaAppliedPrice
 	{
 		get => _maAppliedPrice.Value;
 		set => _maAppliedPrice.Value = value;
@@ -212,7 +212,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 	/// <summary>
 	/// Price source used by the MACD filter.
 	/// </summary>
-	public AppliedPriceType MacdAppliedPrice
+	public AppliedPriceTypes MacdAppliedPrice
 	{
 		get => _macdAppliedPrice.Value;
 		set => _macdAppliedPrice.Value = value;
@@ -298,10 +298,10 @@ public class MaMacdPositionAveragingStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("MA Shift", "Horizontal shift of the moving average", "Indicators");
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.Weighted)
+		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Weighted)
 			.SetDisplay("MA Method", "Moving average smoothing type", "Indicators");
 
-		_maAppliedPrice = Param(nameof(MaAppliedPrice), AppliedPriceType.Weighted)
+		_maAppliedPrice = Param(nameof(MaAppliedPrice), AppliedPriceTypes.Weighted)
 			.SetDisplay("MA Price", "Applied price for the moving average", "Indicators");
 
 		_indentPips = Param(nameof(IndentPips), 4)
@@ -324,7 +324,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetDisplay("MACD Signal", "Signal line length", "Indicators");
 
-		_macdAppliedPrice = Param(nameof(MacdAppliedPrice), AppliedPriceType.Weighted)
+		_macdAppliedPrice = Param(nameof(MacdAppliedPrice), AppliedPriceTypes.Weighted)
 			.SetDisplay("MACD Price", "Applied price for MACD", "Indicators");
 
 		_macdRatio = Param(nameof(MacdRatio), 0.9m)
@@ -768,13 +768,13 @@ public class MaMacdPositionAveragingStrategy : Strategy
 		return true;
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethod method, int period)
+	private LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int period)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = period },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = period },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = period },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = period },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = period },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = period },
 			_ => new WeightedMovingAverage { Length = period },
 		};
 	}
@@ -833,17 +833,17 @@ public class MaMacdPositionAveragingStrategy : Strategy
 		return (int)Math.Round(value);
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceType priceType)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceTypes priceType)
 	{
 		return priceType switch
 		{
-			AppliedPriceType.Close => candle.ClosePrice,
-			AppliedPriceType.Open => candle.OpenPrice,
-			AppliedPriceType.High => candle.HighPrice,
-			AppliedPriceType.Low => candle.LowPrice,
-			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceType.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
+			AppliedPriceTypes.Close => candle.ClosePrice,
+			AppliedPriceTypes.Open => candle.OpenPrice,
+			AppliedPriceTypes.High => candle.HighPrice,
+			AppliedPriceTypes.Low => candle.LowPrice,
+			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceTypes.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
@@ -851,7 +851,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 	/// <summary>
 	/// Moving average calculation options mirroring MetaTrader modes.
 	/// </summary>
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		/// <summary>Simple moving average.</summary>
 		Simple,
@@ -866,7 +866,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 	/// <summary>
 	/// Price selection modes compatible with MetaTrader applied prices.
 	/// </summary>
-	public enum AppliedPriceType
+	public enum AppliedPriceTypes
 	{
 		/// <summary>Use the candle close price.</summary>
 		Close,

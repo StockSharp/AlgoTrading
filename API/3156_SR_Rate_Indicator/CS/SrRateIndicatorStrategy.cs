@@ -331,7 +331,7 @@ public class SrRateIndicatorStrategy : Strategy
 
 	private sealed class SrRateIndicator : BaseIndicator<SrRateIndicatorValue>
 	{
-		private enum PriceMode
+		private enum PriceModes
 		{
 			High,
 			Low,
@@ -386,11 +386,11 @@ public class SrRateIndicatorStrategy : Strategy
 				if (!HasEnoughData(index))
 				return 0m;
 
-				var low = Smooth(PriceMode.Low, index);
+				var low = Smooth(PriceModes.Low, index);
 				if (low < min)
 				min = low;
 
-				var high = Smooth(PriceMode.High, index);
+				var high = Smooth(PriceModes.High, index);
 				if (high > max)
 				max = high;
 			}
@@ -398,11 +398,11 @@ public class SrRateIndicatorStrategy : Strategy
 			if (max <= min)
 			return 0m;
 
-			var weighted = Smooth(PriceMode.Weighted, shift);
+			var weighted = Smooth(PriceModes.Weighted, shift);
 			return 200m * (weighted - min) / (max - min) - 100m;
 		}
 
-		private decimal Smooth(PriceMode mode, int shift)
+		private decimal Smooth(PriceModes mode, int shift)
 		{
 			if (!HasEnoughData(shift))
 			return 0m;
@@ -440,13 +440,13 @@ public class SrRateIndicatorStrategy : Strategy
 			return 2m;
 		}
 
-		private static decimal GetPrice(ICandleMessage candle, PriceMode mode)
+		private static decimal GetPrice(ICandleMessage candle, PriceModes mode)
 		{
 			return mode switch
 			{
-				PriceMode.High => candle.HighPrice,
-				PriceMode.Low => candle.LowPrice,
-				PriceMode.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+				PriceModes.High => candle.HighPrice,
+				PriceModes.Low => candle.LowPrice,
+				PriceModes.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
 				_ => candle.ClosePrice
 			};
 		}

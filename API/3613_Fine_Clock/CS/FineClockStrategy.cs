@@ -25,7 +25,7 @@ public class FineClockStrategy : Strategy
 	/// <summary>
 	/// Available clock formats.
 	/// </summary>
-	public enum ClockFormat
+	public enum ClockFormats
 	{
 		/// <summary>
 		/// Displays hours, minutes and seconds.
@@ -41,7 +41,7 @@ public class FineClockStrategy : Strategy
 	/// <summary>
 	/// Supported time sources for the clock.
 	/// </summary>
-	public enum ClockTimeSource
+	public enum ClockTimeSources
 	{
 		/// <summary>
 		/// Use the local computer time.
@@ -62,7 +62,7 @@ public class FineClockStrategy : Strategy
 	/// <summary>
 	/// Preferred placement of the clock label.
 	/// </summary>
-	public enum ClockCorner
+	public enum ClockCorners
 	{
 		/// <summary>
 		/// Upper left corner of the chart.
@@ -86,9 +86,9 @@ public class FineClockStrategy : Strategy
 	}
 
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<ClockFormat> _format;
-	private readonly StrategyParam<ClockTimeSource> _timeSource;
-	private readonly StrategyParam<ClockCorner> _corner;
+	private readonly StrategyParam<ClockFormats> _format;
+	private readonly StrategyParam<ClockTimeSources> _timeSource;
+	private readonly StrategyParam<ClockCorners> _corner;
 	private readonly StrategyParam<int> _horizontalOffset;
 	private readonly StrategyParam<int> _verticalOffset;
 	private readonly StrategyParam<int> _shadowOffset;
@@ -109,13 +109,13 @@ public class FineClockStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromSeconds(1).TimeFrame())
 		.SetDisplay("Candle Type", "Data type used to feed the clock and draw candles", "General");
 
-		_format = Param(nameof(Format), ClockFormat.Seconds)
+		_format = Param(nameof(Format), ClockFormats.Seconds)
 		.SetDisplay("Format", "Clock output format", "Visualization");
 
-		_timeSource = Param(nameof(TimeSource), ClockTimeSource.Local)
+		_timeSource = Param(nameof(TimeSource), ClockTimeSources.Local)
 		.SetDisplay("Time Source", "Select between local, server or UTC time", "Visualization");
 
-		_corner = Param(nameof(Corner), ClockCorner.RightLower)
+		_corner = Param(nameof(Corner), ClockCorners.RightLower)
 		.SetDisplay("Corner", "Preferred placement of the text label", "Visualization");
 
 		_horizontalOffset = Param(nameof(HorizontalOffset), 0)
@@ -146,7 +146,7 @@ public class FineClockStrategy : Strategy
 	/// <summary>
 	/// Clock display format.
 	/// </summary>
-	public ClockFormat Format
+	public ClockFormats Format
 	{
 		get => _format.Value;
 		set => _format.Value = value;
@@ -155,7 +155,7 @@ public class FineClockStrategy : Strategy
 	/// <summary>
 	/// Selected time source for the clock.
 	/// </summary>
-	public ClockTimeSource TimeSource
+	public ClockTimeSources TimeSource
 	{
 		get => _timeSource.Value;
 		set => _timeSource.Value = value;
@@ -164,7 +164,7 @@ public class FineClockStrategy : Strategy
 	/// <summary>
 	/// Preferred chart corner used to position the clock.
 	/// </summary>
-	public ClockCorner Corner
+	public ClockCorners Corner
 	{
 		get => _corner.Value;
 		set => _corner.Value = value;
@@ -352,7 +352,7 @@ public class FineClockStrategy : Strategy
 		var timeUnit = GetTimeFrame();
 		if (timeUnit <= TimeSpan.Zero)
 		{
-			timeUnit = Format == ClockFormat.Seconds ? TimeSpan.FromSeconds(1) : TimeSpan.FromMinutes(1);
+			timeUnit = Format == ClockFormats.Seconds ? TimeSpan.FromSeconds(1) : TimeSpan.FromMinutes(1);
 		}
 
 		var priceStep = Security.PriceStep;
@@ -361,8 +361,8 @@ public class FineClockStrategy : Strategy
 			priceStep = Math.Abs(basePrice) > 0m ? Math.Abs(basePrice) * 0.001m : 1m;
 		}
 
-		var horizontalDirection = Corner is ClockCorner.RightUpper or ClockCorner.RightLower ? 1 : -1;
-		var verticalDirection = Corner is ClockCorner.LeftUpper or ClockCorner.RightUpper ? 1 : -1;
+		var horizontalDirection = Corner is ClockCorners.RightUpper or ClockCorners.RightLower ? 1 : -1;
+		var verticalDirection = Corner is ClockCorners.LeftUpper or ClockCorners.RightUpper ? 1 : -1;
 
 		var mainTime = baseTime + TimeSpan.FromTicks(timeUnit.Ticks * HorizontalOffset * horizontalDirection);
 		var mainPrice = basePrice + priceStep.Value * VerticalOffset * verticalDirection;
@@ -414,9 +414,9 @@ public class FineClockStrategy : Strategy
 
 		return TimeSource switch
 		{
-			ClockTimeSource.Local => now.ToLocalTime(),
-			ClockTimeSource.Server => now,
-			ClockTimeSource.Utc => now.ToUniversalTime(),
+			ClockTimeSources.Local => now.ToLocalTime(),
+			ClockTimeSources.Server => now,
+			ClockTimeSources.Utc => now.ToUniversalTime(),
 			_ => now,
 		};
 	}
@@ -425,14 +425,14 @@ public class FineClockStrategy : Strategy
 	{
 		return Format switch
 		{
-			ClockFormat.Minutes => time.ToString(" HH:mm "),
+			ClockFormats.Minutes => time.ToString(" HH:mm "),
 			_ => time.ToString(" HH:mm:ss "),
 		};
 	}
 
 	private TimeSpan GetTimerInterval()
 	{
-		return Format == ClockFormat.Seconds ? TimeSpan.FromSeconds(1) : TimeSpan.FromMinutes(1);
+		return Format == ClockFormats.Seconds ? TimeSpan.FromSeconds(1) : TimeSpan.FromMinutes(1);
 	}
 }
 

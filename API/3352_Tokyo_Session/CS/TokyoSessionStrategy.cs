@@ -13,7 +13,7 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum TokyoSignalMode
+public enum TokyoSignalModes
 {
 	ContraryTrend,
 	AccordingTrend,
@@ -23,7 +23,7 @@ public class TokyoSessionStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _brokerOffset;
-	private readonly StrategyParam<TokyoSignalMode> _signalMode;
+	private readonly StrategyParam<TokyoSignalModes> _signalMode;
 	private readonly StrategyParam<int> _timeSetLevels;
 	private readonly StrategyParam<int> _timeCheckLevels;
 	private readonly StrategyParam<int> _timeRecheckPrices;
@@ -75,7 +75,7 @@ public class TokyoSessionStrategy : Strategy
 		set => _brokerOffset.Value = value;
 	}
 
-	public TokyoSignalMode TypeOfSignals
+	public TokyoSignalModes TypeOfSignals
 	{
 		get => _signalMode.Value;
 		set => _signalMode.Value = value;
@@ -217,7 +217,7 @@ public class TokyoSessionStrategy : Strategy
 		.SetDisplay("Broker GMT Offset", "Difference between broker server and GMT time (hours)", "General")
 		.SetRange(-24, 24);
 
-		_signalMode = Param(nameof(TypeOfSignals), TokyoSignalMode.ContraryTrend)
+		_signalMode = Param(nameof(TypeOfSignals), TokyoSignalModes.ContraryTrend)
 		.SetDisplay("Signal Mode", "Choose between contrary or trend following entries", "Signals");
 
 		_timeSetLevels = Param(nameof(TimeSetLevels), 21)
@@ -482,11 +482,11 @@ public class TokyoSessionStrategy : Strategy
 
 		switch (TypeOfSignals)
 		{
-			case TokyoSignalMode.ContraryTrend:
+			case TokyoSignalModes.ContraryTrend:
 				canBuy = closePrice < _levelLow.Value - minDistance && (MaxDistanceOfLevel <= 0m || closePrice > _levelLow.Value - maxDistance) && _checkBarsBuy && _checkPricesBuy;
 				canSell = closePrice > _levelHigh.Value + minDistance && (MaxDistanceOfLevel <= 0m || closePrice < _levelHigh.Value + maxDistance) && _checkBarsSell && _checkPricesSell;
 				break;
-			case TokyoSignalMode.AccordingTrend:
+			case TokyoSignalModes.AccordingTrend:
 				canBuy = closePrice > _levelHigh.Value + minDistance && (MaxDistanceOfLevel <= 0m || closePrice < _levelHigh.Value + maxDistance) && _checkBarsSell && _checkPricesSell;
 				canSell = closePrice < _levelLow.Value - minDistance && (MaxDistanceOfLevel <= 0m || closePrice > _levelLow.Value - maxDistance) && _checkBarsBuy && _checkPricesBuy;
 				break;
@@ -529,7 +529,7 @@ public class TokyoSessionStrategy : Strategy
 
 		switch (TypeOfSignals)
 		{
-			case TokyoSignalMode.ContraryTrend:
+			case TokyoSignalModes.ContraryTrend:
 				if (Position > 0m && closePrice > _levelLow.Value + minDistance)
 				{
 					ExitPosition();
@@ -543,7 +543,7 @@ public class TokyoSessionStrategy : Strategy
 				}
 
 				break;
-			case TokyoSignalMode.AccordingTrend:
+			case TokyoSignalModes.AccordingTrend:
 				if (Position > 0m && closePrice < _levelHigh.Value - minDistance)
 				{
 					ExitPosition();

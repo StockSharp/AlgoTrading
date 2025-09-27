@@ -22,7 +22,7 @@ public class ZoneRecoveryHedgeStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<DataType> _atrCandleType;
-	private readonly StrategyParam<ZoneRecoveryMode> _mode;
+	private readonly StrategyParam<ZoneRecoveryModes> _mode;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<decimal> _overboughtLevel;
 	private readonly StrategyParam<decimal> _oversoldLevel;
@@ -87,7 +87,7 @@ public class ZoneRecoveryHedgeStrategy : Strategy
 		_atrCandleType = Param(nameof(AtrCandleType), TimeSpan.FromDays(1).TimeFrame())
 		.SetDisplay("ATR Candle", "Timeframe used for ATR based sizing", "General");
 
-		_mode = Param(nameof(Mode), ZoneRecoveryMode.RsiMultiTimeframe)
+		_mode = Param(nameof(Mode), ZoneRecoveryModes.RsiMultiTimeframe)
 		.SetDisplay("Mode", "Manual mode disables automatic entries", "Signals");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -229,7 +229,7 @@ public class ZoneRecoveryHedgeStrategy : Strategy
 	/// <summary>
 	/// Strategy operating mode.
 	/// </summary>
-	public ZoneRecoveryMode Mode
+	public ZoneRecoveryModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -393,7 +393,7 @@ public class ZoneRecoveryHedgeStrategy : Strategy
 	/// </summary>
 	public void StartManualMarketCycle(bool isBuy)
 	{
-		if (Mode != ZoneRecoveryMode.Manual)
+		if (Mode != ZoneRecoveryModes.Manual)
 		{
 			LogInfo("Manual cycle ignored because the mode is not Manual.");
 			return;
@@ -417,7 +417,7 @@ public class ZoneRecoveryHedgeStrategy : Strategy
 	/// </summary>
 	public void StartManualPendingCycle(bool isBuy)
 	{
-		if (Mode != ZoneRecoveryMode.Manual)
+		if (Mode != ZoneRecoveryModes.Manual)
 		{
 			LogInfo("Manual cycle ignored because the mode is not Manual.");
 			return;
@@ -500,7 +500,7 @@ public class ZoneRecoveryHedgeStrategy : Strategy
 			return;
 		}
 
-		if (Mode != ZoneRecoveryMode.RsiMultiTimeframe)
+		if (Mode != ZoneRecoveryModes.RsiMultiTimeframe)
 		return;
 
 		var barShift = _tradeOnBarOpen.Value ? 1 : 0;
@@ -1033,7 +1033,7 @@ public class ZoneRecoveryHedgeStrategy : Strategy
 /// <summary>
 /// Available operating modes for the zone recovery hedge strategy.
 /// </summary>
-public enum ZoneRecoveryMode
+public enum ZoneRecoveryModes
 {
 	/// <summary>
 	/// Manual entries only. Use helper methods to start cycles.

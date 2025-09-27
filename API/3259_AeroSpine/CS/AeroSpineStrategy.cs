@@ -32,15 +32,15 @@ public class AeroSpineStrategy : Strategy
 	private readonly StrategyParam<decimal> _maxSpreadPips;
 	private readonly StrategyParam<bool> _enableRecovery;
 
-	private enum TradeDirection
+	private enum TradeDirections
 	{
 		None,
 		Long,
 		Short,
 	}
 
-	private TradeDirection _currentDirection = TradeDirection.None;
-	private TradeDirection _plannedRecoveryDirection = TradeDirection.None;
+	private TradeDirections _currentDirection = TradeDirections.None;
+	private TradeDirections _plannedRecoveryDirection = TradeDirections.None;
 
 	private DateTime? _currentDay;
 	private DateTime? _lastEntryDay;
@@ -208,7 +208,7 @@ public class AeroSpineStrategy : Strategy
 		_dailyOpen = candle.OpenPrice;
 		_breakEvenArmed = false;
 
-		if (_currentDirection == TradeDirection.None)
+		if (_currentDirection == TradeDirections.None)
 		{
 			_lastEntryDay = null;
 		}
@@ -244,14 +244,14 @@ public class AeroSpineStrategy : Strategy
 
 		if (IsRecoveryPending())
 		{
-			if (_plannedRecoveryDirection == TradeDirection.Long)
+			if (_plannedRecoveryDirection == TradeDirections.Long)
 			{
 				if (candle.HighPrice < _dailyOpen + recoveryOffset)
 				return;
 
 				EnterLong(candle, _recoveryVolume);
 			}
-			else if (_plannedRecoveryDirection == TradeDirection.Short)
+			else if (_plannedRecoveryDirection == TradeDirections.Short)
 			{
 				if (candle.LowPrice > _dailyOpen - recoveryOffset)
 				return;
@@ -276,13 +276,13 @@ public class AeroSpineStrategy : Strategy
 
 	private bool IsRecoveryPending()
 	{
-		return EnableRecovery && _recoveryMode && _plannedRecoveryDirection != TradeDirection.None;
+		return EnableRecovery && _recoveryMode && _plannedRecoveryDirection != TradeDirections.None;
 	}
 
 	private void EnterLong(ICandleMessage candle, decimal volume)
 	{
 		BuyMarket(volume);
-		_currentDirection = TradeDirection.Long;
+		_currentDirection = TradeDirections.Long;
 		_currentEntryPrice = candle.ClosePrice;
 		_currentVolume = volume;
 		_breakEvenArmed = false;
@@ -292,7 +292,7 @@ public class AeroSpineStrategy : Strategy
 	private void EnterShort(ICandleMessage candle, decimal volume)
 	{
 		SellMarket(volume);
-		_currentDirection = TradeDirection.Short;
+		_currentDirection = TradeDirections.Short;
 		_currentEntryPrice = candle.ClosePrice;
 		_currentVolume = volume;
 		_breakEvenArmed = false;
@@ -301,7 +301,7 @@ public class AeroSpineStrategy : Strategy
 
 	private void ManageOpenPosition(ICandleMessage candle)
 	{
-		if (_currentDirection == TradeDirection.None)
+		if (_currentDirection == TradeDirections.None)
 		return;
 
 		var takeProfit = TakeProfitPips * _pipSize;
@@ -310,7 +310,7 @@ public class AeroSpineStrategy : Strategy
 
 		switch (_currentDirection)
 		{
-		case TradeDirection.Long:
+		case TradeDirections.Long:
 			if (UseBreakEven && !_breakEvenArmed && candle.HighPrice >= _currentEntryPrice + breakEvenDistance)
 			{
 				_breakEvenArmed = true;
@@ -318,24 +318,24 @@ public class AeroSpineStrategy : Strategy
 
 			if (takeProfit > 0m && candle.HighPrice >= _currentEntryPrice + takeProfit)
 			{
-				CloseWithResult(TradeDirection.Long, _currentEntryPrice + takeProfit);
+				CloseWithResult(TradeDirections.Long, _currentEntryPrice + takeProfit);
 				return;
 			}
 
 			if (_breakEvenArmed && candle.LowPrice <= _currentEntryPrice + breakEvenDistance)
 			{
-				CloseWithResult(TradeDirection.Long, _currentEntryPrice + breakEvenDistance);
+				CloseWithResult(TradeDirections.Long, _currentEntryPrice + breakEvenDistance);
 				return;
 			}
 
 			if (exitOffset > 0m && candle.LowPrice <= _dailyOpen - exitOffset)
 			{
-				CloseWithResult(TradeDirection.Long, _dailyOpen - exitOffset);
+				CloseWithResult(TradeDirections.Long, _dailyOpen - exitOffset);
 			}
 
 			break;
 
-		case TradeDirection.Short:
+		case TradeDirections.Short:
 			if (UseBreakEven && !_breakEvenArmed && candle.LowPrice <= _currentEntryPrice - breakEvenDistance)
 			{
 				_breakEvenArmed = true;
@@ -343,26 +343,26 @@ public class AeroSpineStrategy : Strategy
 
 			if (takeProfit > 0m && candle.LowPrice <= _currentEntryPrice - takeProfit)
 			{
-				CloseWithResult(TradeDirection.Short, _currentEntryPrice - takeProfit);
+				CloseWithResult(TradeDirections.Short, _currentEntryPrice - takeProfit);
 				return;
 			}
 
 			if (_breakEvenArmed && candle.HighPrice >= _currentEntryPrice - breakEvenDistance)
 			{
-				CloseWithResult(TradeDirection.Short, _currentEntryPrice - breakEvenDistance);
+				CloseWithResult(TradeDirections.Short, _currentEntryPrice - breakEvenDistance);
 				return;
 			}
 
 			if (exitOffset > 0m && candle.HighPrice >= _dailyOpen + exitOffset)
 			{
-				CloseWithResult(TradeDirection.Short, _dailyOpen + exitOffset);
+				CloseWithResult(TradeDirections.Short, _dailyOpen + exitOffset);
 			}
 
 			break;
 		}
 	}
 
-	private void CloseWithResult(TradeDirection direction, decimal exitPrice)
+	private void CloseWithResult(TradeDirections direction, decimal exitPrice)
 	{
 		ClosePosition();
 
@@ -371,25 +371,25 @@ public class AeroSpineStrategy : Strategy
 		if (EnableRecovery && pnl < 0m)
 		{
 			_recoveryMode = true;
-			_plannedRecoveryDirection = direction == TradeDirection.Long ? TradeDirection.Short : TradeDirection.Long;
+			_plannedRecoveryDirection = direction == TradeDirections.Long ? TradeDirections.Short : TradeDirections.Long;
 			_recoveryVolume = _currentVolume + Volume;
 		}
 		else
 		{
 			_recoveryMode = false;
-			_plannedRecoveryDirection = TradeDirection.None;
+			_plannedRecoveryDirection = TradeDirections.None;
 			_recoveryVolume = Volume;
 		}
 
-		_currentDirection = TradeDirection.None;
+		_currentDirection = TradeDirections.None;
 		_currentEntryPrice = 0m;
 		_currentVolume = 0m;
 		_breakEvenArmed = false;
 	}
 
-	private decimal CalculatePnl(TradeDirection direction, decimal exitPrice)
+	private decimal CalculatePnl(TradeDirections direction, decimal exitPrice)
 	{
-		var priceDelta = direction == TradeDirection.Long
+		var priceDelta = direction == TradeDirections.Long
 		? exitPrice - _currentEntryPrice
 		: _currentEntryPrice - exitPrice;
 

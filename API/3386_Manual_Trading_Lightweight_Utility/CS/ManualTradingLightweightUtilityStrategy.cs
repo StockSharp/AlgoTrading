@@ -19,8 +19,8 @@ namespace StockSharp.Samples.Strategies;
 public class ManualTradingLightweightUtilityStrategy : Strategy
 {
 private readonly StrategyParam<DataType> _candleType;
-private readonly StrategyParam<ManualOrderMode> _buyOrderMode;
-private readonly StrategyParam<ManualOrderMode> _sellOrderMode;
+private readonly StrategyParam<ManualOrderModes> _buyOrderMode;
+private readonly StrategyParam<ManualOrderModes> _sellOrderMode;
 private readonly StrategyParam<bool> _buyAutomaticPrice;
 private readonly StrategyParam<bool> _sellAutomaticPrice;
 private readonly StrategyParam<decimal> _buyManualPrice;
@@ -50,7 +50,7 @@ private bool _pointWarningIssued;
 /// <summary>
 /// Describes the execution mode of the manual order.
 /// </summary>
-public enum ManualOrderMode
+public enum ManualOrderModes
 {
 /// <summary>
 /// Send a market order immediately.
@@ -76,10 +76,10 @@ public ManualTradingLightweightUtilityStrategy()
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 .SetDisplay("Candle Type", "Market data series used to evaluate offsets and protective levels.", "Market Data");
 
-_buyOrderMode = Param(nameof(BuyOrderMode), ManualOrderMode.MarketExecution)
+_buyOrderMode = Param(nameof(BuyOrderMode), ManualOrderModes.MarketExecution)
 .SetDisplay("Buy Mode", "Execution mode for buy requests.", "Manual Controls");
 
-_sellOrderMode = Param(nameof(SellOrderMode), ManualOrderMode.MarketExecution)
+_sellOrderMode = Param(nameof(SellOrderMode), ManualOrderModes.MarketExecution)
 .SetDisplay("Sell Mode", "Execution mode for sell requests.", "Manual Controls");
 
 _buyAutomaticPrice = Param(nameof(UseAutomaticBuyPrice), true)
@@ -163,7 +163,7 @@ set => _candleType.Value = value;
 /// <summary>
 /// Execution mode for buy requests.
 /// </summary>
-public ManualOrderMode BuyOrderMode
+public ManualOrderModes BuyOrderMode
 {
 get => _buyOrderMode.Value;
 set => _buyOrderMode.Value = value;
@@ -172,7 +172,7 @@ set => _buyOrderMode.Value = value;
 /// <summary>
 /// Execution mode for sell requests.
 /// </summary>
-public ManualOrderMode SellOrderMode
+public ManualOrderModes SellOrderMode
 {
 get => _sellOrderMode.Value;
 set => _sellOrderMode.Value = value;
@@ -401,13 +401,13 @@ return;
 
 switch (BuyOrderMode)
 {
-case ManualOrderMode.MarketExecution:
+case ManualOrderModes.MarketExecution:
 BuyMarket(volume);
 LogInfo($"BUY market order submitted. Volume={volume}, Comment={OrderComment}.");
 CompleteBuyRequest();
 break;
 
-case ManualOrderMode.PendingLimit:
+case ManualOrderModes.PendingLimit:
 {
 var price = ResolveBuyPrice(candle, true);
 if (price <= 0m)
@@ -423,7 +423,7 @@ CompleteBuyRequest();
 break;
 }
 
-case ManualOrderMode.PendingStop:
+case ManualOrderModes.PendingStop:
 {
 var price = ResolveBuyPrice(candle, false);
 if (price <= 0m)
@@ -456,13 +456,13 @@ return;
 
 switch (SellOrderMode)
 {
-case ManualOrderMode.MarketExecution:
+case ManualOrderModes.MarketExecution:
 SellMarket(volume);
 LogInfo($"SELL market order submitted. Volume={volume}, Comment={OrderComment}.");
 CompleteSellRequest();
 break;
 
-case ManualOrderMode.PendingLimit:
+case ManualOrderModes.PendingLimit:
 {
 var price = ResolveSellPrice(candle, true);
 if (price <= 0m)
@@ -478,7 +478,7 @@ CompleteSellRequest();
 break;
 }
 
-case ManualOrderMode.PendingStop:
+case ManualOrderModes.PendingStop:
 {
 var price = ResolveSellPrice(candle, false);
 if (price <= 0m)

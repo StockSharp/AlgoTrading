@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Trading mode options from the original expert advisor.
 /// </summary>
-public enum ExpSpearmanTradeMode
+public enum ExpSpearmanTradeModes
 {
 	/// <summary>
 	/// Mode 1: close opposite positions and open when the histogram crosses neutral levels.
@@ -52,7 +52,7 @@ public class ExpSpearmanRankCorrelationHistogramStrategy : Strategy
 	private readonly StrategyParam<bool> _allowSellEntries;
 	private readonly StrategyParam<bool> _allowBuyExits;
 	private readonly StrategyParam<bool> _allowSellExits;
-	private readonly StrategyParam<ExpSpearmanTradeMode> _tradeMode;
+	private readonly StrategyParam<ExpSpearmanTradeModes> _tradeMode;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<bool> _invertCorrelation;
@@ -100,7 +100,7 @@ public class ExpSpearmanRankCorrelationHistogramStrategy : Strategy
 		_allowSellExits = Param(nameof(AllowSellExits), true)
 			.SetDisplay("Allow Sell Exits", "Enable automatic closing of short positions", "Trading");
 
-		_tradeMode = Param(nameof(TradeMode), ExpSpearmanTradeMode.Mode1)
+		_tradeMode = Param(nameof(TradeMode), ExpSpearmanTradeModes.Mode1)
 			.SetDisplay("Trade Mode", "Replica of the original expert trade mode switch", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 0m)
@@ -206,7 +206,7 @@ public class ExpSpearmanRankCorrelationHistogramStrategy : Strategy
 	/// <summary>
 	/// Trade mode copied from the MetaTrader implementation.
 	/// </summary>
-	public ExpSpearmanTradeMode TradeMode
+	public ExpSpearmanTradeModes TradeMode
 	{
 		get => _tradeMode.Value;
 		set => _tradeMode.Value = value;
@@ -328,7 +328,7 @@ public class ExpSpearmanRankCorrelationHistogramStrategy : Strategy
 
 		switch (TradeMode)
 		{
-		case ExpSpearmanTradeMode.Mode1:
+		case ExpSpearmanTradeModes.Mode1:
 		{
 		if (olderColor > 2)
 		{
@@ -351,7 +351,7 @@ public class ExpSpearmanRankCorrelationHistogramStrategy : Strategy
 		break;
 		}
 
-		case ExpSpearmanTradeMode.Mode2:
+		case ExpSpearmanTradeModes.Mode2:
 		{
 		if (olderColor == 4)
 		{
@@ -374,7 +374,7 @@ public class ExpSpearmanRankCorrelationHistogramStrategy : Strategy
 		break;
 		}
 
-		case ExpSpearmanTradeMode.Mode3:
+		case ExpSpearmanTradeModes.Mode3:
 		{
 		if (olderColor == 4)
 		{

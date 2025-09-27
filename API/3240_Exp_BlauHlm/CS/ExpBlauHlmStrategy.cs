@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies;
 public class ExpBlauHlmStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<SmoothMethod> _smoothingMethod;
+	private readonly StrategyParam<SmoothMethods> _smoothingMethod;
 	private readonly StrategyParam<int> _xLength;
 	private readonly StrategyParam<int> _firstLength;
 	private readonly StrategyParam<int> _secondLength;
@@ -29,7 +29,7 @@ public class ExpBlauHlmStrategy : Strategy
 	private readonly StrategyParam<int> _fourthLength;
 	private readonly StrategyParam<int> _phase;
 	private readonly StrategyParam<int> _signalBar;
-	private readonly StrategyParam<Mode> _mode;
+	private readonly StrategyParam<Modes> _mode;
 	private readonly StrategyParam<bool> _buyOpen;
 	private readonly StrategyParam<bool> _sellOpen;
 	private readonly StrategyParam<bool> _buyClose;
@@ -41,7 +41,7 @@ public class ExpBlauHlmStrategy : Strategy
 	/// Enumeration of available smoothing techniques.
 	/// Unsupported options from the original library fall back to EMA.
 	/// </summary>
-	public enum SmoothMethod
+	public enum SmoothMethods
 	{
 		Simple,
 		Exponential,
@@ -55,7 +55,7 @@ public class ExpBlauHlmStrategy : Strategy
 	/// <summary>
 	/// Operating modes reproduced from the expert advisor.
 	/// </summary>
-	public enum Mode
+	public enum Modes
 	{
 		Breakdown,
 		Twist,
@@ -137,7 +137,7 @@ public class ExpBlauHlmStrategy : Strategy
 	/// <summary>
 	/// Operating mode of the strategy.
 	/// </summary>
-	public Mode EntryMode
+	public Modes EntryMode
 	{
 		get => _entryMode.Value;
 		set => _entryMode.Value = value;
@@ -146,7 +146,7 @@ public class ExpBlauHlmStrategy : Strategy
 	/// <summary>
 	/// Selected smoothing method.
 	/// </summary>
-	public SmoothMethod SmoothingMethod
+	public SmoothMethods SmoothingMethod
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -195,7 +195,7 @@ public class ExpBlauHlmStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for the oscillator", "Data");
 	
-		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothMethod.Exponential)
+		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothMethods.Exponential)
 			.SetDisplay("Smoothing", "XMA smoothing mode", "Indicator");
 	
 		_xLength = Param(nameof(XLength), 2)
@@ -225,8 +225,8 @@ public class ExpBlauHlmStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Offset applied to historical values", "Trading");
 	
-		_mode = Param(nameof(EntryMode), Mode.Twist)
-			.SetDisplay("Mode", "Trading logic used for entries", "Trading");
+		_mode = Param(nameof(EntryMode), Modes.Twist)
+			.SetDisplay("Modes", "Trading logic used for entries", "Trading");
 	
 		_buyOpen = Param(nameof(BuyOpen), true)
 			.SetDisplay("Allow Long", "Enable long entries", "Trading");
@@ -298,7 +298,7 @@ public class ExpBlauHlmStrategy : Strategy
 
 		switch (EntryMode)
 		{
-			case Mode.Breakdown:
+			case Modes.Breakdown:
 			{
 				if (!_calculator.TryGetHistogram(SignalBar, out var hist0) ||
 					!_calculator.TryGetHistogram(SignalBar + 1, out var hist1))
@@ -325,7 +325,7 @@ public class ExpBlauHlmStrategy : Strategy
 				break;
 			}
 
-			case Mode.Twist:
+			case Modes.Twist:
 			{
 				if (!_calculator.TryGetHistogram(SignalBar, out var hist0) ||
 					!_calculator.TryGetHistogram(SignalBar + 1, out var hist1) ||
@@ -353,7 +353,7 @@ public class ExpBlauHlmStrategy : Strategy
 				break;
 			}
 
-			case Mode.CloudTwist:
+			case Modes.CloudTwist:
 			{
 				if (!_calculator.TryGetUpSeries(SignalBar, out var up0) ||
 					!_calculator.TryGetUpSeries(SignalBar + 1, out var up1) ||
@@ -403,7 +403,7 @@ public class ExpBlauHlmStrategy : Strategy
 
 	private sealed class BlauHlmCalculator
 	{
-		private readonly SmoothMethod _method;
+		private readonly SmoothMethods _method;
 		private readonly int _xLength;
 		private readonly int _phase;
 		private readonly LengthIndicator<decimal> _ma1;
@@ -418,7 +418,7 @@ public class ExpBlauHlmStrategy : Strategy
 		private int _historyLimit = 16;
 
 		public BlauHlmCalculator(
-			SmoothMethod method,
+			SmoothMethods method,
 			int xLength,
 			int firstLength,
 			int secondLength,
@@ -522,17 +522,17 @@ public class ExpBlauHlmStrategy : Strategy
 			return true;
 		}
 
-		private LengthIndicator<decimal> CreateMovingAverage(SmoothMethod method, int length, int phase)
+		private LengthIndicator<decimal> CreateMovingAverage(SmoothMethods method, int length, int phase)
 		{
 			return method switch
 			{
-				SmoothMethod.Simple => new SimpleMovingAverage { Length = length },
-				SmoothMethod.Exponential => new ExponentialMovingAverage { Length = length },
-				SmoothMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-				SmoothMethod.LinearWeighted => new WeightedMovingAverage { Length = length },
-				SmoothMethod.Jurik => new JurikMovingAverage { Length = length, Phase = phase },
-				SmoothMethod.TripleExponential => new TripleExponentialMovingAverage { Length = length },
-				SmoothMethod.Adaptive => new KaufmanAdaptiveMovingAverage { Length = length },
+				SmoothMethods.Simple => new SimpleMovingAverage { Length = length },
+				SmoothMethods.Exponential => new ExponentialMovingAverage { Length = length },
+				SmoothMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+				SmoothMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
+				SmoothMethods.Jurik => new JurikMovingAverage { Length = length, Phase = phase },
+				SmoothMethods.TripleExponential => new TripleExponentialMovingAverage { Length = length },
+				SmoothMethods.Adaptive => new KaufmanAdaptiveMovingAverage { Length = length },
 				_ => new ExponentialMovingAverage { Length = length },
 			};
 		}

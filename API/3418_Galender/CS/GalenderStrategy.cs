@@ -23,7 +23,7 @@ public class GalenderStrategy : Strategy
 	private readonly StrategyParam<DateTimeOffset> _dateTo;
 	private readonly StrategyParam<string> _currencyFilter;
 	private readonly StrategyParam<string> _keywordFilter;
-	private readonly StrategyParam<CalendarImportanceFilter> _importanceFilter;
+	private readonly StrategyParam<CalendarImportanceFilters> _importanceFilter;
 
 	private readonly List<CalendarEntry> _entries = new();
 
@@ -44,7 +44,7 @@ public class GalenderStrategy : Strategy
 		_keywordFilter = Param(nameof(KeywordFilter), "interest")
 			.SetDisplay("Keyword Filter", "Keyword that must exist in the news text", "Filters");
 
-		_importanceFilter = Param(nameof(ImportanceFilter), CalendarImportanceFilter.All)
+		_importanceFilter = Param(nameof(ImportanceFilter), CalendarImportanceFilters.All)
 			.SetDisplay("Importance", "Economic importance requirement", "Filters");
 	}
 
@@ -87,7 +87,7 @@ public class GalenderStrategy : Strategy
 	/// <summary>
 	/// Importance level that must be present in the news text.
 	/// </summary>
-	public CalendarImportanceFilter ImportanceFilter
+	public CalendarImportanceFilters ImportanceFilter
 	{
 		get => _importanceFilter.Value;
 		set => _importanceFilter.Value = value;
@@ -219,7 +219,7 @@ public class GalenderStrategy : Strategy
 	private bool MatchesImportance(string text)
 	{
 		var importance = ImportanceFilter;
-		if (importance == CalendarImportanceFilter.All)
+		if (importance == CalendarImportanceFilters.All)
 		{
 			return true;
 		}
@@ -228,10 +228,10 @@ public class GalenderStrategy : Strategy
 
 		return importance switch
 		{
-			CalendarImportanceFilter.None => ContainsWord(upperText, "NONE"),
-			CalendarImportanceFilter.Low => ContainsWord(upperText, "LOW"),
-			CalendarImportanceFilter.Moderate => ContainsWord(upperText, "MODERATE") || ContainsWord(upperText, "MEDIUM"),
-			CalendarImportanceFilter.High => ContainsWord(upperText, "HIGH"),
+			CalendarImportanceFilters.None => ContainsWord(upperText, "NONE"),
+			CalendarImportanceFilters.Low => ContainsWord(upperText, "LOW"),
+			CalendarImportanceFilters.Moderate => ContainsWord(upperText, "MODERATE") || ContainsWord(upperText, "MEDIUM"),
+			CalendarImportanceFilters.High => ContainsWord(upperText, "HIGH"),
 			_ => true
 		};
 	}
@@ -353,7 +353,7 @@ public class GalenderStrategy : Strategy
 	/// <summary>
 	/// Enumeration of supported importance filters.
 	/// </summary>
-	public enum CalendarImportanceFilter
+	public enum CalendarImportanceFilters
 	{
 		/// <summary>
 		/// No importance filter (matches only events tagged with "none").

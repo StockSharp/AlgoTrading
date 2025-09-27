@@ -20,8 +20,8 @@ using StockSharp.Messages;
 public class TrendManagerTmPlusStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<SmoothingMethod> _fastMethod;
-	private readonly StrategyParam<SmoothingMethod> _slowMethod;
+	private readonly StrategyParam<SmoothingMethods> _fastMethod;
+	private readonly StrategyParam<SmoothingMethods> _slowMethod;
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<decimal> _dvLimit;
@@ -46,7 +46,7 @@ public class TrendManagerTmPlusStrategy : Strategy
 	/// <summary>
 	/// Supported smoothing methods.
 	/// </summary>
-	public enum SmoothingMethod
+	public enum SmoothingMethods
 	{
 		Simple,
 		Exponential,
@@ -64,10 +64,10 @@ public class TrendManagerTmPlusStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for signals", "General");
 
-		_fastMethod = Param(nameof(FastMethod), SmoothingMethod.Simple)
+		_fastMethod = Param(nameof(FastMethod), SmoothingMethods.Simple)
 			.SetDisplay("Fast MA Method", "Smoothing for fast line", "Indicator");
 
-		_slowMethod = Param(nameof(SlowMethod), SmoothingMethod.Simple)
+		_slowMethod = Param(nameof(SlowMethod), SmoothingMethods.Simple)
 			.SetDisplay("Slow MA Method", "Smoothing for slow line", "Indicator");
 
 		_fastLength = Param(nameof(FastLength), 23)
@@ -127,13 +127,13 @@ public class TrendManagerTmPlusStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	public SmoothingMethod FastMethod
+	public SmoothingMethods FastMethod
 	{
 		get => _fastMethod.Value;
 		set => _fastMethod.Value = value;
 	}
 
-	public SmoothingMethod SlowMethod
+	public SmoothingMethods SlowMethod
 	{
 		get => _slowMethod.Value;
 		set => _slowMethod.Value = value;
@@ -233,17 +233,17 @@ public class TrendManagerTmPlusStrategy : Strategy
 		StartProtection();
 	}
 
-	private IIndicator CreateMovingAverage(SmoothingMethod method, int length)
+	private IIndicator CreateMovingAverage(SmoothingMethods method, int length)
 	{
 		// Map the selected smoothing method to a StockSharp indicator implementation.
 		return method switch
 		{
-			SmoothingMethod.Simple => new SimpleMovingAverage { Length = length },
-			SmoothingMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			SmoothingMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			SmoothingMethod.Weighted => new WeightedMovingAverage { Length = length },
-			SmoothingMethod.Jurik => new JurikMovingAverage { Length = length },
-			SmoothingMethod.Adaptive => new KaufmanAdaptiveMovingAverage { Length = length },
+			SmoothingMethods.Simple => new SimpleMovingAverage { Length = length },
+			SmoothingMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			SmoothingMethods.Weighted => new WeightedMovingAverage { Length = length },
+			SmoothingMethods.Jurik => new JurikMovingAverage { Length = length },
+			SmoothingMethods.Adaptive => new KaufmanAdaptiveMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}

@@ -21,28 +21,28 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class RangeBreakout2Strategy : Strategy
 {
-	private enum PeriodicityMode
+	private enum PeriodicityModes
 	{
 		Weekly,
 		Daily,
 		NonStop,
 	}
 
-	private enum RangeCalculationMode
+	private enum RangeCalculationModes
 	{
 		Atr,
 		Percent,
 		Fixed,
 	}
 
-	private enum TradeModeOption
+	private enum TradeModeOptions
 	{
 		Stop,
 		Limit,
 		Random,
 	}
 
-	private enum LotManagementMode
+	private enum LotManagementModes
 	{
 		Constant,
 		Linear,
@@ -50,26 +50,26 @@ public class RangeBreakout2Strategy : Strategy
 		Fibonacci,
 	}
 
-	private enum StrategyPhase
+	private enum StrategyPhases
 	{
 		StandBy,
 		Setup,
 		Trade,
 	}
 
-	private readonly StrategyParam<PeriodicityMode> _periodicity;
+	private readonly StrategyParam<PeriodicityModes> _periodicity;
 	private readonly StrategyParam<DayOfWeek> _dayOfWeek;
 	private readonly StrategyParam<int> _hour;
-	private readonly StrategyParam<RangeCalculationMode> _rangeMode;
+	private readonly StrategyParam<RangeCalculationModes> _rangeMode;
 	private readonly StrategyParam<decimal> _atrPercentage;
 	private readonly StrategyParam<decimal> _pricePercentage;
 	private readonly StrategyParam<int> _fixedRangePoints;
 	private readonly StrategyParam<int> _atrLength;
-	private readonly StrategyParam<TradeModeOption> _tradeMode;
+	private readonly StrategyParam<TradeModeOptions> _tradeMode;
 	private readonly StrategyParam<decimal> _rangePercentage;
 	private readonly StrategyParam<decimal> _takeProfitPercentage;
 	private readonly StrategyParam<decimal> _stopLossPercentage;
-	private readonly StrategyParam<LotManagementMode> _lotMode;
+	private readonly StrategyParam<LotManagementModes> _lotMode;
 	private readonly StrategyParam<decimal> _marginPercentage;
 	private readonly StrategyParam<decimal> _lotMultiplier;
 	private readonly StrategyParam<decimal> _rangeMultiplier;
@@ -80,7 +80,7 @@ public class RangeBreakout2Strategy : Strategy
 	private decimal _atrValue;
 	private decimal? _lastAsk;
 	private decimal? _lastBid;
-	private StrategyPhase _phase = StrategyPhase.StandBy;
+	private StrategyPhases _phase = StrategyPhases.StandBy;
 	private decimal _setupRange;
 	private decimal _setupCenter;
 	private decimal _setupHigh;
@@ -100,7 +100,7 @@ public class RangeBreakout2Strategy : Strategy
 	/// </summary>
 	public RangeBreakout2Strategy()
 	{
-		_periodicity = Param(nameof(Periodicity), PeriodicityMode.Weekly)
+		_periodicity = Param(nameof(Periodicity), PeriodicityModes.Weekly)
 			.SetDisplay("Periodicity", "Schedule of the range preparation", "Schedule")
 			.SetCanOptimize(true);
 
@@ -113,7 +113,7 @@ public class RangeBreakout2Strategy : Strategy
 			.SetOptimize(0, 23, 1)
 			.SetCanOptimize(true);
 
-		_rangeMode = Param(nameof(RangeMode), RangeCalculationMode.Atr)
+		_rangeMode = Param(nameof(RangeMode), RangeCalculationModes.Atr)
 			.SetDisplay("Range Mode", "Method used to calculate the raw range", "Range")
 			.SetCanOptimize(true);
 
@@ -137,7 +137,7 @@ public class RangeBreakout2Strategy : Strategy
 			.SetDisplay("ATR Length", "Number of candles used for ATR calculation", "Range")
 			.SetCanOptimize(true);
 
-		_tradeMode = Param(nameof(TradeMode), TradeModeOption.Stop)
+		_tradeMode = Param(nameof(TradeMode), TradeModeOptions.Stop)
 			.SetDisplay("Trade Mode", "Order type used on range breakout", "Trading")
 			.SetCanOptimize(true);
 
@@ -156,7 +156,7 @@ public class RangeBreakout2Strategy : Strategy
 			.SetDisplay("Stop-Loss Percentage", "Percentage of the range used for stop-loss", "Trading")
 			.SetCanOptimize(true);
 
-		_lotMode = Param(nameof(LotMode), LotManagementMode.Martingale)
+		_lotMode = Param(nameof(LotMode), LotManagementModes.Martingale)
 			.SetDisplay("Lot Mode", "Money management scheme", "Risk")
 			.SetCanOptimize(true);
 
@@ -185,7 +185,7 @@ public class RangeBreakout2Strategy : Strategy
 	/// <summary>
 	/// Range preparation schedule.
 	/// </summary>
-	public PeriodicityMode Periodicity
+	public PeriodicityModes Periodicity
 	{
 		get => _periodicity.Value;
 		set => _periodicity.Value = value;
@@ -212,7 +212,7 @@ public class RangeBreakout2Strategy : Strategy
 	/// <summary>
 	/// Range calculation method.
 	/// </summary>
-	public RangeCalculationMode RangeMode
+	public RangeCalculationModes RangeMode
 	{
 		get => _rangeMode.Value;
 		set => _rangeMode.Value = value;
@@ -257,7 +257,7 @@ public class RangeBreakout2Strategy : Strategy
 	/// <summary>
 	/// Trading mode (stop, limit or random).
 	/// </summary>
-	public TradeModeOption TradeMode
+	public TradeModeOptions TradeMode
 	{
 		get => _tradeMode.Value;
 		set => _tradeMode.Value = value;
@@ -293,7 +293,7 @@ public class RangeBreakout2Strategy : Strategy
 	/// <summary>
 	/// Money management scheme.
 	/// </summary>
-	public LotManagementMode LotMode
+	public LotManagementModes LotMode
 	{
 		get => _lotMode.Value;
 		set => _lotMode.Value = value;
@@ -352,7 +352,7 @@ public class RangeBreakout2Strategy : Strategy
 
 		yield return (Security, SignalCandleType);
 
-		if (RangeMode == RangeCalculationMode.Atr)
+		if (RangeMode == RangeCalculationModes.Atr)
 			yield return (Security, AtrCandleType);
 	}
 
@@ -365,7 +365,7 @@ public class RangeBreakout2Strategy : Strategy
 		_atrValue = 0m;
 		_lastAsk = null;
 		_lastBid = null;
-		_phase = StrategyPhase.StandBy;
+		_phase = StrategyPhases.StandBy;
 		_setupRange = 0m;
 		_setupCenter = 0m;
 		_setupHigh = 0m;
@@ -397,7 +397,7 @@ public class RangeBreakout2Strategy : Strategy
 			.WhenNew(ProcessSignalCandle)
 			.Start();
 
-		if (RangeMode == RangeCalculationMode.Atr)
+		if (RangeMode == RangeCalculationModes.Atr)
 		{
 			_atrIndicator = new AverageTrueRange { Length = AtrLength };
 
@@ -420,7 +420,7 @@ public class RangeBreakout2Strategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_phase == StrategyPhase.StandBy && ShouldStartSetup(candle.CloseTime))
+		if (_phase == StrategyPhases.StandBy && ShouldStartSetup(candle.CloseTime))
 			TryPrepareSetup();
 	}
 
@@ -442,7 +442,7 @@ public class RangeBreakout2Strategy : Strategy
 		if (bestAsk != null)
 			_lastAsk = bestAsk;
 
-		if (_phase == StrategyPhase.Setup)
+		if (_phase == StrategyPhases.Setup)
 			TryExecuteEntries();
 	}
 
@@ -454,9 +454,9 @@ public class RangeBreakout2Strategy : Strategy
 
 		return Periodicity switch
 		{
-			PeriodicityMode.Weekly => time.DayOfWeek == DayOfWeekSetting && time.Hour == triggerHour,
-			PeriodicityMode.Daily => time.Hour == triggerHour,
-			PeriodicityMode.NonStop => true,
+			PeriodicityModes.Weekly => time.DayOfWeek == DayOfWeekSetting && time.Hour == triggerHour,
+			PeriodicityModes.Daily => time.Hour == triggerHour,
+			PeriodicityModes.NonStop => true,
 			_ => false,
 		};
 	}
@@ -477,16 +477,16 @@ public class RangeBreakout2Strategy : Strategy
 		_setupHigh = _setupCenter + offset;
 		_setupLow = _setupCenter - offset;
 
-		_phase = StrategyPhase.Setup;
+		_phase = StrategyPhases.Setup;
 	}
 
 	private decimal CalculateRawRange(decimal referencePrice)
 	{
 		return RangeMode switch
 		{
-			RangeCalculationMode.Atr => CalculateAtrRange(referencePrice),
-			RangeCalculationMode.Percent => referencePrice * PricePercentage / 100m,
-			RangeCalculationMode.Fixed => (Security?.PriceStep ?? 0m) * FixedRangePoints,
+			RangeCalculationModes.Atr => CalculateAtrRange(referencePrice),
+			RangeCalculationModes.Percent => referencePrice * PricePercentage / 100m,
+			RangeCalculationModes.Fixed => (Security?.PriceStep ?? 0m) * FixedRangePoints,
 			_ => 0m,
 		};
 	}
@@ -507,7 +507,7 @@ public class RangeBreakout2Strategy : Strategy
 		if (_lastAsk == null || _lastBid == null)
 			return;
 
-		if (_phase != StrategyPhase.Setup)
+		if (_phase != StrategyPhases.Setup)
 			return;
 
 		var ask = _lastAsk.Value;
@@ -539,7 +539,7 @@ public class RangeBreakout2Strategy : Strategy
 
 		if (isUpper)
 		{
-			if (mode == TradeModeOption.Stop)
+			if (mode == TradeModeOptions.Stop)
 			{
 				referencePrice = ask;
 				order = BuyMarket(volume);
@@ -552,7 +552,7 @@ public class RangeBreakout2Strategy : Strategy
 		}
 		else
 		{
-			if (mode == TradeModeOption.Stop)
+			if (mode == TradeModeOptions.Stop)
 			{
 				referencePrice = bid;
 				order = SellMarket(volume);
@@ -571,25 +571,25 @@ public class RangeBreakout2Strategy : Strategy
 		}
 
 		ApplyProtections(order.Side, referencePrice, volume);
-		_phase = StrategyPhase.Trade;
+		_phase = StrategyPhases.Trade;
 	}
 
-	private TradeModeOption ResolveTradeMode()
+	private TradeModeOptions ResolveTradeMode()
 	{
-		if (TradeMode != TradeModeOption.Random)
+		if (TradeMode != TradeModeOptions.Random)
 			return TradeMode;
 
-		return _random.Next(2) == 0 ? TradeModeOption.Stop : TradeModeOption.Limit;
+		return _random.Next(2) == 0 ? TradeModeOptions.Stop : TradeModeOptions.Limit;
 	}
 
 	private decimal PrepareTradeVolume()
 	{
 		return LotMode switch
 		{
-			LotManagementMode.Constant => RecalculateBaseVolume(),
-			LotManagementMode.Linear => PrepareLinearVolume(),
-			LotManagementMode.Martingale => PrepareMartingaleVolume(),
-			LotManagementMode.Fibonacci => PrepareFibonacciVolume(),
+			LotManagementModes.Constant => RecalculateBaseVolume(),
+			LotManagementModes.Linear => PrepareLinearVolume(),
+			LotManagementModes.Martingale => PrepareMartingaleVolume(),
+			LotManagementModes.Fibonacci => PrepareFibonacciVolume(),
 			_ => RecalculateBaseVolume(),
 		};
 	}
@@ -762,7 +762,7 @@ public class RangeBreakout2Strategy : Strategy
 
 	private void ResetToStandBy()
 	{
-		_phase = StrategyPhase.StandBy;
+		_phase = StrategyPhases.StandBy;
 		_setupRange = 0m;
 		_setupCenter = 0m;
 		_setupHigh = 0m;

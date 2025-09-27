@@ -22,7 +22,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class FetchNewsStrategy : Strategy
 {
-	private readonly StrategyParam<FetchNewsOperationMode> _mode;
+	private readonly StrategyParam<FetchNewsOperationModes> _mode;
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<int> _stopLossPoints;
@@ -32,7 +32,7 @@ public class FetchNewsStrategy : Strategy
 	private readonly StrategyParam<string> _tradingKeywords;
 	private readonly StrategyParam<string> _calendarEventsDefinition;
 	private readonly StrategyParam<int> _timeZoneOffsetHours;
-	private readonly StrategyParam<NewsImportanceLevel> _alertImportance;
+	private readonly StrategyParam<NewsImportanceLevels> _alertImportance;
 	private readonly StrategyParam<bool> _onlySymbolCurrencies;
 
 	private readonly List<CalendarEvent> _calendarEvents = new();
@@ -51,7 +51,7 @@ public class FetchNewsStrategy : Strategy
 	/// </summary>
 	public FetchNewsStrategy()
 	{
-		_mode = Param(nameof(Mode), FetchNewsOperationMode.Alerting)
+		_mode = Param(nameof(Mode), FetchNewsOperationModes.Alerting)
 		.SetDisplay("Mode", "Select alerting or trading behaviour.", "General");
 
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
@@ -82,7 +82,7 @@ public class FetchNewsStrategy : Strategy
 		_timeZoneOffsetHours = Param(nameof(TimeZoneOffsetHours), 0)
 		.SetDisplay("Calendar TZ Offset (h)", "Offset in hours applied to event timestamps.", "Calendar");
 
-		_alertImportance = Param(nameof(AlertImportance), NewsImportanceLevel.Moderate)
+		_alertImportance = Param(nameof(AlertImportance), NewsImportanceLevels.Moderate)
 		.SetDisplay("Alert Importance", "Minimum importance for alerting mode.", "Alerting");
 
 		_onlySymbolCurrencies = Param(nameof(OnlySymbolCurrencies), true)
@@ -92,7 +92,7 @@ public class FetchNewsStrategy : Strategy
 	/// <summary>
 	/// Mode of operation.
 	/// </summary>
-	public FetchNewsOperationMode Mode
+	public FetchNewsOperationModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -182,7 +182,7 @@ public class FetchNewsStrategy : Strategy
 	/// <summary>
 	/// Minimum importance processed in alerting mode.
 	/// </summary>
-	public NewsImportanceLevel AlertImportance
+	public NewsImportanceLevels AlertImportance
 	{
 		get => _alertImportance.Value;
 		set => _alertImportance.Value = value;
@@ -313,12 +313,12 @@ public class FetchNewsStrategy : Strategy
 
 			switch (Mode)
 			{
-			case FetchNewsOperationMode.Alerting:
+			case FetchNewsOperationModes.Alerting:
 				ProcessAlert(calendarEvent);
 				_processedEvents.Add(calendarEvent.Id);
 				break;
 
-			case FetchNewsOperationMode.Trading:
+			case FetchNewsOperationModes.Trading:
 				if (ProcessTrading(calendarEvent, now))
 				_processedEvents.Add(calendarEvent.Id);
 				break;
@@ -539,7 +539,7 @@ public class FetchNewsStrategy : Strategy
 		_calendarEvents.Sort((left, right) => left.Time.CompareTo(right.Time));
 	}
 
-	private bool TryParseImportance(string text, out NewsImportanceLevel importance)
+	private bool TryParseImportance(string text, out NewsImportanceLevels importance)
 	{
 		if (Enum.TryParse(text, true, out importance))
 		return true;
@@ -548,16 +548,16 @@ public class FetchNewsStrategy : Strategy
 		{
 		case "medium":
 		case "moderate":
-			importance = NewsImportanceLevel.Moderate;
+			importance = NewsImportanceLevels.Moderate;
 			return true;
 
 		case "high":
 		case "important":
-			importance = NewsImportanceLevel.High;
+			importance = NewsImportanceLevels.High;
 			return true;
 
 		case "low":
-			importance = NewsImportanceLevel.Low;
+			importance = NewsImportanceLevels.Low;
 			return true;
 		}
 
@@ -579,13 +579,13 @@ public class FetchNewsStrategy : Strategy
 		return false;
 	}
 
-	private sealed record CalendarEvent(string Id, DateTimeOffset Time, string Currency, NewsImportanceLevel Importance, string Name);
+	private sealed record CalendarEvent(string Id, DateTimeOffset Time, string Currency, NewsImportanceLevels Importance, string Name);
 }
 
 /// <summary>
 /// Available modes for <see cref="FetchNewsStrategy"/>.
 /// </summary>
-public enum FetchNewsOperationMode
+public enum FetchNewsOperationModes
 {
 	/// <summary>
 	/// Only log matching events.
@@ -601,7 +601,7 @@ public enum FetchNewsOperationMode
 /// <summary>
 /// Importance level used by the macroeconomic calendar.
 /// </summary>
-public enum NewsImportanceLevel
+public enum NewsImportanceLevels
 {
 	/// <summary>
 	/// Low importance release.

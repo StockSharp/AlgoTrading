@@ -28,7 +28,7 @@ public class FrankUdMinimalStrategy : Strategy
 
 	private readonly List<PositionEntry> _longEntries = new();
 	private readonly List<PositionEntry> _shortEntries = new();
-	private readonly Dictionary<long, OrderAction> _orderActions = new();
+	private readonly Dictionary<long, OrderActions> _orderActions = new();
 
 	private decimal _pointValue;
 	private decimal _takeProfitThreshold;
@@ -239,7 +239,7 @@ public class FrankUdMinimalStrategy : Strategy
 		return;
 
 		var order = BuyMarket(volume);
-		RegisterOrder(order, OrderAction.OpenLong);
+		RegisterOrder(order, OrderActions.OpenLong);
 	}
 
 	private void OpenShortPosition()
@@ -249,7 +249,7 @@ public class FrankUdMinimalStrategy : Strategy
 		return;
 
 		var order = SellMarket(volume);
-		RegisterOrder(order, OrderAction.OpenShort);
+		RegisterOrder(order, OrderActions.OpenShort);
 	}
 
 	private void CloseLongPositions()
@@ -259,7 +259,7 @@ public class FrankUdMinimalStrategy : Strategy
 		return;
 
 		var order = SellMarket(volume);
-		RegisterOrder(order, OrderAction.CloseLong);
+		RegisterOrder(order, OrderActions.CloseLong);
 	}
 
 	private void CloseShortPositions()
@@ -269,10 +269,10 @@ public class FrankUdMinimalStrategy : Strategy
 		return;
 
 		var order = BuyMarket(volume);
-		RegisterOrder(order, OrderAction.CloseShort);
+		RegisterOrder(order, OrderActions.CloseShort);
 	}
 
-	private void RegisterOrder(Order order, OrderAction action)
+	private void RegisterOrder(Order order, OrderActions action)
 	{
 		if (order == null)
 		return;
@@ -293,19 +293,19 @@ public class FrankUdMinimalStrategy : Strategy
 
 		switch (action)
 		{
-			case OrderAction.OpenLong:
+			case OrderActions.OpenLong:
 			AddEntry(_longEntries, price, volume);
 			break;
 
-			case OrderAction.OpenShort:
+			case OrderActions.OpenShort:
 			AddEntry(_shortEntries, price, volume);
 			break;
 
-			case OrderAction.CloseLong:
+			case OrderActions.CloseLong:
 			RemoveVolume(_longEntries, volume);
 			break;
 
-			case OrderAction.CloseShort:
+			case OrderActions.CloseShort:
 			RemoveVolume(_shortEntries, volume);
 			break;
 		}
@@ -499,7 +499,7 @@ public class FrankUdMinimalStrategy : Strategy
 		}
 	}
 
-	private enum OrderAction
+	private enum OrderActions
 	{
 		OpenLong,
 		CloseLong,

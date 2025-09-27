@@ -32,7 +32,7 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 	private readonly StrategyParam<int> _skyscraperLength;
 	private readonly StrategyParam<decimal> _skyscraperMultiplier;
 	private readonly StrategyParam<decimal> _skyscraperPercentage;
-	private readonly StrategyParam<SkyscraperMethod> _skyscraperMode;
+	private readonly StrategyParam<SkyscraperMethods> _skyscraperMode;
 	private readonly StrategyParam<int> _skyscraperSignalBar;
 	private readonly StrategyParam<decimal> _skyscraperVolume;
 	private readonly StrategyParam<decimal> _skyscraperStopLoss;
@@ -53,7 +53,7 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 	private readonly List<CandleSnapshot> _skyscraperCandles = new();
 	private readonly List<CandleSnapshot> _colorAmlCandles = new();
 
-	private ModuleSource? _activeModule;
+	private ModuleSources? _activeModule;
 	private decimal? _entryPrice;
 	private decimal? _stopLossPrice;
 	private decimal? _takeProfitPrice;
@@ -104,7 +104,7 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 	.SetNotNegative()
 	.SetDisplay("Percentage Offset", "Optional percentage displacement of the middle line", "Skyscraper");
 
-	_skyscraperMode = Param(nameof(SkyscraperMode), SkyscraperMethod.HighLow)
+	_skyscraperMode = Param(nameof(SkyscraperMode), SkyscraperMethods.HighLow)
 	.SetDisplay("Boundary Source", "Defines whether the module uses High/Low or Close prices", "Skyscraper");
 
 	_skyscraperSignalBar = Param(nameof(SkyscraperSignalBar), 1)
@@ -251,7 +251,7 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 	/// <summary>
 	/// Source mode for Skyscraper boundaries.
 	/// </summary>
-	public SkyscraperMethod SkyscraperMode
+	public SkyscraperMethods SkyscraperMode
 	{
 	get => _skyscraperMode.Value;
 	set => _skyscraperMode.Value = value;
@@ -464,7 +464,7 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 	var closeLong = currentColor == 1 && SkyscraperEnableLongExit;
 	var closeShort = currentColor == 0 && SkyscraperEnableShortExit;
 
-	ExecuteSignals(ModuleSource.Skyscraper, candle, openLong, closeLong, openShort, closeShort, SkyscraperVolume, SkyscraperStopLoss, SkyscraperTakeProfit);
+	ExecuteSignals(ModuleSources.Skyscraper, candle, openLong, closeLong, openShort, closeShort, SkyscraperVolume, SkyscraperStopLoss, SkyscraperTakeProfit);
 	CheckRisk(candle);
 	}
 
@@ -496,11 +496,11 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 	var closeLong = currentColor == 0 && ColorAmlEnableLongExit;
 	var closeShort = currentColor == 2 && ColorAmlEnableShortExit;
 
-	ExecuteSignals(ModuleSource.ColorAml, candle, openLong, closeLong, openShort, closeShort, ColorAmlVolume, ColorAmlStopLoss, ColorAmlTakeProfit);
+	ExecuteSignals(ModuleSources.ColorAml, candle, openLong, closeLong, openShort, closeShort, ColorAmlVolume, ColorAmlStopLoss, ColorAmlTakeProfit);
 	CheckRisk(candle);
 	}
 
-	private void ExecuteSignals(ModuleSource module, ICandleMessage candle, bool openLong, bool closeLong, bool openShort, bool closeShort, decimal volume, decimal stopLossPoints, decimal takeProfitPoints)
+	private void ExecuteSignals(ModuleSources module, ICandleMessage candle, bool openLong, bool closeLong, bool openShort, bool closeShort, decimal volume, decimal stopLossPoints, decimal takeProfitPoints)
 	{
 	if (volume <= 0m)
 	return;
@@ -529,7 +529,7 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 	if (requiredVolume > 0m)
 	{
 	BuyMarket(requiredVolume);
-	SetEntryState(module, candle.ClosePrice, stopLossPoints, takeProfitPoints, TradeDirection.Long);
+	SetEntryState(module, candle.ClosePrice, stopLossPoints, takeProfitPoints, TradeDirections.Long);
 	}
 	}
 
@@ -542,7 +542,7 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 	if (requiredVolume > 0m)
 	{
 	SellMarket(requiredVolume);
-	SetEntryState(module, candle.ClosePrice, stopLossPoints, takeProfitPoints, TradeDirection.Short);
+	SetEntryState(module, candle.ClosePrice, stopLossPoints, takeProfitPoints, TradeDirections.Short);
 	}
 	}
 	}
@@ -584,7 +584,7 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 	}
 	}
 
-	private void SetEntryState(ModuleSource module, decimal entryPrice, decimal stopLossPoints, decimal takeProfitPoints, TradeDirection direction)
+	private void SetEntryState(ModuleSources module, decimal entryPrice, decimal stopLossPoints, decimal takeProfitPoints, TradeDirections direction)
 	{
 	_activeModule = module;
 	_entryPrice = entryPrice;
@@ -593,11 +593,11 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 
 	switch (direction)
 	{
-	case TradeDirection.Long:
+	case TradeDirections.Long:
 	_stopLossPrice = stopLossPoints > 0m ? entryPrice - stopLossPoints * step : null;
 	_takeProfitPrice = takeProfitPoints > 0m ? entryPrice + takeProfitPoints * step : null;
 	break;
-	case TradeDirection.Short:
+	case TradeDirections.Short:
 	_stopLossPrice = stopLossPoints > 0m ? entryPrice + stopLossPoints * step : null;
 	_takeProfitPrice = takeProfitPoints > 0m ? entryPrice - takeProfitPoints * step : null;
 	break;
@@ -628,13 +628,13 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 	return step is > 0m ? step.Value : 0.0001m;
 	}
 
-	private enum ModuleSource
+	private enum ModuleSources
 	{
 	Skyscraper,
 	ColorAml
 	}
 
-	private enum TradeDirection
+	private enum TradeDirections
 	{
 	Long,
 	Short
@@ -643,7 +643,7 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 	/// <summary>
 	/// Price source selection for Skyscraper Fix.
 	/// </summary>
-	public enum SkyscraperMethod
+	public enum SkyscraperMethods
 	{
 	HighLow,
 	Close
@@ -653,7 +653,7 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 
 	private static class SkyscraperCalculator
 	{
-	public static int?[] CalculateColors(IReadOnlyList<CandleSnapshot> candles, decimal point, int length, decimal multiplier, decimal percentage, SkyscraperMethod method)
+	public static int?[] CalculateColors(IReadOnlyList<CandleSnapshot> candles, decimal point, int length, decimal multiplier, decimal percentage, SkyscraperMethods method)
 	{
 	if (candles.Count == 0)
 	return Array.Empty<int?>();
@@ -713,7 +713,7 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 
 	decimal smax0;
 	decimal smin0;
-	if (method == SkyscraperMethod.HighLow)
+	if (method == SkyscraperMethods.HighLow)
 	{
 	smax0 = lowSeries[bar] + x2Step;
 	smin0 = highSeries[bar] - x2Step;

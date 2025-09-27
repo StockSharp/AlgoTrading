@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ThePredatorStrategy : Strategy
 {
-	private readonly StrategyParam<PredatorMode> _mode;
+	private readonly StrategyParam<PredatorModes> _mode;
 	private readonly StrategyParam<int> _fastMaLength;
 	private readonly StrategyParam<int> _slowMaLength;
 	private readonly StrategyParam<int> _dmiPeriod;
@@ -61,7 +61,7 @@ public class ThePredatorStrategy : Strategy
 	/// <summary>
 	/// Available entry templates taken from the original expert.
 	/// </summary>
-	public enum PredatorMode
+	public enum PredatorModes
 	{
 		Strategy1,
 		Strategy2
@@ -72,7 +72,7 @@ public class ThePredatorStrategy : Strategy
 	/// </summary>
 	public ThePredatorStrategy()
 	{
-		_mode = Param(nameof(Mode), PredatorMode.Strategy1)
+		_mode = Param(nameof(Mode), PredatorModes.Strategy1)
 			.SetDisplay("Mode", "Select entry template", "General");
 
 		_fastMaLength = Param(nameof(FastMaLength), 1)
@@ -158,7 +158,7 @@ public class ThePredatorStrategy : Strategy
 	/// <summary>
 	/// Selected template.
 	/// </summary>
-	public PredatorMode Mode
+	public PredatorModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -474,14 +474,14 @@ public class ThePredatorStrategy : Strategy
 
 	switch (Mode)
 	{
-		case PredatorMode.Strategy1:
+		case PredatorModes.Strategy1:
 		{
 			longSignal = adx > AdxThreshold && diPlus > diMinus && fast > slow && longMomentum && macd > macdSignal;
 			shortSignal = adx > AdxThreshold && diMinus > diPlus && fast < slow && shortMomentum && macd < macdSignal;
 			break;
 		}
 
-		case PredatorMode.Strategy2:
+		case PredatorModes.Strategy2:
 		{
 			var hasPrevious = _hasPrevCandle;
 			var buyBandCheck = hasPrevious && _prevClose >= _prevTightLower;

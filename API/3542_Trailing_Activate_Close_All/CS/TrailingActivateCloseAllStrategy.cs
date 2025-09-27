@@ -19,7 +19,7 @@ using StockSharp.Algo;
 /// <summary>
 /// Defines how often the trailing logic is evaluated.
 /// </summary>
-public enum TrailingMode
+public enum TrailingModes
 {
 	/// <summary>
 	/// Recalculate protection on every tick.
@@ -48,7 +48,7 @@ public class TrailingActivateCloseAllStrategy : Strategy
 	?? TryGetField("FreezeDistance");
 
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<TrailingMode> _trailingMode;
+	private readonly StrategyParam<TrailingModes> _trailingMode;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _trailingActivatePoints;
@@ -81,7 +81,7 @@ public class TrailingActivateCloseAllStrategy : Strategy
 	/// <summary>
 	/// Frequency of trailing calculations.
 	/// </summary>
-	public TrailingMode TrailingMode
+	public TrailingModes TrailingModes
 	{
 		get => _trailingMode.Value;
 		set => _trailingMode.Value = value;
@@ -167,7 +167,7 @@ public class TrailingActivateCloseAllStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for bar-based trailing.", "General");
 
-		_trailingMode = Param(nameof(TrailingMode), TrailingMode.NewBar)
+		_trailingMode = Param(nameof(TrailingModes), TrailingModes.NewBar)
 		.SetDisplay("Trailing Mode", "Frequency of trailing calculations.", "General");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 150m)
@@ -213,7 +213,7 @@ public class TrailingActivateCloseAllStrategy : Strategy
 	{
 		yield return (Security, DataType.Level1);
 
-		if (TrailingMode == TrailingMode.NewBar)
+		if (TrailingModes == TrailingModes.NewBar)
 		{
 			yield return (Security, CandleType);
 		}
@@ -266,7 +266,7 @@ public class TrailingActivateCloseAllStrategy : Strategy
 		.Bind(ProcessLevel1)
 		.Start();
 
-		if (TrailingMode == TrailingMode.NewBar)
+		if (TrailingModes == TrailingModes.NewBar)
 		{
 			var subscription = SubscribeCandles(CandleType);
 			subscription.Bind(ProcessCandle).Start();
@@ -324,7 +324,7 @@ public class TrailingActivateCloseAllStrategy : Strategy
 		if (FreezeLevelField is Level1Fields freezeField && message.Changes.TryGetValue(freezeField, out var freezeValue))
 		_freezeLevel = ToDecimal(freezeValue);
 
-		if (TrailingMode == TrailingMode.EveryTick)
+		if (TrailingModes == TrailingModes.EveryTick)
 		UpdateProtectionAndTrailing();
 	}
 

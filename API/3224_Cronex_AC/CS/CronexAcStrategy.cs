@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class CronexAcStrategy : Strategy
 {
-	private readonly StrategyParam<CronexMovingAverageType> _smoothingType;
+	private readonly StrategyParam<CronexMovingAverageTypes> _smoothingType;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _signalBar;
@@ -35,7 +35,7 @@ public class CronexAcStrategy : Strategy
 	/// <summary>
 	/// Type of smoothing applied to the Accelerator Oscillator.
 	/// </summary>
-	public CronexMovingAverageType SmoothingType
+	public CronexMovingAverageTypes SmoothingType
 	{
 		get => _smoothingType.Value;
 		set => _smoothingType.Value = value;
@@ -118,7 +118,7 @@ public class CronexAcStrategy : Strategy
 	/// </summary>
 	public CronexAcStrategy()
 	{
-		_smoothingType = Param(nameof(SmoothingType), CronexMovingAverageType.Simple)
+		_smoothingType = Param(nameof(SmoothingType), CronexMovingAverageTypes.Simple)
 			.SetDisplay("Smoothing", "Moving average type for smoothing", "Indicators");
 
 		_fastPeriod = Param(nameof(FastPeriod), 14)
@@ -267,14 +267,14 @@ public class CronexAcStrategy : Strategy
 		_slowHistory[0] = slowValue;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(CronexMovingAverageType type, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(CronexMovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			CronexMovingAverageType.Simple => new SimpleMovingAverage { Length = length },
-			CronexMovingAverageType.Exponential => new ExponentialMovingAverage { Length = length },
-			CronexMovingAverageType.Smoothed => new SmoothedMovingAverage { Length = length },
-			CronexMovingAverageType.Weighted => new WeightedMovingAverage { Length = length },
+			CronexMovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
+			CronexMovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			CronexMovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
+			CronexMovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -283,7 +283,7 @@ public class CronexAcStrategy : Strategy
 /// <summary>
 /// Moving average algorithms supported by Cronex AC strategy.
 /// </summary>
-public enum CronexMovingAverageType
+public enum CronexMovingAverageTypes
 {
 	/// <summary>
 	/// Simple moving average.

@@ -37,7 +37,7 @@ public class ExpColorMetroMmrecDuplexStrategy : Strategy
 		defaultLossTrigger: 3,
 		defaultSmallMm: 0.01m,
 		defaultMm: 0.1m,
-		defaultMarginMode: MarginMode.Lot,
+		defaultMarginMode: MarginModes.Lot,
 		defaultStopLoss: 1000m,
 		defaultTakeProfit: 2000m,
 		defaultDeviation: 10m,
@@ -58,7 +58,7 @@ public class ExpColorMetroMmrecDuplexStrategy : Strategy
 		defaultLossTrigger: 3,
 		defaultSmallMm: 0.01m,
 		defaultMm: 0.1m,
-		defaultMarginMode: MarginMode.Lot,
+		defaultMarginMode: MarginModes.Lot,
 		defaultStopLoss: 1000m,
 		defaultTakeProfit: 2000m,
 		defaultDeviation: 10m,
@@ -343,19 +343,19 @@ public class ExpColorMetroMmrecDuplexStrategy : Strategy
 	/// <summary>
 	/// Money management mode for the long module (kept for reference).
 	/// </summary>
-	public MarginMode LongMarginMode
+	public MarginModes LongMarginMode
 	{
-		get => _longModule.MarginMode;
-		set => _longModule.MarginMode = value;
+		get => _longModule.MarginModes;
+		set => _longModule.MarginModes = value;
 	}
 
 	/// <summary>
 	/// Money management mode for the short module (kept for reference).
 	/// </summary>
-	public MarginMode ShortMarginMode
+	public MarginModes ShortMarginMode
 	{
-		get => _shortModule.MarginMode;
-		set => _shortModule.MarginMode = value;
+		get => _shortModule.MarginModes;
+		set => _shortModule.MarginModes = value;
 	}
 
 	/// <inheritdoc />
@@ -480,7 +480,7 @@ public class ExpColorMetroMmrecDuplexStrategy : Strategy
 	/// <summary>
 	/// Money management modes preserved from the MT5 source for reference.
 	/// </summary>
-	public enum MarginMode
+	public enum MarginModes
 	{
 		/// <summary>
 		/// Position size derived from the available free margin.
@@ -525,7 +525,7 @@ public class ExpColorMetroMmrecDuplexStrategy : Strategy
 		private readonly StrategyParam<decimal> _stopLossTicks;
 		private readonly StrategyParam<decimal> _takeProfitTicks;
 		private readonly StrategyParam<decimal> _deviationTicks;
-		private readonly StrategyParam<MarginMode> _marginMode;
+		private readonly StrategyParam<MarginModes> _marginMode;
 
 		private readonly List<decimal> _upHistory = new();
 		private readonly List<decimal> _downHistory = new();
@@ -545,7 +545,7 @@ public class ExpColorMetroMmrecDuplexStrategy : Strategy
 		int defaultLossTrigger,
 		decimal defaultSmallMm,
 		decimal defaultMm,
-		MarginMode defaultMarginMode,
+		MarginModes defaultMarginMode,
 		decimal defaultStopLoss,
 		decimal defaultTakeProfit,
 		decimal defaultDeviation,
@@ -713,7 +713,7 @@ public class ExpColorMetroMmrecDuplexStrategy : Strategy
 			set => _deviationTicks.Value = value;
 		}
 
-		public MarginMode MarginMode
+		public MarginModes MarginModes
 		{
 			get => _marginMode.Value;
 			set => _marginMode.Value = value;

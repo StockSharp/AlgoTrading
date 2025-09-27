@@ -24,7 +24,7 @@ public class CommissionCalculatorStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPrice;
 	private readonly StrategyParam<decimal> _takeProfitPrice;
 	private readonly StrategyParam<decimal> _commissionRate;
-	private readonly StrategyParam<OrderMode> _orderMode;
+	private readonly StrategyParam<OrderModes> _orderMode;
 
 	private decimal _totalFee;
 	private decimal _lastFee;
@@ -34,7 +34,7 @@ public class CommissionCalculatorStrategy : Strategy
 	/// <summary>
 	/// Available order execution modes.
 	/// </summary>
-	public enum OrderMode
+	public enum OrderModes
 	{
 		/// <summary>
 		/// Do not send any order.
@@ -120,7 +120,7 @@ public class CommissionCalculatorStrategy : Strategy
 	/// <summary>
 	/// Selected order execution mode.
 	/// </summary>
-	public OrderMode Mode
+	public OrderModes Mode
 	{
 		get => _orderMode.Value;
 		set => _orderMode.Value = value;
@@ -148,7 +148,7 @@ public class CommissionCalculatorStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Commission Rate %", "Commission rate applied to each executed trade", "General");
 
-		_orderMode = Param(nameof(Mode), OrderMode.None)
+		_orderMode = Param(nameof(Mode), OrderModes.None)
 			.SetDisplay("Order Mode", "Type of order that should be placed", "Trading");
 	}
 
@@ -249,7 +249,7 @@ public class CommissionCalculatorStrategy : Strategy
 
 		var volume = Volume;
 
-		if (Mode == OrderMode.None || volume <= 0m)
+		if (Mode == OrderModes.None || volume <= 0m)
 		{
 			LogInfo("Order mode is set to None or volume is zero. No order will be sent.");
 			return;
@@ -257,12 +257,12 @@ public class CommissionCalculatorStrategy : Strategy
 
 		Order order = Mode switch
 		{
-			OrderMode.MarketBuy => BuyMarket(volume),
-			OrderMode.MarketSell => SellMarket(volume),
-			OrderMode.BuyLimit => EntryPrice > 0m ? BuyLimit(EntryPrice, volume) : null,
-			OrderMode.SellLimit => EntryPrice > 0m ? SellLimit(EntryPrice, volume) : null,
-			OrderMode.BuyStop => EntryPrice > 0m ? BuyStop(EntryPrice, volume) : null,
-			OrderMode.SellStop => EntryPrice > 0m ? SellStop(EntryPrice, volume) : null,
+			OrderModes.MarketBuy => BuyMarket(volume),
+			OrderModes.MarketSell => SellMarket(volume),
+			OrderModes.BuyLimit => EntryPrice > 0m ? BuyLimit(EntryPrice, volume) : null,
+			OrderModes.SellLimit => EntryPrice > 0m ? SellLimit(EntryPrice, volume) : null,
+			OrderModes.BuyStop => EntryPrice > 0m ? BuyStop(EntryPrice, volume) : null,
+			OrderModes.SellStop => EntryPrice > 0m ? SellStop(EntryPrice, volume) : null,
 			_ => null,
 		};
 

@@ -22,7 +22,7 @@ public class ExpMaRoundingCandleMmrecStrategy : Strategy
 {
 
 	private readonly StrategyParam<DataType> _candleTypeParam;
-	private readonly StrategyParam<MaSmoothingMethod> _maMethodParam;
+	private readonly StrategyParam<MaSmoothingMethods> _maMethodParam;
 	private readonly StrategyParam<int> _maLengthParam;
 	private readonly StrategyParam<decimal> _roundingFactorParam;
 	private readonly StrategyParam<decimal> _gapParam;
@@ -49,7 +49,7 @@ public class ExpMaRoundingCandleMmrecStrategy : Strategy
 		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle type", "Timeframe used to build MA Rounding candles.", "General");
 
-		_maMethodParam = Param(nameof(SmoothingMethod), MaSmoothingMethod.Simple)
+		_maMethodParam = Param(nameof(SmoothingMethod), MaSmoothingMethods.Simple)
 		.SetDisplay("Smoothing", "Moving average smoothing method.", "Indicator");
 
 		_maLengthParam = Param(nameof(MaLength), 12)
@@ -97,7 +97,7 @@ public class ExpMaRoundingCandleMmrecStrategy : Strategy
 		set => _candleTypeParam.Value = value;
 	}
 
-	public MaSmoothingMethod SmoothingMethod
+	public MaSmoothingMethods SmoothingMethod
 	{
 		get => _maMethodParam.Value;
 		set => _maMethodParam.Value = value;
@@ -344,10 +344,10 @@ public class ExpMaRoundingCandleMmrecStrategy : Strategy
 	{
 		return SmoothingMethod switch
 		{
-			MaSmoothingMethod.Simple => new SimpleMovingAverage { Length = MaLength },
-			MaSmoothingMethod.Exponential => new ExponentialMovingAverage { Length = MaLength },
-			MaSmoothingMethod.Smoothed => new SmoothedMovingAverage { Length = MaLength },
-			MaSmoothingMethod.Weighted => new WeightedMovingAverage { Length = MaLength },
+			MaSmoothingMethods.Simple => new SimpleMovingAverage { Length = MaLength },
+			MaSmoothingMethods.Exponential => new ExponentialMovingAverage { Length = MaLength },
+			MaSmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = MaLength },
+			MaSmoothingMethods.Weighted => new WeightedMovingAverage { Length = MaLength },
 			_ => new SimpleMovingAverage { Length = MaLength },
 		};
 	}
@@ -355,7 +355,7 @@ public class ExpMaRoundingCandleMmrecStrategy : Strategy
 	/// <summary>
 	/// Available moving average smoothing methods.
 	/// </summary>
-	public enum MaSmoothingMethod
+	public enum MaSmoothingMethods
 	{
 		/// <summary>Simple moving average.</summary>
 		Simple,

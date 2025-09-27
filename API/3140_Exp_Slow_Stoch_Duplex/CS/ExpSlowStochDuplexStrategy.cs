@@ -24,7 +24,7 @@ public class ExpSlowStochDuplexStrategy : Strategy
 	private readonly StrategyParam<int> _longDPeriod;
 	private readonly StrategyParam<int> _longSlowing;
 	private readonly StrategyParam<int> _longSignalBar;
-	private readonly StrategyParam<SmoothingMethod> _longSmoothingMethod;
+	private readonly StrategyParam<SmoothingMethods> _longSmoothingMethod;
 	private readonly StrategyParam<int> _longSmoothingLength;
 	private readonly StrategyParam<bool> _longEnableOpen;
 	private readonly StrategyParam<bool> _longEnableClose;
@@ -34,7 +34,7 @@ public class ExpSlowStochDuplexStrategy : Strategy
 	private readonly StrategyParam<int> _shortDPeriod;
 	private readonly StrategyParam<int> _shortSlowing;
 	private readonly StrategyParam<int> _shortSignalBar;
-	private readonly StrategyParam<SmoothingMethod> _shortSmoothingMethod;
+	private readonly StrategyParam<SmoothingMethods> _shortSmoothingMethod;
 	private readonly StrategyParam<int> _shortSmoothingLength;
 	private readonly StrategyParam<bool> _shortEnableOpen;
 	private readonly StrategyParam<bool> _shortEnableClose;
@@ -79,7 +79,7 @@ public class ExpSlowStochDuplexStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Long Signal Bar", "Shift in bars used to detect the crossover for longs", "Logic");
 
-		_longSmoothingMethod = Param(nameof(LongSmoothingMethod), SmoothingMethod.Smoothed)
+		_longSmoothingMethod = Param(nameof(LongSmoothingMethod), SmoothingMethods.Smoothed)
 			.SetDisplay("Long Smoothing", "Post-processing method applied to %K and %D", "Indicators");
 
 		_longSmoothingLength = Param(nameof(LongSmoothingLength), 5)
@@ -111,7 +111,7 @@ public class ExpSlowStochDuplexStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Short Signal Bar", "Shift in bars used to detect the crossover for shorts", "Logic");
 
-		_shortSmoothingMethod = Param(nameof(ShortSmoothingMethod), SmoothingMethod.Smoothed)
+		_shortSmoothingMethod = Param(nameof(ShortSmoothingMethod), SmoothingMethods.Smoothed)
 			.SetDisplay("Short Smoothing", "Post-processing method applied to %K and %D", "Indicators");
 
 		_shortSmoothingLength = Param(nameof(ShortSmoothingLength), 5)
@@ -185,7 +185,7 @@ public class ExpSlowStochDuplexStrategy : Strategy
 	/// <summary>
 	/// Smoothing method applied to the long stochastic output.
 	/// </summary>
-	public SmoothingMethod LongSmoothingMethod
+	public SmoothingMethods LongSmoothingMethod
 	{
 		get => _longSmoothingMethod.Value;
 		set => _longSmoothingMethod.Value = value;
@@ -266,7 +266,7 @@ public class ExpSlowStochDuplexStrategy : Strategy
 	/// <summary>
 	/// Smoothing method applied to the short stochastic output.
 	/// </summary>
-	public SmoothingMethod ShortSmoothingMethod
+	public SmoothingMethods ShortSmoothingMethod
 	{
 		get => _shortSmoothingMethod.Value;
 		set => _shortSmoothingMethod.Value = value;
@@ -511,17 +511,17 @@ public class ExpSlowStochDuplexStrategy : Strategy
 		}
 	}
 
-	private static LengthIndicator<decimal> CreateSmoother(SmoothingMethod method, int length)
+	private static LengthIndicator<decimal> CreateSmoother(SmoothingMethods method, int length)
 	{
-		if (method == SmoothingMethod.None || length <= 1)
+		if (method == SmoothingMethods.None || length <= 1)
 			return null;
 
 		return method switch
 		{
-			SmoothingMethod.Simple => new SimpleMovingAverage { Length = length },
-			SmoothingMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			SmoothingMethod.Weighted => new WeightedMovingAverage { Length = length },
-			SmoothingMethod.Smoothed => new SmoothedMovingAverage { Length = length },
+			SmoothingMethods.Simple => new SimpleMovingAverage { Length = length },
+			SmoothingMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			SmoothingMethods.Weighted => new WeightedMovingAverage { Length = length },
+			SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
 			_ => null,
 		};
 	}
@@ -571,7 +571,7 @@ public class ExpSlowStochDuplexStrategy : Strategy
 	/// <summary>
 	/// Available smoothing methods for the secondary averaging stage.
 	/// </summary>
-	public enum SmoothingMethod
+	public enum SmoothingMethods
 	{
 		/// <summary>
 		/// No additional smoothing.

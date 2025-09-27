@@ -23,7 +23,7 @@ public class AveragingBySignalStrategy : Strategy
 /// <summary>
 /// Position sizing mode that mirrors the MQL LotType input.
 /// </summary>
-public enum LotSizingMode
+public enum LotSizingModes
 {
 /// <summary>
 /// Always use the base volume for every order.
@@ -39,7 +39,7 @@ Multiplier,
 /// <summary>
 /// Moving average calculation method used by the expert advisor.
 /// </summary>
-public enum MovingAverageMethod
+public enum MovingAverageMethods
 {
 /// <summary>
 /// Simple moving average (arithmetic mean).
@@ -64,12 +64,12 @@ LinearWeighted,
 
 private readonly StrategyParam<DataType> _candleType;
 private readonly StrategyParam<decimal> _initialVolume;
-private readonly StrategyParam<LotSizingMode> _lotSizing;
+private readonly StrategyParam<LotSizingModes> _lotSizing;
 private readonly StrategyParam<decimal> _multiplier;
 private readonly StrategyParam<int> _fastPeriod;
-private readonly StrategyParam<MovingAverageMethod> _fastMethod;
+private readonly StrategyParam<MovingAverageMethods> _fastMethod;
 private readonly StrategyParam<int> _slowPeriod;
-private readonly StrategyParam<MovingAverageMethod> _slowMethod;
+private readonly StrategyParam<MovingAverageMethods> _slowMethod;
 private readonly StrategyParam<int> _takeProfitPips;
 private readonly StrategyParam<bool> _averagingBySignal;
 private readonly StrategyParam<decimal> _layerDistancePips;
@@ -116,7 +116,7 @@ _initialVolume = Param(nameof(InitialVolume), 0.1m)
 .SetGreaterThanZero()
 .SetCanOptimize(true);
 
-_lotSizing = Param(nameof(LotSizing), LotSizingMode.Multiplier)
+_lotSizing = Param(nameof(LotSizing), LotSizingModes.Multiplier)
 .SetDisplay("Lot Sizing", "Choose between fixed or multiplier-based sizing.", "Money Management");
 
 _multiplier = Param(nameof(Multiplier), 2m)
@@ -129,7 +129,7 @@ _fastPeriod = Param(nameof(FastPeriod), 28)
 .SetGreaterThanZero()
 .SetCanOptimize(true);
 
-_fastMethod = Param(nameof(FastMethod), MovingAverageMethod.LinearWeighted)
+_fastMethod = Param(nameof(FastMethod), MovingAverageMethods.LinearWeighted)
 .SetDisplay("Fast Method", "Moving average method for the fast line.", "Indicators");
 
 _slowPeriod = Param(nameof(SlowPeriod), 50)
@@ -137,7 +137,7 @@ _slowPeriod = Param(nameof(SlowPeriod), 50)
 .SetGreaterThanZero()
 .SetCanOptimize(true);
 
-_slowMethod = Param(nameof(SlowMethod), MovingAverageMethod.Smoothed)
+_slowMethod = Param(nameof(SlowMethod), MovingAverageMethods.Smoothed)
 .SetDisplay("Slow Method", "Moving average method for the slow line.", "Indicators");
 
 _takeProfitPips = Param(nameof(TakeProfitPips), 15)
@@ -193,14 +193,14 @@ set => _initialVolume.Value = value;
 /// <summary>
 /// Sizing logic used when calculating volumes for averaging layers.
 /// </summary>
-public LotSizingMode LotSizing
+public LotSizingModes LotSizing
 {
 get => _lotSizing.Value;
 set => _lotSizing.Value = value;
 }
 
 /// <summary>
-/// Multiplier applied when <see cref="LotSizingMode.Multiplier"/> is selected.
+/// Multiplier applied when <see cref="LotSizingModes.Multiplier"/> is selected.
 /// </summary>
 public decimal Multiplier
 {
@@ -220,7 +220,7 @@ set => _fastPeriod.Value = value;
 /// <summary>
 /// Moving average method for the fast line.
 /// </summary>
-public MovingAverageMethod FastMethod
+public MovingAverageMethods FastMethod
 {
 get => _fastMethod.Value;
 set => _fastMethod.Value = value;
@@ -238,7 +238,7 @@ set => _slowPeriod.Value = value;
 /// <summary>
 /// Moving average method for the slow line.
 /// </summary>
-public MovingAverageMethod SlowMethod
+public MovingAverageMethods SlowMethod
 {
 get => _slowMethod.Value;
 set => _slowMethod.Value = value;
@@ -571,7 +571,7 @@ private decimal CalculateOrderVolume(int layerIndex)
 {
 var volume = InitialVolume;
 
-if (LotSizing == LotSizingMode.Multiplier)
+if (LotSizing == LotSizingModes.Multiplier)
 {
 for (var i = 0; i < layerIndex; i++)
 volume *= Multiplier;
@@ -604,14 +604,14 @@ volume = maxVolume.Value;
 return volume;
 }
 
-private IIndicator CreateMovingAverage(MovingAverageMethod method, int length)
+private IIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 {
 return method switch
 {
-MovingAverageMethod.Simple => new SimpleMovingAverage { Length = length },
-MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = length },
-MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-MovingAverageMethod.LinearWeighted => new WeightedMovingAverage { Length = length },
+MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 _ => new SimpleMovingAverage { Length = length },
 };
 }

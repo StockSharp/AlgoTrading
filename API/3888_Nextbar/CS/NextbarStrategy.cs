@@ -21,7 +21,7 @@ public class NextbarStrategy : Strategy
 	/// <summary>
 	/// Trading direction modes supported by the original expert advisor.
 	/// </summary>
-	public enum NextbarDirection
+	public enum NextbarDirections
 	{
 		/// <summary>
 		/// Follow the detected momentum (buy after a rise, sell after a drop).
@@ -40,7 +40,7 @@ public class NextbarStrategy : Strategy
 	private readonly StrategyParam<int> _minMovePoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<int> _stopLossPoints;
-	private readonly StrategyParam<NextbarDirection> _direction;
+	private readonly StrategyParam<NextbarDirections> _direction;
 
 	private readonly List<decimal> _closeHistory = new();
 
@@ -80,7 +80,7 @@ public class NextbarStrategy : Strategy
 			.SetDisplay("Stop Loss (points)", "Protective distance expressed in MetaTrader points", "Risk")
 			.SetCanOptimize(true);
 
-		_direction = Param(nameof(Direction), NextbarDirection.Follow)
+		_direction = Param(nameof(Direction), NextbarDirections.Follow)
 			.SetDisplay("Direction", "Choose between trend-following or contrarian behaviour", "Trading Rules");
 	}
 
@@ -141,7 +141,7 @@ public class NextbarStrategy : Strategy
 	/// <summary>
 	/// Defines whether the strategy follows or fades the detected momentum swing.
 	/// </summary>
-	public NextbarDirection Direction
+	public NextbarDirections Direction
 	{
 		get => _direction.Value;
 		set => _direction.Value = value;
@@ -239,15 +239,15 @@ public class NextbarStrategy : Strategy
 
 		var direction = Direction;
 
-		if ((direction == NextbarDirection.Follow && bullishMove) ||
-			(direction == NextbarDirection.Reverse && bearishMove))
+		if ((direction == NextbarDirections.Follow && bullishMove) ||
+			(direction == NextbarDirections.Reverse && bearishMove))
 		{
 			BuyMarket(volume);
 			_entryPrice = currentClose;
 			_barsSinceEntry = 0;
 		}
-		else if ((direction == NextbarDirection.Follow && bearishMove) ||
-			(direction == NextbarDirection.Reverse && bullishMove))
+		else if ((direction == NextbarDirections.Follow && bearishMove) ||
+			(direction == NextbarDirections.Reverse && bullishMove))
 		{
 			SellMarket(volume);
 			_entryPrice = currentClose;

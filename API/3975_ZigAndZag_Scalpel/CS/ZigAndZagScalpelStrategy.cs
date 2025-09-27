@@ -40,7 +40,7 @@ public class ZigAndZagScalpelStrategy : Strategy
 	private DateTime _currentDay = DateTime.MinValue;
 	private int _tradesToday;
 	private bool _trendUp;
-	private PivotType _lastMinorPivotType = PivotType.None;
+	private PivotTypes _lastMinorPivotType = PivotTypes.None;
 	private bool _minorPivotUsed;
 
 	/// <summary>
@@ -204,7 +204,7 @@ public class ZigAndZagScalpelStrategy : Strategy
 		if (_minorPivotUsed)
 		return;
 
-		if (_lastMinorPivotType == PivotType.None)
+		if (_lastMinorPivotType == PivotTypes.None)
 		return;
 
 		if (_tradesToday >= MaxTradesPerDay)
@@ -212,7 +212,7 @@ public class ZigAndZagScalpelStrategy : Strategy
 
 		var navel = CalculateNavel(candle);
 
-		if (_lastMinorPivotType == PivotType.Low && _trendUp)
+		if (_lastMinorPivotType == PivotTypes.Low && _trendUp)
 		{
 			if (navel - _lastMinorPivot >= _breakoutDistance)
 			{
@@ -221,7 +221,7 @@ public class ZigAndZagScalpelStrategy : Strategy
 				_tradesToday++;
 			}
 		}
-		else if (_lastMinorPivotType == PivotType.High && !_trendUp)
+		else if (_lastMinorPivotType == PivotTypes.High && !_trendUp)
 		{
 			if (_lastMinorPivot - navel >= _breakoutDistance)
 			{
@@ -271,7 +271,7 @@ public class ZigAndZagScalpelStrategy : Strategy
 		{
 			_lastMinorPivot = minorValue;
 			_previousMinorPivot = minorValue;
-			_lastMinorPivotType = PivotType.Low;
+			_lastMinorPivotType = PivotTypes.Low;
 			_minorPivotUsed = false;
 			return;
 		}
@@ -281,7 +281,7 @@ public class ZigAndZagScalpelStrategy : Strategy
 
 		_previousMinorPivot = _lastMinorPivot;
 		_lastMinorPivot = minorValue;
-		_lastMinorPivotType = _lastMinorPivot < _previousMinorPivot ? PivotType.Low : PivotType.High;
+		_lastMinorPivotType = _lastMinorPivot < _previousMinorPivot ? PivotTypes.Low : PivotTypes.High;
 		_minorPivotUsed = false;
 	}
 
@@ -289,12 +289,12 @@ public class ZigAndZagScalpelStrategy : Strategy
 	{
 		if (Position > 0)
 		{
-			if (!_trendUp || (CloseOnOppositePivot && _lastMinorPivotType == PivotType.High))
+			if (!_trendUp || (CloseOnOppositePivot && _lastMinorPivotType == PivotTypes.High))
 			ClosePosition();
 		}
 		else if (Position < 0)
 		{
-			if (_trendUp || (CloseOnOppositePivot && _lastMinorPivotType == PivotType.Low))
+			if (_trendUp || (CloseOnOppositePivot && _lastMinorPivotType == PivotTypes.Low))
 			ClosePosition();
 		}
 	}
@@ -304,7 +304,7 @@ public class ZigAndZagScalpelStrategy : Strategy
 		return (5m * candle.ClosePrice + 2m * candle.OpenPrice + candle.HighPrice + candle.LowPrice) / 9m;
 	}
 
-	private enum PivotType
+	private enum PivotTypes
 	{
 		None,
 		Low,

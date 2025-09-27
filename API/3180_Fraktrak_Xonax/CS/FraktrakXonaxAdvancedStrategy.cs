@@ -27,7 +27,7 @@ public class FraktrakXonaxAdvancedStrategy : Strategy
 	private readonly StrategyParam<int> _trailingStepPips;
 	private readonly StrategyParam<bool> _reverseMode;
 	private readonly StrategyParam<bool> _closeOpposite;
-	private readonly StrategyParam<MoneyManagementMode> _moneyManagementMode;
+	private readonly StrategyParam<MoneyManagementModes> _moneyManagementMode;
 	private readonly StrategyParam<decimal> _moneyManagementValue;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -106,7 +106,7 @@ public class FraktrakXonaxAdvancedStrategy : Strategy
 	/// <summary>
 	/// Selected position sizing approach.
 	/// </summary>
-	public MoneyManagementMode ManagementMode
+	public MoneyManagementModes ManagementMode
 	{
 		get => _moneyManagementMode.Value;
 		set => _moneyManagementMode.Value = value;
@@ -114,8 +114,8 @@ public class FraktrakXonaxAdvancedStrategy : Strategy
 
 	/// <summary>
 	/// Value used by the selected money management mode.
-	/// For <see cref="MoneyManagementMode.FixedLot"/> it is the fixed order volume.
-	/// For <see cref="MoneyManagementMode.RiskPercent"/> it is the risk percentage per trade.
+	/// For <see cref="MoneyManagementModes.FixedLot"/> it is the fixed order volume.
+	/// For <see cref="MoneyManagementModes.RiskPercent"/> it is the risk percentage per trade.
 	/// </summary>
 	public decimal ManagementValue
 	{
@@ -135,7 +135,7 @@ public class FraktrakXonaxAdvancedStrategy : Strategy
 	/// <summary>
 	/// Available money management configurations.
 	/// </summary>
-	public enum MoneyManagementMode
+	public enum MoneyManagementModes
 	{
 		/// <summary>
 		/// Always trade the specified fixed volume.
@@ -171,7 +171,7 @@ public class FraktrakXonaxAdvancedStrategy : Strategy
 		_closeOpposite = Param(nameof(CloseOpposite), false)
 		.SetDisplay("Close Opposite", "Close opposite positions before entering", "Trading");
 
-		_moneyManagementMode = Param(nameof(ManagementMode), MoneyManagementMode.RiskPercent)
+		_moneyManagementMode = Param(nameof(ManagementMode), MoneyManagementModes.RiskPercent)
 		.SetDisplay("Money Management", "Volume calculation mode", "Trading");
 
 		_moneyManagementValue = Param(nameof(ManagementValue), 3m)
@@ -461,7 +461,7 @@ public class FraktrakXonaxAdvancedStrategy : Strategy
 
 	private decimal CalculateOrderVolume(decimal entryPrice, decimal? stopPrice)
 	{
-		if (ManagementMode == MoneyManagementMode.FixedLot || stopPrice is null)
+		if (ManagementMode == MoneyManagementModes.FixedLot || stopPrice is null)
 			return ManagementValue;
 
 		var stopDistance = Math.Abs(entryPrice - stopPrice.Value);

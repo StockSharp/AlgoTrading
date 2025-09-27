@@ -28,8 +28,8 @@ public class TwoPendingOrders2Strategy : Strategy
 	private readonly StrategyParam<decimal> _trailingActivatePoints;
 	private readonly StrategyParam<decimal> _trailingStopPoints;
 	private readonly StrategyParam<decimal> _trailingStepPoints;
-	private readonly StrategyParam<TradeMode> _tradeMode;
-	private readonly StrategyParam<PendingOrderMode> _pendingType;
+	private readonly StrategyParam<TradeModes> _tradeMode;
+	private readonly StrategyParam<PendingOrderModes> _pendingType;
 	private readonly StrategyParam<int> _pendingExpirationMinutes;
 	private readonly StrategyParam<decimal> _pendingIndentPoints;
 	private readonly StrategyParam<decimal> _pendingMaxSpreadPoints;
@@ -80,10 +80,10 @@ public class TwoPendingOrders2Strategy : Strategy
 		.SetDisplay("Trailing Step (points)", "Minimum increment to move the trailing stop.", "Trailing")
 		.SetCanOptimize(true);
 
-		_tradeMode = Param(nameof(TradeMode), TradeMode.BuySell)
+		_tradeMode = Param(nameof(TradeModes), TradeModes.BuySell)
 		.SetDisplay("Trade Mode", "Allowed trade direction for new pending orders.", "General");
 
-		_pendingType = Param(nameof(PendingType), PendingOrderMode.Stop)
+		_pendingType = Param(nameof(PendingType), PendingOrderModes.Stop)
 		.SetDisplay("Pending Type", "Choose between stop or limit pending orders.", "General");
 
 		_pendingExpirationMinutes = Param(nameof(PendingExpirationMinutes), 600)
@@ -176,7 +176,7 @@ public class TwoPendingOrders2Strategy : Strategy
 	/// <summary>
 	/// Trade direction allowed for fresh pending orders.
 	/// </summary>
-	public TradeMode TradeMode
+	public TradeModes TradeModes
 	{
 		get => _tradeMode.Value;
 		set => _tradeMode.Value = value;
@@ -185,7 +185,7 @@ public class TwoPendingOrders2Strategy : Strategy
 	/// <summary>
 	/// Defines whether stop or limit orders are used.
 	/// </summary>
-	public PendingOrderMode PendingType
+	public PendingOrderModes PendingType
 	{
 		get => _pendingType.Value;
 		set => _pendingType.Value = value;
@@ -493,14 +493,14 @@ public class TwoPendingOrders2Strategy : Strategy
 
 		if (IsDirectionAllowed(Sides.Buy))
 		{
-			var price = PendingType == PendingOrderMode.Stop ? ask + indent : bid - indent;
+			var price = PendingType == PendingOrderModes.Stop ? ask + indent : bid - indent;
 			if (ReverseLevels)
-			price = PendingType == PendingOrderMode.Stop ? bid - indent : ask + indent;
+			price = PendingType == PendingOrderModes.Stop ? bid - indent : ask + indent;
 
 			price = NormalizePrice(price);
 			if (IsFarFromPositions(price))
 			{
-				if (PendingType == PendingOrderMode.Stop)
+				if (PendingType == PendingOrderModes.Stop)
 				BuyStop(price);
 				else
 				BuyLimit(price);
@@ -509,14 +509,14 @@ public class TwoPendingOrders2Strategy : Strategy
 
 		if (IsDirectionAllowed(Sides.Sell))
 		{
-			var price = PendingType == PendingOrderMode.Stop ? bid - indent : ask + indent;
+			var price = PendingType == PendingOrderModes.Stop ? bid - indent : ask + indent;
 			if (ReverseLevels)
-			price = PendingType == PendingOrderMode.Stop ? ask + indent : bid - indent;
+			price = PendingType == PendingOrderModes.Stop ? ask + indent : bid - indent;
 
 			price = NormalizePrice(price);
 			if (IsFarFromPositions(price))
 			{
-				if (PendingType == PendingOrderMode.Stop)
+				if (PendingType == PendingOrderModes.Stop)
 				SellStop(price);
 				else
 				SellLimit(price);
@@ -554,10 +554,10 @@ public class TwoPendingOrders2Strategy : Strategy
 
 	private bool IsDirectionAllowed(Sides side)
 	{
-		return TradeMode switch
+		return TradeModes switch
 		{
-			TradeMode.Buy => side == Sides.Buy,
-			TradeMode.Sell => side == Sides.Sell,
+			TradeModes.Buy => side == Sides.Buy,
+			TradeModes.Sell => side == Sides.Sell,
 			_ => true,
 		};
 	}
@@ -617,7 +617,7 @@ public class TwoPendingOrders2Strategy : Strategy
 	/// <summary>
 	/// Pending order type supported by the strategy.
 	/// </summary>
-	public enum PendingOrderMode
+	public enum PendingOrderModes
 	{
 		/// <summary>
 		/// Use stop orders placed away from the market.
@@ -633,7 +633,7 @@ public class TwoPendingOrders2Strategy : Strategy
 	/// <summary>
 	/// Trade direction restrictions.
 	/// </summary>
-	public enum TradeMode
+	public enum TradeModes
 	{
 		/// <summary>
 		/// Long trades only.

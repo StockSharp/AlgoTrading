@@ -23,14 +23,14 @@ namespace StockSharp.Samples.Strategies;
 public class ExpCronexChaikinStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<ChaikinAverageMethod> _chaikinMethod;
+	private readonly StrategyParam<ChaikinAverageMethods> _chaikinMethod;
 	private readonly StrategyParam<int> _chaikinFastPeriod;
 	private readonly StrategyParam<int> _chaikinSlowPeriod;
-	private readonly StrategyParam<CronexSmoothingMethod> _smoothingMethod;
+	private readonly StrategyParam<CronexSmoothingMethods> _smoothingMethod;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _phase;
-	private readonly StrategyParam<CronexVolumeType> _volumeType;
+	private readonly StrategyParam<CronexVolumeTypes> _volumeType;
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<bool> _buyOpenEnabled;
 	private readonly StrategyParam<bool> _sellOpenEnabled;
@@ -61,7 +61,7 @@ public class ExpCronexChaikinStrategy : Strategy
 	/// <summary>
 	/// Moving average method applied to the accumulation/distribution line.
 	/// </summary>
-	public ChaikinAverageMethod ChaikinMethod
+	public ChaikinAverageMethods ChaikinMethod
 	{
 		get => _chaikinMethod.Value;
 		set => _chaikinMethod.Value = value;
@@ -88,7 +88,7 @@ public class ExpCronexChaikinStrategy : Strategy
 	/// <summary>
 	/// Cronex smoothing method applied to the Chaikin oscillator.
 	/// </summary>
-	public CronexSmoothingMethod SmoothingMethod
+	public CronexSmoothingMethods SmoothingMethod
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -124,7 +124,7 @@ public class ExpCronexChaikinStrategy : Strategy
 	/// <summary>
 	/// Volume source used in the accumulation/distribution calculation.
 	/// </summary>
-	public CronexVolumeType VolumeSource
+	public CronexVolumeTypes VolumeSource
 	{
 		get => _volumeType.Value;
 		set => _volumeType.Value = value;
@@ -203,7 +203,7 @@ public class ExpCronexChaikinStrategy : Strategy
 		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromHours(4)))
 			.SetDisplay("Indicator Timeframe", "Time frame used for Cronex Chaikin calculations", "General");
 
-		_chaikinMethod = Param(nameof(ChaikinMethod), ChaikinAverageMethod.Exponential)
+		_chaikinMethod = Param(nameof(ChaikinMethod), ChaikinAverageMethods.Exponential)
 			.SetDisplay("Chaikin MA", "Moving-average method for the accumulation/distribution line", "Chaikin");
 
 		_chaikinFastPeriod = Param(nameof(ChaikinFastPeriod), 3)
@@ -216,7 +216,7 @@ public class ExpCronexChaikinStrategy : Strategy
 			.SetDisplay("Chaikin Slow", "Slow averaging period for Chaikin oscillator", "Chaikin")
 			.SetCanOptimize(true);
 
-		_smoothingMethod = Param(nameof(SmoothingMethod), CronexSmoothingMethod.Simple)
+		_smoothingMethod = Param(nameof(SmoothingMethod), CronexSmoothingMethods.Simple)
 			.SetDisplay("Cronex Method", "Smoothing algorithm applied to Chaikin values", "Cronex");
 
 		_fastPeriod = Param(nameof(FastPeriod), 14)
@@ -234,7 +234,7 @@ public class ExpCronexChaikinStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(-100, 100, 5);
 
-		_volumeType = Param(nameof(VolumeSource), CronexVolumeType.Tick)
+		_volumeType = Param(nameof(VolumeSource), CronexVolumeTypes.Tick)
 			.SetDisplay("Volume Source", "Volume applied inside the accumulation/distribution formula", "Chaikin");
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -429,8 +429,8 @@ public class ExpCronexChaikinStrategy : Strategy
 	{
 		return VolumeSource switch
 		{
-			CronexVolumeType.Tick => candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : candle.TotalVolume ?? 0m,
-			CronexVolumeType.Real => candle.TotalVolume ?? (candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : 0m),
+			CronexVolumeTypes.Tick => candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : candle.TotalVolume ?? 0m,
+			CronexVolumeTypes.Real => candle.TotalVolume ?? (candle.TotalTicks.HasValue ? (decimal)candle.TotalTicks.Value : 0m),
 			_ => candle.TotalVolume ?? 0m,
 		};
 	}
@@ -449,36 +449,36 @@ public class ExpCronexChaikinStrategy : Strategy
 		return multiplier * volume;
 	}
 
-	private static LengthIndicator<decimal> CreateChaikinAverage(ChaikinAverageMethod method, int length)
+	private static LengthIndicator<decimal> CreateChaikinAverage(ChaikinAverageMethods method, int length)
 	{
 		var normalized = Math.Max(1, length);
 
 		return method switch
 		{
-			ChaikinAverageMethod.Simple => new SimpleMovingAverage { Length = normalized },
-			ChaikinAverageMethod.Exponential => new ExponentialMovingAverage { Length = normalized },
-			ChaikinAverageMethod.Smoothed => new SmoothedMovingAverage { Length = normalized },
-			ChaikinAverageMethod.LinearWeighted => new WeightedMovingAverage { Length = normalized },
+			ChaikinAverageMethods.Simple => new SimpleMovingAverage { Length = normalized },
+			ChaikinAverageMethods.Exponential => new ExponentialMovingAverage { Length = normalized },
+			ChaikinAverageMethods.Smoothed => new SmoothedMovingAverage { Length = normalized },
+			ChaikinAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = normalized },
 			_ => new ExponentialMovingAverage { Length = normalized },
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateCronexSmoother(CronexSmoothingMethod method, int length, int phase)
+	private static LengthIndicator<decimal> CreateCronexSmoother(CronexSmoothingMethods method, int length, int phase)
 	{
 		var normalized = Math.Max(1, length);
 
 		return method switch
 		{
-			CronexSmoothingMethod.Simple => new SimpleMovingAverage { Length = normalized },
-			CronexSmoothingMethod.Exponential => new ExponentialMovingAverage { Length = normalized },
-			CronexSmoothingMethod.Smoothed => new SmoothedMovingAverage { Length = normalized },
-			CronexSmoothingMethod.LinearWeighted => new WeightedMovingAverage { Length = normalized },
-			CronexSmoothingMethod.Jjma => CreateJurik(normalized, phase),
-			CronexSmoothingMethod.JurX => CreateJurik(normalized, phase),
-			CronexSmoothingMethod.ParMa => new ExponentialMovingAverage { Length = normalized },
-			CronexSmoothingMethod.T3 => new TripleExponentialMovingAverage { Length = normalized },
-			CronexSmoothingMethod.Vidya => new ExponentialMovingAverage { Length = normalized },
-			CronexSmoothingMethod.Ama => new KaufmanAdaptiveMovingAverage { Length = normalized },
+			CronexSmoothingMethods.Simple => new SimpleMovingAverage { Length = normalized },
+			CronexSmoothingMethods.Exponential => new ExponentialMovingAverage { Length = normalized },
+			CronexSmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = normalized },
+			CronexSmoothingMethods.LinearWeighted => new WeightedMovingAverage { Length = normalized },
+			CronexSmoothingMethods.Jjma => CreateJurik(normalized, phase),
+			CronexSmoothingMethods.JurX => CreateJurik(normalized, phase),
+			CronexSmoothingMethods.ParMa => new ExponentialMovingAverage { Length = normalized },
+			CronexSmoothingMethods.T3 => new TripleExponentialMovingAverage { Length = normalized },
+			CronexSmoothingMethods.Vidya => new ExponentialMovingAverage { Length = normalized },
+			CronexSmoothingMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = normalized },
 			_ => new SimpleMovingAverage { Length = normalized },
 		};
 	}
@@ -543,7 +543,7 @@ public class ExpCronexChaikinStrategy : Strategy
 /// <summary>
 /// Moving average methods available for the Chaikin oscillator calculation.
 /// </summary>
-public enum ChaikinAverageMethod
+public enum ChaikinAverageMethods
 {
 	/// <summary>
 	/// Simple moving average.
@@ -569,7 +569,7 @@ public enum ChaikinAverageMethod
 /// <summary>
 /// Cronex smoothing algorithms supported by the strategy.
 /// </summary>
-public enum CronexSmoothingMethod
+public enum CronexSmoothingMethods
 {
 	/// <summary>
 	/// Simple moving average (SMA).
@@ -625,7 +625,7 @@ public enum CronexSmoothingMethod
 /// <summary>
 /// Volume source applied to the accumulation/distribution formula.
 /// </summary>
-public enum CronexVolumeType
+public enum CronexVolumeTypes
 {
 	/// <summary>
 	/// Use tick volume when available.

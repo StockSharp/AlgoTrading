@@ -30,11 +30,11 @@ public class ExpXpvtStrategy : Strategy
         private readonly StrategyParam<bool> _allowBuyClose;
         private readonly StrategyParam<bool> _allowSellClose;
         private readonly StrategyParam<DataType> _candleType;
-        private readonly StrategyParam<AppliedVolumeOption> _volumeSource;
-        private readonly StrategyParam<SmoothingMethod> _smoothingMethod;
+        private readonly StrategyParam<AppliedVolumeOptions> _volumeSource;
+        private readonly StrategyParam<SmoothingMethods> _smoothingMethod;
         private readonly StrategyParam<int> _smoothingLength;
         private readonly StrategyParam<int> _smoothingPhase;
-        private readonly StrategyParam<AppliedPriceOption> _priceSource;
+        private readonly StrategyParam<AppliedPriceOptions> _priceSource;
         private readonly StrategyParam<int> _signalBar;
 
         private LengthIndicator<decimal> _signalSmoother = null!;
@@ -75,10 +75,10 @@ public class ExpXpvtStrategy : Strategy
                 _candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
                         .SetDisplay("Candle Type", "Timeframe used for Price and Volume Trend", "Data");
 
-                _volumeSource = Param(nameof(VolumeSource), AppliedVolumeOption.TickVolume)
+                _volumeSource = Param(nameof(VolumeSource), AppliedVolumeOptions.TickVolume)
                         .SetDisplay("Volume Source", "Volume applied inside Price and Volume Trend", "Indicator");
 
-                _smoothingMethod = Param(nameof(Smoothing), SmoothingMethod.Exponential)
+                _smoothingMethod = Param(nameof(Smoothing), SmoothingMethods.Exponential)
                         .SetDisplay("Smoothing Method", "Moving average applied to the PVT signal", "Indicator");
 
                 _smoothingLength = Param(nameof(SmoothingLength), 5)
@@ -88,7 +88,7 @@ public class ExpXpvtStrategy : Strategy
                 _smoothingPhase = Param(nameof(SmoothingPhase), 15)
                         .SetDisplay("Smoothing Phase", "Phase parameter used by Jurik-style averages", "Indicator");
 
-                _priceSource = Param(nameof(PriceSource), AppliedPriceOption.Close)
+                _priceSource = Param(nameof(PriceSource), AppliedPriceOptions.Close)
                         .SetDisplay("Applied Price", "Price used to build Price and Volume Trend", "Indicator");
 
                 _signalBar = Param(nameof(SignalBar), 1)
@@ -171,7 +171,7 @@ public class ExpXpvtStrategy : Strategy
         /// <summary>
         /// Volume source applied to the PVT calculation.
         /// </summary>
-        public AppliedVolumeOption VolumeSource
+        public AppliedVolumeOptions VolumeSource
         {
                 get => _volumeSource.Value;
                 set => _volumeSource.Value = value;
@@ -180,7 +180,7 @@ public class ExpXpvtStrategy : Strategy
         /// <summary>
         /// Moving average applied to the PVT signal.
         /// </summary>
-        public SmoothingMethod Smoothing
+        public SmoothingMethods Smoothing
         {
                 get => _smoothingMethod.Value;
                 set => _smoothingMethod.Value = value;
@@ -207,7 +207,7 @@ public class ExpXpvtStrategy : Strategy
         /// <summary>
         /// Price used to build Price and Volume Trend.
         /// </summary>
-        public AppliedPriceOption PriceSource
+        public AppliedPriceOptions PriceSource
         {
                 get => _priceSource.Value;
                 set => _priceSource.Value = value;
@@ -359,30 +359,30 @@ public class ExpXpvtStrategy : Strategy
                         SetStopLoss(StopLossPoints, referencePrice, resultingPosition);
         }
 
-        private static decimal GetPrice(ICandleMessage candle, AppliedPriceOption price)
+        private static decimal GetPrice(ICandleMessage candle, AppliedPriceOptions price)
         {
                 return price switch
                 {
-                        AppliedPriceOption.Close => candle.ClosePrice,
-                        AppliedPriceOption.Open => candle.OpenPrice,
-                        AppliedPriceOption.High => candle.HighPrice,
-                        AppliedPriceOption.Low => candle.LowPrice,
-                        AppliedPriceOption.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-                        AppliedPriceOption.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-                        AppliedPriceOption.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-                        AppliedPriceOption.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-                        AppliedPriceOption.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-                        AppliedPriceOption.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
+                        AppliedPriceOptions.Close => candle.ClosePrice,
+                        AppliedPriceOptions.Open => candle.OpenPrice,
+                        AppliedPriceOptions.High => candle.HighPrice,
+                        AppliedPriceOptions.Low => candle.LowPrice,
+                        AppliedPriceOptions.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+                        AppliedPriceOptions.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+                        AppliedPriceOptions.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+                        AppliedPriceOptions.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+                        AppliedPriceOptions.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+                        AppliedPriceOptions.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
                                 ? candle.HighPrice
                                 : candle.ClosePrice < candle.OpenPrice
                                         ? candle.LowPrice
                                         : candle.ClosePrice,
-                        AppliedPriceOption.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
+                        AppliedPriceOptions.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
                                 ? (candle.HighPrice + candle.ClosePrice) / 2m
                                 : candle.ClosePrice < candle.OpenPrice
                                         ? (candle.LowPrice + candle.ClosePrice) / 2m
                                         : candle.ClosePrice,
-                        AppliedPriceOption.Demark =>
+                        AppliedPriceOptions.Demark =>
                                 DemarkPrice(candle.OpenPrice, candle.HighPrice, candle.LowPrice, candle.ClosePrice),
                         _ => candle.ClosePrice,
                 };
@@ -402,14 +402,14 @@ public class ExpXpvtStrategy : Strategy
                 return ((result - low) + (result - high)) / 2m;
         }
 
-        private static decimal GetVolume(ICandleMessage candle, AppliedVolumeOption volumeSource)
+        private static decimal GetVolume(ICandleMessage candle, AppliedVolumeOptions volumeSource)
         {
                 return volumeSource switch
                 {
-                        AppliedVolumeOption.TickVolume => candle.TotalTicks.HasValue
+                        AppliedVolumeOptions.TickVolume => candle.TotalTicks.HasValue
                                 ? candle.TotalTicks.Value
                                 : candle.TotalVolume ?? 0m,
-                        AppliedVolumeOption.RealVolume => candle.TotalVolume ?? (candle.TotalTicks.HasValue
+                        AppliedVolumeOptions.RealVolume => candle.TotalVolume ?? (candle.TotalTicks.HasValue
                                 ? candle.TotalTicks.Value
                                 : 0m),
                         _ => candle.TotalVolume ?? 0m,
@@ -425,22 +425,22 @@ public class ExpXpvtStrategy : Strategy
                         history.RemoveAt(0);
         }
 
-        private static LengthIndicator<decimal> CreateSmoother(SmoothingMethod method, int length, int phase)
+        private static LengthIndicator<decimal> CreateSmoother(SmoothingMethods method, int length, int phase)
         {
                 var normalizedLength = Math.Max(1, length);
 
                 return method switch
                 {
-                        SmoothingMethod.Simple => new SimpleMovingAverage { Length = normalizedLength },
-                        SmoothingMethod.Exponential => new ExponentialMovingAverage { Length = normalizedLength },
-                        SmoothingMethod.Smoothed => new SmoothedMovingAverage { Length = normalizedLength },
-                        SmoothingMethod.LinearWeighted => new WeightedMovingAverage { Length = normalizedLength },
-                        SmoothingMethod.Jjma => CreateJurik(normalizedLength, phase),
-                        SmoothingMethod.Jurx => CreateJurik(normalizedLength, phase),
-                        SmoothingMethod.Parabolic => new ExponentialMovingAverage { Length = normalizedLength },
-                        SmoothingMethod.TripleExponential => new TripleExponentialMovingAverage { Length = normalizedLength },
-                        SmoothingMethod.Vidya => new ExponentialMovingAverage { Length = normalizedLength },
-                        SmoothingMethod.Adaptive => new KaufmanAdaptiveMovingAverage { Length = normalizedLength },
+                        SmoothingMethods.Simple => new SimpleMovingAverage { Length = normalizedLength },
+                        SmoothingMethods.Exponential => new ExponentialMovingAverage { Length = normalizedLength },
+                        SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = normalizedLength },
+                        SmoothingMethods.LinearWeighted => new WeightedMovingAverage { Length = normalizedLength },
+                        SmoothingMethods.Jjma => CreateJurik(normalizedLength, phase),
+                        SmoothingMethods.Jurx => CreateJurik(normalizedLength, phase),
+                        SmoothingMethods.Parabolic => new ExponentialMovingAverage { Length = normalizedLength },
+                        SmoothingMethods.TripleExponential => new TripleExponentialMovingAverage { Length = normalizedLength },
+                        SmoothingMethods.Vidya => new ExponentialMovingAverage { Length = normalizedLength },
+                        SmoothingMethods.Adaptive => new KaufmanAdaptiveMovingAverage { Length = normalizedLength },
                         _ => new SimpleMovingAverage { Length = normalizedLength },
                 };
         }
@@ -461,7 +461,7 @@ public class ExpXpvtStrategy : Strategy
         /// <summary>
         /// Volume source options used by the strategy.
         /// </summary>
-        public enum AppliedVolumeOption
+        public enum AppliedVolumeOptions
         {
                 /// <summary>
                 /// Use tick volume (fallback to real volume if unavailable).
@@ -477,7 +477,7 @@ public class ExpXpvtStrategy : Strategy
         /// <summary>
         /// Moving average smoothing method applied to PVT.
         /// </summary>
-        public enum SmoothingMethod
+        public enum SmoothingMethods
         {
                 /// <summary>
                 /// Simple moving average.
@@ -533,7 +533,7 @@ public class ExpXpvtStrategy : Strategy
         /// <summary>
         /// Price source choices for the PVT calculation.
         /// </summary>
-        public enum AppliedPriceOption
+        public enum AppliedPriceOptions
         {
                 /// <summary>
                 /// Close price.

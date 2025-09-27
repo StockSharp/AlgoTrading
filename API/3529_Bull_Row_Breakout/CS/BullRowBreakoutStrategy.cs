@@ -31,11 +31,11 @@ public class BullRowBreakoutStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 	private readonly StrategyParam<int> _bearRowSize;
 	private readonly StrategyParam<decimal> _bearMinBody;
-	private readonly StrategyParam<RowSequenceMode> _bearRowMode;
+	private readonly StrategyParam<RowSequenceModes> _bearRowMode;
 	private readonly StrategyParam<int> _bearShift;
 	private readonly StrategyParam<int> _bullRowSize;
 	private readonly StrategyParam<decimal> _bullMinBody;
-	private readonly StrategyParam<RowSequenceMode> _bullRowMode;
+	private readonly StrategyParam<RowSequenceModes> _bullRowMode;
 	private readonly StrategyParam<int> _bullShift;
 	private readonly StrategyParam<int> _breakoutLookback;
 	private readonly StrategyParam<int> _stochasticKPeriod;
@@ -70,7 +70,7 @@ public class BullRowBreakoutStrategy : Strategy
 		.SetDisplay("Bear min body", "Minimum bearish candle body (price steps)", "Pattern")
 		.SetCanOptimize(true);
 
-		_bearRowMode = Param(nameof(BearRowMode), RowSequenceMode.Normal)
+		_bearRowMode = Param(nameof(BearRowMode), RowSequenceModes.Normal)
 		.SetDisplay("Bear row mode", "Body size progression for bearish row", "Pattern")
 		.SetCanOptimize(true);
 
@@ -86,7 +86,7 @@ public class BullRowBreakoutStrategy : Strategy
 		.SetDisplay("Bull min body", "Minimum bullish candle body (price steps)", "Pattern")
 		.SetCanOptimize(true);
 
-		_bullRowMode = Param(nameof(BullRowMode), RowSequenceMode.Normal)
+		_bullRowMode = Param(nameof(BullRowMode), RowSequenceModes.Normal)
 		.SetDisplay("Bull row mode", "Body size progression for bullish row", "Pattern")
 		.SetCanOptimize(true);
 
@@ -171,7 +171,7 @@ public class BullRowBreakoutStrategy : Strategy
 	/// <summary>
 	/// Bearish row body progression requirement.
 	/// </summary>
-	public RowSequenceMode BearRowMode
+	public RowSequenceModes BearRowMode
 	{
 		get => _bearRowMode.Value;
 		set => _bearRowMode.Value = value;
@@ -207,7 +207,7 @@ public class BullRowBreakoutStrategy : Strategy
 	/// <summary>
 	/// Bullish row body progression requirement.
 	/// </summary>
-	public RowSequenceMode BullRowMode
+	public RowSequenceModes BullRowMode
 	{
 		get => _bullRowMode.Value;
 		set => _bullRowMode.Value = value;
@@ -421,7 +421,7 @@ public class BullRowBreakoutStrategy : Strategy
 
 	private bool HasBullRow() => HasRow(BullRowSize, BullMinBody, BullRowMode, BullShift, isBullish: true);
 
-	private bool HasRow(int size, decimal minBody, RowSequenceMode mode, int shift, bool isBullish)
+	private bool HasRow(int size, decimal minBody, RowSequenceModes mode, int shift, bool isBullish)
 	{
 		if (size <= 0 || shift <= 0)
 		return false;
@@ -448,10 +448,10 @@ public class BullRowBreakoutStrategy : Strategy
 			if (body < minBodyValue)
 			return false;
 
-			if (mode == RowSequenceMode.Bigger && previousBody > 0m && body <= previousBody)
+			if (mode == RowSequenceModes.Bigger && previousBody > 0m && body <= previousBody)
 			return false;
 
-			if (mode == RowSequenceMode.Smaller && previousBody > 0m && body >= previousBody)
+			if (mode == RowSequenceModes.Smaller && previousBody > 0m && body >= previousBody)
 			return false;
 
 			previousBody = body;
@@ -518,7 +518,7 @@ public class BullRowBreakoutStrategy : Strategy
 /// <summary>
 /// Defines how candle bodies must evolve inside a row.
 /// </summary>
-public enum RowSequenceMode
+public enum RowSequenceModes
 {
 	/// <summary>
 	/// Only direction and minimum body size are checked.

@@ -21,7 +21,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _indicatorShift;
-	private readonly StrategyParam<SignalMode> _signalMode;
+	private readonly StrategyParam<SignalModes> _signalMode;
 	private readonly StrategyParam<bool> _useIndicator1;
 	private readonly StrategyParam<bool> _useIndicator2;
 	private readonly StrategyParam<bool> _useIndicator3;
@@ -30,7 +30,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 	private readonly StrategyParam<int> _period1;
 	private readonly StrategyParam<int> _period2;
 	private readonly StrategyParam<int> _period3;
-	private readonly StrategyParam<PriceMode> _priceMode3;
+	private readonly StrategyParam<PriceModes> _priceMode3;
 	private readonly StrategyParam<int> _period4;
 	private readonly StrategyParam<int> _period5;
 	private readonly StrategyParam<bool> _closeOnSignal;
@@ -89,7 +89,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 		.SetOptimize(0, 3, 1)
 		.SetNotNegative();
 
-		_signalMode = Param(nameof(SignalMode), SignalMode.Normal)
+		_signalMode = Param(nameof(SignalModes), SignalModes.Normal)
 		.SetDisplay("Signal Direction", "Switches between normal and reversed signal interpretation", "General");
 
 		_useIndicator1 = Param(nameof(UseIndicator1), true)
@@ -119,7 +119,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 		.SetDisplay("Fisher Period", "Lookback for the momentum Fisher transform", "Indicators")
 		.SetGreaterThanZero();
 
-		_priceMode3 = Param(nameof(PriceMode3), PriceMode.HighLow)
+		_priceMode3 = Param(nameof(PriceMode3), PriceModes.HighLow)
 		.SetDisplay("Fisher Price", "Price source for the Fisher momentum filter", "Indicators");
 
 		_period4 = Param(nameof(Period4), 14)
@@ -206,7 +206,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 	/// <summary>
 	/// Determines if signals are interpreted normally or reversed.
 	/// </summary>
-	public SignalMode SignalMode
+	public SignalModes SignalModes
 	{
 		get => _signalMode.Value;
 		set => _signalMode.Value = value;
@@ -536,11 +536,11 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 		return;
 
 		var shift = IndicatorShift;
-		var hull1 = UseIndicator1 ? GetHullDirection(_hullFastHistory, shift) : TrendDirection.Neutral;
-		var hull2 = UseIndicator2 ? GetHullDirection(_hullSlowHistory, shift) : TrendDirection.Neutral;
-		var fisherMomentum = UseIndicator3 ? GetFisherDirection(_fisherMomentumHistory, shift) : TrendDirection.Neutral;
-		var atrBreakout = UseIndicator4 ? GetAtrDirection(shift) : TrendDirection.Neutral;
-		var fisherTrend = UseIndicator5 ? GetFisherDirection(_fisherTrendHistory, shift) : TrendDirection.Neutral;
+		var hull1 = UseIndicator1 ? GetHullDirection(_hullFastHistory, shift) : TrendDirections.Neutral;
+		var hull2 = UseIndicator2 ? GetHullDirection(_hullSlowHistory, shift) : TrendDirections.Neutral;
+		var fisherMomentum = UseIndicator3 ? GetFisherDirection(_fisherMomentumHistory, shift) : TrendDirections.Neutral;
+		var atrBreakout = UseIndicator4 ? GetAtrDirection(shift) : TrendDirections.Neutral;
+		var fisherTrend = UseIndicator5 ? GetFisherDirection(_fisherTrendHistory, shift) : TrendDirections.Neutral;
 
 		var longCondition = EvaluateLongCondition(hull1, hull2, fisherMomentum, atrBreakout, fisherTrend);
 		var shortCondition = EvaluateShortCondition(hull1, hull2, fisherMomentum, atrBreakout, fisherTrend);
@@ -742,79 +742,79 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 		ResetRiskState();
 	}
 
-	private bool EvaluateLongCondition(TrendDirection hull1, TrendDirection hull2, TrendDirection fisherMomentum, TrendDirection atrBreakout, TrendDirection fisherTrend)
+	private bool EvaluateLongCondition(TrendDirections hull1, TrendDirections hull2, TrendDirections fisherMomentum, TrendDirections atrBreakout, TrendDirections fisherTrend)
 	{
-		var upHull1 = !UseIndicator1 || hull1 == TrendDirection.Up;
-		var upHull2 = !UseIndicator2 || hull2 == TrendDirection.Up;
-		var upFisherMomentum = !UseIndicator3 || fisherMomentum == TrendDirection.Up;
-		var upAtr = !UseIndicator4 || atrBreakout == TrendDirection.Up;
-		var upTrend = !UseIndicator5 || fisherTrend == TrendDirection.Up;
+		var upHull1 = !UseIndicator1 || hull1 == TrendDirections.Up;
+		var upHull2 = !UseIndicator2 || hull2 == TrendDirections.Up;
+		var upFisherMomentum = !UseIndicator3 || fisherMomentum == TrendDirections.Up;
+		var upAtr = !UseIndicator4 || atrBreakout == TrendDirections.Up;
+		var upTrend = !UseIndicator5 || fisherTrend == TrendDirections.Up;
 
-		var downHull1 = !UseIndicator1 || hull1 == TrendDirection.Down;
-		var downHull2 = !UseIndicator2 || hull2 == TrendDirection.Down;
-		var downFisherMomentum = !UseIndicator3 || fisherMomentum == TrendDirection.Down;
-		var downAtr = !UseIndicator4 || atrBreakout == TrendDirection.Down;
-		var downTrend = !UseIndicator5 || fisherTrend == TrendDirection.Down;
+		var downHull1 = !UseIndicator1 || hull1 == TrendDirections.Down;
+		var downHull2 = !UseIndicator2 || hull2 == TrendDirections.Down;
+		var downFisherMomentum = !UseIndicator3 || fisherMomentum == TrendDirections.Down;
+		var downAtr = !UseIndicator4 || atrBreakout == TrendDirections.Down;
+		var downTrend = !UseIndicator5 || fisherTrend == TrendDirections.Down;
 
-		return SignalMode == SignalMode.Normal
+		return SignalModes == SignalModes.Normal
 		? upHull1 && upHull2 && upFisherMomentum && upAtr && upTrend
 		: downHull1 && downHull2 && downFisherMomentum && downAtr && downTrend;
 	}
 
-	private bool EvaluateShortCondition(TrendDirection hull1, TrendDirection hull2, TrendDirection fisherMomentum, TrendDirection atrBreakout, TrendDirection fisherTrend)
+	private bool EvaluateShortCondition(TrendDirections hull1, TrendDirections hull2, TrendDirections fisherMomentum, TrendDirections atrBreakout, TrendDirections fisherTrend)
 	{
-		var downHull1 = !UseIndicator1 || hull1 == TrendDirection.Down;
-		var downHull2 = !UseIndicator2 || hull2 == TrendDirection.Down;
-		var downFisherMomentum = !UseIndicator3 || fisherMomentum == TrendDirection.Down;
-		var downAtr = !UseIndicator4 || atrBreakout == TrendDirection.Down;
-		var downTrend = !UseIndicator5 || fisherTrend == TrendDirection.Down;
+		var downHull1 = !UseIndicator1 || hull1 == TrendDirections.Down;
+		var downHull2 = !UseIndicator2 || hull2 == TrendDirections.Down;
+		var downFisherMomentum = !UseIndicator3 || fisherMomentum == TrendDirections.Down;
+		var downAtr = !UseIndicator4 || atrBreakout == TrendDirections.Down;
+		var downTrend = !UseIndicator5 || fisherTrend == TrendDirections.Down;
 
-		var upHull1 = !UseIndicator1 || hull1 == TrendDirection.Up;
-		var upHull2 = !UseIndicator2 || hull2 == TrendDirection.Up;
-		var upFisherMomentum = !UseIndicator3 || fisherMomentum == TrendDirection.Up;
-		var upAtr = !UseIndicator4 || atrBreakout == TrendDirection.Up;
-		var upTrend = !UseIndicator5 || fisherTrend == TrendDirection.Up;
+		var upHull1 = !UseIndicator1 || hull1 == TrendDirections.Up;
+		var upHull2 = !UseIndicator2 || hull2 == TrendDirections.Up;
+		var upFisherMomentum = !UseIndicator3 || fisherMomentum == TrendDirections.Up;
+		var upAtr = !UseIndicator4 || atrBreakout == TrendDirections.Up;
+		var upTrend = !UseIndicator5 || fisherTrend == TrendDirections.Up;
 
-		return SignalMode == SignalMode.Normal
+		return SignalModes == SignalModes.Normal
 		? downHull1 && downHull2 && downFisherMomentum && downAtr && downTrend
 		: upHull1 && upHull2 && upFisherMomentum && upAtr && upTrend;
 	}
 
-	private TrendDirection GetHullDirection(List<decimal> history, int shift)
+	private TrendDirections GetHullDirection(List<decimal> history, int shift)
 	{
 		var index = history.Count - 1 - shift;
 		if (index <= 0)
-		return TrendDirection.Neutral;
+		return TrendDirections.Neutral;
 
 		var current = history[index];
 		var previous = history[index - 1];
 
 		if (current > previous)
-		return TrendDirection.Up;
+		return TrendDirections.Up;
 		if (current < previous)
-		return TrendDirection.Down;
-		return TrendDirection.Neutral;
+		return TrendDirections.Down;
+		return TrendDirections.Neutral;
 	}
 
-	private TrendDirection GetFisherDirection(List<decimal> history, int shift)
+	private TrendDirections GetFisherDirection(List<decimal> history, int shift)
 	{
 		var index = history.Count - 1 - shift;
 		if (index < 0)
-		return TrendDirection.Neutral;
+		return TrendDirections.Neutral;
 
 		var value = history[index];
 		if (value > 0m)
-		return TrendDirection.Up;
+		return TrendDirections.Up;
 		if (value < 0m)
-		return TrendDirection.Down;
-		return TrendDirection.Neutral;
+		return TrendDirections.Down;
+		return TrendDirections.Neutral;
 	}
 
-	private TrendDirection GetAtrDirection(int shift)
+	private TrendDirections GetAtrDirection(int shift)
 	{
 		var index = _candleHistory.Count - 1 - shift;
 		if (index < 0 || index + 2 >= _candleHistory.Count)
-		return TrendDirection.Neutral;
+		return TrendDirections.Neutral;
 
 		var current = _candleHistory[index];
 		var previous1 = _candleHistory[index + 1];
@@ -834,9 +834,9 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 		current.OpenPrice > previous2.ClosePrice - atrValue;
 
 		if (buyCondition == sellCondition)
-		return TrendDirection.Neutral;
+		return TrendDirections.Neutral;
 
-		return buyCondition ? TrendDirection.Up : TrendDirection.Down;
+		return buyCondition ? TrendDirections.Up : TrendDirections.Down;
 	}
 
 	private void StoreCandle(ICandleMessage candle)
@@ -910,22 +910,22 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 	private int Period3 => _period3.Value;
 	private int Period4 => _period4.Value;
 	private int Period5 => _period5.Value;
-	private PriceMode PriceMode3 => _priceMode3.Value;
+	private PriceModes PriceMode3 => _priceMode3.Value;
 
-	private enum TrendDirection
+	private enum TrendDirections
 	{
 		Neutral = 0,
 		Up = 1,
 		Down = -1
 	}
 
-	public enum SignalMode
+	public enum SignalModes
 	{
 		Normal,
 		Reverse
 	}
 
-	public enum PriceMode
+	public enum PriceModes
 	{
 		HighLow,
 		Open,

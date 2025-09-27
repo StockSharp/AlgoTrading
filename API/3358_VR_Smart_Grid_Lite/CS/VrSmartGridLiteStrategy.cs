@@ -21,7 +21,7 @@ public class VrSmartGridLiteStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<decimal> _startVolume;
 	private readonly StrategyParam<decimal> _maximalVolume;
-	private readonly StrategyParam<CloseModeOption> _closeMode;
+	private readonly StrategyParam<CloseModeOptions> _closeMode;
 	private readonly StrategyParam<int> _orderStepPips;
 	private readonly StrategyParam<int> _minimalProfitPips;
 	private readonly StrategyParam<int> _slippagePips;
@@ -34,7 +34,7 @@ public class VrSmartGridLiteStrategy : Strategy
 	/// <summary>
 	/// Defines how the grid closes positions.
 	/// </summary>
-	public enum CloseModeOption
+	public enum CloseModeOptions
 	{
 		/// <summary>
 		/// Close opposite extremes at a weighted average price.
@@ -77,7 +77,7 @@ public class VrSmartGridLiteStrategy : Strategy
 	/// <summary>
 	/// Closing mode for managing grid exits.
 	/// </summary>
-	public CloseModeOption CloseMode
+	public CloseModeOptions CloseMode
 	{
 		get => _closeMode.Value;
 		set => _closeMode.Value = value;
@@ -136,7 +136,7 @@ public class VrSmartGridLiteStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Maximal Volume", "Upper limit for any single order", "Trading");
 
-		_closeMode = Param(nameof(CloseMode), CloseModeOption.Average)
+		_closeMode = Param(nameof(CloseMode), CloseModeOptions.Average)
 			.SetDisplay("Close Mode", "How the grid exits positions", "Exit");
 
 		_orderStepPips = Param(nameof(OrderStepPips), 390)
@@ -241,7 +241,7 @@ public class VrSmartGridLiteStrategy : Strategy
 	/// </summary>
 	private void ProcessCloseLogic(ICandleMessage candle, decimal minimalProfitDistance, SideStatistics buyStats, SideStatistics sellStats)
 	{
-		if (CloseMode == CloseModeOption.Average)
+		if (CloseMode == CloseModeOptions.Average)
 		{
 			if (buyStats.Count >= 2 && buyStats.MinEntry != null && buyStats.MaxEntry != null)
 			{
@@ -275,7 +275,7 @@ public class VrSmartGridLiteStrategy : Strategy
 				}
 			}
 		}
-		else if (CloseMode == CloseModeOption.PartClose)
+		else if (CloseMode == CloseModeOptions.PartClose)
 		{
 			if (!TryPrepareOrderVolume(StartVolume, out var startVolume))
 				return;
