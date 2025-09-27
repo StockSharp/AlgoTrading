@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class EarlyBirdRangeBreakStrategy : Strategy
 {
-	private const int MaxParts = 3;
 
 	private readonly StrategyParam<bool> _autoTrading;
 	private readonly StrategyParam<bool> _hedgeTrading;
@@ -27,6 +26,7 @@ public class EarlyBirdRangeBreakStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStopPoints;
 	private readonly StrategyParam<decimal> _trailingRiskMultiplier;
 	private readonly StrategyParam<decimal> _entryBufferPoints;
+	private readonly StrategyParam<int> _maxParts;
 	private readonly StrategyParam<int> _rangeStartHour;
 	private readonly StrategyParam<int> _rangeEndHour;
 	private readonly StrategyParam<int> _tradingStartHour;
@@ -149,6 +149,23 @@ public class EarlyBirdRangeBreakStrategy : Strategy
 		get => _entryBufferPoints.Value;
 		set => _entryBufferPoints.Value = value;
 	}
+	/// <summary>
+	/// Maximum number of partial exits allowed per position.
+	/// </summary>
+	public int MaxParts
+	{
+		get => _maxParts.Value;
+		set
+		{
+			if (_maxParts.Value == value)
+				return;
+
+			_maxParts.Value = value;
+			ClampDirectionState(_longState);
+			ClampDirectionState(_shortState);
+		}
+	}
+
 
 	/// <summary>
 	/// Hour of the day when the reference range starts.
@@ -277,6 +294,10 @@ public class EarlyBirdRangeBreakStrategy : Strategy
 		_entryBufferPoints = Param(nameof(EntryBufferPoints), 2m)
 		.SetNotNegative()
 		.SetDisplay("Entry Buffer (pts)", "Buffer added around the range breakout levels", "Entries");
+		_maxParts = Param(nameof(MaxParts), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("Max Parts", "Number of partial orders executed per breakout", "Execution");
+
 
 		_rangeStartHour = Param(nameof(RangeStartHour), 3)
 		.SetRange(0, 23)
@@ -416,32 +437,74 @@ public class EarlyBirdRangeBreakStrategy : Strategy
 		}
 	}
 
+	private void ClampDirectionState(DirectionState state)
+	{
+		var limit = _maxParts.Value;
+		if (limit <= 0)
+		{
+			state.Reset();
+			return;
+		}
+
+		if (state.Targets.Count > limit)
+		{
+			var retained = new Queue<decimal>(limit);
+			var count = 0;
+			foreach (var target in state.Targets)
+			{
+				retained.Enqueue(target);
+				count++;
+				if (count >= limit)
+					break;
+			}
+
+			state.Targets.Clear();
+			foreach (var target in retained)
+				state.Targets.Enqueue(target);
+		}
+
+		if (state.PartsRemaining > limit)
+			state.PartsRemaining = limit;
+	}
 	private void EnterDirection(DirectionState state, decimal executionPrice, bool isLong)
 	{
+		var parts = MaxParts;
+		if (parts <= 0)
+		{
+			state.Reset();
+			return;
+		}
+
 		var stopDistance = ConvertPoints(StopLossPoints);
 
 		state.EntryPrice = executionPrice;
 		state.StopPrice = isLong
-		? executionPrice - stopDistance
-		: executionPrice + stopDistance;
+			? executionPrice - stopDistance
+			: executionPrice + stopDistance;
 		state.Targets.Clear();
-		state.PartsRemaining = MaxParts;
+		state.PartsRemaining = parts;
 
+		var targetsAdded = 0;
 		foreach (var target in GetTargets(executionPrice, isLong))
-		state.Targets.Enqueue(target);
+		{
+			state.Targets.Enqueue(target);
+			targetsAdded++;
+			if (targetsAdded >= parts)
+				break;
+		}
 
-		for (var i = 0; i < MaxParts; i++)
+		for (var i = 0; i < parts; i++)
 		{
 			if (isLong)
-			BuyMarket(TradeVolume);
+				BuyMarket(TradeVolume);
 			else
-			SellMarket(TradeVolume);
+				SellMarket(TradeVolume);
 		}
 
 		if (isLong)
-		_longTradesToday++;
+			_longTradesToday++;
 		else
-		_shortTradesToday++;
+			_shortTradesToday++;
 	}
 
 	private IEnumerable<decimal> GetTargets(decimal entryPrice, bool isLong)

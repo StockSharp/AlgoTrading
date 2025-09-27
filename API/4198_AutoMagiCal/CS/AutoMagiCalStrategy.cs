@@ -11,10 +11,39 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class AutoMagiCalStrategy : Strategy
 {
-	private const decimal FirstDividerThreshold = 999999999m;
-	private const decimal SecondDividerThreshold = 9999999999m;
+	private readonly StrategyParam<decimal> _firstDividerThreshold;
+	private readonly StrategyParam<decimal> _secondDividerThreshold;
 
 	private int? _magicNumber;
+	public AutoMagiCalStrategy()
+	{
+		_firstDividerThreshold = Param(nameof(FirstDividerThreshold), 999999999m)
+			.SetGreaterThanZero()
+			.SetDisplay("First Divider Threshold", "Upper bound before the first divider is applied", "Calculation");
+
+		_secondDividerThreshold = Param(nameof(SecondDividerThreshold), 9999999999m)
+			.SetGreaterThanZero()
+			.SetDisplay("Second Divider Threshold", "Upper bound before the second divider is applied", "Calculation");
+	}
+
+	/// <summary>
+	/// Value above which the intermediate number is divided by ten.
+	/// </summary>
+	public decimal FirstDividerThreshold
+	{
+		get => _firstDividerThreshold.Value;
+		set => _firstDividerThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Value above which the intermediate number is divided by one hundred.
+	/// </summary>
+	public decimal SecondDividerThreshold
+	{
+		get => _secondDividerThreshold.Value;
+		set => _secondDividerThreshold.Value = value;
+	}
+
 
 	/// <summary>
 	/// Gets the most recently calculated magic number.
