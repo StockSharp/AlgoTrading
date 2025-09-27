@@ -13,7 +13,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BuySellBullishEngulfingStrategy : Strategy
 {
-	private const int BodyEmaLength = 14;
+	private readonly StrategyParam<int> _bodyEmaLength;
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _takeProfitPercent;
@@ -70,6 +70,15 @@ public class BuySellBullishEngulfingStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Candle body EMA length used for smoothing.
+	/// </summary>
+	public int BodyEmaLength
+	{
+		get => _bodyEmaLength.Value;
+		set => _bodyEmaLength.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of <see cref="BuySellBullishEngulfingStrategy"/>.
 	/// </summary>
 	public BuySellBullishEngulfingStrategy()
@@ -93,6 +102,10 @@ public class BuySellBullishEngulfingStrategy : Strategy
 
 		_trendMode = Param(nameof(TrendMode), TrendMode.Sma50)
 			.SetDisplay("Trend Rule", "How to detect trend", "Pattern");
+
+		_bodyEmaLength = Param(nameof(BodyEmaLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("Body EMA Length", "EMA length for candle bodies", "Pattern");
 	}
 
 	/// <inheritdoc />
