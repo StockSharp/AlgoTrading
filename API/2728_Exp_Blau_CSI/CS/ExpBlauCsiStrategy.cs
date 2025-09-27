@@ -18,6 +18,119 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ExpBlauCsiStrategy : Strategy
 {
+	/// <summary>
+	/// Available entry modes for the Blau CSI strategy.
+	/// </summary>
+	public enum BlauCsiEntryModes
+	{
+		/// <summary>
+		/// Use zero level breakdowns as signals.
+		/// </summary>
+		Breakdown,
+
+		/// <summary>
+		/// Use direction changes (twists) as signals.
+		/// </summary>
+		Twist
+	}
+
+	/// <summary>
+	/// Applied price constants supported by the Blau CSI indicator.
+	/// </summary>
+	public enum BlauCsiAppliedPrices
+	{
+		/// <summary>
+		/// Close price.
+		/// </summary>
+		Close = 1,
+
+		/// <summary>
+		/// Open price.
+		/// </summary>
+		Open = 2,
+
+		/// <summary>
+		/// High price.
+		/// </summary>
+		High = 3,
+
+		/// <summary>
+		/// Low price.
+		/// </summary>
+		Low = 4,
+
+		/// <summary>
+		/// Median price = (High + Low) / 2.
+		/// </summary>
+		Median = 5,
+
+		/// <summary>
+		/// Typical price = (High + Low + Close) / 3.
+		/// </summary>
+		Typical = 6,
+
+		/// <summary>
+		/// Weighted close price = (2 * Close + High + Low) / 4.
+		/// </summary>
+		Weighted = 7,
+
+		/// <summary>
+		/// Average of open and close.
+		/// </summary>
+		Simple = 8,
+
+		/// <summary>
+		/// Average of open, high, low, and close.
+		/// </summary>
+		Quarter = 9,
+
+		/// <summary>
+		/// Trend-following price variant 0.
+		/// </summary>
+		TrendFollow0 = 10,
+
+		/// <summary>
+		/// Trend-following price variant 1.
+		/// </summary>
+		TrendFollow1 = 11,
+
+		/// <summary>
+		/// Demark price.
+		/// </summary>
+		Demark = 12
+	}
+
+	/// <summary>
+	/// Smoothing methods available for Blau CSI.
+	/// </summary>
+	public enum BlauCsiSmoothMethods
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Simple,
+
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Exponential,
+
+		/// <summary>
+		/// Smoothed moving average (RMA).
+		/// </summary>
+		Smoothed,
+
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		LinearWeighted,
+
+		/// <summary>
+		/// Jurik moving average.
+		/// </summary>
+		Jurik
+	}
+
 	private readonly StrategyParam<BlauCsiEntryModes> _entryMode;
 	private readonly StrategyParam<BlauCsiSmoothMethods> _smoothMethod;
 	private readonly StrategyParam<int> _momentumLength;
@@ -545,119 +658,6 @@ public class ExpBlauCsiStrategy : Strategy
 		if (_indicatorValues.Count > keep)
 			_indicatorValues.RemoveRange(0, _indicatorValues.Count - keep);
 	}
-}
-
-/// <summary>
-/// Available entry modes for the Blau CSI strategy.
-/// </summary>
-public enum BlauCsiEntryModes
-{
-	/// <summary>
-	/// Use zero level breakdowns as signals.
-	/// </summary>
-	Breakdown,
-
-	/// <summary>
-	/// Use direction changes (twists) as signals.
-	/// </summary>
-	Twist
-}
-
-/// <summary>
-/// Applied price constants supported by the Blau CSI indicator.
-/// </summary>
-public enum BlauCsiAppliedPrices
-{
-	/// <summary>
-	/// Close price.
-	/// </summary>
-	Close = 1,
-
-	/// <summary>
-	/// Open price.
-	/// </summary>
-	Open = 2,
-
-	/// <summary>
-	/// High price.
-	/// </summary>
-	High = 3,
-
-	/// <summary>
-	/// Low price.
-	/// </summary>
-	Low = 4,
-
-	/// <summary>
-	/// Median price = (High + Low) / 2.
-	/// </summary>
-	Median = 5,
-
-	/// <summary>
-	/// Typical price = (High + Low + Close) / 3.
-	/// </summary>
-	Typical = 6,
-
-	/// <summary>
-	/// Weighted close price = (2 * Close + High + Low) / 4.
-	/// </summary>
-	Weighted = 7,
-
-	/// <summary>
-	/// Average of open and close.
-	/// </summary>
-	Simple = 8,
-
-	/// <summary>
-	/// Average of open, high, low, and close.
-	/// </summary>
-	Quarter = 9,
-
-	/// <summary>
-	/// Trend-following price variant 0.
-	/// </summary>
-	TrendFollow0 = 10,
-
-	/// <summary>
-	/// Trend-following price variant 1.
-	/// </summary>
-	TrendFollow1 = 11,
-
-	/// <summary>
-	/// Demark price.
-	/// </summary>
-	Demark = 12
-}
-
-/// <summary>
-/// Smoothing methods available for Blau CSI.
-/// </summary>
-public enum BlauCsiSmoothMethods
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Exponential,
-
-	/// <summary>
-	/// Smoothed moving average (RMA).
-	/// </summary>
-	Smoothed,
-
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	LinearWeighted,
-
-	/// <summary>
-	/// Jurik moving average.
-	/// </summary>
-	Jurik
 }
 
 /// <summary>

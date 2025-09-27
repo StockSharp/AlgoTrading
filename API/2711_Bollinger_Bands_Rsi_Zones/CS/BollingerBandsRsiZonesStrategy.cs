@@ -21,6 +21,72 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BollingerBandsRsiZonesStrategy : Strategy
 {
+	/// <summary>
+	/// Entry location for Bollinger Bands RSI strategy.
+	/// </summary>
+	public enum BollingerBandsRsiEntryModes
+	{
+		/// <summary>
+		/// Midpoint between yellow (primary) and blue (narrow) bands.
+		/// </summary>
+		BetweenYellowAndBlue,
+
+		/// <summary>
+		/// Midpoint between blue (narrow) and red (wide) bands.
+		/// </summary>
+		BetweenBlueAndRed,
+
+		/// <summary>
+		/// Yellow band itself.
+		/// </summary>
+		YellowLine,
+
+		/// <summary>
+		/// Blue band (narrow deviation).
+		/// </summary>
+		BlueLine,
+
+		/// <summary>
+		/// Red band (wide deviation).
+		/// </summary>
+		RedLine
+	}
+
+	/// <summary>
+	/// Exit location for Bollinger Bands RSI strategy.
+	/// </summary>
+	public enum BollingerBandsRsiClosureModes
+	{
+		/// <summary>
+		/// Exit on the middle Bollinger band.
+		/// </summary>
+		MiddleLine,
+
+		/// <summary>
+		/// Exit between yellow and blue bands.
+		/// </summary>
+		BetweenYellowAndBlue,
+
+		/// <summary>
+		/// Exit between blue and red bands.
+		/// </summary>
+		BetweenBlueAndRed,
+
+		/// <summary>
+		/// Exit on the yellow band.
+		/// </summary>
+		YellowLine,
+
+		/// <summary>
+		/// Exit on the blue band.
+		/// </summary>
+		BlueLine,
+
+		/// <summary>
+		/// Exit on the red band.
+		/// </summary>
+		RedLine
+	}
 	private readonly StrategyParam<BollingerBandsRsiEntryModes> _entryMode;
 	private readonly StrategyParam<BollingerBandsRsiClosureModes> _closureMode;
 	private readonly StrategyParam<int> _bandsPeriod;
@@ -607,71 +673,4 @@ public class BollingerBandsRsiZonesStrategy : Strategy
 		while (history.Count > BarShift)
 			history.Dequeue();
 	}
-}
-
-/// <summary>
-/// Entry location for Bollinger Bands RSI strategy.
-/// </summary>
-public enum BollingerBandsRsiEntryModes
-{
-	/// <summary>
-	/// Midpoint between yellow (primary) and blue (narrow) bands.
-	/// </summary>
-	BetweenYellowAndBlue,
-
-	/// <summary>
-	/// Midpoint between blue (narrow) and red (wide) bands.
-	/// </summary>
-	BetweenBlueAndRed,
-
-	/// <summary>
-	/// Yellow band itself.
-	/// </summary>
-	YellowLine,
-
-	/// <summary>
-	/// Blue band (narrow deviation).
-	/// </summary>
-	BlueLine,
-
-	/// <summary>
-	/// Red band (wide deviation).
-	/// </summary>
-	RedLine
-}
-
-/// <summary>
-/// Exit location for Bollinger Bands RSI strategy.
-/// </summary>
-public enum BollingerBandsRsiClosureModes
-{
-	/// <summary>
-	/// Exit on the middle Bollinger band.
-	/// </summary>
-	MiddleLine,
-
-	/// <summary>
-	/// Exit between yellow and blue bands.
-	/// </summary>
-	BetweenYellowAndBlue,
-
-	/// <summary>
-	/// Exit between blue and red bands.
-	/// </summary>
-	BetweenBlueAndRed,
-
-	/// <summary>
-	/// Exit on the yellow band.
-	/// </summary>
-	YellowLine,
-
-	/// <summary>
-	/// Exit on the blue band.
-	/// </summary>
-	BlueLine,
-
-	/// <summary>
-	/// Exit on the red band.
-	/// </summary>
-	RedLine
 }

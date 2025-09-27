@@ -18,6 +18,118 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BlauSmStochasticStrategy : Strategy
 {
+	/// <summary>
+	/// Signal generation modes.
+	/// </summary>
+	public enum BlauSmStochasticModes
+	{
+		/// <summary>
+		/// Uses histogram zero crossings.
+		/// </summary>
+		Breakdown,
+
+		/// <summary>
+		/// Uses momentum twists.
+		/// </summary>
+		Twist,
+
+		/// <summary>
+		/// Uses crossings between main and signal lines.
+		/// </summary>
+		CloudTwist
+	}
+
+	/// <summary>
+	/// Moving average options used in the oscillator smoothing stages.
+	/// </summary>
+	public enum BlauSmSmoothMethods
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Sma,
+
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Ema,
+
+		/// <summary>
+		/// Smoothed moving average.
+		/// </summary>
+		Smma,
+
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		Lwma
+	}
+
+	/// <summary>
+	/// Applied price options for oscillator input.
+	/// </summary>
+	public enum BlauSmAppliedPrices
+	{
+		/// <summary>
+		/// Close price.
+		/// </summary>
+		Close,
+
+		/// <summary>
+		/// Open price.
+		/// </summary>
+		Open,
+
+		/// <summary>
+		/// High price.
+		/// </summary>
+		High,
+
+		/// <summary>
+		/// Low price.
+		/// </summary>
+		Low,
+
+		/// <summary>
+		/// (High + Low) / 2.
+		/// </summary>
+		Median,
+
+		/// <summary>
+		/// (Close + High + Low) / 3.
+		/// </summary>
+		Typical,
+
+		/// <summary>
+		/// (2 * Close + High + Low) / 4.
+		/// </summary>
+		Weighted,
+
+		/// <summary>
+		/// (Open + Close) / 2.
+		/// </summary>
+		Simple,
+
+		/// <summary>
+		/// (Open + Close + High + Low) / 4.
+		/// </summary>
+		Quarter,
+
+		/// <summary>
+		/// Trend-follow price using highs and lows.
+		/// </summary>
+		TrendFollow0,
+
+		/// <summary>
+		/// Average between close and extreme price in trend direction.
+		/// </summary>
+		TrendFollow1,
+
+		/// <summary>
+		/// Demark price variant.
+		/// </summary>
+		Demark
+	}
 	private readonly StrategyParam<BlauSmStochasticModes> _mode;
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<int> _lookbackLength;
@@ -732,117 +844,4 @@ public class BlauSmStochasticValue : ComplexIndicatorValue
 	/// Histogram value (main minus signal).
 	/// </summary>
 	public decimal Histogram => (decimal)GetValue(nameof(Histogram));
-}
-
-/// <summary>
-/// Signal generation modes.
-/// </summary>
-public enum BlauSmStochasticModes
-{
-	/// <summary>
-	/// Uses histogram zero crossings.
-	/// </summary>
-	Breakdown,
-
-	/// <summary>
-	/// Uses momentum twists.
-	/// </summary>
-	Twist,
-
-	/// <summary>
-	/// Uses crossings between main and signal lines.
-	/// </summary>
-	CloudTwist
-}
-
-/// <summary>
-/// Moving average options used in the oscillator smoothing stages.
-/// </summary>
-public enum BlauSmSmoothMethods
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Sma,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Ema,
-
-	/// <summary>
-	/// Smoothed moving average.
-	/// </summary>
-	Smma,
-
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	Lwma
-}
-
-/// <summary>
-/// Applied price options for oscillator input.
-/// </summary>
-public enum BlauSmAppliedPrices
-{
-	/// <summary>
-	/// Close price.
-	/// </summary>
-	Close,
-
-	/// <summary>
-	/// Open price.
-	/// </summary>
-	Open,
-
-	/// <summary>
-	/// High price.
-	/// </summary>
-	High,
-
-	/// <summary>
-	/// Low price.
-	/// </summary>
-	Low,
-
-	/// <summary>
-	/// (High + Low) / 2.
-	/// </summary>
-	Median,
-
-	/// <summary>
-	/// (Close + High + Low) / 3.
-	/// </summary>
-	Typical,
-
-	/// <summary>
-	/// (2 * Close + High + Low) / 4.
-	/// </summary>
-	Weighted,
-
-	/// <summary>
-	/// (Open + Close) / 2.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// (Open + Close + High + Low) / 4.
-	/// </summary>
-	Quarter,
-
-	/// <summary>
-	/// Trend-follow price using highs and lows.
-	/// </summary>
-	TrendFollow0,
-
-	/// <summary>
-	/// Average between close and extreme price in trend direction.
-	/// </summary>
-	TrendFollow1,
-
-	/// <summary>
-	/// Demark price variant.
-	/// </summary>
-	Demark
 }

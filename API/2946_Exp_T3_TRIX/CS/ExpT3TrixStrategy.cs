@@ -14,31 +14,31 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Operating modes supported by <see cref="ExpT3TrixStrategy"/>.
-/// </summary>
-public enum ExpT3TrixModes
-{
-	/// <summary>
-	/// Uses histogram zero cross detection.
-	/// </summary>
-	Breakdown,
-
-	/// <summary>
-	/// Uses turning points of the histogram slope.
-	/// </summary>
-	Twist,
-
-	/// <summary>
-	/// Uses color flip of the fast and slow TRIX cloud.
-	/// </summary>
-	CloudTwist,
-}
-
-/// <summary>
 /// Port of the Exp T3 TRIX expert advisor that trades triple smoothed TRIX signals.
 /// </summary>
 public class ExpT3TrixStrategy : Strategy
 {
+	/// <summary>
+	/// Operating modes supported by <see cref="ExpT3TrixStrategy"/>.
+	/// </summary>
+	public enum ExpT3TrixModes
+	{
+		/// <summary>
+		/// Uses histogram zero cross detection.
+		/// </summary>
+		Breakdown,
+
+		/// <summary>
+		/// Uses turning points of the histogram slope.
+		/// </summary>
+		Twist,
+
+		/// <summary>
+		/// Uses color flip of the fast and slow TRIX cloud.
+		/// </summary>
+		CloudTwist,
+	}
+
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<decimal> _volumeFactor;

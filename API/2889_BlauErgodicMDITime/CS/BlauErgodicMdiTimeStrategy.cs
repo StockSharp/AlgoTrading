@@ -14,100 +14,100 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Trading strategy based on the Blau Ergodic MDI oscillator with three signal modes.
-/// The strategy replicates the behaviour of the original MetaTrader expert advisor
-/// by evaluating the oscillator on a higher timeframe and optionally restricting
-/// trading to a custom time window.
-/// </summary>
-public enum BlauErgodicMdiModes
-{
-	/// <summary>
-	/// Generates entries when the histogram crosses the zero line.
-	/// </summary>
-	Breakdown,
-
-	/// <summary>
-	/// Generates entries when the histogram twists and changes slope.
-	/// </summary>
-	Twist,
-
-	/// <summary>
-	/// Generates entries when the histogram and its smoothed copy cross.
-	/// </summary>
-	CloudTwist
-}
-
-/// <summary>
-/// Price source used to feed the Blau Ergodic MDI calculation.
-/// </summary>
-public enum PriceInputModes
-{
-	/// <summary>
-	/// Candle close price.
-	/// </summary>
-	Close,
-
-	/// <summary>
-	/// Candle open price.
-	/// </summary>
-	Open,
-
-	/// <summary>
-	/// Candle high price.
-	/// </summary>
-	High,
-
-	/// <summary>
-	/// Candle low price.
-	/// </summary>
-	Low,
-
-	/// <summary>
-	/// Median price (high + low) / 2.
-	/// </summary>
-	Median,
-
-	/// <summary>
-	/// Typical price (high + low + close) / 3.
-	/// </summary>
-	Typical,
-
-	/// <summary>
-	/// Weighted close price (high + low + 2 * close) / 4.
-	/// </summary>
-	Weighted,
-
-	/// <summary>
-	/// Simplified price (open + close) / 2.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Quarter price (open + high + low + close) / 4.
-	/// </summary>
-	Quarter,
-
-	/// <summary>
-	/// Trend follow price - picks the high on bullish candles and the low on bearish candles.
-	/// </summary>
-	TrendFollow0,
-
-	/// <summary>
-	/// Half trend follow price - averages close with the extreme price of the candle.
-	/// </summary>
-	TrendFollow1,
-
-	/// <summary>
-	/// Demark price calculation.
-	/// </summary>
-	Demark
-}
-
-/// <summary>
 /// Blau Ergodic MDI strategy converted from MetaTrader version 21013.
 /// </summary>
 public class BlauErgodicMdiTimeStrategy : Strategy
 {
+	/// <summary>
+	/// Trading strategy based on the Blau Ergodic MDI oscillator with three signal modes.
+	/// The strategy replicates the behaviour of the original MetaTrader expert advisor
+	/// by evaluating the oscillator on a higher timeframe and optionally restricting
+	/// trading to a custom time window.
+	/// </summary>
+	public enum BlauErgodicMdiModes
+	{
+		/// <summary>
+		/// Generates entries when the histogram crosses the zero line.
+		/// </summary>
+		Breakdown,
+
+		/// <summary>
+		/// Generates entries when the histogram twists and changes slope.
+		/// </summary>
+		Twist,
+
+		/// <summary>
+		/// Generates entries when the histogram and its smoothed copy cross.
+		/// </summary>
+		CloudTwist
+	}
+
+	/// <summary>
+	/// Price source used to feed the Blau Ergodic MDI calculation.
+	/// </summary>
+	public enum PriceInputModes
+	{
+		/// <summary>
+		/// Candle close price.
+		/// </summary>
+		Close,
+
+		/// <summary>
+		/// Candle open price.
+		/// </summary>
+		Open,
+
+		/// <summary>
+		/// Candle high price.
+		/// </summary>
+		High,
+
+		/// <summary>
+		/// Candle low price.
+		/// </summary>
+		Low,
+
+		/// <summary>
+		/// Median price (high + low) / 2.
+		/// </summary>
+		Median,
+
+		/// <summary>
+		/// Typical price (high + low + close) / 3.
+		/// </summary>
+		Typical,
+
+		/// <summary>
+		/// Weighted close price (high + low + 2 * close) / 4.
+		/// </summary>
+		Weighted,
+
+		/// <summary>
+		/// Simplified price (open + close) / 2.
+		/// </summary>
+		Simple,
+
+		/// <summary>
+		/// Quarter price (open + high + low + close) / 4.
+		/// </summary>
+		Quarter,
+
+		/// <summary>
+		/// Trend follow price - picks the high on bullish candles and the low on bearish candles.
+		/// </summary>
+		TrendFollow0,
+
+		/// <summary>
+		/// Half trend follow price - averages close with the extreme price of the candle.
+		/// </summary>
+		TrendFollow1,
+
+		/// <summary>
+		/// Demark price calculation.
+		/// </summary>
+		Demark
+	}
+
 	private readonly StrategyParam<BlauErgodicMdiModes> _mode;
 	private readonly StrategyParam<PriceInputModes> _priceMode;
 	private readonly StrategyParam<int> _baseLength;

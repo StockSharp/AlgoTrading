@@ -21,6 +21,32 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class XcciHistogramVolDirectStrategy : Strategy
 {
+	/// <summary>
+	/// Available smoothing methods inspired by the original indicator.
+	/// </summary>
+	public enum SmoothingMethods
+	{
+	Sma,
+	Ema,
+	Smma,
+	Lwma,
+	Jjma,
+	Jurx,
+	Parabolic,
+	T3,
+	Vidya,
+	Ama
+	}
+
+	/// <summary>
+	/// Volume source used to weight the CCI values.
+	/// </summary>
+	public enum VolumeModes
+	{
+	Tick,
+	Real
+	}
+
 private readonly StrategyParam<int> _cciPeriod;
 private readonly StrategyParam<SmoothingMethods> _smoothingMethod;
 private readonly StrategyParam<int> _smoothingLength;
@@ -44,32 +70,6 @@ private IIndicator _cciVolumeSmoother = null!;
 private IIndicator _volumeSmoother = null!;
 private readonly List<int> _colorHistory = new();
 private decimal? _prevSmoothedValue;
-
-/// <summary>
-/// Available smoothing methods inspired by the original indicator.
-/// </summary>
-public enum SmoothingMethods
-{
-Sma,
-Ema,
-Smma,
-Lwma,
-Jjma,
-Jurx,
-Parabolic,
-T3,
-Vidya,
-Ama
-}
-
-/// <summary>
-/// Volume source used to weight the CCI values.
-/// </summary>
-public enum VolumeModes
-{
-Tick,
-Real
-}
 
 /// <summary>
 /// CCI period length.

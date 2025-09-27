@@ -19,6 +19,17 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class I4DrfV2Strategy : Strategy
 {
+	/// <summary>
+	/// Trend mode options.
+	/// </summary>
+	public enum TrendModes
+	{
+	/// <summary>Contrarian trading.</summary>
+	Direct,
+	/// <summary>Trend following.</summary>
+	NotDirect
+	}
+
 private readonly StrategyParam<int> _period;
 private readonly StrategyParam<bool> _buyPosOpen;
 private readonly StrategyParam<bool> _sellPosOpen;
@@ -286,17 +297,6 @@ _takePrice = _entryPrice - TakeProfit * step;
 }
 
 _prevColor = currentColor;
-}
-
-/// <summary>
-/// Trend mode options.
-/// </summary>
-public enum TrendModes
-{
-/// <summary>Contrarian trading.</summary>
-Direct,
-/// <summary>Trend following.</summary>
-NotDirect
 }
 
 private sealed class DrfIndicator : LengthIndicator<decimal>

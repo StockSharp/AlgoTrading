@@ -14,19 +14,19 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Specifies how stop limits are calculated.
-/// </summary>
-public enum StopModes
-{
-	Percent,
-	Currency
-}
-
-/// <summary>
 /// Global stop strategy that closes all positions when profit or loss reaches defined thresholds.
 /// </summary>
 public class ExpGStopStrategy : Strategy
 {
+	/// <summary>
+	/// Specifies how stop limits are calculated.
+	/// </summary>
+	public enum StopModes
+	{
+		Percent,
+		Currency
+	}
+
 	private readonly StrategyParam<StopModes> _mode;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;

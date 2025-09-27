@@ -16,21 +16,21 @@ using System.Globalization;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Sends breakout alerts when price crosses user defined horizontal levels.
-/// </summary>
-public enum BreakoutNotificationModes
-{
-	Sound,
-	Alert,
-	Push,
-	Mail,
-}
-
-/// <summary>
 /// Converts the EXP Breakout Signals indicator into a StockSharp strategy.
 /// </summary>
 public class ExpBreakoutSignalsStrategy : Strategy
 {
+	/// <summary>
+	/// Sends breakout alerts when price crosses user defined horizontal levels.
+	/// </summary>
+	public enum BreakoutNotificationModes
+	{
+		Sound,
+		Alert,
+		Push,
+		Mail,
+	}
+
 	// Separators used to split the price level string.
 	private static readonly char[] LevelSeparators = new[] { ';', ',' };
 

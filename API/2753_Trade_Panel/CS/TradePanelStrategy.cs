@@ -13,20 +13,20 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum TradePanelCloseModes
-{
-	CloseAll,
-	CloseLast,
-	CloseProfit,
-	CloseLoss,
-	ClosePartial
-}
-
 /// <summary>
 /// Manual trade panel strategy that reproduces the TradePanel expert advisor logic.
 /// </summary>
 public class TradePanelStrategy : Strategy
 {
+	public enum TradePanelCloseModes
+	{
+		CloseAll,
+		CloseLast,
+		CloseProfit,
+		CloseLoss,
+		ClosePartial
+	}
+
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;

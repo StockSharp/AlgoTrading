@@ -16,27 +16,27 @@ using StockSharp.Algo;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Available position accounting modes to control stacking logic.
-/// </summary>
-public enum PositionAccountingModes
-{
-	/// <summary>
-	/// Netting mode limits total net position volume.
-	/// </summary>
-	Netting,
-
-	/// <summary>
-	/// Hedging mode limits the number of entries per direction.
-	/// </summary>
-	Hedging
-}
-
-/// <summary>
 /// Strategy that opens positions after detecting N identical candles in a row.
 /// Handles optional stop-loss, take-profit, and trailing stop management in pips.
 /// </summary>
 public class NCandlesSequenceStrategy : Strategy
 {
+	/// <summary>
+	/// Available position accounting modes to control stacking logic.
+	/// </summary>
+	public enum PositionAccountingModes
+	{
+		/// <summary>
+		/// Netting mode limits total net position volume.
+		/// </summary>
+		Netting,
+
+		/// <summary>
+		/// Hedging mode limits the number of entries per direction.
+		/// </summary>
+		Hedging
+	}
+
 	private readonly StrategyParam<int> _consecutiveCandles;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _stopLossPips;

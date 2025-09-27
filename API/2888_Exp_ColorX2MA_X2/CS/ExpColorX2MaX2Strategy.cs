@@ -20,6 +20,37 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ExpColorX2MaX2Strategy : Strategy
 {
+	/// <summary>
+	/// Supported smoothing methods for the ColorX2MA calculation.
+	/// </summary>
+	public enum SmoothMethods
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Sma,
+
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Ema,
+
+		/// <summary>
+		/// Smoothed moving average.
+		/// </summary>
+		Smma,
+
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		Lwma,
+
+		/// <summary>
+		/// Jurik moving average.
+		/// </summary>
+		Jurik
+	}
+
 	private readonly StrategyParam<DataType> _trendCandleType;
 	private readonly StrategyParam<SmoothMethods> _trendMethod1;
 	private readonly StrategyParam<int> _trendLength1;
@@ -617,35 +648,4 @@ public class ExpColorX2MaX2Strategy : Strategy
 		phaseProperty.SetValue(jma, phase);
 		return jma;
 	}
-}
-
-/// <summary>
-/// Supported smoothing methods for the ColorX2MA calculation.
-/// </summary>
-public enum SmoothMethods
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Sma,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Ema,
-
-	/// <summary>
-	/// Smoothed moving average.
-	/// </summary>
-	Smma,
-
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	Lwma,
-
-	/// <summary>
-	/// Jurik moving average.
-	/// </summary>
-	Jurik
 }

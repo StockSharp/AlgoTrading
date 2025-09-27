@@ -19,6 +19,22 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SerialMASwingStrategy : Strategy
 {
+	/// <summary>
+	/// Mode describing how the strategy manages swing positions.
+	/// </summary>
+	public enum SerialMaOpenedModes
+	{
+		/// <summary>
+		/// Open a new position on every signal, even if a same-direction position exists.
+		/// </summary>
+		AllSwing,
+
+		/// <summary>
+		/// Allow only a single swing position per direction.
+		/// </summary>
+		SingleSwing,
+	}
+
 	private readonly StrategyParam<SerialMaOpenedModes> _openedMode;
 	private readonly StrategyParam<bool> _enableBuy;
 	private readonly StrategyParam<bool> _enableSell;
@@ -339,22 +355,6 @@ public class SerialMASwingStrategy : Strategy
 		_previousMovingAverage = value.MovingAverage;
 		_previousClose = candle.ClosePrice;
 	}
-}
-
-/// <summary>
-/// Mode describing how the strategy manages swing positions.
-/// </summary>
-public enum SerialMaOpenedModes
-{
-	/// <summary>
-	/// Open a new position on every signal, even if a same-direction position exists.
-	/// </summary>
-	AllSwing,
-
-	/// <summary>
-	/// Allow only a single swing position per direction.
-	/// </summary>
-	SingleSwing,
 }
 
 /// <summary>

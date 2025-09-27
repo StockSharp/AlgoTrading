@@ -21,6 +21,15 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class GoRiskManagedStrategy : Strategy
 {
+	public enum MovingAverageTypes
+	{
+		SMA,
+		EMA,
+		DEMA,
+		TEMA,
+		WMA,
+		VWMA
+	}
 	private readonly StrategyParam<decimal> _risk;
 	private readonly StrategyParam<int> _maxPositions;
 	private readonly StrategyParam<MovingAverageTypes> _maType;
@@ -232,14 +241,4 @@ public class GoRiskManagedStrategy : Strategy
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
-}
-
-public enum MovingAverageTypes
-{
-	SMA,
-	EMA,
-	DEMA,
-	TEMA,
-	WMA,
-	VWMA
 }

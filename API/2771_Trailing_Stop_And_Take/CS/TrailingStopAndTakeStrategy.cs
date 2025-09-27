@@ -13,18 +13,18 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum TrailingPositionTypes
-{
-	All,
-	Long,
-	Short,
-}
-
 /// <summary>
 /// Strategy that manages trailing stop-loss and take-profit levels similar to the original MQL Expert Advisor.
 /// </summary>
 public class TrailingStopAndTakeStrategy : Strategy
 {
+	public enum TrailingPositionTypes
+	{
+		All,
+		Long,
+		Short,
+	}
+
 	private readonly StrategyParam<decimal> _epsilon;
 
 	private readonly StrategyParam<DataType> _candleType;

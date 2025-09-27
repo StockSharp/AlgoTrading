@@ -18,6 +18,57 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class WeightOscillatorDirectStrategy : Strategy
 {
+	/// <summary>
+	/// Defines how the strategy reacts to the oscillator slope.
+	/// </summary>
+	public enum WeightOscillatorTrendModes
+	{
+		/// <summary>
+		/// Trade in the direction of the oscillator slope.
+		/// </summary>
+		Direct,
+
+		/// <summary>
+		/// Trade against the oscillator slope.
+		/// </summary>
+		Against,
+	}
+
+	/// <summary>
+	/// Available smoothing methods for the blended oscillator.
+	/// </summary>
+	public enum WeightOscillatorSmoothingMethods
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Simple,
+
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Exponential,
+
+		/// <summary>
+		/// Smoothed (RMA) moving average.
+		/// </summary>
+		Smoothed,
+
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		Weighted,
+
+		/// <summary>
+		/// Jurik moving average.
+		/// </summary>
+		Jurik,
+
+		/// <summary>
+		/// Kaufman adaptive moving average.
+		/// </summary>
+		Kaufman,
+	}
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<WeightOscillatorTrendModes> _trendMode;
 	private readonly StrategyParam<int> _signalBar;
@@ -461,56 +512,4 @@ public class WeightOscillatorDirectStrategy : Strategy
 	{
 		return _oscillatorHistory[_oscillatorHistory.Count - shift];
 	}
-}
-
-/// <summary>
-/// Defines how the strategy reacts to the oscillator slope.
-/// </summary>
-public enum WeightOscillatorTrendModes
-{
-	/// <summary>
-	/// Trade in the direction of the oscillator slope.
-	/// </summary>
-	Direct,
-
-	/// <summary>
-	/// Trade against the oscillator slope.
-	/// </summary>
-	Against,
-}
-
-/// <summary>
-/// Available smoothing methods for the blended oscillator.
-/// </summary>
-public enum WeightOscillatorSmoothingMethods
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Exponential,
-
-	/// <summary>
-	/// Smoothed (RMA) moving average.
-	/// </summary>
-	Smoothed,
-
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	Weighted,
-
-	/// <summary>
-	/// Jurik moving average.
-	/// </summary>
-	Jurik,
-
-	/// <summary>
-	/// Kaufman adaptive moving average.
-	/// </summary>
-	Kaufman,
 }

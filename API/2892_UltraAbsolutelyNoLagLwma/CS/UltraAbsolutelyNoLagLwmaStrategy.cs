@@ -15,6 +15,35 @@ namespace StockSharp.Samples.Strategies;
 
 public class UltraAbsolutelyNoLagLwmaStrategy : Strategy
 {
+	public enum AppliedPrices
+	{
+		Close = 1,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted,
+		Simplified,
+		Quarter,
+		TrendFollow0,
+		TrendFollow1,
+		DeMark
+	}
+
+	public enum UltraSmoothMethods
+	{
+		Sma,
+		Ema,
+		Smma,
+		Lwma,
+		Jurik,
+		JurX,
+		Parabolic,
+		T3,
+		Vidya,
+		Ama
+	}
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _baseLength;
 	private readonly StrategyParam<AppliedPrices> _appliedPrice;
@@ -538,34 +567,4 @@ public class UltraAbsolutelyNoLagLwmaStrategy : Strategy
 			_ => new EMA { Length = normalizedLength },
 		};
 	}
-}
-
-public enum AppliedPrices
-{
-	Close = 1,
-	Open,
-	High,
-	Low,
-	Median,
-	Typical,
-	Weighted,
-	Simplified,
-	Quarter,
-	TrendFollow0,
-	TrendFollow1,
-	DeMark
-}
-
-public enum UltraSmoothMethods
-{
-	Sma,
-	Ema,
-	Smma,
-	Lwma,
-	Jurik,
-	JurX,
-	Parabolic,
-	T3,
-	Vidya,
-	Ama
 }

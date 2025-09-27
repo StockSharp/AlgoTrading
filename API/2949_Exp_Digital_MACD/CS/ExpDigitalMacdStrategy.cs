@@ -21,6 +21,31 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ExpDigitalMacdStrategy : Strategy
 {
+	/// <summary>
+	/// Modes that replicate the original Exp_Digital_MACD decision rules.
+	/// </summary>
+	public enum ExpDigitalMacdModes
+	{
+		/// <summary>
+		/// Use zero line breakdown logic.
+		/// </summary>
+		Breakdown,
+
+		/// <summary>
+		/// Use MACD slope twists.
+		/// </summary>
+		MacdTwist,
+
+		/// <summary>
+		/// Use signal line twists.
+		/// </summary>
+		SignalTwist,
+
+		/// <summary>
+		/// Compare MACD disposition relative to the signal line.
+		/// </summary>
+		MacdDisposition,
+	}
 	private readonly StrategyParam<ExpDigitalMacdModes> _mode;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
@@ -489,30 +514,4 @@ public class ExpDigitalMacdStrategy : Strategy
 		_signalPrev2 = _signalPrev;
 		_signalPrev = signal;
 	}
-}
-
-/// <summary>
-/// Modes that replicate the original Exp_Digital_MACD decision rules.
-/// </summary>
-public enum ExpDigitalMacdModes
-{
-	/// <summary>
-	/// Use zero line breakdown logic.
-	/// </summary>
-	Breakdown,
-
-	/// <summary>
-	/// Use MACD slope twists.
-	/// </summary>
-	MacdTwist,
-
-	/// <summary>
-	/// Use signal line twists.
-	/// </summary>
-	SignalTwist,
-
-	/// <summary>
-	/// Compare MACD disposition relative to the signal line.
-	/// </summary>
-	MacdDisposition,
 }

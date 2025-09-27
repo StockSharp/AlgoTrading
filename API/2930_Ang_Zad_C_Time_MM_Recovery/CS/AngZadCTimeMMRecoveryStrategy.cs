@@ -18,6 +18,71 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class AngZadCTimeMMRecoveryStrategy : Strategy
 {
+	/// <summary>
+	/// Price selection for the Ang_Zad_C indicator.
+	/// </summary>
+	public enum AppliedPrices
+	{
+		/// <summary>
+		/// Closing price.
+		/// </summary>
+		Close = 1,
+
+		/// <summary>
+		/// Opening price.
+		/// </summary>
+		Open,
+
+		/// <summary>
+		/// Highest price.
+		/// </summary>
+		High,
+
+		/// <summary>
+		/// Lowest price.
+		/// </summary>
+		Low,
+
+		/// <summary>
+		/// Median price (high + low) / 2.
+		/// </summary>
+		Median,
+
+		/// <summary>
+		/// Typical price (close + high + low) / 3.
+		/// </summary>
+		Typical,
+
+		/// <summary>
+		/// Weighted price (2 * close + high + low) / 4.
+		/// </summary>
+		Weighted,
+
+		/// <summary>
+		/// Simple average of open and close.
+		/// </summary>
+		Simple,
+
+		/// <summary>
+		/// Quarter price (open + high + low + close) / 4.
+		/// </summary>
+		Quarter,
+
+		/// <summary>
+		/// Trend following price variant 0.
+		/// </summary>
+		TrendFollow0,
+
+		/// <summary>
+		/// Trend following price variant 1.
+		/// </summary>
+		TrendFollow1,
+
+		/// <summary>
+		/// DeMark price calculation.
+		/// </summary>
+		Demark
+	}
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _ki;
 	private readonly StrategyParam<AppliedPrices> _priceMode;
@@ -481,70 +546,4 @@ public class AngZadCTimeMMRecoveryStrategy : Strategy
 			_lastDirection = 0;
 		}
 	}
-}
-
-/// <summary>
-/// Price selection for the Ang_Zad_C indicator.
-/// </summary>
-public enum AppliedPrices
-{
-	/// <summary>
-	/// Closing price.
-	/// </summary>
-	Close = 1,
-
-	/// <summary>
-	/// Opening price.
-	/// </summary>
-	Open,
-
-	/// <summary>
-	/// Highest price.
-	/// </summary>
-	High,
-
-	/// <summary>
-	/// Lowest price.
-	/// </summary>
-	Low,
-
-	/// <summary>
-	/// Median price (high + low) / 2.
-	/// </summary>
-	Median,
-
-	/// <summary>
-	/// Typical price (close + high + low) / 3.
-	/// </summary>
-	Typical,
-
-	/// <summary>
-	/// Weighted price (2 * close + high + low) / 4.
-	/// </summary>
-	Weighted,
-
-	/// <summary>
-	/// Simple average of open and close.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Quarter price (open + high + low + close) / 4.
-	/// </summary>
-	Quarter,
-
-	/// <summary>
-	/// Trend following price variant 0.
-	/// </summary>
-	TrendFollow0,
-
-	/// <summary>
-	/// Trend following price variant 1.
-	/// </summary>
-	TrendFollow1,
-
-	/// <summary>
-	/// DeMark price calculation.
-	/// </summary>
-	Demark
 }

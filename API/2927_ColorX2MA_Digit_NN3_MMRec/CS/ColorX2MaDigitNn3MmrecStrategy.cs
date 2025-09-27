@@ -18,6 +18,92 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ColorX2MaDigitNn3MmrecStrategy : Strategy
 {
+	/// <summary>
+	/// Available price sources for the custom indicator.
+	/// </summary>
+	public enum ColorX2MaAppliedPrices
+	{
+		/// <summary>
+		/// Close price.
+		/// </summary>
+		Close = 1,
+		/// <summary>
+		/// Open price.
+		/// </summary>
+		Open,
+		/// <summary>
+		/// High price.
+		/// </summary>
+		High,
+		/// <summary>
+		/// Low price.
+		/// </summary>
+		Low,
+		/// <summary>
+		/// Median price (high + low) / 2.
+		/// </summary>
+		Median,
+		/// <summary>
+		/// Typical price (high + low + close) / 3.
+		/// </summary>
+		Typical,
+		/// <summary>
+		/// Weighted close price (2 * close + high + low) / 4.
+		/// </summary>
+		Weighted,
+		/// <summary>
+		/// (open + close) / 2.
+		/// </summary>
+		Simpl,
+		/// <summary>
+		/// (open + high + low + close) / 4.
+		/// </summary>
+		Quarter,
+		/// <summary>
+		/// Trend follow price using extreme values when candles are directional.
+		/// </summary>
+		TrendFollow0,
+		/// <summary>
+		/// Trend follow price averaged with the close when candles are directional.
+		/// </summary>
+		TrendFollow1,
+		/// <summary>
+		/// DeMark price calculation.
+		/// </summary>
+		Demark
+	}
+
+	/// <summary>
+	/// Smoothing method used by the custom double moving average.
+	/// </summary>
+	public enum ColorX2MaSmoothMethods
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Simple,
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Exponential,
+		/// <summary>
+		/// Smoothed moving average.
+		/// </summary>
+		Smoothed,
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		LinearWeighted,
+		/// <summary>
+		/// Jurik moving average approximation.
+		/// </summary>
+		Jurik,
+		/// <summary>
+		/// Kaufman adaptive moving average approximation.
+		/// </summary>
+		Adaptive
+	}
+
 	private readonly TimeframeContext _aContext;
 	private readonly TimeframeContext _bContext;
 	private readonly TimeframeContext _cContext;
@@ -335,92 +421,6 @@ public class ColorX2MaDigitNn3MmrecStrategy : Strategy
 			return true;
 		}
 	}
-}
-
-/// <summary>
-/// Available price sources for the custom indicator.
-/// </summary>
-public enum ColorX2MaAppliedPrices
-{
-	/// <summary>
-	/// Close price.
-	/// </summary>
-	Close = 1,
-	/// <summary>
-	/// Open price.
-	/// </summary>
-	Open,
-	/// <summary>
-	/// High price.
-	/// </summary>
-	High,
-	/// <summary>
-	/// Low price.
-	/// </summary>
-	Low,
-	/// <summary>
-	/// Median price (high + low) / 2.
-	/// </summary>
-	Median,
-	/// <summary>
-	/// Typical price (high + low + close) / 3.
-	/// </summary>
-	Typical,
-	/// <summary>
-	/// Weighted close price (2 * close + high + low) / 4.
-	/// </summary>
-	Weighted,
-	/// <summary>
-	/// (open + close) / 2.
-	/// </summary>
-	Simpl,
-	/// <summary>
-	/// (open + high + low + close) / 4.
-	/// </summary>
-	Quarter,
-	/// <summary>
-	/// Trend follow price using extreme values when candles are directional.
-	/// </summary>
-	TrendFollow0,
-	/// <summary>
-	/// Trend follow price averaged with the close when candles are directional.
-	/// </summary>
-	TrendFollow1,
-	/// <summary>
-	/// DeMark price calculation.
-	/// </summary>
-	Demark
-}
-
-/// <summary>
-/// Smoothing method used by the custom double moving average.
-/// </summary>
-public enum ColorX2MaSmoothMethods
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Simple,
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Exponential,
-	/// <summary>
-	/// Smoothed moving average.
-	/// </summary>
-	Smoothed,
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	LinearWeighted,
-	/// <summary>
-	/// Jurik moving average approximation.
-	/// </summary>
-	Jurik,
-	/// <summary>
-	/// Kaufman adaptive moving average approximation.
-	/// </summary>
-	Adaptive
 }
 
 internal enum TrendDirections

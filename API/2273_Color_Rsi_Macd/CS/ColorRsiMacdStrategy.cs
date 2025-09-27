@@ -21,13 +21,14 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ColorRsiMacdStrategy : Strategy
 {
-public enum AlgModes
-{
-Breakdown,
-MacdTwist,
-SignalTwist,
-MacdDisposition
-}
+	public enum AlgModes
+	{
+	Breakdown,
+	MacdTwist,
+	SignalTwist,
+	MacdDisposition
+	}
+
 
 private readonly StrategyParam<DataType> _candleType;
 private readonly StrategyParam<int> _fastPeriod;

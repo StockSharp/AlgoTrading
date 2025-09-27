@@ -20,6 +20,30 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class EaMovingAverageStrategy : Strategy
 {
+	/// <summary>
+	/// Moving average calculation methods supported by the strategy.
+	/// </summary>
+	public enum MaMethods
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		LinearWeighted
+	}
+
+	/// <summary>
+	/// Price inputs supported by the moving average calculations.
+	/// </summary>
+	public enum MaPriceTypes
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted
+	}
 	private readonly StrategyParam<decimal> _maximumRisk;
 	private readonly StrategyParam<decimal> _decreaseFactor;
 
@@ -630,29 +654,4 @@ public class EaMovingAverageStrategy : Strategy
 			_lastEntryPrice = 0m;
 		}
 	}
-}
-
-/// <summary>
-/// Moving average calculation methods supported by the strategy.
-/// </summary>
-public enum MaMethods
-{
-	Simple,
-	Exponential,
-	Smoothed,
-	LinearWeighted
-}
-
-/// <summary>
-/// Price inputs supported by the moving average calculations.
-/// </summary>
-public enum MaPriceTypes
-{
-	Close,
-	Open,
-	High,
-	Low,
-	Median,
-	Typical,
-	Weighted
 }

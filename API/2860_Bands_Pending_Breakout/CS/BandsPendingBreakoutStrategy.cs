@@ -20,6 +20,23 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BandsPendingBreakoutStrategy : Strategy
 {
+	public enum StopLossModes
+	{
+		/// <summary>
+		/// Place stops at the opposite Bollinger band plus the configured step.
+		/// </summary>
+		BollingerBands,
+
+		/// <summary>
+		/// Place stops around the moving average line.
+		/// </summary>
+		MovingAverage,
+
+		/// <summary>
+		/// Do not set an initial stop loss.
+		/// </summary>
+		None
+	}
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _hourStart;
@@ -757,22 +774,4 @@ public class BandsPendingBreakoutStrategy : Strategy
 		public decimal? StopPrice { get; init; }
 		public decimal? TakeProfitPrice { get; init; }
 	}
-}
-
-public enum StopLossModes
-{
-	/// <summary>
-	/// Place stops at the opposite Bollinger band plus the configured step.
-	/// </summary>
-	BollingerBands,
-
-	/// <summary>
-	/// Place stops around the moving average line.
-	/// </summary>
-	MovingAverage,
-
-	/// <summary>
-	/// Do not set an initial stop loss.
-	/// </summary>
-	None
 }

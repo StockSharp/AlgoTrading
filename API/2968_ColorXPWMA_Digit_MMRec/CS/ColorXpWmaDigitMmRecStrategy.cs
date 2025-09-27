@@ -18,6 +18,127 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ColorXpWmaDigitMmRecStrategy : Strategy
 {
+	/// <summary>
+	/// Available smoothing methods.
+	/// </summary>
+	public enum SmoothMethods
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Sma,
+
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Ema,
+
+		/// <summary>
+		/// Smoothed moving average.
+		/// </summary>
+		Smma,
+
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		Lwma,
+
+		/// <summary>
+		/// Jurik moving average.
+		/// </summary>
+		Jjma,
+
+		/// <summary>
+		/// JurX moving average approximation.
+		/// </summary>
+		JurX,
+
+		/// <summary>
+		/// Parabolic moving average approximation.
+		/// </summary>
+		ParMa,
+
+		/// <summary>
+		/// Triple exponential moving average.
+		/// </summary>
+		T3,
+
+		/// <summary>
+		/// Variable index dynamic average approximation.
+		/// </summary>
+		Vidya,
+
+		/// <summary>
+		/// Kaufman adaptive moving average.
+		/// </summary>
+		Ama,
+	}
+
+	/// <summary>
+	/// Price sources for the indicator.
+	/// </summary>
+	public enum AppliedPrices
+	{
+		/// <summary>
+		/// Close price.
+		/// </summary>
+		Close,
+
+		/// <summary>
+		/// Open price.
+		/// </summary>
+		Open,
+
+		/// <summary>
+		/// High price.
+		/// </summary>
+		High,
+
+		/// <summary>
+		/// Low price.
+		/// </summary>
+		Low,
+
+		/// <summary>
+		/// Median price (high + low) / 2.
+		/// </summary>
+		Median,
+
+		/// <summary>
+		/// Typical price (high + low + close) / 3.
+		/// </summary>
+		Typical,
+
+		/// <summary>
+		/// Weighted close price.
+		/// </summary>
+		Weighted,
+
+		/// <summary>
+		/// Simple (open + close) / 2.
+		/// </summary>
+		Simple,
+
+		/// <summary>
+		/// Quarted price (high + low + open + close) / 4.
+		/// </summary>
+		Quarted,
+
+		/// <summary>
+		/// Trend follow price (high or low based on candle direction).
+		/// </summary>
+		TrendFollow0,
+
+		/// <summary>
+		/// Trend follow price variant using half-range offsets.
+		/// </summary>
+		TrendFollow1,
+
+		/// <summary>
+		/// Demark price.
+		/// </summary>
+		Demark,
+	}
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _indicatorPeriod;
 	private readonly StrategyParam<decimal> _indicatorPower;
@@ -791,126 +912,4 @@ public class ColorXpWmaDigitValue : ComplexIndicatorValue
 		var value = GetValue(name);
 		return value is decimal d ? d : null;
 	}
-}
-
-/// <summary>
-/// Available smoothing methods.
-/// </summary>
-public enum SmoothMethods
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Sma,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Ema,
-
-	/// <summary>
-	/// Smoothed moving average.
-	/// </summary>
-	Smma,
-
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	Lwma,
-
-	/// <summary>
-	/// Jurik moving average.
-	/// </summary>
-	Jjma,
-
-	/// <summary>
-	/// JurX moving average approximation.
-	/// </summary>
-	JurX,
-
-	/// <summary>
-	/// Parabolic moving average approximation.
-	/// </summary>
-	ParMa,
-
-	/// <summary>
-	/// Triple exponential moving average.
-	/// </summary>
-	T3,
-
-	/// <summary>
-	/// Variable index dynamic average approximation.
-	/// </summary>
-	Vidya,
-
-	/// <summary>
-	/// Kaufman adaptive moving average.
-	/// </summary>
-	Ama,
-}
-
-/// <summary>
-/// Price sources for the indicator.
-/// </summary>
-public enum AppliedPrices
-{
-	/// <summary>
-	/// Close price.
-	/// </summary>
-	Close,
-
-	/// <summary>
-	/// Open price.
-	/// </summary>
-	Open,
-
-	/// <summary>
-	/// High price.
-	/// </summary>
-	High,
-
-	/// <summary>
-	/// Low price.
-	/// </summary>
-	Low,
-
-	/// <summary>
-	/// Median price (high + low) / 2.
-	/// </summary>
-	Median,
-
-	/// <summary>
-	/// Typical price (high + low + close) / 3.
-	/// </summary>
-	Typical,
-
-	/// <summary>
-	/// Weighted close price.
-	/// </summary>
-	Weighted,
-
-	/// <summary>
-	/// Simple (open + close) / 2.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Quarted price (high + low + open + close) / 4.
-	/// </summary>
-	Quarted,
-
-	/// <summary>
-	/// Trend follow price (high or low based on candle direction).
-	/// </summary>
-	TrendFollow0,
-
-	/// <summary>
-	/// Trend follow price variant using half-range offsets.
-	/// </summary>
-	TrendFollow1,
-
-	/// <summary>
-	/// Demark price.
-	/// </summary>
-	Demark,
 }

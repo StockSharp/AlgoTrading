@@ -19,6 +19,15 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ITrendStrategy : Strategy
 {
+	/// <summary>
+	/// Bollinger Band line selection.
+	/// </summary>
+	public enum BandModes
+	{
+		Upper,
+		Lower,
+		Middle
+	}
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _bbPeriod;
 	private readonly StrategyParam<decimal> _bbDeviation;
@@ -240,14 +249,4 @@ public class ITrendStrategy : Strategy
 			res = (res + candle.ClosePrice) / 2m;
 		return ((res - candle.LowPrice) + (res - candle.HighPrice)) / 2m;
 	}
-}
-
-/// <summary>
-/// Bollinger Band line selection.
-/// </summary>
-public enum BandModes
-{
-	Upper,
-	Lower,
-	Middle
 }

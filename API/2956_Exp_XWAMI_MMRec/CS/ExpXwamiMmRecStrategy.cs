@@ -20,6 +20,52 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ExpXwamiMmRecStrategy : Strategy
 {
+	/// <summary>
+	/// Smoothing modes supported by the XWAMI conversion.
+	/// </summary>
+	public enum XwamiSmoothingMethods
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Sma,
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Ema,
+		/// <summary>
+		/// Smoothed moving average (RMA).
+		/// </summary>
+		Smma,
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		Lwma,
+		/// <summary>
+		/// Jurik moving average (JJMA).
+		/// </summary>
+		Jjma,
+		/// <summary>
+		/// JurX approximation mapped to Jurik moving average.
+		/// </summary>
+		JurX,
+		/// <summary>
+		/// Parabolic moving average approximation (mapped to EMA).
+		/// </summary>
+		ParMa,
+		/// <summary>
+		/// Tillson T3 filter.
+		/// </summary>
+		T3,
+		/// <summary>
+		/// Variable index dynamic average approximation.
+		/// </summary>
+		Vidya,
+		/// <summary>
+		/// Kaufman adaptive moving average.
+		/// </summary>
+		Ama
+	}
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<XwamiSmoothingMethods> _method1;
@@ -803,51 +849,4 @@ public class ExpXwamiMmRecStrategy : Strategy
 			return value - previous;
 		}
 	}
-}
-
-/// <summary>
-/// Smoothing modes supported by the XWAMI conversion.
-/// </summary>
-public enum XwamiSmoothingMethods
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Sma,
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Ema,
-	/// <summary>
-	/// Smoothed moving average (RMA).
-	/// </summary>
-	Smma,
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	Lwma,
-	/// <summary>
-	/// Jurik moving average (JJMA).
-	/// </summary>
-	Jjma,
-	/// <summary>
-	/// JurX approximation mapped to Jurik moving average.
-	/// </summary>
-	JurX,
-	/// <summary>
-	/// Parabolic moving average approximation (mapped to EMA).
-	/// </summary>
-	ParMa,
-	/// <summary>
-	/// Tillson T3 filter.
-	/// </summary>
-	T3,
-	/// <summary>
-	/// Variable index dynamic average approximation.
-	/// </summary>
-	Vidya,
-	/// <summary>
-	/// Kaufman adaptive moving average.
-	/// </summary>
-	Ama
 }

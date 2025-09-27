@@ -19,6 +19,30 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MaRsiWizardStrategy : Strategy
 {
+	/// <summary>
+	/// Moving average calculation methods supported by the strategy.
+	/// </summary>
+	public enum MaMethods
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		LinearWeighted
+	}
+
+	/// <summary>
+	/// Price sources compatible with the indicators used in the strategy.
+	/// </summary>
+	public enum AppliedPrices
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted
+	}
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _thresholdOpen;
 	private readonly StrategyParam<int> _thresholdClose;
@@ -435,29 +459,4 @@ public class MaRsiWizardStrategy : Strategy
 			_ => candle.ClosePrice
 		};
 	}
-}
-
-/// <summary>
-/// Moving average calculation methods supported by the strategy.
-/// </summary>
-public enum MaMethods
-{
-	Simple,
-	Exponential,
-	Smoothed,
-	LinearWeighted
-}
-
-/// <summary>
-/// Price sources compatible with the indicators used in the strategy.
-/// </summary>
-public enum AppliedPrices
-{
-	Close,
-	Open,
-	High,
-	Low,
-	Median,
-	Typical,
-	Weighted
 }

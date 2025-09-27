@@ -18,6 +18,46 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class XFatlXSatlCloudDuplexStrategy : Strategy
 {
+	/// <summary>
+	/// Supported smoothing methods for XFatlXSatlCloud indicator.
+	/// </summary>
+	public enum XmaMethods
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Sma,
+
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Ema,
+
+		/// <summary>
+		/// Smoothed moving average (RMA).
+		/// </summary>
+		Smma,
+
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		Lwma,
+
+		/// <summary>
+		/// Jurik moving average.
+		/// </summary>
+		Jurik,
+
+		/// <summary>
+		/// Zero lag exponential moving average.
+		/// </summary>
+		ZeroLag,
+
+		/// <summary>
+		/// Kaufman adaptive moving average.
+		/// </summary>
+		Kaufman,
+	}
 	private readonly StrategyParam<decimal> _longVolume;
 	private readonly StrategyParam<decimal> _shortVolume;
 	private readonly StrategyParam<bool> _longAllowOpen;
@@ -845,45 +885,4 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 
 	public decimal SlowRaw => (decimal)GetValue(nameof(SlowRaw));
 	}
-}
-
-/// <summary>
-/// Supported smoothing methods for XFatlXSatlCloud indicator.
-/// </summary>
-public enum XmaMethods
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Sma,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Ema,
-
-	/// <summary>
-	/// Smoothed moving average (RMA).
-	/// </summary>
-	Smma,
-
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	Lwma,
-
-	/// <summary>
-	/// Jurik moving average.
-	/// </summary>
-	Jurik,
-
-	/// <summary>
-	/// Zero lag exponential moving average.
-	/// </summary>
-	ZeroLag,
-
-	/// <summary>
-	/// Kaufman adaptive moving average.
-	/// </summary>
-	Kaufman,
 }

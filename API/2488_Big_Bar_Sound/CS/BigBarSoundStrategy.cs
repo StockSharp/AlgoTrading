@@ -14,27 +14,27 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that emulates the BigBarSound MetaTrader expert advisor.
-/// It monitors candle sizes and raises a log notification when a bar grows beyond the configured threshold.
-/// </summary>
-public enum BigBarDifferenceModes
-{
-	/// <summary>
-	/// Measure the difference between close and open prices.
-	/// </summary>
-	OpenClose,
-
-	/// <summary>
-	/// Measure the distance between the high and low of the candle.
-	/// </summary>
-	HighLow,
-}
-
-/// <summary>
 /// Strategy that logs an alert when a candle exceeds a configurable size.
 /// </summary>
 public class BigBarSoundStrategy : Strategy
 {
+	/// <summary>
+	/// Strategy that emulates the BigBarSound MetaTrader expert advisor.
+	/// It monitors candle sizes and raises a log notification when a bar grows beyond the configured threshold.
+	/// </summary>
+	public enum BigBarDifferenceModes
+	{
+		/// <summary>
+		/// Measure the difference between close and open prices.
+		/// </summary>
+		OpenClose,
+
+		/// <summary>
+		/// Measure the distance between the high and low of the candle.
+		/// </summary>
+		HighLow,
+	}
+
 	private readonly StrategyParam<int> _barPoint;
 	private readonly StrategyParam<BigBarDifferenceModes> _differenceMode;
 	private readonly StrategyParam<string> _soundFile;

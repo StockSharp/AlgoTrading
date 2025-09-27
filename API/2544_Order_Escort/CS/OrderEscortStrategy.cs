@@ -19,6 +19,26 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class OrderEscortStrategy : Strategy
 {
+	/// <summary>
+	/// Available trailing curve types.
+	/// </summary>
+	public enum TrailingTypes
+	{
+		/// <summary>
+		/// Trailing grows linearly with each bar.
+		/// </summary>
+		Linear,
+
+		/// <summary>
+		/// Trailing grows following a power curve.
+		/// </summary>
+		Parabolic,
+
+		/// <summary>
+		/// Trailing grows exponentially.
+		/// </summary>
+		Exponential,
+	}
 	private readonly StrategyParam<decimal> _targetBar;
 	private readonly StrategyParam<decimal> _deltaPoints;
 	private readonly StrategyParam<TrailingTypes> _trailingMode;
@@ -318,25 +338,4 @@ public class OrderEscortStrategy : Strategy
 			: 0m;
 		_exponentialCoefficient = delta / (decimal)Math.Pow(eBase, targetDouble);
 	}
-}
-
-/// <summary>
-/// Available trailing curve types.
-/// </summary>
-public enum TrailingTypes
-{
-	/// <summary>
-	/// Trailing grows linearly with each bar.
-	/// </summary>
-	Linear,
-
-	/// <summary>
-	/// Trailing grows following a power curve.
-	/// </summary>
-	Parabolic,
-
-	/// <summary>
-	/// Trailing grows exponentially.
-	/// </summary>
-	Exponential,
 }

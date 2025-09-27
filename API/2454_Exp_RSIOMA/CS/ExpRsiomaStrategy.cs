@@ -19,6 +19,32 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ExpRsiomaStrategy : Strategy
 {
+	/// <summary>
+	/// Mode of RSIOMA signal processing.
+	/// </summary>
+	public enum AlgModes
+	{
+		/// <summary>
+		/// Open on level breakout.
+		/// </summary>
+		Breakdown,
+
+		/// <summary>
+		/// Histogram direction change.
+		/// </summary>
+		HistTwist,
+
+		/// <summary>
+		/// Signal line direction change.
+		/// </summary>
+		SignalTwist,
+
+		/// <summary>
+		/// Cross between histogram and signal line.
+		/// </summary>
+		HistDisposition
+	}
+
 	private readonly StrategyParam<AlgModes> _mode;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<int> _signalPeriod;
@@ -183,32 +209,6 @@ public class ExpRsiomaStrategy : Strategy
 		_prevSignal = signal;
 		_prevRsi = rsi;
 	}
-}
-
-/// <summary>
-/// Mode of RSIOMA signal processing.
-/// </summary>
-public enum AlgModes
-{
-	/// <summary>
-	/// Open on level breakout.
-	/// </summary>
-	Breakdown,
-
-	/// <summary>
-	/// Histogram direction change.
-	/// </summary>
-	HistTwist,
-
-	/// <summary>
-	/// Signal line direction change.
-	/// </summary>
-	SignalTwist,
-
-	/// <summary>
-	/// Cross between histogram and signal line.
-	/// </summary>
-	HistDisposition
 }
 
 /// <summary>

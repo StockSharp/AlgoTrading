@@ -20,6 +20,30 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class UniversalMaCrossStrategy : Strategy
 {
+	/// <summary>
+	/// Moving average calculation methods supported by the strategy.
+	/// </summary>
+	public enum MovingAverageMethods
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		LinearWeighted
+	}
+
+	/// <summary>
+	/// Price sources that can feed the moving averages.
+	/// </summary>
+	public enum AppliedPrices
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted
+	}
 	private readonly StrategyParam<int> _fastMaPeriod;
 	private readonly StrategyParam<int> _slowMaPeriod;
 	private readonly StrategyParam<MovingAverageMethods> _fastMaType;
@@ -615,29 +639,4 @@ public class UniversalMaCrossStrategy : Strategy
 		Long,
 		Short
 	}
-}
-
-/// <summary>
-/// Moving average calculation methods supported by the strategy.
-/// </summary>
-public enum MovingAverageMethods
-{
-	Simple,
-	Exponential,
-	Smoothed,
-	LinearWeighted
-}
-
-/// <summary>
-/// Price sources that can feed the moving averages.
-/// </summary>
-public enum AppliedPrices
-{
-	Close,
-	Open,
-	High,
-	Low,
-	Median,
-	Typical,
-	Weighted
 }

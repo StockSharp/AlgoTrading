@@ -20,6 +20,30 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ExpertRsiStochasticMaStrategy : Strategy
 {
+	/// <summary>
+	/// Applied price options matching MetaTrader style enumerations.
+	/// </summary>
+	public enum AppliedPriceTypes
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted
+	}
+
+	/// <summary>
+	/// Moving average calculation methods supported by the strategy.
+	/// </summary>
+	public enum MovingAverageMethods
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		Weighted
+	}
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<int> _rsiPeriod;
@@ -546,29 +570,4 @@ public class ExpertRsiStochasticMaStrategy : Strategy
 			_ => candle.ClosePrice
 		};
 	}
-}
-
-/// <summary>
-/// Applied price options matching MetaTrader style enumerations.
-/// </summary>
-public enum AppliedPriceTypes
-{
-	Close,
-	Open,
-	High,
-	Low,
-	Median,
-	Typical,
-	Weighted
-}
-
-/// <summary>
-/// Moving average calculation methods supported by the strategy.
-/// </summary>
-public enum MovingAverageMethods
-{
-	Simple,
-	Exponential,
-	Smoothed,
-	Weighted
 }

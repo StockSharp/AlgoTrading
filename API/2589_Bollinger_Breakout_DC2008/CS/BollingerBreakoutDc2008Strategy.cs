@@ -13,23 +13,23 @@ namespace StockSharp.Samples.Strategies;
 
 
 
-public enum AppliedPriceTypes
-{
-	Close,
-	Open,
-	High,
-	Low,
-	Median,
-	Typical,
-	Weighted,
-	Average
-}
-
 /// <summary>
 /// Bollinger breakout strategy inspired by DC2008 implementation.
 /// </summary>
 public class BollingerBreakoutDc2008Strategy : Strategy
 {
+	public enum AppliedPriceTypes
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted,
+		Average
+	}
+
 	private readonly StrategyParam<int> _bandsPeriod;
 	private readonly StrategyParam<decimal> _bandsDeviation;
 	private readonly StrategyParam<AppliedPriceTypes> _appliedPrice;

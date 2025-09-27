@@ -13,17 +13,17 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum TakeModes
-{
-	Percent,
-	Currency
-}
-
 /// <summary>
 /// Strategy that closes all positions when profit reaches a specified threshold.
 /// </summary>
 public class GlobalTakeProfitStrategy : Strategy
 {
+	public enum TakeModes
+	{
+		Percent,
+		Currency
+	}
+
 	private readonly StrategyParam<TakeModes> _mode;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<DataType> _candleType;

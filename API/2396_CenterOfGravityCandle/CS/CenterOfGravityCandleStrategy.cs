@@ -22,6 +22,83 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class CenterOfGravityCandleStrategy : Strategy
 {
+	/// <summary>
+	/// Synthetic candle color used as trading signal.
+	/// </summary>
+	public enum CenterOfGravityCandleColors
+	{
+		/// <summary>
+		/// Bearish candle (open above close).
+		/// </summary>
+		Bearish = 0,
+
+		/// <summary>
+		/// Neutral candle (open equals close).
+		/// </summary>
+		Neutral = 1,
+
+		/// <summary>
+		/// Bullish candle (open below close).
+		/// </summary>
+		Bullish = 2,
+	}
+
+	/// <summary>
+	/// Moving average methods available for smoothing the synthetic candles.
+	/// </summary>
+	public enum CenterOfGravityMaMethods
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Simple,
+
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Exponential,
+
+		/// <summary>
+		/// Smoothed moving average.
+		/// </summary>
+		Smoothed,
+
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		LinearWeighted,
+	}
+
+	/// <summary>
+	/// Modes that define how the money management value is interpreted.
+	/// </summary>
+	public enum CenterOfGravityMarginModes
+	{
+		/// <summary>
+		/// Portion of account equity is used (approximates free margin).
+		/// </summary>
+		FreeMargin,
+
+		/// <summary>
+		/// Portion of current balance is used.
+		/// </summary>
+		Balance,
+
+		/// <summary>
+		/// Risk is computed from free margin and stop loss distance.
+		/// </summary>
+		LossFreeMargin,
+
+		/// <summary>
+		/// Risk is computed from balance and stop loss distance.
+		/// </summary>
+		LossBalance,
+
+		/// <summary>
+		/// Money management value represents a fixed lot size.
+		/// </summary>
+		Lot,
+	}
 	private readonly StrategyParam<decimal> _moneyManagement;
 	private readonly StrategyParam<CenterOfGravityMarginModes> _marginMode;
 	private readonly StrategyParam<int> _stopLossPips;
@@ -631,82 +708,4 @@ public class CenterOfGravityCandleValue : ComplexIndicatorValue
 	/// Indicates whether the indicator produced a valid value.
 	/// </summary>
 	public bool IsFormed { get; }
-}
-
-/// <summary>
-/// Synthetic candle color used as trading signal.
-/// </summary>
-public enum CenterOfGravityCandleColors
-{
-	/// <summary>
-	/// Bearish candle (open above close).
-	/// </summary>
-	Bearish = 0,
-
-	/// <summary>
-	/// Neutral candle (open equals close).
-	/// </summary>
-	Neutral = 1,
-
-	/// <summary>
-	/// Bullish candle (open below close).
-	/// </summary>
-	Bullish = 2,
-}
-
-/// <summary>
-/// Moving average methods available for smoothing the synthetic candles.
-/// </summary>
-public enum CenterOfGravityMaMethods
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Exponential,
-
-	/// <summary>
-	/// Smoothed moving average.
-	/// </summary>
-	Smoothed,
-
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	LinearWeighted,
-}
-
-/// <summary>
-/// Modes that define how the money management value is interpreted.
-/// </summary>
-public enum CenterOfGravityMarginModes
-{
-	/// <summary>
-	/// Portion of account equity is used (approximates free margin).
-	/// </summary>
-	FreeMargin,
-
-	/// <summary>
-	/// Portion of current balance is used.
-	/// </summary>
-	Balance,
-
-	/// <summary>
-	/// Risk is computed from free margin and stop loss distance.
-	/// </summary>
-	LossFreeMargin,
-
-	/// <summary>
-	/// Risk is computed from balance and stop loss distance.
-	/// </summary>
-	LossBalance,
-
-	/// <summary>
-	/// Money management value represents a fixed lot size.
-	/// </summary>
-	Lot,
 }
