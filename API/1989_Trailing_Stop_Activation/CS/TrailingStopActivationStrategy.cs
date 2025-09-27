@@ -106,9 +106,9 @@ public class TrailingStopActivationStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnNewMyTrade(trade);
+		base.OnOwnTradeReceived(trade);
 
 		if (_lastPosition == 0 && Position != 0)
 		{

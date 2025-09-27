@@ -162,9 +162,9 @@ public class KnuxMartingaleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade myTrade)
+	protected override void OnOwnTradeReceived(MyTrade myTrade)
 	{
-		base.OnNewMyTrade(myTrade);
+		base.OnOwnTradeReceived(myTrade);
 
 		if (Position != 0)
 			return;

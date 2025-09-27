@@ -154,11 +154,11 @@ public class GetLastNthClosedTradeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
 		var previousPosition = Position;
 
-		base.OnNewMyTrade(trade);
+		base.OnOwnTradeReceived(trade);
 
 		if (!IsTradeAccepted(trade))
 		return;

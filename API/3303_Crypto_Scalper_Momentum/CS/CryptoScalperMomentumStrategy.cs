@@ -558,9 +558,9 @@ public class CryptoScalperMomentumStrategy : Strategy
 		}
 	}
 
-	protected override void OnNewMyTrade(MyTrade myTrade)
+	protected override void OnOwnTradeReceived(MyTrade myTrade)
 	{
-		base.OnNewMyTrade(myTrade);
+		base.OnOwnTradeReceived(myTrade);
 
 		if (myTrade.Order.Security != Security)
 		return;

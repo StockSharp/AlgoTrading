@@ -42,7 +42,7 @@ public class PendulumStrategy : Strategy
 	{
 		_stepSize = Param(nameof(StepSize), 0.001m)
 			.SetDisplay("Grid Step", "Distance between consecutive grid levels", "Strategy")
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetCanOptimize(true)
 			.SetOptimize(0.0005m, 0.01m, 0.0005m);
 
@@ -60,7 +60,7 @@ public class PendulumStrategy : Strategy
 
 		_baseVolume = Param(nameof(BaseVolume), 1m)
 			.SetDisplay("Base Volume", "Initial trade volume for the first layer", "Trading")
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetCanOptimize(true)
 			.SetOptimize(0.1m, 5m, 0.1m);
 

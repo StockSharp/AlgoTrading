@@ -507,9 +507,9 @@ _shortTrailingStop = null;
 }
 
 /// <inheritdoc />
-protected override void OnNewMyTrade(MyTrade trade)
+protected override void OnOwnTradeReceived(MyTrade trade)
 {
-base.OnNewMyTrade(trade);
+base.OnOwnTradeReceived(trade);
 
 if (Security is null || trade.Order.Security != Security)
 return;

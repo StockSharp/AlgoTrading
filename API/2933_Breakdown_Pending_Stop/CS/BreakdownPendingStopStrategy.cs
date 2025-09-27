@@ -376,9 +376,9 @@ public class BreakdownPendingStopStrategy : Strategy
 	private decimal GetOffset(decimal ticks) => ticks * _tickSize;
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnNewMyTrade(trade);
+		base.OnOwnTradeReceived(trade);
 
 		var order = trade?.Order;
 		if (order == null)

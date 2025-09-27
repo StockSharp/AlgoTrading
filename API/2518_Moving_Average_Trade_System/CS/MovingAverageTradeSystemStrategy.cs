@@ -135,13 +135,13 @@ public class MovingAverageTradeSystemStrategy : Strategy
 	{
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 50m)
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (steps)", "Distance to take profit in price steps", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(10m, 200m, 10m);
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 50m)
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (steps)", "Distance to stop loss in price steps", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(10m, 200m, 10m);
@@ -364,9 +364,9 @@ public class MovingAverageTradeSystemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnNewMyTrade(trade);
+		base.OnOwnTradeReceived(trade);
 
 		var price = trade.Trade?.Price;
 		if (price is null)

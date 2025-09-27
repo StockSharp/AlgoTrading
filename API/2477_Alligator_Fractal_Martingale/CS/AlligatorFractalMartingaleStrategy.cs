@@ -400,7 +400,7 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 		.SetDisplay("Martingale Steps", "Number of averaging levels", "Martingale");
 
 		_martingaleMultiplier = Param(nameof(MartingaleMultiplier), 1.3m)
-		.SetGreaterThan(0m)
+		.SetGreaterThanZero()
 		.SetDisplay("Martingale Multiplier", "Volume multiplier per level", "Martingale");
 
 		_martingaleStepDistance = Param(nameof(MartingaleStepDistance), 0.005m)
@@ -412,7 +412,7 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 		.SetDisplay("Max Volume", "Absolute cap for any order", "Trading");
 
 		_volume = Param(nameof(Volume), 0.1m)
-		.SetGreaterThan(0m)
+		.SetGreaterThanZero()
 		.SetDisplay("Volume", "Base volume for entries", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

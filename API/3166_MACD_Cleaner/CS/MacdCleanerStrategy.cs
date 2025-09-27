@@ -55,7 +55,7 @@ public class MacdCleanerStrategy : Strategy
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetDisplay("Trade Volume", "Order size used for entries", "Trading")
-			.SetGreaterThan(0m);
+			.SetGreaterThanZero();
 
 		_stopLossPips = Param(nameof(StopLossPips), 35m)
 			.SetDisplay("Stop Loss (pips)", "Distance to the protective stop", "Risk")

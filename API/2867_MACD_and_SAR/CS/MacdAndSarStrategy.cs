@@ -182,7 +182,7 @@ public class MacdAndSarStrategy : Strategy
 	public MacdAndSarStrategy()
 	{
 		_volumeTolerance = Param(nameof(VolumeTolerance), 0.0000001m)
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetDisplay("Volume Tolerance", "Tolerance when stacking positions", "Risk");
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)

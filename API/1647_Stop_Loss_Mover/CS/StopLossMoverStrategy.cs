@@ -116,9 +116,9 @@ public class StopLossMoverStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnNewMyTrade(trade);
+		base.OnOwnTradeReceived(trade);
 
 		// Capture entry price when first trade is executed
 		if (_entryPrice == 0m)

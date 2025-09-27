@@ -156,7 +156,7 @@ private readonly StrategyParam<Sides?> _tradeDirection;
 			.SetCanOptimize(true);
 
 		_factor = Param(nameof(Factor), 3m)
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetDisplay("Factor", "ATR multiplier", "Supertrend")
 			.SetCanOptimize(true);
 

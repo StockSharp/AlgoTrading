@@ -228,8 +228,8 @@ public class MartingaleMacdStrategy : Strategy {
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade trade) {
-	base.OnNewMyTrade(trade);
+	protected override void OnOwnTradeReceived(MyTrade trade) {
+	base.OnOwnTradeReceived(trade);
 
 	if (Position != 0 || _entryPrice == null || _entrySide == null)
 		return;

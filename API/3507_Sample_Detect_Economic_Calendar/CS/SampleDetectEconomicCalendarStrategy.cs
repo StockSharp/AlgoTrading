@@ -276,9 +276,9 @@ public class SampleDetectEconomicCalendarStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnNewMyTrade(trade);
+		base.OnOwnTradeReceived(trade);
 
 		if (trade.Order is null)
 		return;

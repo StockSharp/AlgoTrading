@@ -50,7 +50,7 @@ public class RsiCyclicSmoothedStrategy : Strategy
 		.SetCanOptimize(true);
 		
 		_leveling = Param(nameof(Leveling), 10m)
-		.SetGreaterThan(0m)
+		.SetGreaterThanZero()
 		.SetDisplay("Leveling", "Percentile for bands", "General")
 		.SetCanOptimize(true);
 		

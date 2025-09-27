@@ -138,9 +138,9 @@ public class PauseTradingOnConsecutiveLossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade myTrade)
+	protected override void OnOwnTradeReceived(MyTrade myTrade)
 	{
-		base.OnNewMyTrade(myTrade);
+		base.OnOwnTradeReceived(myTrade);
 
 		_lastTradeTime = myTrade.Trade?.ServerTime ?? myTrade.Trade?.Time ?? CurrentTime ?? DateTimeOffset.UtcNow;
 	}

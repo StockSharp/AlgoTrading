@@ -125,7 +125,7 @@ public class BssTripleEmaSeparationStrategy : Strategy
 	public BssTripleEmaSeparationStrategy()
 	{
 		_volumeTolerance = Param(nameof(VolumeTolerance), 1e-8m)
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetDisplay("Volume Tolerance", "Tolerance when comparing volume values", "Risk");
 
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)

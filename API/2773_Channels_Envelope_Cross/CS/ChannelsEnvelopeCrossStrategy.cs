@@ -231,15 +231,15 @@ public class ChannelsEnvelopeCrossStrategy : Strategy
 		.SetDisplay("Trailing Step (pips)", "Minimum increment for trailing stop", "Risk");
 
 		_envelope003 = Param(nameof(Envelope003), 0.3m / 100m)
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetDisplay("Envelope 0.3%", "Width of the 0.3% envelope", "Indicators");
 
 		_envelope007 = Param(nameof(Envelope007), 0.7m / 100m)
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetDisplay("Envelope 0.7%", "Width of the 0.7% envelope", "Indicators");
 
 		_envelope010 = Param(nameof(Envelope010), 1.0m / 100m)
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetDisplay("Envelope 1.0%", "Width of the 1.0% envelope", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

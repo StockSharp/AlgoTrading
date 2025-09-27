@@ -138,7 +138,7 @@ public class BillyExpertStrategy : Strategy
 	public BillyExpertStrategy()
 	{
 		_volumeTolerance = Param(nameof(VolumeTolerance), 0.0000001m)
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetDisplay("Volume Tolerance", "Tolerance for comparing volume sums", "Risk");
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.01m)

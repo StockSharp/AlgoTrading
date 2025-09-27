@@ -251,9 +251,9 @@ public class RsiMaOnRsiDualStrategy : Strategy
 		}
 	}
 
-	protected override void OnNewMyTrade(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnNewMyTrade(trade);
+		base.OnOwnTradeReceived(trade);
 
 		_orderInFlight = false;
 

@@ -55,7 +55,7 @@ public class GoldPullbackStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_slOffset = Param(nameof(SlOffset), 0.1m)
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetDisplay("SL Offset", "Offset for stop calculation", "Risk")
 			.SetCanOptimize(true);
 

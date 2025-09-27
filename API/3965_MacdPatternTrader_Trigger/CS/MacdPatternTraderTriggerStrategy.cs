@@ -152,7 +152,7 @@ public class MacdPatternTraderTriggerStrategy : Strategy
 	public MacdPatternTraderTriggerStrategy()
 	{
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Order volume for entries", "Trading")
 			.SetCanOptimize(true)
 			.SetOptimize(0.05m, 0.3m, 0.05m);
@@ -176,19 +176,19 @@ public class MacdPatternTraderTriggerStrategy : Strategy
 			.SetOptimize(1, 5, 1);
 
 		_bullishTrigger = Param(nameof(BullishTrigger), 0.0015m)
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetDisplay("Bullish Trigger", "MACD level that arms the bullish pattern", "Logic");
 
 		_bullishReset = Param(nameof(BullishReset), 0.0005m)
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetDisplay("Bullish Reset", "MACD pullback threshold for bullish setup", "Logic");
 
 		_bearishTrigger = Param(nameof(BearishTrigger), 0.0015m)
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetDisplay("Bearish Trigger", "Absolute MACD level that arms the bearish pattern", "Logic");
 
 		_bearishReset = Param(nameof(BearishReset), 0.0005m)
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetDisplay("Bearish Reset", "MACD pullback threshold for bearish setup", "Logic");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 100m)

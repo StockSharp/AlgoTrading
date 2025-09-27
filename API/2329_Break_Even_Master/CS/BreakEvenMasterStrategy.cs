@@ -73,9 +73,9 @@ public class BreakEvenMasterStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade myTrade)
+	protected override void OnOwnTradeReceived(MyTrade myTrade)
 	{
-		base.OnNewMyTrade(myTrade);
+		base.OnOwnTradeReceived(myTrade);
 
 		if (UseComment && myTrade.Order.Comment != Comment)
 			return;

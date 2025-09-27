@@ -83,7 +83,7 @@ public class TrailingStopAndTakeStrategy : Strategy
 			.SetDisplay("Trailing Step", "Minimum movement required before adjusting targets", "Risk");
 
 		_epsilon = Param(nameof(Epsilon), 0.0000001m)
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetDisplay("Trailing Epsilon", "Minimum trailing step size", "Risk");
 
 		_allowTrailingLoss = Param(nameof(AllowTrailingLoss), false)

@@ -650,9 +650,9 @@ public class MultiBreakoutV001kStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnNewMyTrade(trade);
+		base.OnOwnTradeReceived(trade);
 
 		if (!_entryTargets.TryGetValue(trade.Order, out var target))
 		return;

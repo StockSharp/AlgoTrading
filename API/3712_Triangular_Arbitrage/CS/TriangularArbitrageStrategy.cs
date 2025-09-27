@@ -399,9 +399,9 @@ public class TriangularArbitrageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnNewMyTrade(trade);
+		base.OnOwnTradeReceived(trade);
 
 		var security = trade?.Trade?.Security;
 		var order = trade?.Order;

@@ -97,25 +97,25 @@ public class CharlesStrategy : Strategy
 			.SetOptimize(7, 21, 7);
 
 		_stopLoss = Param(nameof(StopLoss), 0.008m)
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Absolute stop-loss value", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0.004m, 0.02m, 0.004m);
 
 		_takeProfit = Param(nameof(TakeProfit), 0.02m)
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Absolute take-profit value", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0.01m, 0.05m, 0.01m);
 
 		_trailStart = Param(nameof(TrailStart), 0.006m)
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetDisplay("Trail Start", "Profit to activate trailing", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0.004m, 0.02m, 0.004m);
 
 		_trailOffset = Param(nameof(TrailOffset), 0.003m)
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetDisplay("Trail Offset", "Distance of trailing stop", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0.002m, 0.01m, 0.002m);

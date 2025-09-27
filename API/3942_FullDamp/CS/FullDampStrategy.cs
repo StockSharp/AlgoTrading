@@ -468,9 +468,9 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 	}
 	
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnNewMyTrade(trade);
+		base.OnOwnTradeReceived(trade);
 		
 		if (trade.Order.Side == Sides.Buy && Position > 0)
 		{

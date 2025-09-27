@@ -147,11 +147,11 @@ public class DynamicAveragingStrategy : Strategy
 	{
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 		.SetDisplay("Trade Volume", "Order volume for new positions", "Trading")
-		.SetGreaterThan(0m);
+		.SetGreaterThanZero();
 
 		_profitTarget = Param(nameof(MinimumProfit), 15m)
 		.SetDisplay("Profit Target", "Floating profit threshold that closes all positions", "Trading")
-		.SetGreaterThan(0m);
+		.SetGreaterThanZero();
 
 		_slidingWindowDays = Param(nameof(SlidingWindowDays), 30)
 		.SetDisplay("Sliding Window (Days)", "Days used to average the volatility", "Indicators")

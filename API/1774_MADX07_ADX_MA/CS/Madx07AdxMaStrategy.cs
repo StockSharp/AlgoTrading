@@ -19,6 +19,14 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class Madx07AdxMaStrategy : Strategy
 {
+	public enum MovingAverageTypes
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		LinearWeighted
+	}
+
 	private readonly StrategyParam<int> _bigMaPeriod;
 	private readonly StrategyParam<MovingAverageTypes> _bigMaType;
 	private readonly StrategyParam<int> _smallMaPeriod;
@@ -186,8 +194,8 @@ public class Madx07AdxMaStrategy : Strategy
 		base.OnStarted(time);
 
 		// Create indicators
-		var bigMa = new MovingAverage { Length = BigMaPeriod, Type = BigMaType };
-		var smallMa = new MovingAverage { Length = SmallMaPeriod, Type = SmallMaType };
+		var bigMa = new SimpleMovingAverage { Length = BigMaPeriod, Type = BigMaType };
+		var smallMa = new SimpleMovingAverage { Length = SmallMaPeriod, Type = SmallMaType };
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 
 		// Subscribe to candles and bind indicators

@@ -175,9 +175,9 @@ public VectorBasketTrendStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnNewMyTrade(trade);
+		base.OnOwnTradeReceived(trade);
 
 		var security = trade.Order.Security;
 		if (security == null)

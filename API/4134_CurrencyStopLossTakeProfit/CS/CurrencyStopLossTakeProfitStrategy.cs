@@ -112,9 +112,9 @@ public class CurrencyStopLossTakeProfitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnNewMyTrade(trade);
+		base.OnOwnTradeReceived(trade);
 
 		RegisterTrade(trade);
 		EvaluatePositions();

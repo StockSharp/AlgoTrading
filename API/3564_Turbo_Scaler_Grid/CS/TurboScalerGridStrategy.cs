@@ -125,7 +125,7 @@ public class TurboScalerGridStrategy : Strategy
 
 		_orderVolume = Param(nameof(OrderVolume), 0.01m)
 			.SetDisplay("Order Volume", "Volume for each pending order", "Orders")
-			.SetGreaterThan(0m);
+			.SetGreaterThanZero();
 
 		_pendingQuantity = Param(nameof(PendingQuantity), 3)
 			.SetDisplay("Pending Quantity", "Number of pending orders in the grid", "Orders")

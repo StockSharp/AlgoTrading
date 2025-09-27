@@ -258,7 +258,7 @@ public class BrunoTrendStrategy : Strategy
 
 		_adxThreshold = Param(nameof(AdxThreshold), 20m)
 		.SetDisplay("+DI Threshold", "Minimum +DI value required for longs", "Trend")
-		.SetGreaterThan(0m);
+		.SetGreaterThanZero();
 
 		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 21)
 		.SetDisplay("Stochastic %K", "%K lookback for the stochastic", "Oscillator")

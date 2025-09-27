@@ -106,11 +106,11 @@ public class StandardDeviationChannelStrategy : Strategy
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 		.SetDisplay("Take Profit", "Fixed take-profit distance in pips.", "Risk")
-		.SetGreaterThan(0m);
+		.SetGreaterThanZero();
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
 		.SetDisplay("Stop Loss", "Fixed stop-loss distance in pips.", "Risk")
-		.SetGreaterThan(0m);
+		.SetGreaterThanZero();
 
 		_breakEvenTriggerPips = Param(nameof(BreakEvenTriggerPips), 30m)
 		.SetDisplay("Break-Even Trigger", "Profit needed before arming the break-even stop.", "Risk")

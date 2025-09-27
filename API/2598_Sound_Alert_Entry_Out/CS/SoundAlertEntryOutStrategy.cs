@@ -86,12 +86,12 @@ public class SoundAlertEntryOutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
 		var positionBeforeTrade = _previousPosition;
 		var pnlBeforeTrade = _previousPnL;
 
-		base.OnNewMyTrade(trade);
+		base.OnOwnTradeReceived(trade);
 
 		_previousPosition = Position;
 		_previousPnL = PnL;

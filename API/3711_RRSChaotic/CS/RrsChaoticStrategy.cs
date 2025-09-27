@@ -228,9 +228,9 @@ public class RrsChaoticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnNewMyTrade(trade);
+		base.OnOwnTradeReceived(trade);
 
 		// Update protective levels based on the latest execution price.
 		if (Position > 0m && trade.OrderDirection == Sides.Buy)

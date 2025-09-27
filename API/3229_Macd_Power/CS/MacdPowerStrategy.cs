@@ -587,10 +587,10 @@ public class MacdPowerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
 		// Track entry statistics to drive trailing and break-even logic
-	base.OnNewMyTrade(trade);
+	base.OnOwnTradeReceived(trade);
 
 	if (Position == 0m)
 	{

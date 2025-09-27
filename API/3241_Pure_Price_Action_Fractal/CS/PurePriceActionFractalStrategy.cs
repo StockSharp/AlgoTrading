@@ -343,9 +343,9 @@ public class PurePriceActionFractalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReset()
+	protected override void OnReseted()
 	{
-		base.OnReset();
+		base.OnReseted();
 
 		_bodyDifferences.Clear();
 		_momentumDistances.Clear();
@@ -423,9 +423,9 @@ public class PurePriceActionFractalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnNewMyTrade(trade);
+		base.OnOwnTradeReceived(trade);
 
 		var currentPosition = Position;
 

@@ -202,7 +202,7 @@ public class MartingaleTradeSimulatorStrategy : Strategy
 		.SetCanOptimize(false);
 
 		_martingaleMultiplier = Param(nameof(MartingaleMultiplier), 1.2m)
-		.SetGreaterThan(0m)
+		.SetGreaterThanZero()
 		.SetDisplay("Martingale Multiplier", "Volume multiplier for each averaging order.", "Martingale");
 
 		_martingaleStepPoints = Param(nameof(MartingaleStepPoints), 150m)
@@ -477,9 +477,9 @@ public class MartingaleTradeSimulatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnNewMyTrade(trade);
+		base.OnOwnTradeReceived(trade);
 
 		var price = trade.Trade?.Price;
 		if (price is null)

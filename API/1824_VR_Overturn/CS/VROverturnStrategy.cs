@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class VROverturnStrategy : Strategy
 {
-	private enum TradeModes
+	public enum TradeModes
 	{
 		Martingale,
 		AntiMartingale
@@ -130,9 +130,9 @@ public class VROverturnStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnNewMyTrade(trade);
+		base.OnOwnTradeReceived(trade);
 
 		if (Position != 0 && _entryPrice == 0m)
 		{

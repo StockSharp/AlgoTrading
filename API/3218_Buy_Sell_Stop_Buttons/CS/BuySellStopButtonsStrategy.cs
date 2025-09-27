@@ -71,7 +71,7 @@ public BuySellStopButtonsStrategy()
 
 	_takeProfitInMoney = Param(nameof(TakeProfitInMoney), 10m)
 	.SetDisplay("TP amount", "Monetary profit that triggers the immediate close when TP in money is enabled.", "Money targets")
-	.SetGreaterThan(0m);
+	.SetGreaterThanZero();
 
 	_useTakeProfitPercent = Param(nameof(UseTakeProfitPercent), false)
 	.SetDisplay("TP percent", "Close all positions once profit exceeds the configured percentage of equity.", "Money targets")
@@ -79,7 +79,7 @@ public BuySellStopButtonsStrategy()
 
 	_takeProfitPercent = Param(nameof(TakeProfitPercent), 10m)
 	.SetDisplay("TP %", "Percentage of portfolio value used by the percent based take-profit.", "Money targets")
-	.SetGreaterThan(0m);
+	.SetGreaterThanZero();
 
 	_enableTrailing = Param(nameof(EnableTrailing), true)
 	.SetDisplay("Enable trailing", "Activates the equity based trailing block from the original expert.", "Money targets")
@@ -87,11 +87,11 @@ public BuySellStopButtonsStrategy()
 
 	_trailingProfitMoney = Param(nameof(TrailingProfitMoney), 40m)
 	.SetDisplay("Trailing activation", "Profit in money that arms the trailing equity lock.", "Money targets")
-	.SetGreaterThan(0m);
+	.SetGreaterThanZero();
 
 	_trailingLossMoney = Param(nameof(TrailingLossMoney), 10m)
 	.SetDisplay("Trailing give back", "Maximum profit give back allowed once the trailing lock is armed.", "Money targets")
-	.SetGreaterThan(0m);
+	.SetGreaterThanZero();
 
 	_useBollingerExit = Param(nameof(UseBollingerExit), true)
 	.SetDisplay("Use Bollinger exit", "Mimics the chart stop button that closes positions at the opposite band.", "Exits")
@@ -103,7 +103,7 @@ public BuySellStopButtonsStrategy()
 
 	_breakEvenTriggerPips = Param(nameof(BreakEvenTriggerPips), 10m)
 	.SetDisplay("Break-even trigger", "Distance in pips required before the stop is moved to break even.", "Exits")
-	.SetGreaterThan(0m);
+	.SetGreaterThanZero();
 
 	_breakEvenOffsetPips = Param(nameof(BreakEvenOffsetPips), 5m)
 	.SetDisplay("Break-even offset", "Additional pips added on top of the entry price once break-even is active.", "Exits");
@@ -339,9 +339,9 @@ protected override void OnStarted(DateTimeOffset time)
 }
 
 /// <inheritdoc />
-protected override void OnNewMyTrade(MyTrade trade)
+protected override void OnOwnTradeReceived(MyTrade trade)
 {
-	base.OnNewMyTrade(trade);
+	base.OnOwnTradeReceived(trade);
 
 	var previousPosition = _lastPosition;
 	var newPosition = Position;

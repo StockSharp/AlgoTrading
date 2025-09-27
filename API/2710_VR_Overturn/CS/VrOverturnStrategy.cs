@@ -76,7 +76,7 @@ public class VrOverturnStrategy : Strategy
 	public VrOverturnStrategy()
 	{
 		_volumeEpsilon = Param(nameof(VolumeEpsilon), 1e-6m)
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetDisplay("Volume Epsilon", "Minimum volume threshold to treat position as flat", "Risk");
 
 		_initialDirection = Param(nameof(FirstPositionDirection), InitialDirections.Buy)

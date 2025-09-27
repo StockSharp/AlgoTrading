@@ -221,7 +221,7 @@ public class CloudzsTrade2Strategy : Strategy
 	public CloudzsTrade2Strategy()
 	{
 		_lotSplitter = Param(nameof(LotSplitter), 0.1m)
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetDisplay("Lot Splitter", "Coefficient used to derive order size", "Trading");
 
 		_maxVolume = Param(nameof(MaxVolume), 0m)

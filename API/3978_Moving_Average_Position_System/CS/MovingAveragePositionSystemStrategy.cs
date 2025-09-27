@@ -170,27 +170,27 @@ public class MovingAveragePositionSystemStrategy : Strategy
 		.SetDisplay("MA Shift", "Forward shift for the moving average", "Indicators");
 
 		_initialVolume = Param(nameof(InitialVolume), 0.1m)
-		.SetGreaterThan(0m)
+		.SetGreaterThanZero()
 		.SetDisplay("Initial Volume", "Starting lot size", "Trading");
 
 		_startVolume = Param(nameof(StartVolume), 0.1m)
-		.SetGreaterThan(0m)
+		.SetGreaterThanZero()
 		.SetDisplay("Start Volume", "Base lot restored after profits", "Trading");
 
 		_maxVolume = Param(nameof(MaxVolume), 10m)
-		.SetGreaterThan(0m)
+		.SetGreaterThanZero()
 		.SetDisplay("Max Volume", "Maximum allowed lot size", "Trading");
 
 		_lossThresholdPips = Param(nameof(LossThresholdPips), 90m)
-		.SetGreaterThan(0m)
+		.SetGreaterThanZero()
 		.SetDisplay("Loss Threshold (pts)", "Loss in points that doubles the lot", "Risk");
 
 		_profitThresholdPips = Param(nameof(ProfitThresholdPips), 170m)
-		.SetGreaterThan(0m)
+		.SetGreaterThanZero()
 		.SetDisplay("Profit Target (pts)", "Profit in points that resets the lot", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 1000m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pts)", "Fixed take profit distance", "Risk");
 
 		_useMoneyManagement = Param(nameof(UseMoneyManagement), true)
@@ -251,7 +251,7 @@ public class MovingAveragePositionSystemStrategy : Strategy
 		base.OnStarted(time);
 	}
 
-	private MovingAverage CreateMovingAverage()
+	private LengthIndicator<decimal> CreateMovingAverage()
 	{
 		return MaType switch
 		{

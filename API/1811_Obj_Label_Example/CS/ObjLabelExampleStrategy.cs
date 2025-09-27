@@ -12,6 +12,7 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 using StockSharp.Algo;
+using StockSharp.Charting;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -25,7 +26,7 @@ public class ObjLabelExampleStrategy : Strategy
 	private readonly StrategyParam<string> _labelText;
 	private readonly StrategyParam<decimal> _priceOffset;
 
-	private IChartArea? _area;
+	private IChartArea _area;
 	private bool _labelDrawn;
 
 	/// <summary>

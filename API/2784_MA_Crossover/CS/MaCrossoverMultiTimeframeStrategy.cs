@@ -672,10 +672,10 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
 		// Update the average entry price once fills arrive.
-		base.OnNewMyTrade(trade);
+		base.OnOwnTradeReceived(trade);
 
 		if (trade.Order.Security != Security)
 			return;

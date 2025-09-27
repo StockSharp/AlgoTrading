@@ -339,9 +339,9 @@ public class MoneyRainRecoveryStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnNewMyTrade(trade);
+		base.OnOwnTradeReceived(trade);
 
 		var direction = trade.Order.Side;
 		var tradeVolume = trade.Trade.Volume ?? trade.Order.Volume;

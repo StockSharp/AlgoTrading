@@ -12,6 +12,7 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 using StockSharp.Algo;
+using StockSharp.Charting;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -56,7 +57,7 @@ public class OrderGuardianStrategy : Strategy
 	private int _sarWriteIndex;
 	private int _sarCount;
 
-	private ChartArea? _chartArea;
+	private IChartArea _chartArea;
 	private DateTimeOffset? _lastGuideTime;
 	private decimal? _lastGuideTakeProfit;
 	private decimal? _lastGuideStopLoss;

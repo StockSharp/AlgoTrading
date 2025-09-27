@@ -58,7 +58,7 @@ public class BollingerBandPendingStopsStrategy : Strategy
 
 		_bandDeviation = Param(nameof(BandDeviation), 4m)
 		.SetDisplay("Band Deviation", "Standard deviation multiplier for the bands", "Indicators")
-		.SetGreaterThan(0m);
+		.SetGreaterThanZero();
 
 		_startHour = Param(nameof(StartHour), 0)
 		.SetDisplay("Start Hour", "Hour when pending orders become eligible", "Trading")
@@ -70,15 +70,15 @@ public class BollingerBandPendingStopsStrategy : Strategy
 
 		_firstTakeProfit = Param(nameof(FirstTakeProfit), 21m)
 		.SetDisplay("First TP", "Take-profit distance in price steps for slot 1", "Risk")
-		.SetGreaterThan(0m);
+		.SetGreaterThanZero();
 
 		_secondTakeProfit = Param(nameof(SecondTakeProfit), 34m)
 		.SetDisplay("Second TP", "Take-profit distance in price steps for slot 2", "Risk")
-		.SetGreaterThan(0m);
+		.SetGreaterThanZero();
 
 		_thirdTakeProfit = Param(nameof(ThirdTakeProfit), 55m)
 		.SetDisplay("Third TP", "Take-profit distance in price steps for slot 3", "Risk")
-		.SetGreaterThan(0m);
+		.SetGreaterThanZero();
 
 		_useBandTrailing = Param(nameof(UseBandTrailingStop), true)
 		.SetDisplay("Use Band Trailing", "Use the opposite band instead of EMA for trailing", "Risk");
@@ -321,9 +321,9 @@ public class BollingerBandPendingStopsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnNewMyTrade(trade);
+		base.OnOwnTradeReceived(trade);
 
 		foreach (var slot in _longSlots)
 			if (slot.TryHandleTrade(trade, this, _priceStep))

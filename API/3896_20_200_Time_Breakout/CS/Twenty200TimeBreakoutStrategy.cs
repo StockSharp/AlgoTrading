@@ -87,7 +87,7 @@ public class Twenty200TimeBreakoutStrategy : Strategy
 			.SetDisplay("Max Open Hours", "Maximum lifetime for an open position in hours (0 disables the guard)", "Risk");
 
 		_fixedVolume = Param(nameof(FixedVolume), 0.01m)
-			.SetGreaterThan(0m)
+			.SetGreaterThanZero()
 			.SetDisplay("Fixed Volume", "Fallback trade volume used when auto lot sizing is disabled", "Money Management");
 
 		_autoLotEnabled = Param(nameof(AutoLotEnabled), true)
@@ -167,9 +167,9 @@ public class Twenty200TimeBreakoutStrategy : Strategy
 		}
 	}
 
-	protected override void OnNewMyTrade(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnNewMyTrade(trade);
+		base.OnOwnTradeReceived(trade);
 
 		if (trade.Order.Security != Security)
 			return;

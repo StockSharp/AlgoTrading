@@ -356,11 +356,11 @@ _waitBuffer = 0m;
 }
 
 /// <inheritdoc />
-protected override void OnNewMyTrade(MyTrade trade)
+protected override void OnOwnTradeReceived(MyTrade trade)
 {
 var positionBefore = _lastKnownPosition;
 
-base.OnNewMyTrade(trade);
+base.OnOwnTradeReceived(trade);
 
 var positionAfter = Position;
 _lastKnownPosition = positionAfter;

@@ -83,7 +83,7 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 		.SetDisplay("Use Auto Lot", "Enable dynamic position sizing based on free margin", "Money Management");
 
 		_autoMarginDivider = Param(nameof(AutoMarginDivider), 7)
-		.SetGreaterThanOrEqual(1)
+		.SetRange(1, int.MaxValue)
 		.SetDisplay("Auto Margin Divider", "Divisor used to convert free margin into the lot size", "Money Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

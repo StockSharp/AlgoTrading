@@ -255,9 +255,9 @@ public class Et4MtcV1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnNewMyTrade(trade);
+		base.OnOwnTradeReceived(trade);
 
 		UpdateLastTradeTime(trade.Trade.ServerTime);
 	}

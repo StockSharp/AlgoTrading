@@ -182,9 +182,9 @@ public class AutoTpManagerStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnNewMyTrade(MyTrade trade)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		base.OnNewMyTrade(trade);
+		base.OnOwnTradeReceived(trade);
 
 		// Store the last trade price to estimate the entry when necessary.
 		_lastTradePrice = trade.Trade?.Price ?? _lastTradePrice;
