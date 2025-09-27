@@ -13,11 +13,10 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class OpenCloseStrategy : Strategy
 {
-	private const decimal MinimumVolume = 0.1m;
-
 	private readonly StrategyParam<decimal> _initialVolume;
 	private readonly StrategyParam<decimal> _maximumRisk;
 	private readonly StrategyParam<decimal> _decreaseFactor;
+	private readonly StrategyParam<decimal> _minimumVolume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private bool _hasPreviousCandle;
@@ -39,6 +38,10 @@ public class OpenCloseStrategy : Strategy
 
 		_decreaseFactor = Param(nameof(DecreaseFactor), 100m)
 			.SetDisplay("Decrease Factor", "Lot reduction factor applied after consecutive losing trades.", "Risk");
+
+		_minimumVolume = Param(nameof(MinimumVolume), 0.1m)
+			.SetGreaterThanZero()
+			.SetDisplay("Minimum Volume", "Lower bound for trade volume calculations.", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Time-frame used to evaluate the open/close pattern.", "Data");
@@ -70,6 +73,15 @@ public class OpenCloseStrategy : Strategy
 		get => _decreaseFactor.Value;
 		set => _decreaseFactor.Value = value;
 	}
+	/// <summary>
+	/// Minimal volume allowed for any generated order.
+	/// </summary>
+	public decimal MinimumVolume
+	{
+		get => _minimumVolume.Value;
+		set => _minimumVolume.Value = value;
+	}
+
 
 	/// <summary>
 	/// Candle series used to evaluate the pattern.
