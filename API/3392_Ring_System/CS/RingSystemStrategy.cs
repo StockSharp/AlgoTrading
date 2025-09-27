@@ -174,7 +174,7 @@ public class RingSystemStrategy : Strategy
 		var split = Currencies
 			.Split(new[] { '/', ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries)
 			.Select(c => c.Trim().ToUpperInvariant())
-			.Where(c => !string.IsNullOrWhiteSpace(c))
+			.Where(c => !c.IsEmptyOrWhiteSpace())
 			.ToArray();
 
 		if (split.Length < 3)

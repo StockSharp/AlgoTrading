@@ -187,7 +187,7 @@ public class InformativeDashboardStrategy : Strategy
 
 		var spreadText = GetSpreadText();
 		var accountName = portfolio?.Name;
-		if (string.IsNullOrWhiteSpace(accountName))
+		if (accountName.IsEmptyOrWhiteSpace())
 			accountName = "Unknown";
 
 		var comment = string.Format(CultureInfo.InvariantCulture,

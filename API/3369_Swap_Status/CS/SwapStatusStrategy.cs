@@ -187,7 +187,7 @@ public class SwapStatusStrategy : Strategy
 		}
 
 		var customList = CustomSymbols;
-		if (!string.IsNullOrWhiteSpace(customList))
+		if (!customList.IsEmptyOrWhiteSpace())
 		{
 			var separators = new[] { ',', ';', '\n', '\r', '\t', ' ' };
 			var tokens = customList.Split(separators, StringSplitOptions.RemoveEmptyEntries);

@@ -481,7 +481,7 @@ public class ManualPositionTrackingPanelStrategy : Strategy
 
 	private void LogAction(string message)
 	{
-		if (!LogActions || string.IsNullOrWhiteSpace(message))
+		if (!LogActions || message.IsEmptyOrWhiteSpace())
 		return;
 
 		LogInfo(message);

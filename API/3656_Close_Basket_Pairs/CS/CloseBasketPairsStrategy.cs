@@ -125,7 +125,7 @@ public class CloseBasketPairsStrategy : Strategy
 
 	private IEnumerable<(string symbol, Sides side)> ParseBasketPairs(string definition, bool logErrors)
 	{
-		if (string.IsNullOrWhiteSpace(definition))
+		if (definition.IsEmptyOrWhiteSpace())
 		{
 			if (logErrors)
 				LogError("Basket definition is empty.");

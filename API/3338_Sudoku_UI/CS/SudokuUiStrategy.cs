@@ -287,7 +287,7 @@ public class SudokuUiStrategy : Strategy
 
 		var source = PuzzleDefinition;
 
-		if (string.IsNullOrWhiteSpace(source))
+		if (source.IsEmptyOrWhiteSpace())
 			return result;
 
 		string content = source;

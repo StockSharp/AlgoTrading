@@ -541,7 +541,7 @@ public class SampleDetectEconomicCalendarStrategy : Strategy
 		_events.Clear();
 
 		var raw = CalendarDefinition;
-		if (string.IsNullOrWhiteSpace(raw))
+		if (raw.IsEmptyOrWhiteSpace())
 		return;
 
 		var lines = raw.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);

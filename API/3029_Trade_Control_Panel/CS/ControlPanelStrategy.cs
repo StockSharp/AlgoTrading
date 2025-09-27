@@ -340,7 +340,7 @@ public class ControlPanelStrategy : Strategy
 
 	private static decimal[] ParseVolumeList(string value)
 	{
-		if (string.IsNullOrWhiteSpace(value))
+		if (value.IsEmptyOrWhiteSpace())
 			return Array.Empty<decimal>();
 
 		var parts = value.Split(';');

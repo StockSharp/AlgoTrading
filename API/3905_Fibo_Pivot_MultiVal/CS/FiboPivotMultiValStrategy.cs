@@ -808,7 +808,7 @@ public class FiboPivotMultiValStrategy : Strategy
 
 	private static string NormalizeMidZoneMode(string value)
 	{
-	if (string.IsNullOrWhiteSpace(value))
+	if (value.IsEmptyOrWhiteSpace())
 	return "bs";
 
 	var normalized = value.Trim().ToLowerInvariant();

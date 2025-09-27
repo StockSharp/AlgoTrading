@@ -321,7 +321,7 @@ public class RiskManagerInfoPanelStrategy : Strategy
 			builder.AppendLine("*** DAILY RISK LIMIT EXCEEDED! Trading suspended.");
 		}
 
-		if (UseSupportMessage && !string.IsNullOrWhiteSpace(SupportMessage))
+		if (UseSupportMessage && !SupportMessage.IsEmptyOrWhiteSpace())
 		{
 			builder.AppendLine();
 			builder.AppendLine(SupportMessage);

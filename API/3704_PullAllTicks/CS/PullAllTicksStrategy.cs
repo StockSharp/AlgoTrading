@@ -168,7 +168,7 @@ public class PullAllTicksStrategy : Strategy
 
 	private static DateTimeOffset? ParseDate(string value)
 	{
-		if (string.IsNullOrWhiteSpace(value))
+		if (value.IsEmptyOrWhiteSpace())
 		return null;
 
 		return DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var result)

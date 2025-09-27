@@ -215,7 +215,7 @@ public class TradingPanelStrategy : Strategy
 		if (_resolvedSecurity != null)
 			return _resolvedSecurity;
 
-		if (!string.IsNullOrWhiteSpace(SecurityId) && AutoLookupSecurity)
+		if (!SecurityId.IsEmptyOrWhiteSpace() && AutoLookupSecurity)
 			_resolvedSecurity = SecurityProvider?.LookupById(SecurityId) ?? Security;
 		else
 			_resolvedSecurity = Security;
@@ -225,7 +225,7 @@ public class TradingPanelStrategy : Strategy
 
 	private static DataType ResolveTimeFrame(string name)
 	{
-		if (string.IsNullOrWhiteSpace(name))
+		if (name.IsEmptyOrWhiteSpace())
 			return null;
 
 		switch (name.Trim().ToUpperInvariant())

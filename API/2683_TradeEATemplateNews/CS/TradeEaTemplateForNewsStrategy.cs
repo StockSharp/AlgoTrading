@@ -367,8 +367,8 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 		{
 			var label = GetImportanceLabel(activeEvent.Importance);
 			var timeText = activeEvent.Time.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
-			var currencyPart = string.IsNullOrWhiteSpace(activeEvent.Currency) ? string.Empty : $" [{activeEvent.Currency}]";
-			var titlePart = string.IsNullOrWhiteSpace(activeEvent.Title) ? string.Empty : $" - {activeEvent.Title}";
+			var currencyPart = activeEvent.Currency.IsEmptyOrWhiteSpace() ? string.Empty : $" [{activeEvent.Currency}]";
+			var titlePart = activeEvent.Title.IsEmptyOrWhiteSpace() ? string.Empty : $" - {activeEvent.Title}";
 			return $"Trading paused due to {label} news{currencyPart} at {timeText}{titlePart}.";
 		}
 
@@ -376,8 +376,8 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 		{
 			var label = GetImportanceLabel(upcomingEvent.Importance);
 			var timeText = upcomingEvent.Time.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
-			var currencyPart = string.IsNullOrWhiteSpace(upcomingEvent.Currency) ? string.Empty : $" [{upcomingEvent.Currency}]";
-			var titlePart = string.IsNullOrWhiteSpace(upcomingEvent.Title) ? string.Empty : $" - {upcomingEvent.Title}";
+			var currencyPart = upcomingEvent.Currency.IsEmptyOrWhiteSpace() ? string.Empty : $" [{upcomingEvent.Currency}]";
+			var titlePart = upcomingEvent.Title.IsEmptyOrWhiteSpace() ? string.Empty : $" - {upcomingEvent.Title}";
 			return $"Next scheduled news: {label}{currencyPart} at {timeText}{titlePart}.";
 		}
 
@@ -401,7 +401,7 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 
 		var raw = NewsEventsDefinition;
 
-		if (string.IsNullOrWhiteSpace(raw))
+		if (raw.IsEmptyOrWhiteSpace())
 		{
 			LogInfo("News events list is empty. The filter will allow trading at all times.");
 			return;
@@ -466,7 +466,7 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 
 	private static bool TryParseImportance(string value, out NewsImportance importance)
 	{
-		if (string.IsNullOrWhiteSpace(value))
+		if (value.IsEmptyOrWhiteSpace())
 		{
 			importance = default;
 			return false;
@@ -517,7 +517,7 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 		if (_instrumentCurrencies.Count == 0)
 			return true;
 
-		if (string.IsNullOrWhiteSpace(evt.Currency))
+		if (evt.Currency.IsEmptyOrWhiteSpace())
 			return true;
 
 		var separators = new[] { '/', ',', '|', ';', ' ' };
@@ -543,7 +543,7 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 
 		var code = Security?.Code;
 
-		if (string.IsNullOrWhiteSpace(code))
+		if (code.IsEmptyOrWhiteSpace())
 			return;
 
 		var trimmed = code.Trim().ToUpperInvariant();

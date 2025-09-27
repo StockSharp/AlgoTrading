@@ -187,7 +187,7 @@ public class CloseDeleteEaStrategy : Strategy
 			var referenceSecurity = Security;
 			var applyCurrent = ApplyToCurrentSecurity && referenceSecurity != null;
 			var filter = TargetStrategyId;
-			var filterEnabled = !string.IsNullOrWhiteSpace(filter);
+			var filterEnabled = !filter.IsEmptyOrWhiteSpace();
 
 			var hasPendingWork = false;
 			var startedWork = false;

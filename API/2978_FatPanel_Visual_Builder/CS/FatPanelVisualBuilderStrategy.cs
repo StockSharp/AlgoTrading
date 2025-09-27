@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-using Ecng.Common;
 
 using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
@@ -198,7 +197,7 @@ public class FatPanelVisualBuilderStrategy : Strategy
 
 	private FatPanelConfiguration LoadConfiguration()
 	{
-		var text = string.IsNullOrWhiteSpace(Configuration) ? DefaultConfiguration : Configuration;
+		var text = Configuration.IsEmptyOrWhiteSpace() ? DefaultConfiguration : Configuration;
 
 		try
 		{
@@ -322,8 +321,8 @@ public class FatPanelVisualBuilderStrategy : Strategy
 
 	private FatPanelConditionContext BuildTimeCondition(FatPanelCondition condition)
 	{
-		var startText = string.IsNullOrWhiteSpace(condition.Start) ? "00:00" : condition.Start!;
-		var endText = string.IsNullOrWhiteSpace(condition.End) ? "00:00" : condition.End!;
+		var startText = condition.Start.IsEmptyOrWhiteSpace() ? "00:00" : condition.Start!;
+		var endText = condition.End.IsEmptyOrWhiteSpace() ? "00:00" : condition.End!;
 
 		if (!TryParseTime(startText, out var start) || !TryParseTime(endText, out var end))
 			throw new InvalidOperationException("Time condition requires parsable start and end values.");
@@ -557,7 +556,7 @@ public class FatPanelVisualBuilderStrategy : Strategy
 
 		public FatPanelRuleContext(string name, List<FatPanelConditionContext> all, List<FatPanelConditionContext> any, List<FatPanelConditionContext> none, FatPanelActionContext action)
 		{
-			_name = string.IsNullOrWhiteSpace(name) ? "Unnamed" : name;
+			_name = name.IsEmptyOrWhiteSpace() ? "Unnamed" : name;
 			_all = all;
 			_any = any;
 			_none = none;

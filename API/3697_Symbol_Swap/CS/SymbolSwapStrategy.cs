@@ -100,7 +100,7 @@ public class SymbolSwapStrategy : Strategy
 	/// <param name="securityId">Identifier resolvable by the current SecurityProvider.</param>
 	public void SwapSecurity(string securityId)
 	{
-		if (string.IsNullOrWhiteSpace(securityId))
+		if (securityId.IsEmptyOrWhiteSpace())
 			throw new ArgumentException("Security identifier must be provided.", nameof(securityId));
 
 		_pendingSecurityId = securityId.Trim();
@@ -146,7 +146,7 @@ public class SymbolSwapStrategy : Strategy
 
 	private Security ResolveTrackedSecurity()
 	{
-		if (!string.IsNullOrWhiteSpace(WatchedSecurityId))
+		if (!WatchedSecurityId.IsEmptyOrWhiteSpace())
 		{
 			var resolved = SecurityProvider?.LookupById(WatchedSecurityId.Trim());
 			if (resolved == null)

@@ -177,7 +177,7 @@ public class GalenderStrategy : Strategy
 	{
 		var filter = CurrencyFilter;
 
-		if (string.IsNullOrWhiteSpace(filter))
+		if (filter.IsEmptyOrWhiteSpace())
 		{
 			return true;
 		}
@@ -200,7 +200,7 @@ public class GalenderStrategy : Strategy
 	{
 		var keyword = KeywordFilter;
 
-		if (string.IsNullOrWhiteSpace(keyword))
+		if (keyword.IsEmptyOrWhiteSpace())
 		{
 			return true;
 		}
@@ -231,7 +231,7 @@ public class GalenderStrategy : Strategy
 	private string ExtractCurrency(string text)
 	{
 		var filter = CurrencyFilter;
-		if (string.IsNullOrWhiteSpace(filter))
+		if (filter.IsEmptyOrWhiteSpace())
 		{
 			return string.Empty;
 		}

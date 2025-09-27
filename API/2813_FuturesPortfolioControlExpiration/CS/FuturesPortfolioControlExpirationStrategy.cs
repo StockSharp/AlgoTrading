@@ -181,7 +181,7 @@ public class FuturesPortfolioControlExpirationStrategy : Strategy
 		leg.Reset();
 
 		var symbol = leg.GetSymbol();
-		if (string.IsNullOrWhiteSpace(symbol))
+		if (symbol.IsEmptyOrWhiteSpace())
 		{
 			LogWarning($"{leg.Name}: symbol is not specified.");
 			return;
@@ -372,7 +372,7 @@ public class FuturesPortfolioControlExpirationStrategy : Strategy
 
 		Security security = null;
 		var board = BoardCode;
-		if (!string.IsNullOrWhiteSpace(board))
+		if (!board.IsEmptyOrWhiteSpace())
 		{
 			security = SecurityProvider.LookupById($"{code}@{board}");
 		}

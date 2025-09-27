@@ -762,7 +762,7 @@ private bool TryComputeVariantQuotes(Variant variant, out decimal bid, out decim
 
 private void ParseAllowedPatterns()
 {
-	if (string.IsNullOrWhiteSpace(AllowedPatterns))
+	if (AllowedPatterns.IsEmptyOrWhiteSpace())
 	return;
 
 	var lines = AllowedPatterns.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -783,7 +783,7 @@ private List<string> ParseCurrencies()
 {
 	var result = new List<string>();
 
-	if (string.IsNullOrWhiteSpace(Currencies))
+	if (Currencies.IsEmptyOrWhiteSpace())
 	return result;
 
 	var tokens = Currencies.Split(new[] { ',', ';', '\n', '\r', '\t', ' ' }, StringSplitOptions.RemoveEmptyEntries);

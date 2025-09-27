@@ -304,7 +304,7 @@ public class NewsTemplateUniversalStrategy : Strategy
 	{
 		var text = BuildNormalizedText(news);
 
-		if (string.IsNullOrWhiteSpace(text))
+		if (text.IsEmptyOrWhiteSpace())
 		return false;
 
 		var tokens = _currencies.Value
@@ -334,7 +334,7 @@ public class NewsTemplateUniversalStrategy : Strategy
 
 		var filter = SpecificNewsText;
 
-		if (string.IsNullOrWhiteSpace(filter))
+		if (filter.IsEmptyOrWhiteSpace())
 		return false;
 
 		var text = BuildNormalizedText(news);
