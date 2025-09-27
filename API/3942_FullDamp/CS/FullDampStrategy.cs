@@ -11,16 +11,16 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class FullDampStrategy : Strategy
 {
-	private const decimal OversoldLevel = 30m;
-	private const decimal OverboughtLevel = 70m;
-	
-	private readonly StrategyParam<DataType> _candleType;
+private readonly StrategyParam<decimal> _oversoldLevel;
+private readonly StrategyParam<decimal> _overboughtLevel;
+
+private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _bollingerPeriod1;
 	private readonly StrategyParam<int> _bollingerPeriod2;
 	private readonly StrategyParam<int> _bollingerPeriod3;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<int> _lookbackBars;
-	private readonly StrategyParam<int> _stopOffsetPoints;
+private readonly StrategyParam<int> _stopOffsetPoints;
 	
 	private decimal? _wideUpperBand;
 	private decimal? _wideLowerBand;
@@ -107,19 +107,39 @@ public class FullDampStrategy : Strategy
 	/// <summary>
 	/// Offset for stop calculation expressed in instrument points.
 	/// </summary>
-	public int StopOffsetPoints
-	{
-		get => _stopOffsetPoints.Value;
-		set => _stopOffsetPoints.Value = value;
-	}
+public int StopOffsetPoints
+{
+get => _stopOffsetPoints.Value;
+set => _stopOffsetPoints.Value = value;
+}
+
+public decimal OversoldLevel
+{
+get => _oversoldLevel.Value;
+set => _oversoldLevel.Value = value;
+}
+
+public decimal OverboughtLevel
+{
+get => _overboughtLevel.Value;
+set => _overboughtLevel.Value = value;
+}
 	
 	/// <summary>
 	/// Initializes a new instance of <see cref="FullDampStrategy"/>.
 	/// </summary>
 	public FullDampStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candles for analysis", "General");
+_oversoldLevel = Param(nameof(OversoldLevel), 30m)
+.SetRange(0m, 100m)
+.SetDisplay("Oversold Level", "RSI threshold that marks the oversold region.", "Indicators");
+
+_overboughtLevel = Param(nameof(OverboughtLevel), 70m)
+.SetRange(0m, 100m)
+.SetDisplay("Overbought Level", "RSI threshold that marks the overbought region.", "Indicators");
+
+_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+.SetDisplay("Candle Type", "Candles for analysis", "General");
 		
 		_bollingerPeriod1 = Param(nameof(BollingerPeriod1), 20)
 			.SetGreaterThanZero()
