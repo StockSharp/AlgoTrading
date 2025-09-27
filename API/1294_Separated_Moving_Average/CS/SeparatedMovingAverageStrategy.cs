@@ -13,7 +13,7 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum MaType
+public enum MaTypes
 {
 	SMA,
 	EMA,
@@ -22,7 +22,7 @@ public enum MaType
 
 public class SeparatedMovingAverageStrategy : Strategy
 {
-	private readonly StrategyParam<MaType> _maType;
+	private readonly StrategyParam<MaTypes> _maType;
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<bool> _useHeikinAshi;
 	private readonly StrategyParam<DataType> _candleType;
@@ -36,7 +36,7 @@ public class SeparatedMovingAverageStrategy : Strategy
 
 	public SeparatedMovingAverageStrategy()
 	{
-		_maType = Param(nameof(MaType), MaType.SMA)
+		_maType = Param(nameof(MaType), MaTypes.SMA)
 			.SetDisplay("Type", "Moving average type", "General");
 		_length = Param(nameof(Length), 20)
 			.SetGreaterThanZero()
@@ -47,7 +47,7 @@ public class SeparatedMovingAverageStrategy : Strategy
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	public MaType MaType
+	public MaTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -90,10 +90,10 @@ public class SeparatedMovingAverageStrategy : Strategy
 	}
 
 	private MovingAverage CreateMa()
-		=> MaType switch
+		=> MaTypes switch
 		{
-			MaType.EMA => new ExponentialMovingAverage { Length = Length },
-			MaType.HMA => new HullMovingAverage { Length = Length },
+			MaTypes.EMA => new ExponentialMovingAverage { Length = Length },
+			MaTypes.HMA => new HullMovingAverage { Length = Length },
 			_ => new SMA { Length = Length },
 		};
 

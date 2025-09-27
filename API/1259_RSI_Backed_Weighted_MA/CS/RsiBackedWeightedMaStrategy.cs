@@ -22,7 +22,7 @@ namespace StockSharp.Samples.Strategies;
 public class RsiBackedWeightedMaStrategy : Strategy
 {
 	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<MaType> _maType;
+	private readonly StrategyParam<MaTypes> _maType;
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<decimal> _rsiLong;
 	private readonly StrategyParam<decimal> _rsiShort;
@@ -56,7 +56,7 @@ public class RsiBackedWeightedMaStrategy : Strategy
 	/// <summary>
 	/// Moving average type.
 	/// </summary>
-	public MaType MaType { get => _maType.Value; set => _maType.Value = value; }
+	public MaTypes MaType { get => _maType.Value; set => _maType.Value = value; }
 
 	/// <summary>
 	/// Moving average length.
@@ -132,7 +132,7 @@ public class RsiBackedWeightedMaStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Length", "RSI calculation period", "RSI Settings");
 
-		_maType = Param(nameof(MaType), MaType.RWMA)
+		_maType = Param(nameof(MaType), MaTypes.RWMA)
 		.SetDisplay("MA Type", "Moving average type", "MA Settings");
 
 		_maLength = Param(nameof(MaLength), 19)
@@ -214,9 +214,9 @@ public class RsiBackedWeightedMaStrategy : Strategy
 		_capitalRef = Portfolio?.CurrentValue ?? 0m;
 		_cashOrder = _capitalRef * 0.95m;
 
-		LengthIndicator<decimal> ma = MaType switch
+		LengthIndicator<decimal> ma = MaTypes switch
 		{
-			MaType.SMA => new SimpleMovingAverage { Length = MaLength },
+			MaTypes.SMA => new SimpleMovingAverage { Length = MaLength },
 			_ => new RetroWeightedMovingAverage { Length = MaLength }
 		};
 
@@ -388,7 +388,7 @@ public class RsiBackedWeightedMaStrategy : Strategy
 	/// <summary>
 	/// Types of moving averages.
 	/// </summary>
-	public enum MaType
+	public enum MaTypes
 	{
 		/// <summary>Simple moving average.</summary>
 		SMA,

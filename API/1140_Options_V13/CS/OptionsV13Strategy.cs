@@ -13,7 +13,7 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum SignalDirection
+public enum SignalDirections
 {
 	Long,
 	Short,
@@ -35,7 +35,7 @@ public class OptionsV13Strategy : Strategy
 	private readonly StrategyParam<decimal> _tpSlRatio;
 	private readonly StrategyParam<bool> _enableOrBreakout;
 	private readonly StrategyParam<bool> _enableEodClose;
-	private readonly StrategyParam<SignalDirection> _signalDirection;
+	private readonly StrategyParam<SignalDirections> _signalDirection;
 	private readonly StrategyParam<int> _volumeMaLength;
 	private readonly StrategyParam<TimeSpan> _noTradeStart;
 	private readonly StrategyParam<TimeSpan> _noTradeEnd;
@@ -63,7 +63,7 @@ public class OptionsV13Strategy : Strategy
 	public decimal TpSlRatio { get => _tpSlRatio.Value; set => _tpSlRatio.Value = value; }
 	public bool EnableOrBreakout { get => _enableOrBreakout.Value; set => _enableOrBreakout.Value = value; }
 	public bool EnableEodClose { get => _enableEodClose.Value; set => _enableEodClose.Value = value; }
-	public SignalDirection SignalDirection { get => _signalDirection.Value; set => _signalDirection.Value = value; }
+	public SignalDirections SignalDirection { get => _signalDirection.Value; set => _signalDirection.Value = value; }
 	public int VolumeMaLength { get => _volumeMaLength.Value; set => _volumeMaLength.Value = value; }
 	public TimeSpan NoTradeStart { get => _noTradeStart.Value; set => _noTradeStart.Value = value; }
 	public TimeSpan NoTradeEnd { get => _noTradeEnd.Value; set => _noTradeEnd.Value = value; }
@@ -97,7 +97,7 @@ public class OptionsV13Strategy : Strategy
 			.SetDisplay("Require OR Breakout", "Require price to break opening range", "Signals");
 		_enableEodClose = Param(nameof(EnableEodClose), true)
 			.SetDisplay("Auto Close at 15:55", "Close positions at 15:55 NY time", "Session");
-		_signalDirection = Param(nameof(SignalDirection), SignalDirection.Both)
+		_signalDirection = Param(nameof(SignalDirection), SignalDirections.Both)
 			.SetDisplay("Signal Direction", "Allowed trade direction", "Signals");
 		_volumeMaLength = Param(nameof(VolumeMaLength), 20)
 			.SetGreaterThanZero()
@@ -214,8 +214,8 @@ public class OptionsV13Strategy : Strategy
 
 		if (!blockedSession && volOk && Position == 0)
 		{
-			var allowLong = SignalDirection == SignalDirection.Both || SignalDirection == SignalDirection.Long;
-			var allowShort = SignalDirection == SignalDirection.Both || SignalDirection == SignalDirection.Short;
+			var allowLong = SignalDirections == SignalDirections.Both || SignalDirections == SignalDirections.Long;
+			var allowShort = SignalDirections == SignalDirections.Both || SignalDirections == SignalDirections.Short;
 
 			if (allowLong && _readyLong && rsiValue >= RsiLongThreshold && (!EnableOrBreakout || (candle.ClosePrice > _orHigh && _orHigh > 0)))
 			{

@@ -22,7 +22,7 @@ public class XmacdModesStrategy : Strategy
 	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<int> _signalPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<XmacdMode> _mode;
+	private readonly StrategyParam<XmacdModes> _mode;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 
@@ -35,7 +35,7 @@ public class XmacdModesStrategy : Strategy
 	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public int SignalPeriod { get => _signalPeriod.Value; set => _signalPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public XmacdMode Mode { get => _mode.Value; set => _mode.Value = value; }
+	public XmacdModes Mode { get => _mode.Value; set => _mode.Value = value; }
 	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
 	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
 
@@ -59,7 +59,7 @@ public class XmacdModesStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_mode = Param(nameof(Mode), XmacdMode.MacdDisposition)
+		_mode = Param(nameof(Mode), XmacdModes.MacdDisposition)
 			.SetDisplay("Mode", "Trading mode", "General");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
@@ -142,14 +142,14 @@ public class XmacdModesStrategy : Strategy
 
 		switch (Mode)
 		{
-			case XmacdMode.Breakdown:
+			case XmacdModes.Breakdown:
 				var crossUp = macd > 0m && _prevMacd <= 0m;
 				var crossDown = macd < 0m && _prevMacd >= 0m;
 				buy = crossUp;
 				sell = crossDown;
 				break;
 
-			case XmacdMode.MacdTwist:
+			case XmacdModes.MacdTwist:
 				var wasDecreasing = _prevMacd < _prevMacd2;
 				var nowIncreasing = macd > _prevMacd;
 				var wasIncreasing = _prevMacd > _prevMacd2;
@@ -158,7 +158,7 @@ public class XmacdModesStrategy : Strategy
 				sell = wasIncreasing && nowDecreasing;
 				break;
 
-			case XmacdMode.SignalTwist:
+			case XmacdModes.SignalTwist:
 				var sigWasDecreasing = _prevSignal < _prevSignal2;
 				var sigNowIncreasing = signal > _prevSignal;
 				var sigWasIncreasing = _prevSignal > _prevSignal2;
@@ -167,7 +167,7 @@ public class XmacdModesStrategy : Strategy
 				sell = sigWasIncreasing && sigNowDecreasing;
 				break;
 
-			case XmacdMode.MacdDisposition:
+			case XmacdModes.MacdDisposition:
 				var crossAbove = macd > signal && _prevMacd <= _prevSignal;
 				var crossBelow = macd < signal && _prevMacd >= _prevSignal;
 				buy = crossAbove;
@@ -187,7 +187,7 @@ public class XmacdModesStrategy : Strategy
 	}
 }
 
-public enum XmacdMode
+public enum XmacdModes
 {
 	Breakdown,
 	MacdTwist,

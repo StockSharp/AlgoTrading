@@ -23,7 +23,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MovingAverageRainbowStormerStrategy : Strategy
 {
-	private readonly StrategyParam<MovingAverageTypeEnum> _maType;
+	private readonly StrategyParam<MovingAverageTypes> _maType;
 	private readonly StrategyParam<int> _maLengthFirst;
 	private readonly StrategyParam<int> _maLengthSecond;
 	private readonly StrategyParam<int> _maLengthThird;
@@ -59,7 +59,7 @@ public class MovingAverageRainbowStormerStrategy : Strategy
 	/// <summary>
 	/// Moving average type.
 	/// </summary>
-	public MovingAverageTypeEnum MaType
+	public MovingAverageTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -223,7 +223,7 @@ public class MovingAverageRainbowStormerStrategy : Strategy
 	/// </summary>
 	public MovingAverageRainbowStormerStrategy()
 	{
-		_maType = Param(nameof(MaType), MovingAverageTypeEnum.Exponential)
+		_maType = Param(nameof(MaType), MovingAverageTypes.Exponential)
 		.SetDisplay("MA Type", string.Empty, "Moving Averages");
 
 		_maLengthFirst = Param(nameof(MaLengthFirst), 3)
@@ -505,16 +505,16 @@ public class MovingAverageRainbowStormerStrategy : Strategy
 		else return null;
 	}
 
-	private static IIndicator CreateMa(MovingAverageTypeEnum type, int length)
+	private static IIndicator CreateMa(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypeEnum.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageTypeEnum.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageTypeEnum.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageTypeEnum.Weighted => new WeightedMovingAverage { Length = length },
-			MovingAverageTypeEnum.Hull => new HullMovingAverage { Length = length },
-			MovingAverageTypeEnum.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
+			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageTypes.Hull => new HullMovingAverage { Length = length },
+			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
 			_ => new ExponentialMovingAverage { Length = length },
 		};
 	}
@@ -522,7 +522,7 @@ public class MovingAverageRainbowStormerStrategy : Strategy
 	/// <summary>
 	/// Available moving average types.
 	/// </summary>
-	public enum MovingAverageTypeEnum
+	public enum MovingAverageTypes
 	{
 		/// <summary>Simple moving average.</summary>
 		Simple,

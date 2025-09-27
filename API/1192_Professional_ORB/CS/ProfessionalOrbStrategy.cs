@@ -27,7 +27,7 @@ public class ProfessionalOrbStrategy : Strategy
 	private decimal _orbRange;
 	private bool _orbFormed;
 	private int _tradesToday;
-	private PositionSide _positionSide;
+	private PositionSides _positionSide;
 	private decimal _entryPrice;
 	private decimal _profitTargetLevel;
 	private decimal _breakoutCandleHigh;
@@ -36,7 +36,7 @@ public class ProfessionalOrbStrategy : Strategy
 	private decimal _prevClose;
 	private DateTime _currentDate;
 
-	private enum PositionSide
+	private enum PositionSides
 	{
 		None,
 		Long,
@@ -193,7 +193,7 @@ public class ProfessionalOrbStrategy : Strategy
 
 		var validRange = _orbFormed && _orbRange >= MinOrbRange;
 		var afterOrb = _orbFormed && currentMinutes > orbEnd;
-		var canTrade = validRange && _tradesToday < MaxTrades && _positionSide == PositionSide.None;
+		var canTrade = validRange && _tradesToday < MaxTrades && _positionSide == PositionSides.None;
 
 		var bullBreak = afterOrb && _prevClose <= _orbHigh && candle.ClosePrice > _orbHigh;
 		var bearBreak = afterOrb && _prevClose >= _orbLow && candle.ClosePrice < _orbLow;
@@ -202,7 +202,7 @@ public class ProfessionalOrbStrategy : Strategy
 		{
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
-			_positionSide = PositionSide.Long;
+			_positionSide = PositionSides.Long;
 			_tradesToday++;
 			_entryPrice = candle.ClosePrice;
 			_profitTargetLevel = _entryPrice + ProfitTargetPoints;
@@ -213,7 +213,7 @@ public class ProfessionalOrbStrategy : Strategy
 		{
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
-			_positionSide = PositionSide.Short;
+			_positionSide = PositionSides.Short;
 			_tradesToday++;
 			_entryPrice = candle.ClosePrice;
 			_profitTargetLevel = _entryPrice - ProfitTargetPoints;
@@ -221,22 +221,22 @@ public class ProfessionalOrbStrategy : Strategy
 			_breakoutCandleLow = candle.LowPrice;
 		}
 
-		if (_positionSide == PositionSide.Long && (candle.LowPrice <= _breakoutCandleLow || candle.ClosePrice <= _breakoutCandleLow))
+		if (_positionSide == PositionSides.Long && (candle.LowPrice <= _breakoutCandleLow || candle.ClosePrice <= _breakoutCandleLow))
 		{
 			SellMarket(Position);
 			ResetPositionState();
 		}
-		else if (_positionSide == PositionSide.Short && (candle.HighPrice >= _breakoutCandleHigh || candle.ClosePrice >= _breakoutCandleHigh))
+		else if (_positionSide == PositionSides.Short && (candle.HighPrice >= _breakoutCandleHigh || candle.ClosePrice >= _breakoutCandleHigh))
 		{
 			BuyMarket(-Position);
 			ResetPositionState();
 		}
 		else
 		{
-			var longStop = _positionSide == PositionSide.Long && candle.ClosePrice < (_orbHigh - atrValue * StopLossAtr);
-			var shortStop = _positionSide == PositionSide.Short && candle.ClosePrice > (_orbLow + atrValue * StopLossAtr);
-			var longProfit = _positionSide == PositionSide.Long && candle.ClosePrice >= _profitTargetLevel;
-			var shortProfit = _positionSide == PositionSide.Short && candle.ClosePrice <= _profitTargetLevel;
+			var longStop = _positionSide == PositionSides.Long && candle.ClosePrice < (_orbHigh - atrValue * StopLossAtr);
+			var shortStop = _positionSide == PositionSides.Short && candle.ClosePrice > (_orbLow + atrValue * StopLossAtr);
+			var longProfit = _positionSide == PositionSides.Long && candle.ClosePrice >= _profitTargetLevel;
+			var shortProfit = _positionSide == PositionSides.Short && candle.ClosePrice <= _profitTargetLevel;
 			var endDay = time.Hour >= 15 && time.Minute >= 15;
 
 			if (longStop || shortStop || endDay)
@@ -263,7 +263,7 @@ public class ProfessionalOrbStrategy : Strategy
 
 	private void ResetPositionState()
 	{
-		_positionSide = PositionSide.None;
+		_positionSide = PositionSides.None;
 		_entryPrice = 0m;
 		_profitTargetLevel = 0m;
 		_breakoutCandleHigh = 0m;

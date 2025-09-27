@@ -33,7 +33,7 @@ public class YeongRrgStrategy : Strategy
 	private StandardDeviation _rmRatioStd;
 
 	private decimal _lastIndexClose;
-	private State _state = State.None;
+        private States _state = States.None;
 
 	/// <summary>
 	/// Period used for calculations.
@@ -103,7 +103,7 @@ public class YeongRrgStrategy : Strategy
 		_rmRatioMean = null;
 		_rmRatioStd = null;
 		_lastIndexClose = 0m;
-		_state = State.None;
+                _state = States.None;
 	}
 
 	/// <inheritdoc />
@@ -191,17 +191,17 @@ public class YeongRrgStrategy : Strategy
 		var jdkRs = 100m + ((rsRatio - meanRsRatio) / stdRsRatio + 1m);
 		var jdkRm = 100m + ((rmRatio - meanRmRatio) / stdRmRatio + 1m);
 
-		if (jdkRs > 100m && jdkRm > 100m)
-			_state = State.Green;
-		else if (jdkRs > 100m && jdkRm < 100m)
-			_state = State.Yellow;
-		else if (jdkRs < 100m && jdkRm < 100m)
-			_state = State.Red;
-		else if (jdkRs < 100m && jdkRm > 100m)
-			_state = State.Blue;
+                if (jdkRs > 100m && jdkRm > 100m)
+                        _state = States.Green;
+                else if (jdkRs > 100m && jdkRm < 100m)
+                        _state = States.Yellow;
+                else if (jdkRs < 100m && jdkRm < 100m)
+                        _state = States.Red;
+                else if (jdkRs < 100m && jdkRm > 100m)
+                        _state = States.Blue;
 
-		var buySignal = _state == State.Green && candle.ServerTime.Year >= 2010;
-		var sellSignal = _state == State.Red;
+                var buySignal = _state == States.Green && candle.ServerTime.Year >= 2010;
+                var sellSignal = _state == States.Red;
 
 		if (buySignal && Position <= 0)
 		{
@@ -214,7 +214,7 @@ public class YeongRrgStrategy : Strategy
 		}
 	}
 
-	private enum State
+        private enum States
 	{
 		None,
 		Green,

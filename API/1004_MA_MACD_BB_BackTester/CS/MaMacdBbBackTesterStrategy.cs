@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MaMacdBbBackTesterStrategy : Strategy
 {
-	public enum IndicatorType
+	public enum IndicatorTypes
 	{
 		MA,
 		MACD,
@@ -26,7 +26,7 @@ public class MaMacdBbBackTesterStrategy : Strategy
 	}
 
 private readonly StrategyParam<DataType> _candleType;
-private readonly StrategyParam<IndicatorType> _indicator;
+private readonly StrategyParam<IndicatorTypes> _indicator;
 private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<int> _fastLength;
@@ -47,7 +47,7 @@ private readonly StrategyParam<Sides?> _direction;
 	private decimal? _prevSignal;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public IndicatorType Indicator { get => _indicator.Value; set => _indicator.Value = value; }
+	public IndicatorTypes Indicator { get => _indicator.Value; set => _indicator.Value = value; }
 public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
@@ -63,7 +63,7 @@ public Sides? Direction { get => _direction.Value; set => _direction.Value = val
 		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame", "General");
 
-		_indicator = Param(nameof(Indicator), IndicatorType.MA)
+		_indicator = Param(nameof(Indicator), IndicatorTypes.MA)
 			.SetDisplay("Indicator", "Trading indicator", "General");
 	 _direction = Param(nameof(Direction), Sides.Buy)
 	        .SetDisplay("Direction", "Trade direction", "General");
@@ -108,11 +108,11 @@ public Sides? Direction { get => _direction.Value; set => _direction.Value = val
 
 		switch (Indicator)
 		{
-			case IndicatorType.MA:
+			case IndicatorTypes.MA:
 				_ma = new SimpleMovingAverage { Length = MaLength };
 				subscription.Bind(_ma, ProcessMa).Start();
 				break;
-			case IndicatorType.MACD:
+			case IndicatorTypes.MACD:
 				_macd = new MovingAverageConvergenceDivergenceSignal
 				{
 					Macd =
@@ -124,7 +124,7 @@ public Sides? Direction { get => _direction.Value; set => _direction.Value = val
 				};
 				subscription.BindEx(_macd, ProcessMacd).Start();
 				break;
-			case IndicatorType.BB:
+			case IndicatorTypes.BB:
 				_bollinger = new BollingerBands { Length = BbLength, Width = BbMultiplier };
 				subscription.Bind(_bollinger, ProcessBb).Start();
 				break;

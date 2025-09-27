@@ -21,7 +21,7 @@ public class RandomSyntheticAssetGenerationStrategy : Strategy
 	private readonly StrategyParam<int> _seed;
 	private readonly StrategyParam<decimal> _intrabarVolatility;
 	private readonly StrategyParam<decimal> _priceMultiplier;
-	private readonly StrategyParam<RandomMethod> _method;
+	private readonly StrategyParam<RandomMethods> _method;
 
 	private decimal _randomClose;
 	private int _barIndex;
@@ -33,7 +33,7 @@ public class RandomSyntheticAssetGenerationStrategy : Strategy
 	/// <summary>
 	/// The pseudo-random generation method.
 	/// </summary>
-	public enum RandomMethod
+	public enum RandomMethods
 	{
 		/// <summary>Ricardo Santos method.</summary>
 		Rs,
@@ -50,7 +50,7 @@ public class RandomSyntheticAssetGenerationStrategy : Strategy
 		_seed = Param(nameof(Seed), 123456).SetCanOptimize(true);
 		_intrabarVolatility = Param(nameof(IntrabarVolatility), 0.66m).SetDisplay("Intrabar Volatility").SetCanOptimize(true);
 		_priceMultiplier = Param(nameof(PriceMultiplier), 30m).SetDisplay("Price Multiplier").SetCanOptimize(true);
-		_method = Param(nameof(Method), RandomMethod.Rs).SetDisplay("Method").SetCanOptimize(true);
+		_method = Param(nameof(Method), RandomMethods.Rs).SetDisplay("Method").SetCanOptimize(true);
 	}
 
 	/// <summary>Seed [>= 0].</summary>
@@ -75,7 +75,7 @@ public class RandomSyntheticAssetGenerationStrategy : Strategy
 	}
 
 	/// <summary>Pseudo-random generation method.</summary>
-	public RandomMethod Method
+	public RandomMethods Method
 	{
 		get => _method.Value;
 		set => _method.Value = value;
@@ -130,9 +130,9 @@ public class RandomSyntheticAssetGenerationStrategy : Strategy
 		AddInfo($"O:{randomOpen:0.00} H:{randomHigh:0.00} L:{randomLow:0.00} C:{randomClose:0.00} V:{randomVolume:0.00} TR:{randomTr:0.00}");
 	}
 
-	private decimal Rand(RandomMethod method, decimal range, int seed)
+	private decimal Rand(RandomMethods method, decimal range, int seed)
 	{
-		if (method == RandomMethod.Rs)
+		if (method == RandomMethods.Rs)
 		{
 			var result = (decimal)Math.PI * (_rsState * _barIndex + seed);
 			result %= range;
@@ -147,7 +147,7 @@ public class RandomSyntheticAssetGenerationStrategy : Strategy
 		return (_s1 / 30269m + _s2 / 30307m + _s3 / 30323m) % range;
 	}
 
-	private decimal RandomValue(RandomMethod method, int seed)
+	private decimal RandomValue(RandomMethods method, int seed)
 	{
 		var rand1 = 0.1m + (decimal)Math.Pow(1 - Math.Log10(0.01 + (double)Rand(method, 10m, seed)), 2);
 		var rand2 = Rand(method, 1m, seed + 1) + 1m;
@@ -157,7 +157,7 @@ public class RandomSyntheticAssetGenerationStrategy : Strategy
 		return randNormal + (Rand(method, 0.1m, seed) - 0.05m);
 	}
 
-	private decimal RandomWick(RandomMethod method, decimal change, decimal intrabarVolatility, int seed)
+	private decimal RandomWick(RandomMethods method, decimal change, decimal intrabarVolatility, int seed)
 	{
 		var absChange = Math.Abs(change);
 		var randValue = Rand(method, 1m, seed);

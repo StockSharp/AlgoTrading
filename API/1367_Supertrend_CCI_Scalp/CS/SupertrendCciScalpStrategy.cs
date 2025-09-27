@@ -24,7 +24,7 @@ public class SupertrendCciScalpStrategy : Strategy
 	private readonly StrategyParam<decimal> _factor2;
 	private readonly StrategyParam<int> _cciLength;
 	private readonly StrategyParam<int> _smoothingLength;
-	private readonly StrategyParam<MovingAverageTypeEnum> _maType;
+	private readonly StrategyParam<MovingAverageTypes> _maType;
 	private readonly StrategyParam<decimal> _cciLevel;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -64,7 +64,7 @@ public class SupertrendCciScalpStrategy : Strategy
 	/// <summary>
 	/// Moving average type for smoothed CCI.
 	/// </summary>
-	public MovingAverageTypeEnum MaType { get => _maType.Value; set => _maType.Value = value; }
+	public MovingAverageTypes MaType { get => _maType.Value; set => _maType.Value = value; }
 
 	/// <summary>
 	/// CCI level for signals.
@@ -99,7 +99,7 @@ public class SupertrendCciScalpStrategy : Strategy
 	_smoothingLength = Param(nameof(SmoothingLength), 5)
 	    .SetDisplay("Smoothing Length", "Moving average length for CCI", "CCI");
 
-	_maType = Param(nameof(MaType), MovingAverageTypeEnum.Simple)
+	_maType = Param(nameof(MaType), MovingAverageTypes.Simple)
 	    .SetDisplay("MA Type", "Type of moving average", "CCI");
 
 	_cciLevel = Param(nameof(CciLevel), 100m)
@@ -197,20 +197,20 @@ public class SupertrendCciScalpStrategy : Strategy
 	}
 	}
 
-	private static IIndicator CreateMa(MovingAverageTypeEnum type, int length)
+	private static IIndicator CreateMa(MovingAverageTypes type, int length)
 	{
 	return type switch
 	{
-	    MovingAverageTypeEnum.Simple => new SimpleMovingAverage { Length = length },
-	    MovingAverageTypeEnum.Exponential => new ExponentialMovingAverage { Length = length },
-	    MovingAverageTypeEnum.Smoothed => new SmoothedMovingAverage { Length = length },
-	    MovingAverageTypeEnum.Weighted => new WeightedMovingAverage { Length = length },
-	    MovingAverageTypeEnum.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
+	    MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
+	    MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+	    MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
+	    MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
+	    MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
 	    _ => new SimpleMovingAverage { Length = length },
 	};
 	}
 
-	public enum MovingAverageTypeEnum
+	public enum MovingAverageTypes
 	{
 	Simple,
 	Exponential,

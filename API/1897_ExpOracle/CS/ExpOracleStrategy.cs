@@ -22,7 +22,7 @@ public class ExpOracleStrategy : Strategy
 {
 	private readonly StrategyParam<int> _oraclePeriod;
 	private readonly StrategyParam<int> _smooth;
-	private readonly StrategyParam<AlgorithmMode> _mode;
+	private readonly StrategyParam<AlgorithmModes> _mode;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<bool> _allowBuy;
 	private readonly StrategyParam<bool> _allowSell;
@@ -52,7 +52,7 @@ public class ExpOracleStrategy : Strategy
 	/// <summary>
 	/// Selected trading algorithm.
 	/// </summary>
-	public AlgorithmMode Mode
+	public AlgorithmModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -102,7 +102,7 @@ public class ExpOracleStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(2, 20, 2);
 
-		_mode = Param(nameof(Mode), AlgorithmMode.Twist)
+		_mode = Param(nameof(Mode), AlgorithmModes.Twist)
 			.SetDisplay("Mode", "Signal algorithm", "Parameters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -144,7 +144,7 @@ public class ExpOracleStrategy : Strategy
 
 		switch (Mode)
 		{
-			case AlgorithmMode.Breakdown:
+			case AlgorithmModes.Breakdown:
 				if (AllowBuy && _prevSignal <= 0m && signal > 0m)
 				{
 					var volume = Volume + Math.Abs(Position);
@@ -157,7 +157,7 @@ public class ExpOracleStrategy : Strategy
 				}
 				break;
 
-			case AlgorithmMode.Twist:
+			case AlgorithmModes.Twist:
 				if (AllowBuy && _prevPrevSignal < _prevSignal && signal >= _prevSignal)
 				{
 					var volume = Volume + Math.Abs(Position);
@@ -170,7 +170,7 @@ public class ExpOracleStrategy : Strategy
 				}
 				break;
 
-			case AlgorithmMode.Disposition:
+			case AlgorithmModes.Disposition:
 				if (AllowBuy && _prevSignal < _prevOracle && signal >= oracle)
 				{
 					var volume = Volume + Math.Abs(Position);
@@ -193,7 +193,7 @@ public class ExpOracleStrategy : Strategy
 /// <summary>
 /// Trading algorithm modes.
 /// </summary>
-public enum AlgorithmMode
+public enum AlgorithmModes
 {
 	/// <summary>
 	/// Signal line crossing zero.

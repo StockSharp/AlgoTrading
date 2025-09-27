@@ -24,7 +24,7 @@ public class MacdLiquidityTrackerStrategy : Strategy
 	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<int> _signalLength;
 	private readonly StrategyParam<bool> _allowShort;
-	private readonly StrategyParam<SystemType> _systemType;
+	private readonly StrategyParam<SystemTypes> _systemType;
 	private readonly StrategyParam<bool> _useStopLoss;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<bool> _useTakeProfit;
@@ -62,7 +62,7 @@ public class MacdLiquidityTrackerStrategy : Strategy
 	/// <summary>
 	/// System logic selection.
 	/// </summary>
-	public SystemType SystemLogic { get => _systemType.Value; set => _systemType.Value = value; }
+	public SystemTypes SystemLogic { get => _systemType.Value; set => _systemType.Value = value; }
 
 	/// <summary>
 	/// Enable stop loss.
@@ -119,7 +119,7 @@ public class MacdLiquidityTrackerStrategy : Strategy
 		_allowShort = Param(nameof(AllowShortTrades), false)
 			.SetDisplay("Allow Short Trades", "Enable short trades", "General");
 
-		_systemType = Param(nameof(SystemLogic), SystemType.Normal)
+		_systemType = Param(nameof(SystemLogic), SystemTypes.Normal)
 			.SetDisplay("System Type", "Logic for signals", "System");
 
 		_useStopLoss = Param(nameof(UseStopLoss), false)
@@ -210,19 +210,19 @@ public class MacdLiquidityTrackerStrategy : Strategy
 
 		switch (SystemLogic)
 		{
-			case SystemType.Fast:
+			case SystemTypes.Fast:
 				longSignal = isBrightBlue || isDarkMagenta;
 				shortSignal = isDarkBlue || isBrightMagenta;
 				break;
-			case SystemType.Normal:
+			case SystemTypes.Normal:
 				longSignal = macd > signal;
 				shortSignal = macd < signal;
 				break;
-			case SystemType.Safe:
+			case SystemTypes.Safe:
 				longSignal = isBrightBlue;
 				shortSignal = isDarkBlue || isBrightMagenta || isDarkMagenta;
 				break;
-			case SystemType.Crossover:
+			case SystemTypes.Crossover:
 				longSignal = macd > signal && (_prevMacd <= _prevSignal);
 				shortSignal = macd < signal && (_prevMacd >= _prevSignal);
 				break;
@@ -264,7 +264,7 @@ public class MacdLiquidityTrackerStrategy : Strategy
 	/// <summary>
 	/// Types of system logic.
 	/// </summary>
-	public enum SystemType
+	public enum SystemTypes
 	{
 		/// <summary>
 		/// Uses MACD momentum colour states.

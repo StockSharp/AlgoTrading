@@ -22,7 +22,7 @@ public class BinaryWaveStrategy : Strategy
 	/// <summary>
 	/// Mode for generating entry signals.
 	/// </summary>
-	public enum EntryMode
+	public enum EntryModes
 	{
 		/// <summary>
 		/// Enter when the wave crosses zero.
@@ -35,7 +35,7 @@ public class BinaryWaveStrategy : Strategy
 		Twist
 	}
 
-	private readonly StrategyParam<EntryMode> _mode;
+	private readonly StrategyParam<EntryModes> _mode;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _fastMacd;
@@ -73,7 +73,7 @@ public class BinaryWaveStrategy : Strategy
 	/// <summary>
 	/// Mode for generating entry signals.
 	/// </summary>
-	public EntryMode Mode
+	public EntryModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -282,7 +282,7 @@ public class BinaryWaveStrategy : Strategy
 	/// </summary>
 	public BinaryWaveStrategy()
 	{
-		_mode = Param(nameof(Mode), EntryMode.Breakdown)
+		_mode = Param(nameof(Mode), EntryModes.Breakdown)
 		.SetDisplay("Mode", "Entry signal mode", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -467,7 +467,7 @@ public class BinaryWaveStrategy : Strategy
 	var buyClose = false;
 	var sellClose = false;
 
-	if (Mode == EntryMode.Breakdown)
+	if (Mode == EntryModes.Breakdown)
 	{
 	if (_prevWave <= 0 && wave > 0)
 	{

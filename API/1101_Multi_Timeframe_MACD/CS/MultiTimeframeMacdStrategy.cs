@@ -25,7 +25,7 @@ public class MultiTimeframeMacdStrategy : Strategy
 	private readonly StrategyParam<DataType> _higherCandleType;
 	private readonly StrategyParam<bool> _showCurrentTf;
 	private readonly StrategyParam<bool> _showHigherTf;
-	private readonly StrategyParam<EntryType> _entryType;
+	private readonly StrategyParam<EntryTypes> _entryType;
 	private readonly StrategyParam<bool> _useTrailingStop;
 	private readonly StrategyParam<decimal> _trailingStopPercent;
 
@@ -112,7 +112,7 @@ public class MultiTimeframeMacdStrategy : Strategy
 	/// <summary>
 	/// Entry signal type.
 	/// </summary>
-	public EntryType Entry
+	public EntryTypes Entry
 	{
 		get => _entryType.Value;
 		set => _entryType.Value = value;
@@ -168,7 +168,7 @@ public class MultiTimeframeMacdStrategy : Strategy
 		_showHigherTf = Param(nameof(ShowHigherTimeframe), true)
 							.SetDisplay("Use Higher TF", "Include higher timeframe MACD", "Logic");
 
-		_entryType = Param(nameof(Entry), EntryType.Crossover).SetDisplay("Entry Type", "Signal type", "Logic");
+		_entryType = Param(nameof(Entry), EntryTypes.Crossover).SetDisplay("Entry Type", "Signal type", "Logic");
 
 		_useTrailingStop =
 			Param(nameof(UseTrailingStop), false).SetDisplay("Use Trailing", "Enable trailing stop", "Risk");
@@ -302,11 +302,11 @@ public class MultiTimeframeMacdStrategy : Strategy
 			shortZero = higherBelowZero && _prevHigherMacd >= 0m && _higherMacdValue < 0m;
 		}
 
-		var entryLong = (Entry == EntryType.Crossover && longCross) || (Entry == EntryType.ZeroCross && longZero) ||
-						(Entry == EntryType.Both && (longCross || longZero));
+		var entryLong = (Entry == EntryTypes.Crossover && longCross) || (Entry == EntryTypes.ZeroCross && longZero) ||
+						(Entry == EntryTypes.Both && (longCross || longZero));
 
-		var entryShort = (Entry == EntryType.Crossover && shortCross) || (Entry == EntryType.ZeroCross && shortZero) ||
-						 (Entry == EntryType.Both && (shortCross || shortZero));
+		var entryShort = (Entry == EntryTypes.Crossover && shortCross) || (Entry == EntryTypes.ZeroCross && shortZero) ||
+						 (Entry == EntryTypes.Both && (shortCross || shortZero));
 
 		if (entryLong && Position <= 0)
 		{
@@ -359,14 +359,14 @@ public class MultiTimeframeMacdStrategy : Strategy
 		}
 		else
 		{
-			var exitLong = ((Entry == EntryType.Crossover || Entry == EntryType.Both) &&
+			var exitLong = ((Entry == EntryTypes.Crossover || Entry == EntryTypes.Both) &&
 							_prevCurrentMacd >= _prevCurrentSignal && _currentMacdValue < _currentSignalValue) ||
-						   ((Entry == EntryType.ZeroCross || Entry == EntryType.Both) && _prevCurrentMacd >= 0m &&
+						   ((Entry == EntryTypes.ZeroCross || Entry == EntryTypes.Both) && _prevCurrentMacd >= 0m &&
 							_currentMacdValue < 0m);
 
-			var exitShort = ((Entry == EntryType.Crossover || Entry == EntryType.Both) &&
+			var exitShort = ((Entry == EntryTypes.Crossover || Entry == EntryTypes.Both) &&
 							 _prevCurrentMacd <= _prevCurrentSignal && _currentMacdValue > _currentSignalValue) ||
-							((Entry == EntryType.ZeroCross || Entry == EntryType.Both) && _prevCurrentMacd <= 0m &&
+							((Entry == EntryTypes.ZeroCross || Entry == EntryTypes.Both) && _prevCurrentMacd <= 0m &&
 							 _currentMacdValue > 0m);
 
 			if (Position > 0 && exitLong)
@@ -383,7 +383,7 @@ public class MultiTimeframeMacdStrategy : Strategy
 	/// <summary>
 	/// Entry types.
 	/// </summary>
-	public enum EntryType
+	public enum EntryTypes
 	{
 		/// <summary>
 		/// MACD line crossing signal line.

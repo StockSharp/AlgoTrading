@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class VwapStrategy : Strategy
 {
-	public enum ExitMode
+	public enum ExitModes
 	{
 		Vwap,
 		Deviation,
@@ -26,8 +26,8 @@ public class VwapStrategy : Strategy
 	}
 
 	private readonly StrategyParam<decimal> _stopPoints;
-	private readonly StrategyParam<ExitMode> _exitModeLong;
-	private readonly StrategyParam<ExitMode> _exitModeShort;
+	private readonly StrategyParam<ExitModes> _exitModeLong;
+	private readonly StrategyParam<ExitModes> _exitModeShort;
 	private readonly StrategyParam<decimal> _targetLongDeviation;
 	private readonly StrategyParam<decimal> _targetShortDeviation;
 	private readonly StrategyParam<bool> _enableSafetyExit;
@@ -54,12 +54,12 @@ public class VwapStrategy : Strategy
 	/// <summary>
 	/// Long exit mode.
 	/// </summary>
-	public ExitMode ExitModeLong { get => _exitModeLong.Value; set => _exitModeLong.Value = value; }
+	public ExitModes ExitModeLong { get => _exitModeLong.Value; set => _exitModeLong.Value = value; }
 
 	/// <summary>
 	/// Short exit mode.
 	/// </summary>
-	public ExitMode ExitModeShort { get => _exitModeShort.Value; set => _exitModeShort.Value = value; }
+	public ExitModes ExitModeShort { get => _exitModeShort.Value; set => _exitModeShort.Value = value; }
 
 	/// <summary>
 	/// Deviation multiplier for long targets.
@@ -107,10 +107,10 @@ public class VwapStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Points", "Stop buffer from signal bar", "Parameters");
 
-		_exitModeLong = Param(nameof(ExitModeLong), ExitMode.Vwap)
+		_exitModeLong = Param(nameof(ExitModeLong), ExitModes.Vwap)
 			.SetDisplay("Long Exit Mode", string.Empty, "Parameters");
 
-		_exitModeShort = Param(nameof(ExitModeShort), ExitMode.Vwap)
+		_exitModeShort = Param(nameof(ExitModeShort), ExitModes.Vwap)
 			.SetDisplay("Short Exit Mode", string.Empty, "Parameters");
 
 		_targetLongDeviation = Param(nameof(TargetLongDeviation), 2m)
@@ -254,10 +254,10 @@ public class VwapStrategy : Strategy
 		if (Position > 0 && _signalLow.HasValue)
 		{
 			var stop = _signalLow.Value - StopPoints;
-			var exitVwap = ExitModeLong == ExitMode.Vwap && candle.HighPrice >= vwap;
-			var exitDev = ExitModeLong == ExitMode.Deviation && candle.HighPrice >= targetUpperLong;
+			var exitVwap = ExitModeLong == ExitModes.Vwap && candle.HighPrice >= vwap;
+			var exitDev = ExitModeLong == ExitModes.Deviation && candle.HighPrice >= targetUpperLong;
 
-			if (candle.LowPrice <= stop || (ExitModeLong != ExitMode.None && (exitVwap || exitDev)))
+			if (candle.LowPrice <= stop || (ExitModeLong != ExitModes.None && (exitVwap || exitDev)))
 				SellMarket();
 			else if (EnableSafetyExit && _bearCount >= NumOpposingBars)
 				SellMarket();
@@ -265,10 +265,10 @@ public class VwapStrategy : Strategy
 		else if (Position < 0 && _signalHigh.HasValue)
 		{
 			var stop = _signalHigh.Value + StopPoints;
-			var exitVwap = ExitModeShort == ExitMode.Vwap && candle.LowPrice <= vwap;
-			var exitDev = ExitModeShort == ExitMode.Deviation && candle.LowPrice <= targetLowerShort;
+			var exitVwap = ExitModeShort == ExitModes.Vwap && candle.LowPrice <= vwap;
+			var exitDev = ExitModeShort == ExitModes.Deviation && candle.LowPrice <= targetLowerShort;
 
-			if (candle.HighPrice >= stop || (ExitModeShort != ExitMode.None && (exitVwap || exitDev)))
+			if (candle.HighPrice >= stop || (ExitModeShort != ExitModes.None && (exitVwap || exitDev)))
 				BuyMarket();
 			else if (EnableSafetyExit && _bullCount >= NumOpposingBars)
 				BuyMarket();

@@ -142,17 +142,17 @@ trailingStop: UseTrailingStop ? new Unit(TrailingStop, UnitTypes.Price) : null);
 Volume = OrderVolume;
 }
 
-private enum TrendDir
+private enum TrendDirections
 {
 None,
 Up,
 Down
 }
 
-private TrendDir GetTrend()
+private TrendDirections GetTrend()
 {
 if (_emaValues.Count <= BarsInTrend)
-return TrendDir.None;
+return TrendDirections.None;
 
 var arr = _emaValues.ToArray();
 var count = 0;
@@ -167,10 +167,10 @@ count++;
 }
 
 if (count == BarsInTrend)
-return TrendDir.Up;
+return TrendDirections.Up;
 if (count == -BarsInTrend)
-return TrendDir.Down;
-return TrendDir.None;
+return TrendDirections.Down;
+return TrendDirections.None;
 }
 
 private void UpdateEntryPrice(decimal price, decimal volumeChange)
@@ -235,16 +235,16 @@ _avgEntryPrice = 0;
 }
 }
 
-var trend = UseEmaTrend ? GetTrend() : TrendDir.None;
+var trend = UseEmaTrend ? GetTrend() : TrendDirections.None;
 var maxPos = MaxTrades * OrderVolume;
 
-if (wpr <= -99.99m && _canBuy && (!UseEmaTrend || trend == TrendDir.Up) && Position < maxPos)
+if (wpr <= -99.99m && _canBuy && (!UseEmaTrend || trend == TrendDirections.Up) && Position < maxPos)
 {
 BuyMarket(OrderVolume);
 _canBuy = false;
 UpdateEntryPrice(candle.ClosePrice, OrderVolume);
 }
-else if (wpr >= -0.01m && _canSell && (!UseEmaTrend || trend == TrendDir.Down) && Position > -maxPos)
+else if (wpr >= -0.01m && _canSell && (!UseEmaTrend || trend == TrendDirections.Down) && Position > -maxPos)
 {
 SellMarket(OrderVolume);
 _canSell = false;

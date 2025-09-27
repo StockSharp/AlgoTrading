@@ -20,13 +20,13 @@ namespace StockSharp.Samples.Strategies;
 public class SimpleFibonacciRetracementStrategy : Strategy
 {
 	private readonly StrategyParam<int> _lookbackPeriod;
-	private readonly StrategyParam<FibDirection> _fibDirection;
+	private readonly StrategyParam<FibDirections> _fibDirection;
 	private readonly StrategyParam<decimal> _fibLevel236;
 	private readonly StrategyParam<decimal> _fibLevel382;
 	private readonly StrategyParam<decimal> _fibLevel50;
 	private readonly StrategyParam<decimal> _fibLevel618;
-	private readonly StrategyParam<FibLevel> _buyEntryLevel;
-	private readonly StrategyParam<FibLevel> _sellEntryLevel;
+	private readonly StrategyParam<FibLevels> _buyEntryLevel;
+	private readonly StrategyParam<FibLevels> _sellEntryLevel;
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<DataType> _candleType;
@@ -45,7 +45,7 @@ public class SimpleFibonacciRetracementStrategy : Strategy
 	/// <summary>
 	/// Direction for Fibonacci calculation.
 	/// </summary>
-	public FibDirection Direction { get => _fibDirection.Value; set => _fibDirection.Value = value; }
+	public FibDirections Direction { get => _fibDirection.Value; set => _fibDirection.Value = value; }
 	
 	/// <summary>
 	/// 23.6% Fibonacci level.
@@ -70,12 +70,12 @@ public class SimpleFibonacciRetracementStrategy : Strategy
 	/// <summary>
 	/// Entry level for long positions.
 	/// </summary>
-	public FibLevel BuyEntryLevel { get => _buyEntryLevel.Value; set => _buyEntryLevel.Value = value; }
+	public FibLevels BuyEntryLevel { get => _buyEntryLevel.Value; set => _buyEntryLevel.Value = value; }
 	
 	/// <summary>
 	/// Entry level for short positions.
 	/// </summary>
-	public FibLevel SellEntryLevel { get => _sellEntryLevel.Value; set => _sellEntryLevel.Value = value; }
+	public FibLevels SellEntryLevel { get => _sellEntryLevel.Value; set => _sellEntryLevel.Value = value; }
 	
 	/// <summary>
 	/// Take profit in pips.
@@ -102,7 +102,7 @@ public class SimpleFibonacciRetracementStrategy : Strategy
 		.SetDisplay("Lookback Period", "Period for highest/lowest", "General")
 		.SetCanOptimize(true);
 		
-		_fibDirection = Param(nameof(Direction), FibDirection.TopToBottom)
+		_fibDirection = Param(nameof(Direction), FibDirections.TopToBottom)
 		.SetDisplay("Fibonacci Direction", "Direction of calculation", "General")
 		.SetCanOptimize(true);
 		
@@ -122,11 +122,11 @@ public class SimpleFibonacciRetracementStrategy : Strategy
 		.SetDisplay("Fib 61.8%", "Fibonacci 61.8% level", "Fibonacci")
 		.SetCanOptimize(true);
 		
-		_buyEntryLevel = Param(nameof(BuyEntryLevel), FibLevel.Fib618)
+		_buyEntryLevel = Param(nameof(BuyEntryLevel), FibLevels.Fib618)
 		.SetDisplay("Buy Entry Level", "Fibonacci level for longs", "Entries")
 		.SetCanOptimize(true);
 		
-		_sellEntryLevel = Param(nameof(SellEntryLevel), FibLevel.Fib382)
+		_sellEntryLevel = Param(nameof(SellEntryLevel), FibLevels.Fib382)
 		.SetDisplay("Sell Entry Level", "Fibonacci level for shorts", "Entries")
 		.SetCanOptimize(true);
 		
@@ -192,7 +192,7 @@ public class SimpleFibonacciRetracementStrategy : Strategy
 		decimal fib50;
 		decimal fib618;
 		
-		if (Direction == FibDirection.TopToBottom)
+		if (Direction == FibDirections.TopToBottom)
 		{
 			fib0 = high;
 			fib100 = low;
@@ -258,24 +258,24 @@ public class SimpleFibonacciRetracementStrategy : Strategy
 		}
 	}
 	
-	private static decimal GetLevel(FibLevel level, decimal fib236, decimal fib382, decimal fib50, decimal fib618)
+	private static decimal GetLevel(FibLevels level, decimal fib236, decimal fib382, decimal fib50, decimal fib618)
 	{
 		return level switch
 		{
-			FibLevel.Fib236 => fib236,
-			FibLevel.Fib382 => fib382,
-			FibLevel.Fib50 => fib50,
+			FibLevels.Fib236 => fib236,
+			FibLevels.Fib382 => fib382,
+			FibLevels.Fib50 => fib50,
 			_ => fib618,
 		};
 	}
 	
-	public enum FibDirection
+	public enum FibDirections
 	{
 		TopToBottom,
 		BottomToTop
 	}
 	
-	public enum FibLevel
+	public enum FibLevels
 	{
 		Fib236,
 		Fib382,

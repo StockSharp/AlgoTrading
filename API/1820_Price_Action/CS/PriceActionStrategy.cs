@@ -23,10 +23,10 @@ public class PriceActionStrategy : Strategy
 	private readonly StrategyParam<decimal> _leverage;
 	private readonly StrategyParam<decimal> _trailingStop;
 	private readonly StrategyParam<decimal> _trailingStep;
-	private readonly StrategyParam<TradeDirection> _initialDirection;
+	private readonly StrategyParam<TradeDirections> _initialDirection;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private TradeDirection _nextDirection;
+	private TradeDirections _nextDirection;
 	private decimal _stopPrice;
 	private decimal _takeProfitPrice;
 
@@ -54,7 +54,7 @@ public class PriceActionStrategy : Strategy
 	/// <summary>
 	/// Direction of the first trade.
 	/// </summary>
-	public TradeDirection InitialDirection { get => _initialDirection.Value; set => _initialDirection.Value = value; }
+	public TradeDirections InitialDirection { get => _initialDirection.Value; set => _initialDirection.Value = value; }
 
 	/// <summary>
 	/// Candle type for processing.
@@ -76,7 +76,7 @@ public class PriceActionStrategy : Strategy
 		_trailingStep = Param(nameof(TrailingStep), 0m)
 			.SetDisplay("Trailing Step", "Minimal move to trail", "Risk");
 
-		_initialDirection = Param(nameof(InitialDirection), TradeDirection.Buy)
+		_initialDirection = Param(nameof(InitialDirection), TradeDirections.Buy)
 			.SetDisplay("Initial Direction", "First trade side", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -112,19 +112,19 @@ public class PriceActionStrategy : Strategy
 
 		if (Position == 0)
 		{
-			if (_nextDirection == TradeDirection.Buy)
+			if (_nextDirection == TradeDirections.Buy)
 			{
 				BuyMarket(Volume);
 				_stopPrice = candle.ClosePrice - TP;
 				_takeProfitPrice = candle.ClosePrice + Leverage * TP;
-				_nextDirection = TradeDirection.Sell;
+				_nextDirection = TradeDirections.Sell;
 			}
 			else
 			{
 				SellMarket(Volume);
 				_stopPrice = candle.ClosePrice + TP;
 				_takeProfitPrice = candle.ClosePrice - Leverage * TP;
-				_nextDirection = TradeDirection.Buy;
+				_nextDirection = TradeDirections.Buy;
 			}
 		}
 		else if (Position > 0)
@@ -154,7 +154,7 @@ public class PriceActionStrategy : Strategy
 	}
 }
 
-public enum TradeDirection
+public enum TradeDirections
 {
 	Buy = 1,
 	Sell = 2

@@ -26,10 +26,10 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy {
 	private readonly StrategyParam<int> _oversoldLevel;
 	private readonly StrategyParam<int> _overboughtLevel;
 	private readonly StrategyParam<bool> _enableTrendFilter;
-	private readonly StrategyParam<MaType> _maType;
+	private readonly StrategyParam<MaTypes> _maType;
 	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<SlTpMethod> _method;
-	private readonly StrategyParam<ExitMode> _exitMode;
+	private readonly StrategyParam<SlTpMethods> _method;
+	private readonly StrategyParam<ExitModes> _exitMode;
 	private readonly StrategyParam<int> _swingLook;
 	private readonly StrategyParam<decimal> _swingMarginPct;
 	private readonly StrategyParam<decimal> _rrSwing;
@@ -95,7 +95,7 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy {
 		get => _enableTrendFilter.Value;
 		set => _enableTrendFilter.Value = value;
 	}
-	public MaType TrendMaType {
+	public MaTypes TrendMaType {
 		get => _maType.Value;
 		set => _maType.Value = value;
 	}
@@ -103,11 +103,11 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy {
 		get => _maLength.Value;
 		set => _maLength.Value = value;
 	}
-	public SlTpMethod Method {
+	public SlTpMethods Method {
 		get => _method.Value;
 		set => _method.Value = value;
 	}
-	public ExitMode ExitMode {
+	public ExitModes ExitMode {
 		get => _exitMode.Value;
 		set => _exitMode.Value = value;
 	}
@@ -169,14 +169,14 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy {
 		_enableTrendFilter =
 			Param(nameof(EnableTrendFilter), false)
 				.SetDisplay("Enable Trend Filter", "Use trend MA", "Filters");
-		_maType = Param(nameof(TrendMaType), MaType.Sma)
+		_maType = Param(nameof(TrendMaType), MaTypes.Sma)
 					  .SetDisplay("MA Type", "Trend MA type", "Filters");
 		_maLength = Param(nameof(TrendMaLength), 200)
 						.SetDisplay("MA Length", "Trend MA length", "Filters");
-		_method = Param(nameof(Method), SlTpMethod.Swing)
+		_method = Param(nameof(Method), SlTpMethods.Swing)
 					  .SetDisplay("SL/TP Method", "Stop/target method", "Risk");
 		_exitMode =
-			Param(nameof(ExitMode), Strategies.ExitMode.Dynamic)
+			Param(nameof(ExitMode), Strategies.ExitModes.Dynamic)
 				.SetDisplay("Exit Mode", "Dynamic or static exits", "Risk");
 		_swingLook = Param(nameof(SwingLook), 20)
 						 .SetDisplay("Swing Lookback",
@@ -345,7 +345,7 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy {
 			decimal tpCalc;
 			decimal rr;
 
-			if (Method == SlTpMethod.Swing) {
+			if (Method == SlTpMethods.Swing) {
 				slCalc = swingLow * (1m - SwingMarginPct / 100m);
 				rr = RrSwing;
 			} else {
@@ -355,13 +355,13 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy {
 			var risk = entryPrice - slCalc;
 			tpCalc = entryPrice + risk * rr;
 
-			if (ExitMode == ExitMode.Static && _entrySl is null) {
+			if (ExitModes == ExitModes.Static && _entrySl is null) {
 				_entrySl = slCalc;
 				_entryTp = tpCalc;
 			}
 
-			_slPrice = ExitMode == ExitMode.Dynamic ? slCalc : _entrySl;
-			_tpPrice = ExitMode == ExitMode.Dynamic ? tpCalc : _entryTp;
+			_slPrice = ExitModes == ExitModes.Dynamic ? slCalc : _entrySl;
+			_tpPrice = ExitModes == ExitModes.Dynamic ? tpCalc : _entryTp;
 
 			if (_slPrice is decimal sl && candle.LowPrice <= sl) {
 				SellMarket(Math.Abs(Position));
@@ -380,7 +380,7 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy {
 			decimal tpCalc;
 			decimal rr;
 
-			if (Method == SlTpMethod.Swing) {
+			if (Method == SlTpMethods.Swing) {
 				slCalc = swingHigh * (1m + SwingMarginPct / 100m);
 				rr = RrSwing;
 			} else {
@@ -390,13 +390,13 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy {
 			var risk = slCalc - entryPrice;
 			tpCalc = entryPrice - risk * rr;
 
-			if (ExitMode == ExitMode.Static && _entrySl is null) {
+			if (ExitModes == ExitModes.Static && _entrySl is null) {
 				_entrySl = slCalc;
 				_entryTp = tpCalc;
 			}
 
-			_slPrice = ExitMode == ExitMode.Dynamic ? slCalc : _entrySl;
-			_tpPrice = ExitMode == ExitMode.Dynamic ? tpCalc : _entryTp;
+			_slPrice = ExitModes == ExitModes.Dynamic ? slCalc : _entrySl;
+			_tpPrice = ExitModes == ExitModes.Dynamic ? tpCalc : _entryTp;
 
 			if (_slPrice is decimal sl && candle.HighPrice >= sl) {
 				BuyMarket(Math.Abs(Position));
@@ -412,13 +412,13 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy {
 		}
 	}
 
-	private static MovingAverage CreateMa(MaType type, int length) {
+	private static MovingAverage CreateMa(MaTypes type, int length) {
 		return type switch {
-			MaType.Sma => new SimpleMovingAverage { Length = length },
-			MaType.Ema => new ExponentialMovingAverage { Length = length },
-			MaType.Smma => new SmoothedMovingAverage { Length = length },
-			MaType.Wma => new WeightedMovingAverage { Length = length },
-			MaType.Vwma => new VolumeWeightedMovingAverage { Length = length },
+			MaTypes.Sma => new SimpleMovingAverage { Length = length },
+			MaTypes.Ema => new ExponentialMovingAverage { Length = length },
+			MaTypes.Smma => new SmoothedMovingAverage { Length = length },
+			MaTypes.Wma => new WeightedMovingAverage { Length = length },
+			MaTypes.Vwma => new VolumeWeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -427,7 +427,7 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy {
 /// <summary>
 /// Moving average types.
 /// </summary>
-public enum MaType {
+public enum MaTypes {
 	/// <summary> Simple moving average. </summary>
 	Sma,
 	/// <summary> Exponential moving average. </summary>
@@ -443,7 +443,7 @@ public enum MaType {
 /// <summary>
 /// Stop loss and take profit calculation method.
 /// </summary>
-public enum SlTpMethod {
+public enum SlTpMethods {
 	/// <summary> Use recent swing high/low. </summary>
 	Swing,
 	/// <summary> Use ATR based calculation. </summary>
@@ -453,7 +453,7 @@ public enum SlTpMethod {
 /// <summary>
 /// Exit levels mode.
 /// </summary>
-public enum ExitMode {
+public enum ExitModes {
 	/// <summary> Recalculate SL/TP each bar. </summary>
 	Dynamic,
 	/// <summary> Lock SL/TP at entry. </summary>

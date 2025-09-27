@@ -16,7 +16,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Defines stop loss calculation modes.
 /// </summary>
-public enum StopLossMode
+public enum StopLossModes
 {
 /// <summary>
 /// Stop loss is calculated from entry price.
@@ -40,7 +40,7 @@ private readonly StrategyParam<int> _rsiIndex;
 private readonly StrategyParam<int> _candleDeltaLength;
 private readonly StrategyParam<bool> _disableRepeatingSignals;
 private readonly StrategyParam<bool> _enableStopLoss;
-private readonly StrategyParam<StopLossMode> _stopLossMethod;
+private readonly StrategyParam<StopLossModes> _stopLossMethod;
 private readonly StrategyParam<decimal> _entryStopLossPercent;
 private readonly StrategyParam<int> _lookbackPeriod;
 private readonly StrategyParam<decimal> _stopLossBufferPercent;
@@ -103,7 +103,7 @@ set => _enableStopLoss.Value = value;
 /// <summary>
 /// Stop loss calculation method.
 /// </summary>
-public StopLossMode StopLossMethod
+public StopLossModes StopLossMethod
 {
 get => _stopLossMethod.Value;
 set => _stopLossMethod.Value = value;
@@ -172,7 +172,7 @@ _disableRepeatingSignals = Param(nameof(DisableRepeatingSignals), false)
 _enableStopLoss = Param(nameof(EnableStopLoss), true)
 .SetDisplay("Enable Stop Loss", "Activate stop loss", "Risk Management");
 
-_stopLossMethod = Param(nameof(StopLossMethod), StopLossMode.EntryPriceBased)
+_stopLossMethod = Param(nameof(StopLossMethod), StopLossModes.EntryPriceBased)
 .SetDisplay("Stop Loss Method", "Entry price or lowest low based", "Risk Management");
 
 _entryStopLossPercent = Param(nameof(EntryStopLossPercent), 2.0m)
@@ -279,7 +279,7 @@ BuyMarket(Volume + Math.Abs(Position));
 _entryPrice = candle.ClosePrice;
 if (EnableStopLoss)
 {
-_stopLossPrice = StopLossMethod == StopLossMode.EntryPriceBased
+_stopLossPrice = StopLossMethod == StopLossModes.EntryPriceBased
 ? _entryPrice * (1 - EntryStopLossPercent / 100m)
 : _lowestLow * (1 - StopLossBufferPercent / 100m);
 }

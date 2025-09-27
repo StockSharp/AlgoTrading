@@ -35,7 +35,7 @@ public class LiveRSIStrategy : Strategy
 	private RelativeStrengthIndex _rsiOpen = null!;
 	private ParabolicSar _sar = null!;
 
-	private TrendDirection _lastTrend;
+	private TrendDirections _lastTrend;
 
 	/// <summary>
 	/// RSI calculation period.
@@ -147,7 +147,7 @@ public class LiveRSIStrategy : Strategy
 
 		StartProtection(default, new Unit(StopLoss, UnitTypes.Absolute));
 
-		_lastTrend = TrendDirection.None;
+		_lastTrend = TrendDirections.None;
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -172,21 +172,21 @@ public class LiveRSIStrategy : Strategy
 
 		var trend = DetectTrend(candle, rsiClose, rsiWeighted, rsiTypical, rsiMedian, rsiOpen, sar);
 
-		if (_lastTrend == TrendDirection.None)
+		if (_lastTrend == TrendDirections.None)
 		{
 			_lastTrend = trend;
 			return;
 		}
 
-		if (trend == TrendDirection.Bull && _lastTrend == TrendDirection.Bear && Position <= 0)
+		if (trend == TrendDirections.Bull && _lastTrend == TrendDirections.Bear && Position <= 0)
 		{
 			BuyMarket();
-			_lastTrend = TrendDirection.Bull;
+			_lastTrend = TrendDirections.Bull;
 		}
-		else if (trend == TrendDirection.Bear && _lastTrend == TrendDirection.Bull && Position >= 0)
+		else if (trend == TrendDirections.Bear && _lastTrend == TrendDirections.Bull && Position >= 0)
 		{
 			SellMarket();
-			_lastTrend = TrendDirection.Bear;
+			_lastTrend = TrendDirections.Bear;
 		}
 
 		if (Position > 0)
@@ -199,7 +199,7 @@ public class LiveRSIStrategy : Strategy
 		}
 	}
 
-	private TrendDirection DetectTrend(ICandleMessage candle, decimal rsiClose, decimal rsiWeighted,
+	private TrendDirections DetectTrend(ICandleMessage candle, decimal rsiClose, decimal rsiWeighted,
 		decimal rsiTypical, decimal rsiMedian, decimal rsiOpen, decimal sar)
 	{
 		var hourOk = !CheckHour || (candle.OpenTime.Hour > StartHour && candle.OpenTime.Hour < EndHour);
@@ -207,19 +207,19 @@ public class LiveRSIStrategy : Strategy
 		if (hourOk && rsiClose > rsiWeighted && rsiWeighted > rsiTypical && rsiTypical > rsiMedian &&
 			rsiMedian > rsiOpen && candle.ClosePrice > sar && rsiClose > 50m)
 		{
-			return TrendDirection.Bull;
+			return TrendDirections.Bull;
 		}
 
 		if (hourOk && rsiClose < rsiWeighted && rsiWeighted < rsiTypical && rsiTypical < rsiMedian &&
 			rsiMedian < rsiOpen && candle.ClosePrice < sar && rsiClose < 50m)
 		{
-			return TrendDirection.Bear;
+			return TrendDirections.Bear;
 		}
 
-		return TrendDirection.None;
+		return TrendDirections.None;
 	}
 
-	private enum TrendDirection
+	private enum TrendDirections
 	{
 		None,
 		Bull,

@@ -18,14 +18,14 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TradingTheChannelStrategy : Strategy
 {
-	private enum TradeRule
+	private enum TradeRules
 	{
 		TradeTrend,
 		TradeBreakouts,
 		TradeChannel
 	}
 
-	private enum RangeSource
+	private enum RangeSources
 	{
 		Close,
 		HighLow
@@ -33,8 +33,8 @@ public class TradingTheChannelStrategy : Strategy
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _period;
-	private readonly StrategyParam<TradeRule> _rule;
-	private readonly StrategyParam<RangeSource> _rangeSource;
+	private readonly StrategyParam<TradeRules> _rule;
+	private readonly StrategyParam<RangeSources> _rangeSource;
 	private readonly StrategyParam<decimal> _zonePercent;
 	private readonly StrategyParam<bool> _longOnly;
 	private readonly StrategyParam<bool> _trendFilter;
@@ -57,12 +57,12 @@ public class TradingTheChannelStrategy : Strategy
 	/// <summary>
 	/// Trading mode.
 	/// </summary>
-	public TradeRule Rule { get => _rule.Value; set => _rule.Value = value; }
+	public TradeRules Rule { get => _rule.Value; set => _rule.Value = value; }
 
 	/// <summary>
 	/// Source for band calculation.
 	/// </summary>
-	public RangeSource Source { get => _rangeSource.Value; set => _rangeSource.Value = value; }
+	public RangeSources Source { get => _rangeSource.Value; set => _rangeSource.Value = value; }
 
 	/// <summary>
 	/// Zone width fraction for rule 3.
@@ -93,10 +93,10 @@ public class TradingTheChannelStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(20, 80, 20);
 
-		_rule = Param(nameof(Rule), TradeRule.TradeTrend)
+		_rule = Param(nameof(Rule), TradeRules.TradeTrend)
 			.SetDisplay("Trade Rule", "Trading mode", "Parameters");
 
-		_rangeSource = Param(nameof(Source), RangeSource.Close)
+		_rangeSource = Param(nameof(Source), RangeSources.Close)
 			.SetDisplay("Range Source", "Use close or high/low", "Parameters");
 
 		_zonePercent = Param(nameof(ZonePercent), 0.2m)
@@ -198,7 +198,7 @@ public class TradingTheChannelStrategy : Strategy
 		for (var i = 0; i < n; i++)
 		{
 			var predicted = intercept + slope * i;
-			if (Source == RangeSource.Close)
+			if (Source == RangeSources.Close)
 			{
 				b = Math.Max(b, predicted - closes[i]);
 				t = Math.Max(t, closes[i] - predicted);
@@ -215,7 +215,7 @@ public class TradingTheChannelStrategy : Strategy
 
 		switch (Rule)
 		{
-			case TradeRule.TradeTrend:
+			case TradeRules.TradeTrend:
 			if (signal != _prevSignal)
 			{
 			if (signal > 0 && Position <= 0)
@@ -225,14 +225,14 @@ public class TradingTheChannelStrategy : Strategy
 			}
 			break;
 
-			case TradeRule.TradeBreakouts:
+			case TradeRules.TradeBreakouts:
 			if (candle.ClosePrice > upper && Position <= 0)
 			BuyMarket();
 			else if (candle.ClosePrice < lower && Position >= 0 && !LongOnly)
 			SellMarket();
 			break;
 
-			case TradeRule.TradeChannel:
+			case TradeRules.TradeChannel:
 			var range = upper - lower;
 			var buyZone = lower + ZonePercent * range;
 			var sellZone = upper - ZonePercent * range;

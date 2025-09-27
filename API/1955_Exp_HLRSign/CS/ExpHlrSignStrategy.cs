@@ -18,13 +18,13 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ExpHlrSignStrategy : Strategy
 {
-	private enum AlgMethod
+	private enum AlgMethods
 	{
 		ModeIn,
 		ModeOut,
 	}
 
-	private readonly StrategyParam<AlgMethod> _mode;
+	private readonly StrategyParam<AlgMethods> _mode;
 	private readonly StrategyParam<int> _range;
 	private readonly StrategyParam<decimal> _upLevel;
 	private readonly StrategyParam<decimal> _dnLevel;
@@ -40,7 +40,7 @@ public class ExpHlrSignStrategy : Strategy
 	/// <summary>
 	/// Indicator mode.
 	/// </summary>
-	public AlgMethod Mode
+	public AlgMethods Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -123,7 +123,7 @@ public class ExpHlrSignStrategy : Strategy
 	/// </summary>
 	public ExpHlrSignStrategy()
 	{
-		_mode = Param(nameof(Mode), AlgMethod.ModeOut)
+		_mode = Param(nameof(Mode), AlgMethods.ModeOut)
 			.SetDisplay("Mode", "Indicator operation mode", "General");
 
 		_range = Param(nameof(Range), 40)
@@ -221,7 +221,7 @@ public class ExpHlrSignStrategy : Strategy
 			return;
 		}
 
-		if (Mode == AlgMethod.ModeIn)
+		if (Mode == AlgMethods.ModeIn)
 		{
 			if (hlr > UpLevel && _previousHlr <= UpLevel)
 				buySignal = true;

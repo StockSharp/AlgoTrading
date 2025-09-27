@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ColorBbCandlesStrategy : Strategy
 {
-	private enum BandState
+	private enum BandStates
 	{
 		Neutral,
 		Above,
@@ -32,7 +32,7 @@ public class ColorBbCandlesStrategy : Strategy
 	private readonly StrategyParam<decimal> _bollingerDeviation;
 	private readonly StrategyParam<DataType> _candleType;
 	
-	private BandState _previousState = BandState.Neutral;
+	private BandStates _previousState = BandStates.Neutral;
 	private decimal _entryPrice;
 	
 	/// <summary>
@@ -93,7 +93,7 @@ public class ColorBbCandlesStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_previousState = BandState.Neutral;
+		_previousState = BandStates.Neutral;
 		_entryPrice = 0m;
 	}
 	
@@ -131,14 +131,14 @@ public class ColorBbCandlesStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 		
-		var state = BandState.Neutral;
+		var state = BandStates.Neutral;
 		
 		if (candle.ClosePrice > upperBand)
-		state = BandState.Above;
+		state = BandStates.Above;
 		else if (candle.ClosePrice < lowerBand)
-		state = BandState.Below;
+		state = BandStates.Below;
 		
-		if (state == BandState.Above && _previousState != BandState.Above)
+		if (state == BandStates.Above && _previousState != BandStates.Above)
 		{
 			var volume = Volume + (Position < 0 ? Math.Abs(Position) : 0);
 			if (volume > 0)
@@ -147,7 +147,7 @@ public class ColorBbCandlesStrategy : Strategy
 				_entryPrice = candle.ClosePrice;
 			}
 		}
-		else if (state == BandState.Below && _previousState != BandState.Below)
+		else if (state == BandStates.Below && _previousState != BandStates.Below)
 		{
 			var volume = Volume + (Position > 0 ? Math.Abs(Position) : 0);
 			if (volume > 0)
@@ -156,7 +156,7 @@ public class ColorBbCandlesStrategy : Strategy
 				_entryPrice = candle.ClosePrice;
 			}
 		}
-		else if (state == BandState.Neutral && _previousState != BandState.Neutral)
+		else if (state == BandStates.Neutral && _previousState != BandStates.Neutral)
 		{
 			if (Position > 0)
 			{

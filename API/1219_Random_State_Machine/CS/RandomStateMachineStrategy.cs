@@ -20,7 +20,7 @@ public class RandomStateMachineStrategy : Strategy
 {
 	private readonly StrategyParam<int> _stateResetInterval;
 	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<MaType> _maType;
+	private readonly StrategyParam<MaTypes> _maType;
 	private readonly StrategyParam<bool> _enableLongs;
 	private readonly StrategyParam<bool> _enableShorts;
 	private readonly StrategyParam<bool> _useTpSlLong;
@@ -62,7 +62,7 @@ public class RandomStateMachineStrategy : Strategy
 	/// <summary>
 	/// Moving average type.
 	/// </summary>
-	public MaType MaTypeIndicator { get => _maType.Value; set => _maType.Value = value; }
+	public MaTypes MaTypeIndicator { get => _maType.Value; set => _maType.Value = value; }
 
 	/// <summary>
 	/// Enable long trades.
@@ -152,7 +152,7 @@ public class RandomStateMachineStrategy : Strategy
 			.SetDisplay("MA Length", "Moving average length", "Indicators")
 			.SetGreaterThanZero();
 
-		_maType = Param(nameof(MaTypeIndicator), MaType.Ema)
+		_maType = Param(nameof(MaTypeIndicator), MaTypes.Ema)
 			.SetDisplay("MA Type", "Moving average type", "Indicators");
 
 		_enableLongs = Param(nameof(EnableLongs), true)
@@ -239,12 +239,12 @@ public class RandomStateMachineStrategy : Strategy
 		subscription.Bind(_maIndicator, ProcessCandle).Start();
 	}
 
-	private MovingAverage CreateMa(MaType type, int length)
+	private MovingAverage CreateMa(MaTypes type, int length)
 	{
 		return type switch
 		{
-			MaType.Sma => new SimpleMovingAverage { Length = length },
-			MaType.Ema => new ExponentialMovingAverage { Length = length },
+			MaTypes.Sma => new SimpleMovingAverage { Length = length },
+			MaTypes.Ema => new ExponentialMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -344,7 +344,7 @@ public class RandomStateMachineStrategy : Strategy
 	/// <summary>
 	/// Moving average types.
 	/// </summary>
-	public enum MaType
+	public enum MaTypes
 	{
 		/// <summary>
 		/// Simple moving average.

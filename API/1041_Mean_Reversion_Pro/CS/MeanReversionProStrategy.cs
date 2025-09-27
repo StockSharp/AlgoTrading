@@ -17,7 +17,7 @@ public class MeanReversionProStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<TradingMode> _tradingMode;
+	private readonly StrategyParam<TradingModes> _tradingMode;
 	private readonly StrategyParam<DataType> _candleType;
 
 	public int FastLength
@@ -32,7 +32,7 @@ public class MeanReversionProStrategy : Strategy
 		set => _slowLength.Value = value;
 	}
 
-	public TradingMode Mode
+	public TradingModes Mode
 	{
 		get => _tradingMode.Value;
 		set => _tradingMode.Value = value;
@@ -58,7 +58,7 @@ public class MeanReversionProStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(100, 200, 50);
 
-		_tradingMode = Param(nameof(Mode), TradingMode.LongOnly)
+		_tradingMode = Param(nameof(Mode), TradingModes.LongOnly)
 			.SetDisplay("Trading Direction", "Allowed trading direction", "Parameters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
@@ -107,8 +107,8 @@ public class MeanReversionProStrategy : Strategy
 		var longThreshold = candle.LowPrice + 0.2m * range;
 		var shortThreshold = candle.HighPrice - 0.2m * range;
 
-		var longAllowed = Mode is TradingMode.LongOnly or TradingMode.Both;
-		var shortAllowed = Mode is TradingMode.ShortOnly or TradingMode.Both;
+		var longAllowed = Mode is TradingModes.LongOnly or TradingModes.Both;
+		var shortAllowed = Mode is TradingModes.ShortOnly or TradingModes.Both;
 
 		var longSignal = candle.ClosePrice < fast &&
 			candle.ClosePrice < longThreshold &&
@@ -143,7 +143,7 @@ public class MeanReversionProStrategy : Strategy
 		}
 	}
 
-	public enum TradingMode
+	public enum TradingModes
 	{
 		LongOnly,
 		ShortOnly,

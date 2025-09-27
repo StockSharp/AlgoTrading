@@ -23,7 +23,7 @@ public class MultiStepFlexiMaStrategy : Strategy
 	private readonly StrategyParam<int> _indicatorLength;
 	private readonly StrategyParam<decimal> _startingFactor;
 	private readonly StrategyParam<decimal> _incrementFactor;
-	private readonly StrategyParam<NormalizeMethod> _normalizeMethod;
+	private readonly StrategyParam<NormalizeMethods> _normalizeMethod;
 	private readonly StrategyParam<int> _superTrendPeriod;
 private readonly StrategyParam<decimal> _superTrendMultiplier;
 private readonly StrategyParam<Sides?> _direction;
@@ -45,7 +45,7 @@ private readonly StrategyParam<decimal> _tpLevel1;
 	/// <summary>
 	/// Normalization method for oscillator.
 	/// </summary>
-	public enum NormalizeMethod
+	public enum NormalizeMethods
 	{
 		None,
 		MaxMin,
@@ -75,7 +75,7 @@ private readonly StrategyParam<decimal> _tpLevel1;
 	/// <summary>
 	/// Normalization method.
 	/// </summary>
-	public NormalizeMethod Normalization { get => _normalizeMethod.Value; set => _normalizeMethod.Value = value; }
+	public NormalizeMethods Normalization { get => _normalizeMethod.Value; set => _normalizeMethod.Value = value; }
 
 	/// <summary>
 	/// SuperTrend ATR period.
@@ -140,7 +140,7 @@ public Sides? Direction { get => _direction.Value; set => _direction.Value = val
 		_incrementFactor = Param(nameof(IncrementFactor), 2m)
 		.SetDisplay("Increment Factor", "Increment between steps", "FlexiMA");
 
-		_normalizeMethod = Param(nameof(Normalization), NormalizeMethod.None)
+		_normalizeMethod = Param(nameof(Normalization), NormalizeMethods.None)
 		.SetDisplay("Normalization", "Normalization method", "FlexiMA");
 
 		_superTrendPeriod = Param(nameof(SuperTrendPeriod), 10)
@@ -235,7 +235,7 @@ public Sides? Direction { get => _direction.Value; set => _direction.Value = val
 
 		switch (Normalization)
 		{
-			case NormalizeMethod.MaxMin:
+			case NormalizeMethods.MaxMin:
 			var min = decimal.MaxValue;
 			var max = decimal.MinValue;
 			for (var i = 0; i < diffs.Length; i++)
@@ -250,7 +250,7 @@ public Sides? Direction { get => _direction.Value; set => _direction.Value = val
 			for (var i = 0; i < diffs.Length; i++)
 			normalized[i] = range == 0m ? 0m : (diffs[i] - min) / range;
 			break;
-			case NormalizeMethod.AbsoluteSum:
+			case NormalizeMethods.AbsoluteSum:
 			for (var i = 0; i < diffs.Length; i++)
 			normalized[i] = denom == 0m ? 0m : diffs[i] / denom;
 			break;

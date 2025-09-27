@@ -24,7 +24,7 @@ public class TextStrategy : Strategy
 	/// <summary>
 	/// Supported fonts.
 	/// </summary>
-	public enum EFont
+	public enum EFonts
 	{
 		BoldStrong,
 		Circled
@@ -36,14 +36,14 @@ public class TextStrategy : Strategy
 	/// <param name="fromText">Initial text.</param>
 	/// <param name="font">Desired font.</param>
 	/// <returns>Text transformed to the selected font.</returns>
-	public static string ToFont(string fromText, EFont font)
+	public static string ToFont(string fromText, EFonts font)
 	{
 		const string pine = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 		string[] map;
 
 		switch (font)
 		{
-			case EFont.BoldStrong:
+			case EFonts.BoldStrong:
 				map = new[]
 				{
 					"α","Ⴆ","ƈ","ԃ","ҽ","ϝ","ɠ","ԋ","ι","ʝ","ƙ","ʅ","ɱ","ɳ","σ","ρ","ϙ","ɾ","ʂ","ƚ","υ","ʋ","ɯ","𝐱","ყ","ȥ",
@@ -51,7 +51,7 @@ public class TextStrategy : Strategy
 					"𝟎","𝟏","𝟐","𝟑","𝟒","𝟓","𝟔","𝟕","𝟖","𝟗"
 				};
 				break;
-			case EFont.Circled:
+			case EFonts.Circled:
 				map = new[]
 				{
 					"🅐","🅑","🅒","🅓","🅔","🅕","🅖","🅗","🅘","🅙","🅚","🅛","🅜","🅝","🅞","🅟","🅠","🅡","🅢","🅣","🅤","🅥","🅦","🅧","🅨","🅩",

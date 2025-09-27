@@ -25,7 +25,7 @@ public class YinYangRsiVolumeTrendStrategy : Strategy
 	private readonly StrategyParam<bool> _useTakeProfit;
 	private readonly StrategyParam<bool> _useStopLoss;
 	private readonly StrategyParam<decimal> _stopLossMultiplier;
-	private readonly StrategyParam<ResetCondition> _resetCondition;
+	private readonly StrategyParam<ResetConditions> _resetCondition;
 	private readonly StrategyParam<CandlePrice> _purchaseSource;
 	private readonly StrategyParam<CandlePrice> _exitSource;
 	private readonly StrategyParam<DataType> _candleType;
@@ -76,7 +76,7 @@ public class YinYangRsiVolumeTrendStrategy : Strategy
 	/// <summary>
 	/// Reset mode for purchase availability.
 	/// </summary>
-	public ResetCondition ResetCondition { get => _resetCondition.Value; set => _resetCondition.Value = value; }
+	public ResetConditions ResetCondition { get => _resetCondition.Value; set => _resetCondition.Value = value; }
 	
 	/// <summary>
 	/// Price source for purchase checks.
@@ -112,7 +112,7 @@ public class YinYangRsiVolumeTrendStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Stoploss Multiplier %", "Distance from purchase lines", "Risk");
 		
-		_resetCondition = Param(nameof(ResetCondition), ResetCondition.Entry)
+		_resetCondition = Param(nameof(ResetCondition), ResetConditions.Entry)
 		.SetDisplay("Reset After", "When to reset purchase availability", "General");
 		
 		_purchaseSource = Param(nameof(PurchaseSource), CandlePrice.Close)
@@ -232,8 +232,8 @@ public class YinYangRsiVolumeTrendStrategy : Strategy
 		var longTakeProfit = CrossDown(_prevExitSrc, _prevZoneBasis, exitSrc, zoneBasis) && _longTakeProfitAvailable;
 		
 		var longAvailReset = CrossDown(_prevPurchaseSrc, _prevZoneHigh, purchaseSrc, zoneHigh)
-		|| (ResetCondition == ResetCondition.StopLoss && _longStopLoss)
-		|| (ResetCondition == ResetCondition.Entry && longEntry);
+		|| (ResetConditions == ResetConditions.StopLoss && _longStopLoss)
+		|| (ResetConditions == ResetConditions.Entry && longEntry);
 		if (longAvailReset)
 		_longAvailable = true;
 		else if (longStart)
@@ -251,8 +251,8 @@ public class YinYangRsiVolumeTrendStrategy : Strategy
 		var shortTakeProfit = CrossUp(_prevExitSrc, _prevZoneBasis, exitSrc, zoneBasis) && _shortTakeProfitAvailable;
 		
 		var shortAvailReset = CrossUp(_prevPurchaseSrc, _prevZoneLow, purchaseSrc, zoneLow)
-		|| (ResetCondition == ResetCondition.StopLoss && _shortStopLoss)
-		|| (ResetCondition == ResetCondition.Entry && shortEntry);
+		|| (ResetConditions == ResetConditions.StopLoss && _shortStopLoss)
+		|| (ResetConditions == ResetConditions.Entry && shortEntry);
 		if (shortAvailReset)
 		_shortAvailable = true;
 		else if (shortStart)
@@ -306,7 +306,7 @@ public class YinYangRsiVolumeTrendStrategy : Strategy
 /// <summary>
 /// Options for resetting purchase availability.
 /// </summary>
-public enum ResetCondition
+public enum ResetConditions
 {
 	/// <summary>
 	/// Reset after entry condition is met.

@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class RallyBaseDropSndPivotsStrategy : Strategy
 {
-	public enum TradeMode
+	public enum TradeModes
 	{
 		LongAndShort,
 		LongOnly,
@@ -31,7 +31,7 @@ public class RallyBaseDropSndPivotsStrategy : Strategy
 	private readonly StrategyParam<decimal> _mult;
 	private readonly StrategyParam<decimal> _riskReward;
 	private readonly StrategyParam<bool> _reverseConditions;
-	private readonly StrategyParam<TradeMode> _mode;
+	private readonly StrategyParam<TradeModes> _mode;
 
 	private readonly List<ICandleMessage> _candles = [];
 	private readonly AverageTrueRange _atr = new() { Length = 14 };
@@ -68,7 +68,7 @@ public class RallyBaseDropSndPivotsStrategy : Strategy
 		_reverseConditions = Param(nameof(ReverseConditions), false)
 			.SetDisplay("Reverse Conditions", "Swap long/short levels", "General");
 
-		_mode = Param(nameof(Mode), TradeMode.LongAndShort)
+		_mode = Param(nameof(Mode), TradeModes.LongAndShort)
 			.SetDisplay("Trade Mode", "Allowed trade direction", "General");
 	}
 
@@ -100,7 +100,7 @@ public class RallyBaseDropSndPivotsStrategy : Strategy
 	/// <summary>
 	/// Trading mode.
 	/// </summary>
-	public TradeMode Mode { get => _mode.Value; set => _mode.Value = value; }
+	public TradeModes Mode { get => _mode.Value; set => _mode.Value = value; }
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -161,7 +161,7 @@ public class RallyBaseDropSndPivotsStrategy : Strategy
 
 		if (!ReverseConditions)
 		{
-			if (Mode != TradeMode.ShortOnly && _up is decimal upLvl && _prevClose is decimal pc1 && pc1 <= upLvl && candle.ClosePrice > upLvl && (_lastLongLevel != upLvl))
+			if (Mode != TradeModes.ShortOnly && _up is decimal upLvl && _prevClose is decimal pc1 && pc1 <= upLvl && candle.ClosePrice > upLvl && (_lastLongLevel != upLvl))
 			{
 				_lastLongLevel = upLvl;
 				_lastLongEntryPrice = candle.ClosePrice;
@@ -169,7 +169,7 @@ public class RallyBaseDropSndPivotsStrategy : Strategy
 				BuyMarket();
 			}
 
-			if (Mode != TradeMode.LongOnly && _down is decimal dnLvl && _prevClose is decimal pc2 && pc2 >= dnLvl && candle.ClosePrice < dnLvl && (_lastShortLevel != dnLvl))
+			if (Mode != TradeModes.LongOnly && _down is decimal dnLvl && _prevClose is decimal pc2 && pc2 >= dnLvl && candle.ClosePrice < dnLvl && (_lastShortLevel != dnLvl))
 			{
 				_lastShortLevel = dnLvl;
 				_lastShortEntryPrice = candle.ClosePrice;
@@ -179,7 +179,7 @@ public class RallyBaseDropSndPivotsStrategy : Strategy
 		}
 		else
 		{
-			if (Mode != TradeMode.ShortOnly && _down is decimal dnLvl && _prevClose is decimal pc1 && pc1 >= dnLvl && candle.ClosePrice < dnLvl && (_lastLongLevel != dnLvl))
+			if (Mode != TradeModes.ShortOnly && _down is decimal dnLvl && _prevClose is decimal pc1 && pc1 >= dnLvl && candle.ClosePrice < dnLvl && (_lastLongLevel != dnLvl))
 			{
 				_lastLongLevel = dnLvl;
 				_lastLongEntryPrice = candle.ClosePrice;
@@ -187,7 +187,7 @@ public class RallyBaseDropSndPivotsStrategy : Strategy
 				BuyMarket();
 			}
 
-			if (Mode != TradeMode.LongOnly && _up is decimal upLvl && _prevClose is decimal pc2 && pc2 <= upLvl && candle.ClosePrice > upLvl && (_lastShortLevel != upLvl))
+			if (Mode != TradeModes.LongOnly && _up is decimal upLvl && _prevClose is decimal pc2 && pc2 <= upLvl && candle.ClosePrice > upLvl && (_lastShortLevel != upLvl))
 			{
 				_lastShortLevel = upLvl;
 				_lastShortEntryPrice = candle.ClosePrice;

@@ -20,10 +20,10 @@ namespace StockSharp.Samples.Strategies;
 public class XAlert3Strategy : Strategy
 {
 	private readonly StrategyParam<int> _ma1Period;
-	private readonly StrategyParam<MovingAverageTypeEnum> _ma1Type;
+	private readonly StrategyParam<MovingAverageTypes> _ma1Type;
 	private readonly StrategyParam<int> _ma2Period;
-	private readonly StrategyParam<MovingAverageTypeEnum> _ma2Type;
-	private readonly StrategyParam<PriceTypeEnum> _priceType;
+	private readonly StrategyParam<MovingAverageTypes> _ma2Type;
+	private readonly StrategyParam<PriceTypes> _priceType;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private IIndicator _ma1;
@@ -43,7 +43,7 @@ public class XAlert3Strategy : Strategy
 	/// <summary>
 	/// Type of the first moving average.
 	/// </summary>
-	public MovingAverageTypeEnum Ma1Type
+	public MovingAverageTypes Ma1Type
 	{
 		get => _ma1Type.Value;
 		set => _ma1Type.Value = value;
@@ -61,7 +61,7 @@ public class XAlert3Strategy : Strategy
 	/// <summary>
 	/// Type of the second moving average.
 	/// </summary>
-	public MovingAverageTypeEnum Ma2Type
+	public MovingAverageTypes Ma2Type
 	{
 		get => _ma2Type.Value;
 		set => _ma2Type.Value = value;
@@ -70,7 +70,7 @@ public class XAlert3Strategy : Strategy
 	/// <summary>
 	/// Source price used for calculations.
 	/// </summary>
-	public PriceTypeEnum PriceType
+	public PriceTypes PriceType
 	{
 		get => _priceType.Value;
 		set => _priceType.Value = value;
@@ -95,7 +95,7 @@ public class XAlert3Strategy : Strategy
 			.SetDisplay("MA1 Period", "Length of the first moving average", "MA1")
 			.SetCanOptimize(true);
 
-		_ma1Type = Param(nameof(Ma1Type), MovingAverageTypeEnum.Simple)
+		_ma1Type = Param(nameof(Ma1Type), MovingAverageTypes.Simple)
 			.SetDisplay("MA1 Type", "Type of the first moving average", "MA1");
 
 		_ma2Period = Param(nameof(Ma2Period), 14)
@@ -103,10 +103,10 @@ public class XAlert3Strategy : Strategy
 			.SetDisplay("MA2 Period", "Length of the second moving average", "MA2")
 			.SetCanOptimize(true);
 
-		_ma2Type = Param(nameof(Ma2Type), MovingAverageTypeEnum.Simple)
+		_ma2Type = Param(nameof(Ma2Type), MovingAverageTypes.Simple)
 			.SetDisplay("MA2 Type", "Type of the second moving average", "MA2");
 
-		_priceType = Param(nameof(PriceType), PriceTypeEnum.Median)
+		_priceType = Param(nameof(PriceType), PriceTypes.Median)
 			.SetDisplay("Price Type", "Source price for calculations", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -173,33 +173,33 @@ public class XAlert3Strategy : Strategy
 		_prevDiff1 = diff;
 	}
 
-	private static IIndicator CreateMovingAverage(MovingAverageTypeEnum type, int length)
+	private static IIndicator CreateMovingAverage(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypeEnum.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageTypeEnum.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageTypeEnum.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
 
-	private static decimal GetPrice(ICandleMessage candle, PriceTypeEnum type)
+	private static decimal GetPrice(ICandleMessage candle, PriceTypes type)
 	{
 		return type switch
 		{
-			PriceTypeEnum.Open => candle.OpenPrice,
-			PriceTypeEnum.High => candle.HighPrice,
-			PriceTypeEnum.Low => candle.LowPrice,
-			PriceTypeEnum.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			PriceTypeEnum.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			PriceTypeEnum.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			PriceTypes.Open => candle.OpenPrice,
+			PriceTypes.High => candle.HighPrice,
+			PriceTypes.Low => candle.LowPrice,
+			PriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			PriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			PriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}
 }
 
-public enum MovingAverageTypeEnum
+public enum MovingAverageTypes
 {
 	/// <summary>Simple Moving Average.</summary>
 	Simple,
@@ -211,7 +211,7 @@ public enum MovingAverageTypeEnum
 	Weighted
 }
 
-public enum PriceTypeEnum
+public enum PriceTypes
 {
 	/// <summary>Close price.</summary>
 	Close,

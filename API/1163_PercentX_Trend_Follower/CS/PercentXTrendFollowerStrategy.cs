@@ -18,13 +18,13 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class PercentXTrendFollowerStrategy : Strategy
 {
-	public enum BandMode
+	public enum BandModes
 	{
 		Keltner,
 		Bollinger,
 	}
 
-	private readonly StrategyParam<BandMode> _bandType;
+	private readonly StrategyParam<BandModes> _bandType;
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<int> _loopbackPeriod;
 	private readonly StrategyParam<int> _outerLoopback;
@@ -50,7 +50,7 @@ public class PercentXTrendFollowerStrategy : Strategy
 	/// <summary>
 	/// Band type.
 	/// </summary>
-	public BandMode BandType { get => _bandType.Value; set => _bandType.Value = value; }
+	public BandModes BandType { get => _bandType.Value; set => _bandType.Value = value; }
 
 	/// <summary>
 	/// Moving average length.
@@ -97,7 +97,7 @@ public class PercentXTrendFollowerStrategy : Strategy
 	/// </summary>
 	public PercentXTrendFollowerStrategy()
 	{
-		_bandType = Param(nameof(BandType), BandMode.Keltner)
+		_bandType = Param(nameof(BandType), BandModes.Keltner)
 			.SetDisplay("Band Type", "Indicator for band calculation", "Parameters");
 
 		_maLength = Param(nameof(MaLength), 40)
@@ -174,7 +174,7 @@ public class PercentXTrendFollowerStrategy : Strategy
 		decimal upper;
 		decimal lower;
 
-		if (BandType == BandMode.Bollinger)
+		if (BandType == BandModes.Bollinger)
 		{
 			var bb = (BollingerBandsValue)bollingerValue;
 			if (bb.UpBand is not decimal up || bb.LowBand is not decimal low || bb.MovingAverage is not decimal mid)

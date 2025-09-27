@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ModifiedObvWithDivergenceDetectionStrategy : Strategy
 {
-	private readonly StrategyParam<MovingAverageTypeEnum> _maType;
+	private readonly StrategyParam<MovingAverageTypes> _maType;
 	private readonly StrategyParam<int> _obvMaLength;
 	private readonly StrategyParam<int> _signalLength;
 	private readonly StrategyParam<DataType> _candleType;
@@ -42,7 +42,7 @@ public class ModifiedObvWithDivergenceDetectionStrategy : Strategy
 	/// <summary>
 	/// Type of moving average used for OBV smoothing.
 	/// </summary>
-	public MovingAverageTypeEnum MaType
+	public MovingAverageTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -80,7 +80,7 @@ public class ModifiedObvWithDivergenceDetectionStrategy : Strategy
 	/// </summary>
 	public ModifiedObvWithDivergenceDetectionStrategy()
 	{
-		_maType = Param(nameof(MaType), MovingAverageTypeEnum.Exponential)
+		_maType = Param(nameof(MaType), MovingAverageTypes.Exponential)
 			.SetDisplay("MA Type", "Moving average type for OBV", "General");
 
 		_obvMaLength = Param(nameof(ObvMaLength), 7)
@@ -129,18 +129,18 @@ public class ModifiedObvWithDivergenceDetectionStrategy : Strategy
 
 		IIndicator obvMa = MaType switch
 		{
-			MovingAverageTypeEnum.Simple => new SimpleMovingAverage(),
-			MovingAverageTypeEnum.VolumeWeighted => new VolumeWeightedMovingAverage(),
-			MovingAverageTypeEnum.Weighted => new WeightedMovingAverage(),
+			MovingAverageTypes.Simple => new SimpleMovingAverage(),
+			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage(),
+			MovingAverageTypes.Weighted => new WeightedMovingAverage(),
 			_ => new ExponentialMovingAverage(),
 		};
 		obvMa.Length = ObvMaLength;
 
 		IIndicator signalMa = MaType switch
 		{
-			MovingAverageTypeEnum.Simple => new SimpleMovingAverage(),
-			MovingAverageTypeEnum.VolumeWeighted => new VolumeWeightedMovingAverage(),
-			MovingAverageTypeEnum.Weighted => new WeightedMovingAverage(),
+			MovingAverageTypes.Simple => new SimpleMovingAverage(),
+			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage(),
+			MovingAverageTypes.Weighted => new WeightedMovingAverage(),
 			_ => new ExponentialMovingAverage(),
 		};
 		signalMa.Length = SignalLength;
@@ -253,7 +253,7 @@ public class ModifiedObvWithDivergenceDetectionStrategy : Strategy
 	/// <summary>
 	/// Moving average types.
 	/// </summary>
-	public enum MovingAverageTypeEnum
+	public enum MovingAverageTypes
 	{
 		/// <summary>
 		/// Exponential moving average.

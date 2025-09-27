@@ -22,7 +22,7 @@ public class Lego4BetaStrategy : Strategy
 	private readonly StrategyParam<bool> _useMaOpen;
 	private readonly StrategyParam<int> _fastMaLength;
 	private readonly StrategyParam<int> _slowMaLength;
-	private readonly StrategyParam<MaType> _maType;
+	private readonly StrategyParam<MaTypes> _maType;
 	private readonly StrategyParam<bool> _useStochasticOpen;
 	private readonly StrategyParam<int> _stochLength;
 	private readonly StrategyParam<int> _stochKPeriod;
@@ -73,7 +73,7 @@ public class Lego4BetaStrategy : Strategy
 	/// <summary>
 	/// Moving average type.
 	/// </summary>
-	public MaType MaType
+	public MaTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -196,7 +196,7 @@ public class Lego4BetaStrategy : Strategy
 		.SetDisplay("Slow MA Length", "Length of slow MA", "Moving Average")
 		.SetCanOptimize(true);
 
-		_maType = Param(nameof(MaType), MaType.EMA)
+		_maType = Param(nameof(MaType), MaTypes.EMA)
 		.SetDisplay("MA Type", "Moving average type", "Moving Average");
 
 		_useStochasticOpen = Param(nameof(UseStochasticOpen), false)
@@ -267,8 +267,8 @@ public class Lego4BetaStrategy : Strategy
 
 		StartProtection();
 
-		_fastMa = CreateMa(MaType, FastMaLength);
-		_slowMa = CreateMa(MaType, SlowMaLength);
+		_fastMa = CreateMa(MaTypes, FastMaLength);
+		_slowMa = CreateMa(MaTypes, SlowMaLength);
 		_stochastic = new StochasticOscillator
 		{
 			Length = StochLength,
@@ -338,12 +338,12 @@ public class Lego4BetaStrategy : Strategy
 		_prevSlow = slow;
 	}
 
-	private MovingAverage CreateMa(MaType type, int length)
+	private MovingAverage CreateMa(MaTypes type, int length)
 	{
 		return type switch
 		{
-			MaType.SMA => new SimpleMovingAverage { Length = length },
-			MaType.WMA => new WeightedMovingAverage { Length = length },
+			MaTypes.SMA => new SimpleMovingAverage { Length = length },
+			MaTypes.WMA => new WeightedMovingAverage { Length = length },
 			_ => new ExponentialMovingAverage { Length = length },
 		};
 	}
@@ -352,7 +352,7 @@ public class Lego4BetaStrategy : Strategy
 /// <summary>
 /// Moving average type.
 /// </summary>
-public enum MaType
+public enum MaTypes
 {
 	/// <summary>
 	/// Simple moving average.

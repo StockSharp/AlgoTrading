@@ -24,7 +24,7 @@ public class StochasticHeatMapStrategy : Strategy
 	private readonly StrategyParam<int> _smoothSlow;
 	private readonly StrategyParam<int> _plotNumber;
 	private readonly StrategyParam<bool> _useWaves;
-	private readonly StrategyParam<MaType> _maType;
+	private readonly StrategyParam<MaTypes> _maType;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevFast;
@@ -78,7 +78,7 @@ public class StochasticHeatMapStrategy : Strategy
 	/// <summary>
 	/// Moving average type used for smoothing.
 	/// </summary>
-	public MaType MaType
+	public MaTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -121,7 +121,7 @@ public class StochasticHeatMapStrategy : Strategy
 		_useWaves = Param(nameof(UseWaves), false)
 			.SetDisplay("Waves", "Increase smoothing for each Stochastic", "Parameters");
 
-		_maType = Param(nameof(MaType), MaType.EMA)
+		_maType = Param(nameof(MaType), MaTypes.EMA)
 			.SetDisplay("MA Type", "Type of moving average for smoothing", "Parameters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -155,7 +155,7 @@ public class StochasticHeatMapStrategy : Strategy
 			SmoothSlow = SmoothSlow,
 			PlotNumber = PlotNumber,
 			UseWaves = UseWaves,
-			MaType = MaType
+			MaTypes = MaTypes
 		};
 
 		var subscription = SubscribeCandles(CandleType);
@@ -212,7 +212,7 @@ public class StochasticHeatMapIndicator : BaseIndicator<decimal>
 	public int SmoothSlow { get; set; } = 21;
 	public int PlotNumber { get; set; } = 28;
 	public bool UseWaves { get; set; }
-	public MaType MaType { get; set; } = MaType.EMA;
+	public MaTypes MaType { get; set; } = MaTypes.EMA;
 
 	private readonly List<(StochasticOscillator stoch, IIndicator ma)> _items = new();
 	private IIndicator _slowMa;
@@ -236,20 +236,20 @@ public class StochasticHeatMapIndicator : BaseIndicator<decimal>
 					D = { Length = 1 },
 				};
 
-				IIndicator ma = MaType switch
+				IIndicator ma = MaTypes switch
 				{
-					MaType.SMA => new SimpleMovingAverage { Length = smooth },
-					MaType.WMA => new WeightedMovingAverage { Length = smooth },
+					MaTypes.SMA => new SimpleMovingAverage { Length = smooth },
+					MaTypes.WMA => new WeightedMovingAverage { Length = smooth },
 					_ => new ExponentialMovingAverage { Length = smooth },
 				};
 
 				_items.Add((stoch, ma));
 			}
 
-			_slowMa = MaType switch
+			_slowMa = MaTypes switch
 			{
-				MaType.SMA => new SimpleMovingAverage { Length = SmoothSlow },
-				MaType.WMA => new WeightedMovingAverage { Length = SmoothSlow },
+				MaTypes.SMA => new SimpleMovingAverage { Length = SmoothSlow },
+				MaTypes.WMA => new WeightedMovingAverage { Length = SmoothSlow },
 				_ => new ExponentialMovingAverage { Length = SmoothSlow },
 			};
 		}
@@ -299,7 +299,7 @@ public class StochasticHeatMapValue : ComplexIndicatorValue
 /// <summary>
 /// Moving average type.
 /// </summary>
-public enum MaType
+public enum MaTypes
 {
 	/// <summary>
 	/// Simple moving average.

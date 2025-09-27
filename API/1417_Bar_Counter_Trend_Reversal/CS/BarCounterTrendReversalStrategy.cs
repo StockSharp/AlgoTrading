@@ -23,7 +23,7 @@ public class BarCounterTrendReversalStrategy : Strategy
 	private readonly StrategyParam<int> _noOfFalls;
 	private readonly StrategyParam<bool> _volumeConfirm;
 	private readonly StrategyParam<bool> _channelConfirm;
-	private readonly StrategyParam<ChannelType> _channelType;
+	private readonly StrategyParam<ChannelTypes> _channelType;
 	private readonly StrategyParam<int> _channelLength;
 	private readonly StrategyParam<int> _channelMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
@@ -42,7 +42,7 @@ public class BarCounterTrendReversalStrategy : Strategy
 	/// <summary>
 	/// Channel indicator type.
 	/// </summary>
-	public enum ChannelType
+	public enum ChannelTypes
 	{
 		/// <summary> Keltner Channel. </summary>
 		Kc,
@@ -59,7 +59,7 @@ public class BarCounterTrendReversalStrategy : Strategy
 	/// <summary>Require channel breakout confirmation.</summary>
 	public bool ChannelConfirm { get => _channelConfirm.Value; set => _channelConfirm.Value = value; }
 	/// <summary>Selected channel type.</summary>
-	public ChannelType Channel { get => _channelType.Value; set => _channelType.Value = value; }
+	public ChannelTypes Channel { get => _channelType.Value; set => _channelType.Value = value; }
 	/// <summary>Channel indicator length.</summary>
 	public int ChannelLength { get => _channelLength.Value; set => _channelLength.Value = value; }
 	/// <summary>Channel multiplier.</summary>
@@ -82,7 +82,7 @@ public class BarCounterTrendReversalStrategy : Strategy
 		.SetDisplay("Volume Confirm", "Require volume rising", "Parameters");
 		_channelConfirm = Param(nameof(ChannelConfirm), true)
 		.SetDisplay("Channel Confirm", "Use channel breakout", "Parameters");
-		_channelType = Param(nameof(Channel), ChannelType.Kc)
+		_channelType = Param(nameof(Channel), ChannelTypes.Kc)
 		.SetDisplay("Channel Type", "Channel indicator type", "Parameters");
 		_channelLength = Param(nameof(ChannelLength), 20)
 		.SetDisplay("Channel Length", "Length for channel indicator", "Parameters")
@@ -116,7 +116,7 @@ public class BarCounterTrendReversalStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_channelIndicator = Channel == ChannelType.Kc
+		_channelIndicator = Channel == ChannelTypes.Kc
 		? new KeltnerChannels { Length = ChannelLength, Multiplier = ChannelMultiplier }
 		: new BollingerBands { Length = ChannelLength, Width = ChannelMultiplier };
 
