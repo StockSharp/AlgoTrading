@@ -49,6 +49,32 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 	private int _currentStopSteps;
 
 	/// <summary>
+	/// Moving average methods supported by the smoothed Heiken Ashi calculation.
+	/// </summary>
+	public enum HaMaMethods
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Simple,
+
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Exponential,
+
+		/// <summary>
+		/// Smoothed moving average.
+		/// </summary>
+		Smoothed,
+
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		LinearWeighted
+	}
+
+	/// <summary>
 	/// Trade volume used for new entries.
 	/// </summary>
 	public decimal TradeVolume
@@ -673,28 +699,3 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 	}
 }
 
-/// <summary>
-/// Moving average methods supported by the smoothed Heiken Ashi calculation.
-/// </summary>
-public enum HaMaMethods
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Exponential,
-
-	/// <summary>
-	/// Smoothed moving average.
-	/// </summary>
-	Smoothed,
-
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	LinearWeighted
-}

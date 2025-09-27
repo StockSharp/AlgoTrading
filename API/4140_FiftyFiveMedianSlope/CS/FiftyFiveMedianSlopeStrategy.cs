@@ -39,6 +39,17 @@ public class FiftyFiveMedianSlopeStrategy : Strategy
 	private bool _allowSell = true;
 	private decimal _alignedBaseVolume;
 
+	/// <summary>
+	/// Moving average calculation methods supported by the strategy.
+	/// </summary>
+	public enum MovingAverageKinds
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		LinearWeighted
+	}
+
 	public FiftyFiveMedianSlopeStrategy()
 	{
 		_fixedVolume = Param(nameof(FixedVolume), 1m)
@@ -486,13 +497,3 @@ public class FiftyFiveMedianSlopeStrategy : Strategy
 	}
 }
 
-/// <summary>
-/// Moving average calculation methods supported by the strategy.
-/// </summary>
-public enum MovingAverageKinds
-{
-	Simple,
-	Exponential,
-	Smoothed,
-	LinearWeighted
-}

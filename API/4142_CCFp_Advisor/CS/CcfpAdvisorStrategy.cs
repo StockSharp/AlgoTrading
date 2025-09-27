@@ -46,6 +46,17 @@ public class CcfpAdvisorStrategy : Strategy
 	private int _expectedPairs;
 
 	/// <summary>
+	/// Moving-average calculation modes supported by the strategy.
+	/// </summary>
+	public enum MovingAverageModes
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		Weighted,
+	}
+
+	/// <summary>
 	/// Initializes a new instance of <see cref="CcfpAdvisorStrategy"/>.
 	/// </summary>
 	public CcfpAdvisorStrategy()
@@ -893,17 +904,6 @@ private struct ActiveTrade
 	public Sides Side { get; set; }
 	public decimal Volume { get; set; }
 	public decimal? StopPrice { get; set; }
-}
-
-/// <summary>
-/// Moving-average calculation modes supported by the strategy.
-/// </summary>
-public enum MovingAverageModes
-{
-	Simple,
-	Exponential,
-	Smoothed,
-	Weighted,
 }
 
 private enum CurrencyIndexes

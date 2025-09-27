@@ -54,6 +54,16 @@ public class TrailingStopFrCnSarStrategy : Strategy
 
 	private string _lastSummary;
 
+	public enum TrailingStopModes
+	{
+		Off = 0,
+		Candle = 1,
+		Fractal = 2,
+		Velocity = 3,
+		Parabolic = 4,
+		FixedPoints = 5,
+	}
+
 	public TrailingStopFrCnSarStrategy()
 	{
 		_mode = Param(nameof(Mode), (int)TrailingStopModes.Candle)
@@ -724,12 +734,3 @@ public class TrailingStopFrCnSarStrategy : Strategy
 	}
 }
 
-public enum TrailingStopModes
-{
-	Off = 0,
-	Candle = 1,
-	Fractal = 2,
-	Velocity = 3,
-	Parabolic = 4,
-	FixedPoints = 5,
-}
