@@ -15,7 +15,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class VolatilityHftEaStrategy : Strategy
 {
-	private const int MinimumBars = 60;
+	private readonly StrategyParam<int> _minimumBars;
 
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<int> _fastMaLength;
@@ -36,6 +36,10 @@ public class VolatilityHftEaStrategy : Strategy
 
 	public VolatilityHftEaStrategy()
 	{
+		_minimumBars = Param(nameof(MinimumBars), 60)
+			.SetGreaterThanZero()
+			.SetDisplay("Minimum Bars", "Minimum completed candles before signal evaluation", "Signal");
+
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Volume applied to market orders", "Trading");
@@ -78,6 +82,12 @@ public class VolatilityHftEaStrategy : Strategy
 	{
 		get => _maDifferencePips.Value;
 		set => _maDifferencePips.Value = value;
+	}
+
+	public int MinimumBars
+	{
+		get => _minimumBars.Value;
+		set => _minimumBars.Value = value;
 	}
 
 	public DataType CandleType

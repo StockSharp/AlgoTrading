@@ -15,12 +15,12 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class FiveMinScalpingStrategy : Strategy
 {
-	private const int ScalperLookback = 20;
-	private const int BreakoutWindow = 5;
-	private const int MomentumHistorySize = 3;
-	private const int FastTrendLength = 8;
-	private const int MiddleTrendLength = 13;
-	private const int SlowTrendLength = 21;
+	private readonly StrategyParam<int> _scalperLookback;
+	private readonly StrategyParam<int> _breakoutWindow;
+	private readonly StrategyParam<int> _momentumHistorySize;
+	private readonly StrategyParam<int> _fastTrendLength;
+	private readonly StrategyParam<int> _middleTrendLength;
+	private readonly StrategyParam<int> _slowTrendLength;
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<DataType> _momentumCandleType;
@@ -52,7 +52,7 @@ public class FiveMinScalpingStrategy : Strategy
 	private readonly List<decimal> _slowTrendHistory = new();
 	private readonly List<decimal> _highHistory = new();
 	private readonly List<decimal> _lowHistory = new();
-	private readonly List<decimal> _momentumDeviationHistory = new(MomentumHistorySize);
+	private readonly List<decimal> _momentumDeviationHistory = new();
 
 	private bool _momentumReady;
 	private bool _hasMacroMacd;
@@ -70,6 +70,30 @@ public class FiveMinScalpingStrategy : Strategy
 	/// </summary>
 	public FiveMinScalpingStrategy()
 	{
+		_scalperLookback = Param(nameof(ScalperLookback), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Scalper Lookback", "Candles considered when searching for breakouts", "Trend");
+
+		_breakoutWindow = Param(nameof(BreakoutWindow), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Breakout Window", "Window used to track recent highs and lows", "Trend");
+
+		_momentumHistorySize = Param(nameof(MomentumHistorySize), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("Momentum History Size", "Number of deviations stored for momentum confirmation", "Filters");
+
+		_fastTrendLength = Param(nameof(FastTrendLength), 8)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast Trend Length", "LWMA length for the fastest trend filter", "Trend");
+
+		_middleTrendLength = Param(nameof(MiddleTrendLength), 13)
+			.SetGreaterThanZero()
+			.SetDisplay("Middle Trend Length", "LWMA length for the mid-term trend filter", "Trend");
+
+		_slowTrendLength = Param(nameof(SlowTrendLength), 21)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Trend Length", "LWMA length for the slow trend filter", "Trend");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Signal Timeframe", "Primary timeframe used for entry signals", "General");
 
@@ -282,6 +306,60 @@ public class FiveMinScalpingStrategy : Strategy
 	{
 		get => _tradeVolume.Value;
 		set => _tradeVolume.Value = value;
+	}
+
+	/// <summary>
+	/// Number of candles considered for breakout detection.
+	/// </summary>
+	public int ScalperLookback
+	{
+		get => _scalperLookback.Value;
+		set => _scalperLookback.Value = value;
+	}
+
+	/// <summary>
+	/// Window length used when computing recent highs and lows.
+	/// </summary>
+	public int BreakoutWindow
+	{
+		get => _breakoutWindow.Value;
+		set => _breakoutWindow.Value = value;
+	}
+
+	/// <summary>
+	/// Stored deviations for momentum confirmation.
+	/// </summary>
+	public int MomentumHistorySize
+	{
+		get => _momentumHistorySize.Value;
+		set => _momentumHistorySize.Value = value;
+	}
+
+	/// <summary>
+	/// Length of the fastest trend LWMA.
+	/// </summary>
+	public int FastTrendLength
+	{
+		get => _fastTrendLength.Value;
+		set => _fastTrendLength.Value = value;
+	}
+
+	/// <summary>
+	/// Length of the middle trend LWMA.
+	/// </summary>
+	public int MiddleTrendLength
+	{
+		get => _middleTrendLength.Value;
+		set => _middleTrendLength.Value = value;
+	}
+
+	/// <summary>
+	/// Length of the slow trend LWMA.
+	/// </summary>
+	public int SlowTrendLength
+	{
+		get => _slowTrendLength.Value;
+		set => _slowTrendLength.Value = value;
 	}
 
 	/// <inheritdoc />

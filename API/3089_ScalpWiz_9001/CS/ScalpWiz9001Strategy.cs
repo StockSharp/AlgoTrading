@@ -14,7 +14,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ScalpWiz9001Strategy : Strategy
 {
-	private const int LevelCount = 4;
+	private readonly StrategyParam<int> _levelCount;
 
 	private enum VolumeMode
 	{
@@ -31,8 +31,8 @@ public class ScalpWiz9001Strategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStepPips;
 	private readonly StrategyParam<int> _expirationMinutes;
 	private readonly StrategyParam<VolumeMode> _volumeMode;
-	private readonly StrategyParam<decimal>[] _levelValues = new StrategyParam<decimal>[LevelCount];
-	private readonly StrategyParam<decimal>[] _levelPips = new StrategyParam<decimal>[LevelCount];
+	private readonly StrategyParam<decimal>[] _levelValues;
+	private readonly StrategyParam<decimal>[] _levelPips;
 
 	private decimal _pipSize;
 	private decimal _tickSize;
@@ -53,6 +53,11 @@ public class ScalpWiz9001Strategy : Strategy
 	/// </summary>
 	public ScalpWiz9001Strategy()
 	{
+		const int levelSlots = 4;
+
+		_levelValues = new StrategyParam<decimal>[levelSlots];
+		_levelPips = new StrategyParam<decimal>[levelSlots];
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for Bollinger calculations", "General");
 
@@ -86,6 +91,10 @@ public class ScalpWiz9001Strategy : Strategy
 
 		_volumeMode = Param(nameof(ManagementMode), VolumeMode.RiskPercent)
 			.SetDisplay("Management Mode", "Interpretation of level values (fixed lot or risk percent)", "Money Management");
+
+		_levelCount = Param(nameof(LevelCount), levelSlots)
+			.SetRange(1, levelSlots)
+			.SetDisplay("Level Count", "Number of active breakout layers", "Money Management");
 
 		_levelValues[0] = Param(nameof(Level0Value), 1m)
 			.SetNotNegative()
@@ -190,6 +199,15 @@ public class ScalpWiz9001Strategy : Strategy
 	{
 		get => _expirationMinutes.Value;
 		set => _expirationMinutes.Value = value;
+	}
+
+	/// <summary>
+	/// Number of breakout layers actively managed by the strategy.
+	/// </summary>
+	public int LevelCount
+	{
+		get => _levelCount.Value;
+		set => _levelCount.Value = value;
 	}
 
 	/// <summary>

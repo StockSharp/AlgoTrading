@@ -15,7 +15,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ColorSchaffJjrsxMmrecDuplexStrategy : Strategy
 {
-	private const decimal _factor = 0.5m;
+	private readonly StrategyParam<decimal> _factor;
 
 	private readonly StrategyParam<DataType> _longCandleType;
 	private readonly StrategyParam<int> _longTotalTrigger;
@@ -65,6 +65,11 @@ public class ColorSchaffJjrsxMmrecDuplexStrategy : Strategy
 	/// </summary>
 	public ColorSchaffJjrsxMmrecDuplexStrategy()
 	{
+		_factor = Param(nameof(Factor), 0.5m)
+			.SetDisplay("Smoothing Factor", "Multiplier used for trend filtering", "General")
+			.SetRange(0.01m, 5m)
+			.SetCanOptimize(true);
+
 		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Long Candle", "Time-frame used for the long indicator", "Long")
 			.SetCanOptimize(false);
@@ -180,6 +185,15 @@ public class ColorSchaffJjrsxMmrecDuplexStrategy : Strategy
 
 		_shortPriceType = Param(nameof(ShortAppliedPrice), AppliedPrice.Close)
 			.SetDisplay("Short Applied Price", "Price source for the short indicator", "Short");
+	}
+
+	/// <summary>
+	/// Multiplier applied to smooth the duplex indicators.
+	/// </summary>
+	public decimal Factor
+	{
+		get => _factor.Value;
+		set => _factor.Value = value;
 	}
 
 	/// <summary>
@@ -459,7 +473,7 @@ public class ColorSchaffJjrsxMmrecDuplexStrategy : Strategy
 			SmoothLength = LongSmooth,
 			CycleLength = LongCycleLength,
 			AppliedPrice = LongAppliedPrice,
-			SmoothingFactor = _factor
+			SmoothingFactor = Factor
 		};
 
 		_shortIndicator = new ColorSchaffJjrsxTrendCycleIndicator
@@ -469,7 +483,7 @@ public class ColorSchaffJjrsxMmrecDuplexStrategy : Strategy
 			SmoothLength = ShortSmooth,
 			CycleLength = ShortCycleLength,
 			AppliedPrice = ShortAppliedPrice,
-			SmoothingFactor = _factor
+			SmoothingFactor = Factor
 		};
 
 		var longSubscription = SubscribeCandles(LongCandleType);

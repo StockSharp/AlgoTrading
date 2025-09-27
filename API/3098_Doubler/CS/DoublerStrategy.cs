@@ -14,7 +14,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class DoublerStrategy : Strategy
 {
-	private const decimal VolumeTolerance = 0.0000001m;
+	private readonly StrategyParam<decimal> _volumeTolerance;
 
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<decimal> _stopLossPips;
@@ -97,10 +97,23 @@ public class DoublerStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Maximum allowed volume mismatch between hedge legs.
+	/// </summary>
+	public decimal VolumeTolerance
+	{
+		get => _volumeTolerance.Value;
+		set => _volumeTolerance.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes strategy parameters.
 	/// </summary>
 	public DoublerStrategy()
 	{
+		_volumeTolerance = Param(nameof(VolumeTolerance), 0.0000001m)
+			.SetNotNegative()
+			.SetDisplay("Volume Tolerance", "Tolerance used when comparing hedge legs", "Trading");
+
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Volume for each hedge leg", "Trading")
