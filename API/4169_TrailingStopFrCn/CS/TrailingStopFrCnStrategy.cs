@@ -23,7 +23,7 @@ public class TrailingStopFrCnStrategy : Strategy
 	private readonly StrategyParam<bool> _onlyWithoutLoss;
 	private readonly StrategyParam<decimal> _trailingStopPips;
 	private readonly StrategyParam<decimal> _minStopDistancePips;
-	private readonly StrategyParam<TrailingSource> _trailingMode;
+	private readonly StrategyParam<TrailingSources> _trailingMode;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly List<CandleSnapshot> _candles = new();
@@ -80,7 +80,7 @@ public class TrailingStopFrCnStrategy : Strategy
 	/// <summary>
 	/// Trailing source when the fixed trailing distance is disabled.
 	/// </summary>
-	public TrailingSource TrailingMode
+	public TrailingSources TrailingMode
 	{
 		get => _trailingMode.Value;
 		set => _trailingMode.Value = value;
@@ -112,7 +112,7 @@ public class TrailingStopFrCnStrategy : Strategy
 		_minStopDistancePips = Param(nameof(MinStopDistancePips), 0m)
 			.SetDisplay("Min Stop Distance (pips)", "Broker enforced minimal stop distance", "Trailing");
 
-		_trailingMode = Param(nameof(TrailingMode), TrailingSource.Candles)
+		_trailingMode = Param(nameof(TrailingMode), TrailingSources.Candles)
 			.SetDisplay("Trailing Mode", "Data source for adaptive trailing", "Trailing");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -294,7 +294,7 @@ public class TrailingStopFrCnStrategy : Strategy
 
 		var minOffset = GetMinStopOffset();
 
-		if (TrailingMode == TrailingSource.Fractals)
+		if (TrailingMode == TrailingSources.Fractals)
 		{
 			for (var i = _fractalLows.Count - 1; i >= 0; i--)
 			{
@@ -333,7 +333,7 @@ public class TrailingStopFrCnStrategy : Strategy
 
 		var minOffset = GetMinStopOffset();
 
-		if (TrailingMode == TrailingSource.Fractals)
+		if (TrailingMode == TrailingSources.Fractals)
 		{
 			for (var i = _fractalHighs.Count - 1; i >= 0; i--)
 			{
@@ -451,7 +451,7 @@ public class TrailingStopFrCnStrategy : Strategy
 			_fractalHighs.RemoveRange(0, _fractalHighs.Count - 100);
 	}
 
-	private enum TrailingSource
+	private enum TrailingSources
 	{
 		Fractals,
 		Candles,

@@ -58,8 +58,8 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 	private bool? _highFirst;
 	private bool _fibLevelsReady;
 
-	private TrendDirection _trend;
-	private StrategySignal _signal;
+	private TrendDirections _trend;
+	private StrategySignals _signal;
 
 	private decimal _pipSize;
 	private decimal _entryPrice;
@@ -69,14 +69,14 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 	private decimal? _pendingStopLossPrice;
 	private Sides? _currentPositionSide;
 
-	private enum TrendDirection
+	private enum TrendDirections
 	{
 		Unknown,
 		Up,
 		Down
 	}
 
-	private enum StrategySignal
+	private enum StrategySignals
 	{
 		None,
 		ReverseBuy,
@@ -321,15 +321,15 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 	{
 		if (bid < emaValue)
 		{
-			_trend = TrendDirection.Down;
+			_trend = TrendDirections.Down;
 		}
 		else if (ask > emaValue)
 		{
-			_trend = TrendDirection.Up;
+			_trend = TrendDirections.Up;
 		}
 		else
 		{
-			_trend = TrendDirection.Unknown;
+			_trend = TrendDirections.Unknown;
 		}
 	}
 
@@ -337,7 +337,7 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 	{
 		if (!_fibLevelsReady || !_highFirst.HasValue || !_fib146.HasValue || !_fib236.HasValue || !_fib764.HasValue || !_fib91.HasValue)
 		{
-			_signal = StrategySignal.None;
+			_signal = StrategySignals.None;
 			return;
 		}
 
@@ -345,46 +345,46 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 		{
 			if (ask < _fib236.Value)
 			{
-				_signal = StrategySignal.ReverseBuy;
+				_signal = StrategySignals.ReverseBuy;
 			}
 			else if (bid > _fib764.Value)
 			{
-				_signal = StrategySignal.ReverseSell;
+				_signal = StrategySignals.ReverseSell;
 			}
 			else if (bid > _fib236.Value && bid < _fib764.Value)
 			{
-				_signal = StrategySignal.TradingArea;
+				_signal = StrategySignals.TradingArea;
 			}
 			else if (bid > _fib91.Value || ask < _fib146.Value)
 			{
-				_signal = StrategySignal.Continuation;
+				_signal = StrategySignals.Continuation;
 			}
 			else
 			{
-				_signal = StrategySignal.None;
+				_signal = StrategySignals.None;
 			}
 		}
 		else
 		{
 			if (bid > _fib236.Value)
 			{
-				_signal = StrategySignal.ReverseSell;
+				_signal = StrategySignals.ReverseSell;
 			}
 			else if (ask < _fib764.Value)
 			{
-				_signal = StrategySignal.ReverseBuy;
+				_signal = StrategySignals.ReverseBuy;
 			}
 			else if (bid < _fib236.Value && bid > _fib764.Value)
 			{
-				_signal = StrategySignal.TradingArea;
+				_signal = StrategySignals.TradingArea;
 			}
 			else if (ask < _fib91.Value || bid > _fib146.Value)
 			{
-				_signal = StrategySignal.Continuation;
+				_signal = StrategySignals.Continuation;
 			}
 			else
 			{
-				_signal = StrategySignal.None;
+				_signal = StrategySignals.None;
 			}
 		}
 	}
@@ -403,34 +403,34 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 
 		switch (_trend)
 		{
-			case TrendDirection.Up:
+			case TrendDirections.Up:
 			{
-				if (_signal == StrategySignal.TradingArea && ask > _resistance.Value)
+				if (_signal == StrategySignals.TradingArea && ask > _resistance.Value)
 				{
 					SendEntryOrder(Sides.Buy, volume, _support);
 				}
-				else if (_signal == StrategySignal.ReverseSell && _highFirst == false && ask < _resistance.Value)
+				else if (_signal == StrategySignals.ReverseSell && _highFirst == false && ask < _resistance.Value)
 				{
 					SendEntryOrder(Sides.Sell, volume, _fib146);
 				}
-				else if (_signal == StrategySignal.ReverseBuy && _highFirst == false && bid < _resistance.Value)
+				else if (_signal == StrategySignals.ReverseBuy && _highFirst == false && bid < _resistance.Value)
 				{
 					SendEntryOrder(Sides.Buy, volume, _fib91);
 				}
 				break;
 			}
 
-			case TrendDirection.Down:
+			case TrendDirections.Down:
 			{
-				if (_signal == StrategySignal.TradingArea && bid < _support.Value)
+				if (_signal == StrategySignals.TradingArea && bid < _support.Value)
 				{
 					SendEntryOrder(Sides.Sell, volume, _resistance);
 				}
-				else if (_signal == StrategySignal.ReverseSell && _highFirst == true && bid < _resistance.Value)
+				else if (_signal == StrategySignals.ReverseSell && _highFirst == true && bid < _resistance.Value)
 				{
 					SendEntryOrder(Sides.Sell, volume, _fib91);
 				}
-				else if (_signal == StrategySignal.ReverseBuy && _highFirst == true && bid < _resistance.Value)
+				else if (_signal == StrategySignals.ReverseBuy && _highFirst == true && bid < _resistance.Value)
 				{
 					SendEntryOrder(Sides.Buy, volume, _fib146);
 				}
@@ -617,8 +617,8 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 		_fib000 = _fib146 = _fib236 = _fib382 = _fib50 = _fib618 = _fib764 = _fib91 = _fib100 = _fib1618 = _fib2618 = _fib4236 = null;
 		_highFirst = null;
 		_fibLevelsReady = false;
-		_trend = TrendDirection.Unknown;
-		_signal = StrategySignal.None;
+		_trend = TrendDirections.Unknown;
+		_signal = StrategySignals.None;
 		_pipSize = 0m;
 		_entryPrice = 0m;
 		_stopLossPrice = null;

@@ -26,9 +26,9 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _extraStopLossPoints;
 	private readonly StrategyParam<int> _firstMaPeriod;
-	private readonly StrategyParam<HaMaMethod> _firstMaMethod;
+	private readonly StrategyParam<HaMaMethods> _firstMaMethod;
 	private readonly StrategyParam<int> _secondMaPeriod;
-	private readonly StrategyParam<HaMaMethod> _secondMaMethod;
+	private readonly StrategyParam<HaMaMethods> _secondMaMethod;
 	private readonly StrategyParam<int> _maxM5TrendLength;
 	private readonly StrategyParam<int> _minM15TrendLength;
 	private readonly StrategyParam<DataType> _m1CandleType;
@@ -38,7 +38,7 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 	private readonly StrategyParam<DataType> _h1CandleType;
 	private readonly StrategyParam<DataType> _h4CandleType;
 
-	private readonly Dictionary<TimeframeKey, TimeframeContext> _timeframes = new();
+	private readonly Dictionary<TimeframeKeys, TimeframeContext> _timeframes = new();
 
 	private decimal _previousPosition;
 	private decimal _lastRealizedPnL;
@@ -96,7 +96,7 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 	/// <summary>
 	/// Moving average type used for the first smoothing pass.
 	/// </summary>
-	public HaMaMethod FirstMaMethod
+	public HaMaMethods FirstMaMethod
 	{
 		get => _firstMaMethod.Value;
 		set => _firstMaMethod.Value = value;
@@ -114,7 +114,7 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 	/// <summary>
 	/// Moving average type used for the second smoothing pass.
 	/// </summary>
-	public HaMaMethod SecondMaMethod
+	public HaMaMethods SecondMaMethod
 	{
 		get => _secondMaMethod.Value;
 		set => _secondMaMethod.Value = value;
@@ -220,7 +220,7 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 		.SetDisplay("First MA Period", "Length of the first smoothing moving average", "Indicators")
 		.SetCanOptimize(true);
 
-		_firstMaMethod = Param(nameof(FirstMaMethod), HaMaMethod.Smoothed)
+		_firstMaMethod = Param(nameof(FirstMaMethod), HaMaMethods.Smoothed)
 		.SetDisplay("First MA Method", "Method of the first smoothing moving average", "Indicators");
 
 		_secondMaPeriod = Param(nameof(SecondMaPeriod), 2)
@@ -228,7 +228,7 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 		.SetDisplay("Second MA Period", "Length of the second smoothing moving average", "Indicators")
 		.SetCanOptimize(true);
 
-		_secondMaMethod = Param(nameof(SecondMaMethod), HaMaMethod.LinearWeighted)
+		_secondMaMethod = Param(nameof(SecondMaMethod), HaMaMethods.LinearWeighted)
 		.SetDisplay("Second MA Method", "Method of the second smoothing moving average", "Indicators");
 
 		_maxM5TrendLength = Param(nameof(MaxM5TrendLength), 10)
@@ -301,27 +301,27 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 
 		var baseSubscription = SubscribeCandles(M1CandleType);
 		baseSubscription
-		.WhenCandlesFinished(candle => ProcessTimeframeCandle(TimeframeKey.Minute1, candle))
+		.WhenCandlesFinished(candle => ProcessTimeframeCandle(TimeframeKeys.Minute1, candle))
 		.Start();
 
 		SubscribeCandles(M5CandleType)
-		.WhenCandlesFinished(candle => ProcessTimeframeCandle(TimeframeKey.Minute5, candle))
+		.WhenCandlesFinished(candle => ProcessTimeframeCandle(TimeframeKeys.Minute5, candle))
 		.Start();
 
 		SubscribeCandles(M15CandleType)
-		.WhenCandlesFinished(candle => ProcessTimeframeCandle(TimeframeKey.Minute15, candle))
+		.WhenCandlesFinished(candle => ProcessTimeframeCandle(TimeframeKeys.Minute15, candle))
 		.Start();
 
 		SubscribeCandles(M30CandleType)
-		.WhenCandlesFinished(candle => ProcessTimeframeCandle(TimeframeKey.Minute30, candle))
+		.WhenCandlesFinished(candle => ProcessTimeframeCandle(TimeframeKeys.Minute30, candle))
 		.Start();
 
 		SubscribeCandles(H1CandleType)
-		.WhenCandlesFinished(candle => ProcessTimeframeCandle(TimeframeKey.Hour1, candle))
+		.WhenCandlesFinished(candle => ProcessTimeframeCandle(TimeframeKeys.Hour1, candle))
 		.Start();
 
 		SubscribeCandles(H4CandleType)
-		.WhenCandlesFinished(candle => ProcessTimeframeCandle(TimeframeKey.Hour4, candle))
+		.WhenCandlesFinished(candle => ProcessTimeframeCandle(TimeframeKeys.Hour4, candle))
 		.Start();
 
 		var area = CreateChartArea();
@@ -334,12 +334,12 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 
 	private void InitializeTimeframes()
 	{
-		_timeframes[TimeframeKey.Minute1] = CreateContext("M1");
-		_timeframes[TimeframeKey.Minute5] = CreateContext("M5");
-		_timeframes[TimeframeKey.Minute15] = CreateContext("M15");
-		_timeframes[TimeframeKey.Minute30] = CreateContext("M30");
-		_timeframes[TimeframeKey.Hour1] = CreateContext("H1");
-		_timeframes[TimeframeKey.Hour4] = CreateContext("H4");
+		_timeframes[TimeframeKeys.Minute1] = CreateContext("M1");
+		_timeframes[TimeframeKeys.Minute5] = CreateContext("M5");
+		_timeframes[TimeframeKeys.Minute15] = CreateContext("M15");
+		_timeframes[TimeframeKeys.Minute30] = CreateContext("M30");
+		_timeframes[TimeframeKeys.Hour1] = CreateContext("H1");
+		_timeframes[TimeframeKeys.Hour4] = CreateContext("H4");
 	}
 
 	private TimeframeContext CreateContext(string name)
@@ -359,19 +359,19 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 		};
 	}
 
-	private static IIndicator CreateMovingAverage(HaMaMethod method, int length)
+	private static IIndicator CreateMovingAverage(HaMaMethods method, int length)
 	{
 		return method switch
 		{
-			HaMaMethod.Simple => new SimpleMovingAverage { Length = length },
-			HaMaMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			HaMaMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			HaMaMethod.LinearWeighted => new WeightedMovingAverage { Length = length },
+			HaMaMethods.Simple => new SimpleMovingAverage { Length = length },
+			HaMaMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			HaMaMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			HaMaMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
 
-	private void ProcessTimeframeCandle(TimeframeKey key, ICandleMessage candle)
+	private void ProcessTimeframeCandle(TimeframeKeys key, ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
@@ -381,7 +381,7 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 
 		UpdateHeikenAshi(context.State, candle);
 
-		if (key == TimeframeKey.Minute1)
+		if (key == TimeframeKeys.Minute1)
 		{
 			HandleBaseCandle(candle);
 		}
@@ -539,11 +539,11 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 
 	private bool AreHigherTimeframesReady()
 	{
-		return _timeframes.TryGetValue(TimeframeKey.Minute5, out var m5)
-		&& _timeframes.TryGetValue(TimeframeKey.Minute15, out var m15)
-		&& _timeframes.TryGetValue(TimeframeKey.Minute30, out var m30)
-		&& _timeframes.TryGetValue(TimeframeKey.Hour1, out var h1)
-		&& _timeframes.TryGetValue(TimeframeKey.Hour4, out var h4)
+		return _timeframes.TryGetValue(TimeframeKeys.Minute5, out var m5)
+		&& _timeframes.TryGetValue(TimeframeKeys.Minute15, out var m15)
+		&& _timeframes.TryGetValue(TimeframeKeys.Minute30, out var m30)
+		&& _timeframes.TryGetValue(TimeframeKeys.Hour1, out var h1)
+		&& _timeframes.TryGetValue(TimeframeKeys.Hour4, out var h4)
 		&& m5.State.IsBullish.HasValue
 		&& m15.State.IsBullish.HasValue
 		&& m30.State.IsBullish.HasValue
@@ -553,11 +553,11 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 
 	private void TryEnterPosition(ICandleMessage candle)
 	{
-		var m5 = _timeframes[TimeframeKey.Minute5].State;
-		var m15 = _timeframes[TimeframeKey.Minute15].State;
-		var m30 = _timeframes[TimeframeKey.Minute30].State;
-		var h1 = _timeframes[TimeframeKey.Hour1].State;
-		var h4 = _timeframes[TimeframeKey.Hour4].State;
+		var m5 = _timeframes[TimeframeKeys.Minute5].State;
+		var m15 = _timeframes[TimeframeKeys.Minute15].State;
+		var m30 = _timeframes[TimeframeKeys.Minute30].State;
+		var h1 = _timeframes[TimeframeKeys.Hour1].State;
+		var h4 = _timeframes[TimeframeKeys.Hour4].State;
 
 		var buySignal = m5.IsBullish == true
 		&& m5.UpCount < MaxM5TrendLength
@@ -638,7 +638,7 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 		_previousPosition = current;
 	}
 
-	private enum TimeframeKey
+	private enum TimeframeKeys
 	{
 		Minute1,
 		Minute5,
@@ -676,7 +676,7 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 /// <summary>
 /// Moving average methods supported by the smoothed Heiken Ashi calculation.
 /// </summary>
-public enum HaMaMethod
+public enum HaMaMethods
 {
 	/// <summary>
 	/// Simple moving average.

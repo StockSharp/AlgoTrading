@@ -49,11 +49,11 @@ public class RubberbandsSafetyNetStrategy : Strategy
 	private int _safetyOrdersCount;
 	private bool _initialStateApplied;
 	private bool _closeRequested;
-	private CloseReason _pendingCloseReason;
+	private CloseReasons _pendingCloseReasons;
 	private Sides _nextDirection;
 	private Sides _lastDirection;
 
-	private enum CloseReason
+	private enum CloseReasons
 	{
 		None,
 		Target,
@@ -380,7 +380,7 @@ public class RubberbandsSafetyNetStrategy : Strategy
 		_safetyOrdersCount = 0;
 		_initialStateApplied = false;
 		_closeRequested = false;
-		_pendingCloseReason = CloseReason.None;
+		_pendingCloseReasons = CloseReasons.None;
 		_nextDirection = Sides.Buy;
 		_lastDirection = Sides.Buy;
 	}
@@ -434,7 +434,7 @@ public class RubberbandsSafetyNetStrategy : Strategy
 			else
 			{
 				// Defer liquidation to the standard closing pipeline.
-				RequestClose(CloseReason.Manual);
+				RequestClose(CloseReasons.Manual);
 			}
 		}
 
@@ -482,7 +482,7 @@ public class RubberbandsSafetyNetStrategy : Strategy
 		if (UseSessionTakeProfit && totalProfit >= SessionTakeProfitPerLot * BaseVolume)
 		{
 			// Session profit reached, liquidate and reset profit counters.
-			RequestClose(CloseReason.Session);
+			RequestClose(CloseReasons.Session);
 			if (HandleCloseRequest())
 			return;
 		}
@@ -490,7 +490,7 @@ public class RubberbandsSafetyNetStrategy : Strategy
 		if (UseSessionStopLoss && !_safetyMode && totalProfit <= -SessionStopLossPerLot * BaseVolume)
 		{
 			// Session loss reached outside of safety mode.
-			RequestClose(CloseReason.Session);
+			RequestClose(CloseReasons.Session);
 			if (HandleCloseRequest())
 			return;
 		}
@@ -499,7 +499,7 @@ public class RubberbandsSafetyNetStrategy : Strategy
 		if (!_safetyMode && unrealized >= baseTarget)
 		{
 			// Base cycle finished with profit.
-			RequestClose(CloseReason.Target);
+			RequestClose(CloseReasons.Target);
 			if (HandleCloseRequest())
 			return;
 		}
@@ -526,7 +526,7 @@ public class RubberbandsSafetyNetStrategy : Strategy
 		if (SafetyProfitPerLot > 0m && unrealized >= safetyProfitTarget)
 		{
 			// Profit target while in safety mode reached.
-			RequestClose(CloseReason.Safety);
+			RequestClose(CloseReasons.Safety);
 			if (HandleCloseRequest())
 			return;
 		}
@@ -542,7 +542,7 @@ public class RubberbandsSafetyNetStrategy : Strategy
 		if (SafetyModeTakeProfitPerLot > 0m && totalProfit >= SafetyModeTakeProfitPerLot * BaseVolume)
 		{
 			// Session level profit achieved during safety mode.
-			RequestClose(CloseReason.Safety);
+			RequestClose(CloseReasons.Safety);
 			HandleCloseRequest();
 		}
 	}
@@ -558,13 +558,13 @@ public class RubberbandsSafetyNetStrategy : Strategy
 		_lastDirection = InitialSafetyToBuy ? Sides.Sell : Sides.Buy;
 	}
 
-	private void RequestClose(CloseReason reason)
+	private void RequestClose(CloseReasons reason)
 	{
 		if (_closeRequested)
 		return;
 
 		_closeRequested = true;
-		_pendingCloseReason = reason;
+		_pendingCloseReasons = reason;
 		_lastDirection = Position > 0m ? Sides.Buy : Sides.Sell;
 	}
 
@@ -599,13 +599,13 @@ public class RubberbandsSafetyNetStrategy : Strategy
 
 	private void OnAfterClose()
 	{
-		if (_pendingCloseReason == CloseReason.Manual || _pendingCloseReason == CloseReason.Session)
+		if (_pendingCloseReasons == CloseReasons.Manual || _pendingCloseReasons == CloseReasons.Session)
 		_realizedProfit = 0m;
 
 		_safetyMode = false;
 		_safetyOrdersCount = 0;
 		_closeRequested = false;
-		_pendingCloseReason = CloseReason.None;
+		_pendingCloseReasons = CloseReasons.None;
 		CloseNow = false;
 		DoNow = false;
 

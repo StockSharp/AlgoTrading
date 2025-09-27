@@ -21,22 +21,22 @@ namespace StockSharp.Samples.Strategies;
 public class ComboEa4FsfrUpdated5Strategy : Strategy
 {
 	private readonly StrategyParam<bool> _useMa;
-	private readonly StrategyParam<MaSignalMode> _maMode;
+	private readonly StrategyParam<MaSignalModes> _maMode;
 	private readonly StrategyParam<int> _ma1Period;
 	private readonly StrategyParam<int> _ma2Period;
 	private readonly StrategyParam<int> _ma3Period;
 	private readonly StrategyParam<int> _ma1BufferPeriod;
 	private readonly StrategyParam<int> _ma2BufferPeriod;
-	private readonly StrategyParam<MovingAverageMethod> _ma1Method;
-	private readonly StrategyParam<MovingAverageMethod> _ma2Method;
-	private readonly StrategyParam<MovingAverageMethod> _ma3Method;
-	private readonly StrategyParam<AppliedPrice> _ma1Price;
-	private readonly StrategyParam<AppliedPrice> _ma2Price;
-	private readonly StrategyParam<AppliedPrice> _ma3Price;
+	private readonly StrategyParam<MovingAverageMethods> _ma1Method;
+	private readonly StrategyParam<MovingAverageMethods> _ma2Method;
+	private readonly StrategyParam<MovingAverageMethods> _ma3Method;
+	private readonly StrategyParam<AppliedPrices> _ma1Price;
+	private readonly StrategyParam<AppliedPrices> _ma2Price;
+	private readonly StrategyParam<AppliedPrices> _ma3Price;
 
 	private readonly StrategyParam<bool> _useRsi;
 	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<RsiSignalMode> _rsiMode;
+	private readonly StrategyParam<RsiSignalModes> _rsiMode;
 	private readonly StrategyParam<decimal> _rsiBuyLevel;
 	private readonly StrategyParam<decimal> _rsiSellLevel;
 	private readonly StrategyParam<decimal> _rsiBuyZone;
@@ -58,8 +58,8 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	private readonly StrategyParam<int> _macdFast;
 	private readonly StrategyParam<int> _macdSlow;
 	private readonly StrategyParam<int> _macdSignal;
-	private readonly StrategyParam<AppliedPrice> _macdPrice;
-	private readonly StrategyParam<MacdSignalMode> _macdMode;
+	private readonly StrategyParam<AppliedPrices> _macdPrice;
+	private readonly StrategyParam<MacdSignalModes> _macdMode;
 
 	private readonly StrategyParam<bool> _useTrailingStop;
 	private readonly StrategyParam<decimal> _trailingStop;
@@ -74,11 +74,11 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	private readonly StrategyParam<bool> _autoClose;
 	private readonly StrategyParam<bool> _openOppositeAfterClose;
 	private readonly StrategyParam<bool> _useMaClosing;
-	private readonly StrategyParam<MaSignalMode> _maModeClosing;
+	private readonly StrategyParam<MaSignalModes> _maModeClosing;
 	private readonly StrategyParam<bool> _useMacdClosing;
-	private readonly StrategyParam<MacdSignalMode> _macdModeClosing;
+	private readonly StrategyParam<MacdSignalModes> _macdModeClosing;
 	private readonly StrategyParam<bool> _useRsiClosing;
-	private readonly StrategyParam<RsiSignalMode> _rsiModeClosing;
+	private readonly StrategyParam<RsiSignalModes> _rsiModeClosing;
 	private readonly StrategyParam<bool> _useStochasticClosing;
 	private readonly StrategyParam<bool> _useSarClosing;
 
@@ -125,7 +125,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	private decimal? _shortTakePrice;
 	private decimal? _pendingLongAtr;
 	private decimal? _pendingShortAtr;
-	private SignalDirection? _pendingOppositeEntry;
+	private SignalDirections? _pendingOppositeEntry;
 	private bool _longExitRequested;
 	private bool _shortExitRequested;
 
@@ -141,7 +141,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	/// <summary>
 	/// Moving average confirmation mode.
 	/// </summary>
-	public MaSignalMode MaMode
+	public MaSignalModes MaMode
 	{
 		get => _maMode.Value;
 		set => _maMode.Value = value;
@@ -195,7 +195,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	/// <summary>
 	/// Method used for the fast moving average.
 	/// </summary>
-	public MovingAverageMethod Ma1Method
+	public MovingAverageMethods Ma1Method
 	{
 		get => _ma1Method.Value;
 		set => _ma1Method.Value = value;
@@ -204,7 +204,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	/// <summary>
 	/// Method used for the medium moving average.
 	/// </summary>
-	public MovingAverageMethod Ma2Method
+	public MovingAverageMethods Ma2Method
 	{
 		get => _ma2Method.Value;
 		set => _ma2Method.Value = value;
@@ -213,7 +213,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	/// <summary>
 	/// Method used for the slow moving average.
 	/// </summary>
-	public MovingAverageMethod Ma3Method
+	public MovingAverageMethods Ma3Method
 	{
 		get => _ma3Method.Value;
 		set => _ma3Method.Value = value;
@@ -222,7 +222,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	/// <summary>
 	/// Applied price for the fast moving average.
 	/// </summary>
-	public AppliedPrice Ma1Price
+	public AppliedPrices Ma1Price
 	{
 		get => _ma1Price.Value;
 		set => _ma1Price.Value = value;
@@ -231,7 +231,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	/// <summary>
 	/// Applied price for the medium moving average.
 	/// </summary>
-	public AppliedPrice Ma2Price
+	public AppliedPrices Ma2Price
 	{
 		get => _ma2Price.Value;
 		set => _ma2Price.Value = value;
@@ -240,7 +240,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	/// <summary>
 	/// Applied price for the slow moving average.
 	/// </summary>
-	public AppliedPrice Ma3Price
+	public AppliedPrices Ma3Price
 	{
 		get => _ma3Price.Value;
 		set => _ma3Price.Value = value;
@@ -267,7 +267,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	/// <summary>
 	/// RSI confirmation mode.
 	/// </summary>
-	public RsiSignalMode RsiMode
+	public RsiSignalModes RsiMode
 	{
 		get => _rsiMode.Value;
 		set => _rsiMode.Value = value;
@@ -438,7 +438,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	/// <summary>
 	/// Applied price used for the zero-lag MACD.
 	/// </summary>
-	public AppliedPrice MacdPrice
+	public AppliedPrices MacdPrice
 	{
 		get => _macdPrice.Value;
 		set => _macdPrice.Value = value;
@@ -447,7 +447,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	/// <summary>
 	/// MACD confirmation mode.
 	/// </summary>
-	public MacdSignalMode MacdMode
+	public MacdSignalModes MacdMode
 	{
 		get => _macdMode.Value;
 		set => _macdMode.Value = value;
@@ -546,7 +546,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	/// <summary>
 	/// Moving average confirmation mode for exits.
 	/// </summary>
-	public MaSignalMode MaModeClosing
+	public MaSignalModes MaModeClosing
 	{
 		get => _maModeClosing.Value;
 		set => _maModeClosing.Value = value;
@@ -564,7 +564,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	/// <summary>
 	/// MACD confirmation mode for exits.
 	/// </summary>
-	public MacdSignalMode MacdModeClosing
+	public MacdSignalModes MacdModeClosing
 	{
 		get => _macdModeClosing.Value;
 		set => _macdModeClosing.Value = value;
@@ -582,7 +582,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	/// <summary>
 	/// RSI confirmation mode for exits.
 	/// </summary>
-	public RsiSignalMode RsiModeClosing
+	public RsiSignalModes RsiModeClosing
 	{
 		get => _rsiModeClosing.Value;
 		set => _rsiModeClosing.Value = value;
@@ -621,22 +621,22 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	public ComboEa4FsfrUpdated5Strategy()
 	{
 		_useMa = Param(nameof(UseMa), true).SetDisplay("Use MA", "Enable moving averages", "Entries");
-		_maMode = Param(nameof(MaMode), MaSignalMode.AllCombined).SetDisplay("MA Mode", "Moving average mode", "Entries");
+		_maMode = Param(nameof(MaMode), MaSignalModes.AllCombined).SetDisplay("MA Mode", "Moving average mode", "Entries");
 		_ma1Period = Param(nameof(Ma1Period), 5).SetDisplay("MA1 Period", "Fast MA length", "Indicators").SetCanOptimize(true);
 		_ma2Period = Param(nameof(Ma2Period), 13).SetDisplay("MA2 Period", "Medium MA length", "Indicators").SetCanOptimize(true);
 		_ma3Period = Param(nameof(Ma3Period), 62).SetDisplay("MA3 Period", "Slow MA length", "Indicators").SetCanOptimize(true);
 		_ma1BufferPeriod = Param(nameof(Ma1BufferPeriod), 14).SetDisplay("MA1 Buffer", "ATR buffer for MA1", "Indicators").SetCanOptimize(true);
 		_ma2BufferPeriod = Param(nameof(Ma2BufferPeriod), 14).SetDisplay("MA2 Buffer", "ATR buffer for MA2", "Indicators").SetCanOptimize(true);
-		_ma1Method = Param(nameof(Ma1Method), MovingAverageMethod.Exponential).SetDisplay("MA1 Method", "Fast MA method", "Indicators");
-		_ma2Method = Param(nameof(Ma2Method), MovingAverageMethod.Exponential).SetDisplay("MA2 Method", "Medium MA method", "Indicators");
-		_ma3Method = Param(nameof(Ma3Method), MovingAverageMethod.Exponential).SetDisplay("MA3 Method", "Slow MA method", "Indicators");
-		_ma1Price = Param(nameof(Ma1Price), AppliedPrice.Close).SetDisplay("MA1 Price", "Fast MA price", "Indicators");
-		_ma2Price = Param(nameof(Ma2Price), AppliedPrice.Close).SetDisplay("MA2 Price", "Medium MA price", "Indicators");
-		_ma3Price = Param(nameof(Ma3Price), AppliedPrice.Close).SetDisplay("MA3 Price", "Slow MA price", "Indicators");
+		_ma1Method = Param(nameof(Ma1Method), MovingAverageMethods.Exponential).SetDisplay("MA1 Method", "Fast MA method", "Indicators");
+		_ma2Method = Param(nameof(Ma2Method), MovingAverageMethods.Exponential).SetDisplay("MA2 Method", "Medium MA method", "Indicators");
+		_ma3Method = Param(nameof(Ma3Method), MovingAverageMethods.Exponential).SetDisplay("MA3 Method", "Slow MA method", "Indicators");
+		_ma1Price = Param(nameof(Ma1Price), AppliedPrices.Close).SetDisplay("MA1 Price", "Fast MA price", "Indicators");
+		_ma2Price = Param(nameof(Ma2Price), AppliedPrices.Close).SetDisplay("MA2 Price", "Medium MA price", "Indicators");
+		_ma3Price = Param(nameof(Ma3Price), AppliedPrices.Close).SetDisplay("MA3 Price", "Slow MA price", "Indicators");
 
 		_useRsi = Param(nameof(UseRsi), true).SetDisplay("Use RSI", "Enable RSI", "Entries");
 		_rsiPeriod = Param(nameof(RsiPeriod), 21).SetDisplay("RSI Period", "RSI length", "Indicators").SetCanOptimize(true);
-		_rsiMode = Param(nameof(RsiMode), RsiSignalMode.OverboughtOversold).SetDisplay("RSI Mode", "RSI logic", "Entries");
+		_rsiMode = Param(nameof(RsiMode), RsiSignalModes.OverboughtOversold).SetDisplay("RSI Mode", "RSI logic", "Entries");
 		_rsiBuyLevel = Param(nameof(RsiBuyLevel), 12m).SetDisplay("RSI Buy", "Oversold threshold", "Entries").SetCanOptimize(true);
 		_rsiSellLevel = Param(nameof(RsiSellLevel), 88m).SetDisplay("RSI Sell", "Overbought threshold", "Entries").SetCanOptimize(true);
 		_rsiBuyZone = Param(nameof(RsiBuyZone), 55m).SetDisplay("RSI Buy Zone", "Upper zone", "Entries");
@@ -658,8 +658,8 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 		_macdFast = Param(nameof(MacdFast), 12).SetDisplay("MACD Fast", "Fast period", "Indicators").SetCanOptimize(true);
 		_macdSlow = Param(nameof(MacdSlow), 24).SetDisplay("MACD Slow", "Slow period", "Indicators").SetCanOptimize(true);
 		_macdSignal = Param(nameof(MacdSignal), 9).SetDisplay("MACD Signal", "Signal period", "Indicators").SetCanOptimize(true);
-		_macdPrice = Param(nameof(MacdPrice), AppliedPrice.Close).SetDisplay("MACD Price", "Applied price", "Indicators");
-		_macdMode = Param(nameof(MacdMode), MacdSignalMode.ZeroCross).SetDisplay("MACD Mode", "MACD logic", "Entries");
+		_macdPrice = Param(nameof(MacdPrice), AppliedPrices.Close).SetDisplay("MACD Price", "Applied price", "Indicators");
+		_macdMode = Param(nameof(MacdMode), MacdSignalModes.ZeroCross).SetDisplay("MACD Mode", "MACD logic", "Entries");
 
 		_useTrailingStop = Param(nameof(UseTrailingStop), false).SetDisplay("Use Trailing", "Enable trailing stop", "Risk");
 		_trailingStop = Param(nameof(TrailingStop), 198m).SetDisplay("Trailing", "Trailing distance", "Risk");
@@ -674,11 +674,11 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 		_autoClose = Param(nameof(AutoClose), true).SetDisplay("Auto Close", "Enable exit confirmations", "Exits");
 		_openOppositeAfterClose = Param(nameof(OpenOppositeAfterClose), false).SetDisplay("Flip Position", "Open opposite after exit", "Exits");
 		_useMaClosing = Param(nameof(UseMaClosing), false).SetDisplay("Close MA", "Use MA for exits", "Exits");
-		_maModeClosing = Param(nameof(MaModeClosing), MaSignalMode.MediumSlow).SetDisplay("MA Exit Mode", "MA logic for exits", "Exits");
+		_maModeClosing = Param(nameof(MaModeClosing), MaSignalModes.MediumSlow).SetDisplay("MA Exit Mode", "MA logic for exits", "Exits");
 		_useMacdClosing = Param(nameof(UseMacdClosing), true).SetDisplay("Close MACD", "Use MACD for exits", "Exits");
-		_macdModeClosing = Param(nameof(MacdModeClosing), MacdSignalMode.Combined).SetDisplay("MACD Exit Mode", "MACD logic for exits", "Exits");
+		_macdModeClosing = Param(nameof(MacdModeClosing), MacdSignalModes.Combined).SetDisplay("MACD Exit Mode", "MACD logic for exits", "Exits");
 		_useRsiClosing = Param(nameof(UseRsiClosing), false).SetDisplay("Close RSI", "Use RSI for exits", "Exits");
-		_rsiModeClosing = Param(nameof(RsiModeClosing), RsiSignalMode.Trend).SetDisplay("RSI Exit Mode", "RSI logic for exits", "Exits");
+		_rsiModeClosing = Param(nameof(RsiModeClosing), RsiSignalModes.Trend).SetDisplay("RSI Exit Mode", "RSI logic for exits", "Exits");
 		_useStochasticClosing = Param(nameof(UseStochasticClosing), true).SetDisplay("Close Stoch", "Use stochastic for exits", "Exits");
 		_useSarClosing = Param(nameof(UseSarClosing), true).SetDisplay("Close SAR", "Use SAR for exits", "Exits");
 
@@ -746,11 +746,11 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 
 				switch (direction)
 				{
-					case SignalDirection.Buy:
+					case SignalDirections.Buy:
 					_pendingLongAtr = atr;
 					BuyMarket(GetTradeVolume());
 					break;
-					case SignalDirection.Sell:
+					case SignalDirections.Sell:
 					_pendingShortAtr = atr;
 					SellMarket(GetTradeVolume());
 					break;
@@ -804,11 +804,11 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 			var entrySignal = CalculateEntrySignal();
 			switch (entrySignal)
 			{
-				case SignalDirection.Buy:
+				case SignalDirections.Buy:
 				_pendingLongAtr = _atrValue;
 				BuyMarket(GetTradeVolume());
 				break;
-				case SignalDirection.Sell:
+				case SignalDirections.Sell:
 				_pendingShortAtr = _atrValue;
 				SellMarket(GetTradeVolume());
 				break;
@@ -952,27 +952,27 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 		}
 	}
 
-	private void HandleSignalBasedExit(SignalDirection exitSignal)
+	private void HandleSignalBasedExit(SignalDirections exitSignal)
 	{
 		if (!AutoClose)
 		return;
 
 		switch (exitSignal)
 		{
-			case SignalDirection.Sell when Position > 0 && !_longExitRequested:
+			case SignalDirections.Sell when Position > 0 && !_longExitRequested:
 			SellMarket(Position);
 			_longExitRequested = true;
-			_pendingOppositeEntry = OpenOppositeAfterClose ? SignalDirection.Sell : null;
+			_pendingOppositeEntry = OpenOppositeAfterClose ? SignalDirections.Sell : null;
 			break;
-			case SignalDirection.Buy when Position < 0 && !_shortExitRequested:
+			case SignalDirections.Buy when Position < 0 && !_shortExitRequested:
 			BuyMarket(Math.Abs(Position));
 			_shortExitRequested = true;
-			_pendingOppositeEntry = OpenOppositeAfterClose ? SignalDirection.Buy : null;
+			_pendingOppositeEntry = OpenOppositeAfterClose ? SignalDirections.Buy : null;
 			break;
 		}
 	}
 
-	private SignalDirection CalculateEntrySignal()
+	private SignalDirections CalculateEntrySignal()
 	{
 		var selected = 0;
 		var up = 0;
@@ -1011,7 +1011,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 		return ResolveSignal(selected, up, down);
 	}
 
-	private SignalDirection CalculateCloseSignal()
+	private SignalDirections CalculateCloseSignal()
 	{
 		var selected = 0;
 		var up = 0;
@@ -1050,39 +1050,39 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 		return ResolveSignal(selected, up, down);
 	}
 
-	private void UpdateCounters(SignalDirection direction, ref int up, ref int down)
+	private void UpdateCounters(SignalDirections direction, ref int up, ref int down)
 	{
 		switch (direction)
 		{
-			case SignalDirection.Buy:
+			case SignalDirections.Buy:
 			up++;
 			break;
-			case SignalDirection.Sell:
+			case SignalDirections.Sell:
 			down++;
 			break;
 		}
 	}
 
-	private static SignalDirection ResolveSignal(int selected, int up, int down)
+	private static SignalDirections ResolveSignal(int selected, int up, int down)
 	{
 		if (selected == 0)
-		return SignalDirection.None;
+		return SignalDirections.None;
 
 		if (up == selected)
-		return SignalDirection.Buy;
+		return SignalDirections.Buy;
 
 		if (down == selected)
-		return SignalDirection.Sell;
+		return SignalDirections.Sell;
 
-		return SignalDirection.None;
+		return SignalDirections.None;
 	}
 
-	private SignalDirection EvaluateMa(MaSignalMode mode)
+	private SignalDirections EvaluateMa(MaSignalModes mode)
 	{
 		if (_ma1Current is not decimal ma1 || _ma1Previous is not decimal ma1Prev ||
 		_ma2Current is not decimal ma2 || _ma2Previous is not decimal ma2Prev ||
 		_ma3Current is not decimal ma3 || _ma3Previous is not decimal ma3Prev)
-		return SignalDirection.None;
+		return SignalDirections.None;
 
 		var buffer1 = _ma1BufferValue ?? 0m;
 		var buffer2 = _ma2BufferValue ?? 0m;
@@ -1093,151 +1093,151 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 
 		return mode switch
 		{
-			MaSignalMode.FastMedium => ma12,
-			MaSignalMode.MediumSlow => ma23,
-			MaSignalMode.FastMediumCombined => CombineSignals(ma12, ma23),
-			MaSignalMode.FastSlow => ma13,
-			MaSignalMode.AllCombined => CombineSignals(CombineSignals(ma12, ma23), ma13),
-			_ => SignalDirection.None
+			MaSignalModes.FastMedium => ma12,
+			MaSignalModes.MediumSlow => ma23,
+			MaSignalModes.FastMediumCombined => CombineSignals(ma12, ma23),
+			MaSignalModes.FastSlow => ma13,
+			MaSignalModes.AllCombined => CombineSignals(CombineSignals(ma12, ma23), ma13),
+			_ => SignalDirections.None
 		};
 	}
 
-	private static SignalDirection EvaluateMaCross(decimal fast, decimal fastPrev, decimal slow, decimal slowPrev, decimal buffer)
+	private static SignalDirections EvaluateMaCross(decimal fast, decimal fastPrev, decimal slow, decimal slowPrev, decimal buffer)
 	{
 		if (fast >= slow + buffer && fastPrev < slowPrev + buffer)
-		return SignalDirection.Buy;
+		return SignalDirections.Buy;
 
 		if (fast <= slow - buffer && fastPrev > slowPrev - buffer)
-		return SignalDirection.Sell;
+		return SignalDirections.Sell;
 
-		return SignalDirection.None;
+		return SignalDirections.None;
 	}
 
-	private static SignalDirection CombineSignals(SignalDirection first, SignalDirection second)
+	private static SignalDirections CombineSignals(SignalDirections first, SignalDirections second)
 	{
-		if (first == SignalDirection.None || second == SignalDirection.None)
-		return SignalDirection.None;
+		if (first == SignalDirections.None || second == SignalDirections.None)
+		return SignalDirections.None;
 
-		return first == second ? first : SignalDirection.None;
+		return first == second ? first : SignalDirections.None;
 	}
 
-	private SignalDirection EvaluateRsi(RsiSignalMode mode)
+	private SignalDirections EvaluateRsi(RsiSignalModes mode)
 	{
 		if (_rsiCurrent is not decimal current || _rsiPrevious is not decimal previous)
-		return SignalDirection.None;
+		return SignalDirections.None;
 
 		return mode switch
 		{
-			RsiSignalMode.OverboughtOversold => current < RsiBuyLevel ? SignalDirection.Buy : current > RsiSellLevel ? SignalDirection.Sell : SignalDirection.None,
-			RsiSignalMode.Trend => EvaluateRsiTrend(current, previous),
-			RsiSignalMode.Combined => CombineSignals(EvaluateRsiTrend(current, previous), current < RsiBuyLevel ? SignalDirection.Buy : current > RsiSellLevel ? SignalDirection.Sell : SignalDirection.None),
-			RsiSignalMode.Zone => EvaluateRsiZone(current, previous),
-			_ => SignalDirection.None
+			RsiSignalModes.OverboughtOversold => current < RsiBuyLevel ? SignalDirections.Buy : current > RsiSellLevel ? SignalDirections.Sell : SignalDirections.None,
+			RsiSignalModes.Trend => EvaluateRsiTrend(current, previous),
+			RsiSignalModes.Combined => CombineSignals(EvaluateRsiTrend(current, previous), current < RsiBuyLevel ? SignalDirections.Buy : current > RsiSellLevel ? SignalDirections.Sell : SignalDirections.None),
+			RsiSignalModes.Zone => EvaluateRsiZone(current, previous),
+			_ => SignalDirections.None
 		};
 	}
 
-	private SignalDirection EvaluateRsiTrend(decimal current, decimal previous)
+	private SignalDirections EvaluateRsiTrend(decimal current, decimal previous)
 	{
 		if (_prevOpen is not decimal openPrev || _prevClose is not decimal closePrev)
-		return SignalDirection.None;
+		return SignalDirections.None;
 
 		if (current > previous && Security?.LastTrade?.Price is decimal lastPrice && lastPrice > closePrev)
-		return SignalDirection.Buy;
+		return SignalDirections.Buy;
 
 		if (current < previous && Security?.LastTrade?.Price is decimal last && last < closePrev)
-		return SignalDirection.Sell;
+		return SignalDirections.Sell;
 
 		if (current > previous && openPrev < closePrev)
-		return SignalDirection.Buy;
+		return SignalDirections.Buy;
 
 		if (current < previous && openPrev > closePrev)
-		return SignalDirection.Sell;
+		return SignalDirections.Sell;
 
-		return SignalDirection.None;
+		return SignalDirections.None;
 	}
 
-	private SignalDirection EvaluateRsiZone(decimal current, decimal previous)
+	private SignalDirections EvaluateRsiZone(decimal current, decimal previous)
 	{
 		if (current > previous && (current > 50m || previous > RsiSellZone))
-		return SignalDirection.Buy;
+		return SignalDirections.Buy;
 
 		if (current < previous && (current < 50m || previous < RsiBuyZone))
-		return SignalDirection.Sell;
+		return SignalDirections.Sell;
 
-		return SignalDirection.None;
+		return SignalDirections.None;
 	}
 
-	private SignalDirection EvaluateStochastic()
+	private SignalDirections EvaluateStochastic()
 	{
 		if (_stochasticValue is not decimal value || _stochasticSignal is not decimal signal)
-		return SignalDirection.None;
+		return SignalDirections.None;
 
 		if (UseStochasticHighLow)
 		{
 			if (value > signal && value > StochasticHigh)
-			return SignalDirection.Buy;
+			return SignalDirections.Buy;
 
 			if (value < signal && value < StochasticLow)
-			return SignalDirection.Sell;
+			return SignalDirections.Sell;
 
-			return SignalDirection.None;
+			return SignalDirections.None;
 		}
 
 		if (value > signal)
-		return SignalDirection.Buy;
+		return SignalDirections.Buy;
 
 		if (value < signal)
-		return SignalDirection.Sell;
+		return SignalDirections.Sell;
 
-		return SignalDirection.None;
+		return SignalDirections.None;
 	}
 
-	private SignalDirection EvaluateSar()
+	private SignalDirections EvaluateSar()
 	{
 		if (_sarValue is not decimal sar || _prevClose is not decimal prevClose)
-		return SignalDirection.None;
+		return SignalDirections.None;
 
-		return sar < prevClose ? SignalDirection.Buy : SignalDirection.Sell;
+		return sar < prevClose ? SignalDirections.Buy : SignalDirections.Sell;
 	}
 
-	private SignalDirection EvaluateMacd(MacdSignalMode mode)
+	private SignalDirections EvaluateMacd(MacdSignalModes mode)
 	{
 		if (_macdLineCurrent is not decimal current || _macdLinePrevious is not decimal previous ||
 		_macdSignalCurrent is not decimal signal || _macdSignalPrevious is not decimal signalPrev)
-		return SignalDirection.None;
+		return SignalDirections.None;
 
 		return mode switch
 		{
-			MacdSignalMode.Trend => EvaluateMacdTrend(current, previous, signal, signalPrev),
-			MacdSignalMode.ZeroCross => EvaluateMacdCross(current, previous, signal, signalPrev),
-			MacdSignalMode.Combined => CombineSignals(EvaluateMacdTrend(current, previous, signal, signalPrev), EvaluateMacdCross(current, previous, signal, signalPrev)),
-			_ => SignalDirection.None
+			MacdSignalModes.Trend => EvaluateMacdTrend(current, previous, signal, signalPrev),
+			MacdSignalModes.ZeroCross => EvaluateMacdCross(current, previous, signal, signalPrev),
+			MacdSignalModes.Combined => CombineSignals(EvaluateMacdTrend(current, previous, signal, signalPrev), EvaluateMacdCross(current, previous, signal, signalPrev)),
+			_ => SignalDirections.None
 		};
 	}
 
-	private static SignalDirection EvaluateMacdTrend(decimal current, decimal previous, decimal signal, decimal signalPrev)
+	private static SignalDirections EvaluateMacdTrend(decimal current, decimal previous, decimal signal, decimal signalPrev)
 	{
 		if (current > previous && signal > signalPrev && current > signal)
-		return SignalDirection.Buy;
+		return SignalDirections.Buy;
 
 		if (current < previous && signal < signalPrev && current < signal)
-		return SignalDirection.Sell;
+		return SignalDirections.Sell;
 
-		return SignalDirection.None;
+		return SignalDirections.None;
 	}
 
-	private static SignalDirection EvaluateMacdCross(decimal current, decimal previous, decimal signal, decimal signalPrev)
+	private static SignalDirections EvaluateMacdCross(decimal current, decimal previous, decimal signal, decimal signalPrev)
 	{
 		var crossUp = previous <= signalPrev && current > signal;
 		var crossDown = previous >= signalPrev && current < signal;
 
 		if (crossUp && current < 0m && previous < 0m)
-		return SignalDirection.Buy;
+		return SignalDirections.Buy;
 
 		if (crossDown && current > 0m && previous > 0m)
-		return SignalDirection.Sell;
+		return SignalDirections.Sell;
 
-		return SignalDirection.None;
+		return SignalDirections.None;
 	}
 
 	private decimal GetTradeVolume()
@@ -1327,34 +1327,34 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 		return step * factor;
 	}
 
-	private static IIndicator CreateMovingAverage(MovingAverageMethod method, int period)
+	private static IIndicator CreateMovingAverage(MovingAverageMethods method, int period)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = period },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = period },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = period },
-			MovingAverageMethod.LinearWeighted => new LinearWeightedMovingAverage { Length = period },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = period },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = period },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = period },
+			MovingAverageMethods.LinearWeighted => new LinearWeightedMovingAverage { Length = period },
 			_ => new SimpleMovingAverage { Length = period }
 		};
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrice price)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrices price)
 	{
 		return price switch
 		{
-			AppliedPrice.Close => candle.ClosePrice,
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			AppliedPrices.Close => candle.ClosePrice,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}
 
-	private enum SignalDirection
+	private enum SignalDirections
 	{
 		None,
 		Buy,
@@ -1364,7 +1364,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	/// <summary>
 	/// Moving average confirmation modes.
 	/// </summary>
-	public enum MaSignalMode
+	public enum MaSignalModes
 	{
 		FastMedium = 1,
 		MediumSlow = 2,
@@ -1376,7 +1376,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	/// <summary>
 	/// RSI confirmation modes.
 	/// </summary>
-	public enum RsiSignalMode
+	public enum RsiSignalModes
 	{
 		OverboughtOversold = 1,
 		Trend = 2,
@@ -1387,7 +1387,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	/// <summary>
 	/// MACD confirmation modes.
 	/// </summary>
-	public enum MacdSignalMode
+	public enum MacdSignalModes
 	{
 		Trend = 1,
 		ZeroCross = 2,
@@ -1397,7 +1397,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	/// <summary>
 	/// Moving average calculation methods.
 	/// </summary>
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		Simple = 0,
 		Exponential = 1,
@@ -1408,7 +1408,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	/// <summary>
 	/// Available price sources.
 	/// </summary>
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		Close = 0,
 		Open = 1,

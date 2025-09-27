@@ -43,9 +43,9 @@ public class StopHunterStrategy : Strategy
 	private decimal _lastPosition;
 	private decimal? _entryPrice;
 	private decimal _entryVolume;
-	private ExitAction _pendingExitAction;
+	private ExitActions _pendingExitAction;
 
-	private enum ExitAction
+	private enum ExitActions
 	{
 		None,
 		PartialLong,
@@ -338,7 +338,7 @@ public class StopHunterStrategy : Strategy
 	{
 		if (Position > 0m)
 		{
-			if (_pendingExitAction != ExitAction.None)
+			if (_pendingExitAction != ExitActions.None)
 				return;
 
 			var entryPrice = Position.AveragePrice ?? _entryPrice;
@@ -357,7 +357,7 @@ public class StopHunterStrategy : Strategy
 					if (volume > 0m)
 					{
 						_exitOrder = SellMarket(volume);
-						_pendingExitAction = ExitAction.PartialLong;
+						_pendingExitAction = ExitActions.PartialLong;
 					}
 				}
 				else
@@ -367,7 +367,7 @@ public class StopHunterStrategy : Strategy
 					if (volume > 0m)
 					{
 						_exitOrder = SellMarket(volume);
-						_pendingExitAction = ExitAction.FullLong;
+						_pendingExitAction = ExitActions.FullLong;
 					}
 				}
 			}
@@ -378,13 +378,13 @@ public class StopHunterStrategy : Strategy
 				if (volume > 0m)
 				{
 					_exitOrder = SellMarket(volume);
-					_pendingExitAction = ExitAction.FullLong;
+					_pendingExitAction = ExitActions.FullLong;
 				}
 			}
 		}
 		else if (Position < 0m)
 		{
-			if (_pendingExitAction != ExitAction.None)
+			if (_pendingExitAction != ExitActions.None)
 				return;
 
 			var entryPrice = Position.AveragePrice ?? _entryPrice;
@@ -403,7 +403,7 @@ public class StopHunterStrategy : Strategy
 					if (volume > 0m)
 					{
 						_exitOrder = BuyMarket(volume);
-						_pendingExitAction = ExitAction.PartialShort;
+						_pendingExitAction = ExitActions.PartialShort;
 					}
 				}
 				else
@@ -413,7 +413,7 @@ public class StopHunterStrategy : Strategy
 					if (volume > 0m)
 					{
 						_exitOrder = BuyMarket(volume);
-						_pendingExitAction = ExitAction.FullShort;
+						_pendingExitAction = ExitActions.FullShort;
 					}
 				}
 			}
@@ -424,7 +424,7 @@ public class StopHunterStrategy : Strategy
 				if (volume > 0m)
 				{
 					_exitOrder = BuyMarket(volume);
-					_pendingExitAction = ExitAction.FullShort;
+					_pendingExitAction = ExitActions.FullShort;
 				}
 			}
 		}
@@ -550,7 +550,7 @@ public class StopHunterStrategy : Strategy
 			_secondTrade = false;
 			_takeProfitExtension = 0;
 			_stopLossExtension = 0;
-			_pendingExitAction = ExitAction.None;
+			_pendingExitAction = ExitActions.None;
 		}
 		else if (_sellStopOrder != null && order == _sellStopOrder)
 		{
@@ -559,21 +559,21 @@ public class StopHunterStrategy : Strategy
 			_secondTrade = false;
 			_takeProfitExtension = 0;
 			_stopLossExtension = 0;
-			_pendingExitAction = ExitAction.None;
+			_pendingExitAction = ExitActions.None;
 		}
 		else if (_exitOrder != null && order == _exitOrder)
 		{
 			switch (_pendingExitAction)
 			{
-				case ExitAction.PartialLong:
-				case ExitAction.PartialShort:
+				case ExitActions.PartialLong:
+				case ExitActions.PartialShort:
 					_secondTrade = true;
 					_takeProfitExtension += TakeProfitPoints;
 					_stopLossExtension += StopLossPoints;
 					_entryVolume = Math.Abs(Position);
 					break;
-				case ExitAction.FullLong:
-				case ExitAction.FullShort:
+				case ExitActions.FullLong:
+				case ExitActions.FullShort:
 					_secondTrade = false;
 					_takeProfitExtension = 0;
 					_stopLossExtension = 0;
@@ -584,7 +584,7 @@ public class StopHunterStrategy : Strategy
 			}
 
 			_exitOrder = null;
-			_pendingExitAction = ExitAction.None;
+			_pendingExitAction = ExitActions.None;
 		}
 	}
 
@@ -608,7 +608,7 @@ public class StopHunterStrategy : Strategy
 		if (_exitOrder != null && order == _exitOrder && order.State is OrderStates.Failed or OrderStates.Canceled)
 		{
 			_exitOrder = null;
-			_pendingExitAction = ExitAction.None;
+			_pendingExitAction = ExitActions.None;
 		}
 	}
 
@@ -627,7 +627,7 @@ public class StopHunterStrategy : Strategy
 			_entryPrice = null;
 			_entryVolume = 0m;
 			_exitOrder = null;
-			_pendingExitAction = ExitAction.None;
+			_pendingExitAction = ExitActions.None;
 		}
 		else
 		{
@@ -670,6 +670,6 @@ public class StopHunterStrategy : Strategy
 		_lastPosition = 0m;
 		_entryPrice = null;
 		_entryVolume = 0m;
-		_pendingExitAction = ExitAction.None;
+		_pendingExitAction = ExitActions.None;
 	}
 }

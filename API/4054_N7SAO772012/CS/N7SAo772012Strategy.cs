@@ -770,10 +770,10 @@ private void ProcessMinuteCandle(ICandleMessage candle)
 	var signal = EvaluateSignal();
 	switch (signal.Direction)
 	{
-		case SignalDirection.Long:
+		case SignalDirections.Long:
 			TryEnterLong(candle.ClosePrice, signal.StopDistance, signal.TakeDistance);
 			break;
-		case SignalDirection.Short:
+		case SignalDirections.Short:
 			TryEnterShort(candle.ClosePrice, signal.StopDistance, signal.TakeDistance);
 			break;
 	}
@@ -915,21 +915,21 @@ private SignalResult EvaluateVsr(decimal priceSignal)
 			if (_perceptronUpperZ > 0m)
 			{
 			if (_perceptronUpperX > 0m)
-			return CreateSignal(SignalDirection.Long, NeuroStopLossPointsLong, NeuroTakeProfitFactorLong * NeuroStopLossPointsLong);
+			return CreateSignal(SignalDirections.Long, NeuroStopLossPointsLong, NeuroTakeProfitFactorLong * NeuroStopLossPointsLong);
 		}
 	else
 	{
 		if (_perceptronUpperY > 0m)
-		return CreateSignal(SignalDirection.Short, NeuroStopLossPointsShort, NeuroTakeProfitFactorShort * NeuroStopLossPointsShort);
+		return CreateSignal(SignalDirections.Short, NeuroStopLossPointsShort, NeuroTakeProfitFactorShort * NeuroStopLossPointsShort);
 	}
 return EvaluateBts(priceSignal);
 case 3:
 	if (_perceptronUpperY > 0m)
-	return CreateSignal(SignalDirection.Short, NeuroStopLossPointsShort, NeuroTakeProfitFactorShort * NeuroStopLossPointsShort);
+	return CreateSignal(SignalDirections.Short, NeuroStopLossPointsShort, NeuroTakeProfitFactorShort * NeuroStopLossPointsShort);
 	return EvaluateBts(priceSignal);
 case 2:
 	if (_perceptronUpperX > 0m)
-	return CreateSignal(SignalDirection.Long, NeuroStopLossPointsLong, NeuroTakeProfitFactorLong * NeuroStopLossPointsLong);
+	return CreateSignal(SignalDirections.Long, NeuroStopLossPointsLong, NeuroTakeProfitFactorLong * NeuroStopLossPointsLong);
 	return EvaluateBts(priceSignal);
 default:
 	return EvaluateBts(priceSignal);
@@ -945,22 +945,22 @@ private SignalResult EvaluateBts(decimal priceSignal)
 	{
 		var stop = BaseStopLossPointsLong;
 		var take = BaseTakeProfitFactorLong * stop;
-		return CreateSignal(SignalDirection.Long, stop, take);
+		return CreateSignal(SignalDirections.Long, stop, take);
 	}
 
 if (allowShortCheck && _perceptronLowerY > 0m && _deltaG12 < 0m)
 {
 	var stop = BaseStopLossPointsShort;
 	var take = BaseTakeProfitFactorShort * stop;
-	return CreateSignal(SignalDirection.Short, stop, take);
+	return CreateSignal(SignalDirections.Short, stop, take);
 }
 
 return SignalResult.None;
 }
 
-private SignalResult CreateSignal(SignalDirection direction, decimal stopPoints, decimal takePoints)
+private SignalResult CreateSignal(SignalDirections direction, decimal stopPoints, decimal takePoints)
 {
-	if (direction == SignalDirection.None)
+	if (direction == SignalDirections.None)
 	return SignalResult.None;
 
 	var stopDistance = stopPoints > 0m ? stopPoints * _pointValue : 0m;
@@ -1075,21 +1075,21 @@ private static bool IsTradingTime(DateTimeOffset time)
 
 private readonly struct SignalResult
 {
-	public static readonly SignalResult None = new(SignalDirection.None, 0m, 0m);
+	public static readonly SignalResult None = new(SignalDirections.None, 0m, 0m);
 
-	public SignalResult(SignalDirection direction, decimal stopDistance, decimal takeDistance)
+	public SignalResult(SignalDirections direction, decimal stopDistance, decimal takeDistance)
 	{
 		Direction = direction;
 		StopDistance = stopDistance;
 		TakeDistance = takeDistance;
 	}
 
-public SignalDirection Direction { get; }
+public SignalDirections Direction { get; }
 public decimal StopDistance { get; }
 public decimal TakeDistance { get; }
 }
 
-private enum SignalDirection
+private enum SignalDirections
 {
 	None,
 	Long,

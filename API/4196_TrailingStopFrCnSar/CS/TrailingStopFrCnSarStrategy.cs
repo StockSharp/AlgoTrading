@@ -56,7 +56,7 @@ public class TrailingStopFrCnSarStrategy : Strategy
 
 	public TrailingStopFrCnSarStrategy()
 	{
-		_mode = Param(nameof(Mode), (int)TrailingStopMode.Candle)
+		_mode = Param(nameof(Mode), (int)TrailingStopModes.Candle)
 			.SetDisplay("Trailing mode", "Trailing stop calculation mode.", "Trailing");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -110,9 +110,9 @@ public class TrailingStopFrCnSarStrategy : Strategy
 			.SetDisplay("History Depth", "Number of candles retained for fractal calculations", "Trailing");
 	}
 
-	public TrailingStopMode Mode
+	public TrailingStopModes Mode
 	{
-		get => (TrailingStopMode)_mode.Value;
+		get => (TrailingStopModes)_mode.Value;
 		set => _mode.Value = (int)value;
 	}
 
@@ -304,7 +304,7 @@ public class TrailingStopFrCnSarStrategy : Strategy
 
 		var mode = Mode;
 
-		if (mode == TrailingStopMode.Parabolic && !_parabolicSar.IsFormed)
+		if (mode == TrailingStopModes.Parabolic && !_parabolicSar.IsFormed)
 		{
 			// Wait for the SAR to warm up before using its values.
 			_previousVelocity = currentVelocity ?? previousVelocity;
@@ -409,7 +409,7 @@ public class TrailingStopFrCnSarStrategy : Strategy
 		return average;
 	}
 
-	private decimal? CalculateLongCandidate(ICandleMessage candle, TrailingStopMode mode, decimal sarValue, decimal? currentVelocity, decimal? previousVelocity)
+	private decimal? CalculateLongCandidate(ICandleMessage candle, TrailingStopModes mode, decimal sarValue, decimal? currentVelocity, decimal? previousVelocity)
 	{
 		var point = GetPoint();
 		if (point <= 0m)
@@ -419,30 +419,30 @@ public class TrailingStopFrCnSarStrategy : Strategy
 
 		switch (mode)
 		{
-			case TrailingStopMode.Off:
+			case TrailingStopModes.Off:
 				return null;
-			case TrailingStopMode.Candle:
+			case TrailingStopModes.Candle:
 				if (GetRecentLow() is not decimal candleLow)
 					return null;
 				var candleStop = candleLow - delta;
 				return candleStop > 0m ? candleStop : null;
-			case TrailingStopMode.Fractal:
+			case TrailingStopModes.Fractal:
 				if (_lastDownFractal is not decimal fractal)
 					return null;
 				var fractalStop = fractal - delta;
 				return fractalStop > 0m ? fractalStop : null;
-			case TrailingStopMode.Velocity:
+			case TrailingStopModes.Velocity:
 				return CalculateVelocityStop(true, candle.ClosePrice, delta, currentVelocity, previousVelocity, point);
-			case TrailingStopMode.Parabolic:
+			case TrailingStopModes.Parabolic:
 				return CalculateParabolicStop(true, sarValue, delta, candle.ClosePrice);
-			case TrailingStopMode.FixedPoints:
+			case TrailingStopModes.FixedPoints:
 				return CalculateFixedStop(true, candle.ClosePrice, point);
 			default:
 				return null;
 		}
 	}
 
-	private decimal? CalculateShortCandidate(ICandleMessage candle, TrailingStopMode mode, decimal sarValue, decimal? currentVelocity, decimal? previousVelocity)
+	private decimal? CalculateShortCandidate(ICandleMessage candle, TrailingStopModes mode, decimal sarValue, decimal? currentVelocity, decimal? previousVelocity)
 	{
 		var point = GetPoint();
 		if (point <= 0m)
@@ -452,21 +452,21 @@ public class TrailingStopFrCnSarStrategy : Strategy
 
 		switch (mode)
 		{
-			case TrailingStopMode.Off:
+			case TrailingStopModes.Off:
 				return null;
-			case TrailingStopMode.Candle:
+			case TrailingStopModes.Candle:
 				if (GetRecentHigh() is not decimal candleHigh)
 					return null;
 				return candleHigh + delta;
-			case TrailingStopMode.Fractal:
+			case TrailingStopModes.Fractal:
 				if (_lastUpFractal is not decimal fractal)
 					return null;
 				return fractal + delta;
-			case TrailingStopMode.Velocity:
+			case TrailingStopModes.Velocity:
 				return CalculateVelocityStop(false, candle.ClosePrice, delta, currentVelocity, previousVelocity, point);
-			case TrailingStopMode.Parabolic:
+			case TrailingStopModes.Parabolic:
 				return CalculateParabolicStop(false, sarValue, delta, candle.ClosePrice);
-			case TrailingStopMode.FixedPoints:
+			case TrailingStopModes.FixedPoints:
 				return CalculateFixedStop(false, candle.ClosePrice, point);
 			default:
 				return null;
@@ -724,7 +724,7 @@ public class TrailingStopFrCnSarStrategy : Strategy
 	}
 }
 
-public enum TrailingStopMode
+public enum TrailingStopModes
 {
 	Off = 0,
 	Candle = 1,

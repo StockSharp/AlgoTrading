@@ -392,10 +392,10 @@ public class CyberiaTraderAiStrategy : Strategy
 		// Manage existing positions first to mirror the MQL behaviour.
 		if (Position > 0)
 		{
-			var shouldExitLong = (stats.CurrentDecision == TradeDecision.Sell &&
+			var shouldExitLong = (stats.CurrentDecision == TradeDecisions.Sell &&
 			stats.SellPossibility >= stats.SellSucPossibilityMid &&
 			stats.SellSucPossibilityMid > 0m) ||
-			(flags.DisableBuy && stats.CurrentDecision != TradeDecision.Buy);
+			(flags.DisableBuy && stats.CurrentDecision != TradeDecisions.Buy);
 
 			if (shouldExitLong)
 			{
@@ -405,10 +405,10 @@ public class CyberiaTraderAiStrategy : Strategy
 		}
 		else if (Position < 0)
 		{
-			var shouldExitShort = (stats.CurrentDecision == TradeDecision.Buy &&
+			var shouldExitShort = (stats.CurrentDecision == TradeDecisions.Buy &&
 			stats.BuyPossibility >= stats.BuySucPossibilityMid &&
 			stats.BuySucPossibilityMid > 0m) ||
-			(flags.DisableSell && stats.CurrentDecision != TradeDecision.Sell);
+			(flags.DisableSell && stats.CurrentDecision != TradeDecisions.Sell);
 
 			if (shouldExitShort)
 			{
@@ -418,7 +418,7 @@ public class CyberiaTraderAiStrategy : Strategy
 		}
 
 		// Evaluate fresh entries only when the probability module allows it.
-		if (stats.CurrentDecision == TradeDecision.Buy &&
+		if (stats.CurrentDecision == TradeDecisions.Buy &&
 		!flags.DisableBuy &&
 		stats.BuyPossibility >= stats.BuySucPossibilityMid &&
 		stats.BuySucPossibilityMid > 0m &&
@@ -429,7 +429,7 @@ public class CyberiaTraderAiStrategy : Strategy
 			return;
 		}
 
-		if (stats.CurrentDecision == TradeDecision.Sell &&
+		if (stats.CurrentDecision == TradeDecisions.Sell &&
 		!flags.DisableSell &&
 		stats.SellPossibility >= stats.SellSucPossibilityMid &&
 		stats.SellSucPossibilityMid > 0m &&
@@ -662,13 +662,13 @@ public class CyberiaTraderAiStrategy : Strategy
 			var buyPossibility = 0m;
 			var sellPossibility = 0m;
 			var undefinedPossibility = 0m;
-			var decision = TradeDecision.Unknown;
+			var decision = TradeDecisions.Unknown;
 
 			if (decisionValue > 0m)
 			{
 				if (previousValue < 0m)
 				{
-					decision = TradeDecision.Sell;
+					decision = TradeDecisions.Sell;
 					sellPossibility = decisionValue;
 				}
 				else
@@ -680,7 +680,7 @@ public class CyberiaTraderAiStrategy : Strategy
 			{
 				if (previousValue > 0m)
 				{
-					decision = TradeDecision.Buy;
+					decision = TradeDecisions.Buy;
 					buyPossibility = -decisionValue;
 				}
 				else
@@ -699,7 +699,7 @@ public class CyberiaTraderAiStrategy : Strategy
 
 			switch (decision)
 			{
-			case TradeDecision.Buy:
+			case TradeDecisions.Buy:
 				buyQuality++;
 				buySum += buyPossibility;
 				if (buyPossibility > spreadThreshold)
@@ -709,7 +709,7 @@ public class CyberiaTraderAiStrategy : Strategy
 				}
 				break;
 
-			case TradeDecision.Sell:
+			case TradeDecisions.Sell:
 				sellQuality++;
 				sellSum += sellPossibility;
 				if (sellPossibility > spreadThreshold)
@@ -790,7 +790,7 @@ public class CyberiaTraderAiStrategy : Strategy
 	{
 		public bool IsValid;
 		public int Period;
-		public TradeDecision CurrentDecision;
+		public TradeDecisions CurrentDecision;
 		public decimal BuyPossibility;
 		public decimal SellPossibility;
 		public decimal UndefinedPossibility;
@@ -809,7 +809,7 @@ public class CyberiaTraderAiStrategy : Strategy
 		public decimal PossibilitySuccessRatio;
 	}
 
-	private enum TradeDecision
+	private enum TradeDecisions
 	{
 		Unknown,
 		Buy,

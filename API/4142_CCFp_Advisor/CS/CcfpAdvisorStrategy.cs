@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class CcfpAdvisorStrategy : Strategy
 {
-	private readonly StrategyParam<MovingAverageMode> _maType;
+	private readonly StrategyParam<MovingAverageModes> _maType;
 	private readonly StrategyParam<CandlePrice> _priceMode;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
@@ -50,7 +50,7 @@ public class CcfpAdvisorStrategy : Strategy
 	/// </summary>
 	public CcfpAdvisorStrategy()
 	{
-		_maType = Param(nameof(MaType), MovingAverageMode.Exponential)
+		_maType = Param(nameof(MaType), MovingAverageModes.Exponential)
 			.SetDisplay("MA Type", "Moving-average algorithm used for the currency strength calculation", "General")
 			.SetCanOptimize(true);
 
@@ -105,7 +105,7 @@ public class CcfpAdvisorStrategy : Strategy
 /// <summary>
 /// Moving-average method applied to every composite MA calculation.
 /// </summary>
-public MovingAverageMode MaType
+public MovingAverageModes MaType
 {
 	get => _maType.Value;
 	set => _maType.Value = value;
@@ -376,7 +376,7 @@ if (_activeWeakTrade is { } weak && weak.Currency != minCurrency)
 }
 }
 
-private void OpenTrade(ref ActiveTrade? slot, CurrencyIndex currency, TradeAction action, string tag)
+private void OpenTrade(ref ActiveTrade? slot, CurrencyIndexes currency, TradeAction action, string tag)
 {
 	if (slot is { Currency: var existing } && existing == currency)
 	return;
@@ -500,7 +500,7 @@ if (!AreValid(eurUsd) || !AreValid(gbpUsd) || !AreValid(audUsd) || !AreValid(nzd
 var strength = new decimal[8];
 
 // USD strength.
-strength[(int)CurrencyIndex.USD] =
+strength[(int)CurrencyIndexes.USD] =
 (SafeDiv(eurUsd.Slow, eurUsd.Fast) - 1m) +
 (SafeDiv(gbpUsd.Slow, gbpUsd.Fast) - 1m) +
 (SafeDiv(audUsd.Slow, audUsd.Fast) - 1m) +
@@ -510,7 +510,7 @@ strength[(int)CurrencyIndex.USD] =
 (SafeDiv(usdJpy.Fast, usdJpy.Slow) - 1m);
 
 // EUR strength.
-strength[(int)CurrencyIndex.EUR] =
+strength[(int)CurrencyIndexes.EUR] =
 (SafeDiv(eurUsd.Fast, eurUsd.Slow) - 1m) +
 (SafeDiv(SafeDiv(eurUsd.Fast, gbpUsd.Fast), SafeDiv(eurUsd.Slow, gbpUsd.Slow)) - 1m) +
 (SafeDiv(SafeDiv(eurUsd.Fast, audUsd.Fast), SafeDiv(eurUsd.Slow, audUsd.Slow)) - 1m) +
@@ -520,7 +520,7 @@ strength[(int)CurrencyIndex.EUR] =
 (SafeDiv(eurUsd.Fast * usdJpy.Fast, eurUsd.Slow * usdJpy.Slow) - 1m);
 
 // GBP strength.
-strength[(int)CurrencyIndex.GBP] =
+strength[(int)CurrencyIndexes.GBP] =
 (SafeDiv(gbpUsd.Fast, gbpUsd.Slow) - 1m) +
 (SafeDiv(SafeDiv(eurUsd.Slow, gbpUsd.Slow), SafeDiv(eurUsd.Fast, gbpUsd.Fast)) - 1m) +
 (SafeDiv(SafeDiv(gbpUsd.Fast, audUsd.Fast), SafeDiv(gbpUsd.Slow, audUsd.Slow)) - 1m) +
@@ -530,7 +530,7 @@ strength[(int)CurrencyIndex.GBP] =
 (SafeDiv(gbpUsd.Fast * usdJpy.Fast, gbpUsd.Slow * usdJpy.Slow) - 1m);
 
 // CHF strength.
-strength[(int)CurrencyIndex.CHF] =
+strength[(int)CurrencyIndexes.CHF] =
 (SafeDiv(usdChf.Slow, usdChf.Fast) - 1m) +
 (SafeDiv(eurUsd.Slow * usdChf.Slow, eurUsd.Fast * usdChf.Fast) - 1m) +
 (SafeDiv(gbpUsd.Slow * usdChf.Slow, gbpUsd.Fast * usdChf.Fast) - 1m) +
@@ -540,7 +540,7 @@ strength[(int)CurrencyIndex.CHF] =
 (SafeDiv(SafeDiv(usdChf.Slow, usdJpy.Slow), SafeDiv(usdChf.Fast, usdJpy.Fast)) - 1m);
 
 // JPY strength.
-strength[(int)CurrencyIndex.JPY] =
+strength[(int)CurrencyIndexes.JPY] =
 (SafeDiv(usdJpy.Slow, usdJpy.Fast) - 1m) +
 (SafeDiv(eurUsd.Slow * usdJpy.Slow, eurUsd.Fast * usdJpy.Fast) - 1m) +
 (SafeDiv(gbpUsd.Slow * usdJpy.Slow, gbpUsd.Fast * usdJpy.Fast) - 1m) +
@@ -550,7 +550,7 @@ strength[(int)CurrencyIndex.JPY] =
 (SafeDiv(SafeDiv(usdJpy.Slow, usdChf.Slow), SafeDiv(usdJpy.Fast, usdChf.Fast)) - 1m);
 
 // AUD strength.
-strength[(int)CurrencyIndex.AUD] =
+strength[(int)CurrencyIndexes.AUD] =
 (SafeDiv(audUsd.Fast, audUsd.Slow) - 1m) +
 (SafeDiv(SafeDiv(eurUsd.Slow, audUsd.Slow), SafeDiv(eurUsd.Fast, audUsd.Fast)) - 1m) +
 (SafeDiv(SafeDiv(gbpUsd.Slow, audUsd.Slow), SafeDiv(gbpUsd.Fast, audUsd.Fast)) - 1m) +
@@ -560,7 +560,7 @@ strength[(int)CurrencyIndex.AUD] =
 (SafeDiv(audUsd.Fast * usdJpy.Fast, audUsd.Slow * usdJpy.Slow) - 1m);
 
 // CAD strength.
-strength[(int)CurrencyIndex.CAD] =
+strength[(int)CurrencyIndexes.CAD] =
 (SafeDiv(usdCad.Slow, usdCad.Fast) - 1m) +
 (SafeDiv(eurUsd.Slow * usdCad.Slow, eurUsd.Fast * usdCad.Fast) - 1m) +
 (SafeDiv(gbpUsd.Slow * usdCad.Slow, gbpUsd.Fast * usdCad.Fast) - 1m) +
@@ -570,7 +570,7 @@ strength[(int)CurrencyIndex.CAD] =
 (SafeDiv(SafeDiv(usdJpy.Fast, usdCad.Fast), SafeDiv(usdJpy.Slow, usdCad.Slow)) - 1m);
 
 // NZD strength.
-strength[(int)CurrencyIndex.NZD] =
+strength[(int)CurrencyIndexes.NZD] =
 (SafeDiv(nzdUsd.Fast, nzdUsd.Slow) - 1m) +
 (SafeDiv(SafeDiv(eurUsd.Slow, nzdUsd.Slow), SafeDiv(eurUsd.Fast, nzdUsd.Fast)) - 1m) +
 (SafeDiv(SafeDiv(gbpUsd.Slow, nzdUsd.Slow), SafeDiv(gbpUsd.Fast, nzdUsd.Fast)) - 1m) +
@@ -635,7 +635,7 @@ private static int GetDecimalDigits(decimal value)
 return digits;
 }
 
-private static (CurrencyIndex currency, decimal value) FindExtremum(IReadOnlyList<decimal> values, bool isMaximum)
+private static (CurrencyIndexes currency, decimal value) FindExtremum(IReadOnlyList<decimal> values, bool isMaximum)
 {
 	var best = values.Count > 0 ? values[0] : 0m;
 	var index = 0;
@@ -661,7 +661,7 @@ else
 }
 }
 
-return ((CurrencyIndex)index, best);
+return ((CurrencyIndexes)index, best);
 }
 
 private static decimal GetExtreme(IReadOnlyList<decimal> values, bool isMaximum)
@@ -688,18 +688,18 @@ private static decimal GetExtreme(IReadOnlyList<decimal> values, bool isMaximum)
 return result;
 }
 
-private bool TryGetTradeAction(CurrencyIndex currency, bool isStrong, out TradeAction action)
+private bool TryGetTradeAction(CurrencyIndexes currency, bool isStrong, out TradeAction action)
 {
 	action = default;
 	return currency switch
 	{
-		CurrencyIndex.EUR => CreateAction(EurUsdSecurity, isStrong ? Sides.Buy : Sides.Sell, out action),
-		CurrencyIndex.GBP => CreateAction(GbpUsdSecurity, isStrong ? Sides.Buy : Sides.Sell, out action),
-		CurrencyIndex.CHF => CreateAction(UsdChfSecurity, isStrong ? Sides.Sell : Sides.Buy, out action),
-		CurrencyIndex.JPY => CreateAction(UsdJpySecurity, isStrong ? Sides.Sell : Sides.Buy, out action),
-		CurrencyIndex.AUD => CreateAction(AudUsdSecurity, isStrong ? Sides.Buy : Sides.Sell, out action),
-		CurrencyIndex.CAD => CreateAction(UsdCadSecurity, isStrong ? Sides.Sell : Sides.Buy, out action),
-		CurrencyIndex.NZD => CreateAction(NzdUsdSecurity, isStrong ? Sides.Buy : Sides.Sell, out action),
+		CurrencyIndexes.EUR => CreateAction(EurUsdSecurity, isStrong ? Sides.Buy : Sides.Sell, out action),
+		CurrencyIndexes.GBP => CreateAction(GbpUsdSecurity, isStrong ? Sides.Buy : Sides.Sell, out action),
+		CurrencyIndexes.CHF => CreateAction(UsdChfSecurity, isStrong ? Sides.Sell : Sides.Buy, out action),
+		CurrencyIndexes.JPY => CreateAction(UsdJpySecurity, isStrong ? Sides.Sell : Sides.Buy, out action),
+		CurrencyIndexes.AUD => CreateAction(AudUsdSecurity, isStrong ? Sides.Buy : Sides.Sell, out action),
+		CurrencyIndexes.CAD => CreateAction(UsdCadSecurity, isStrong ? Sides.Sell : Sides.Buy, out action),
+		CurrencyIndexes.NZD => CreateAction(NzdUsdSecurity, isStrong ? Sides.Buy : Sides.Sell, out action),
 		_ => false,
 	};
 }
@@ -724,7 +724,7 @@ private void AddPair(string symbol, Security security, IReadOnlyList<int> multip
 	_pairBySecurity[security] = pair;
 }
 
-private static AggregatedMovingAverage CreateAggregatedAverage(MovingAverageMode type, int period, IReadOnlyList<int> multipliers)
+private static AggregatedMovingAverage CreateAggregatedAverage(MovingAverageModes type, int period, IReadOnlyList<int> multipliers)
 {
 	var indicators = new List<LengthIndicator<decimal>>(multipliers.Count);
 	for (var i = 0; i < multipliers.Count; i++)
@@ -736,13 +736,13 @@ private static AggregatedMovingAverage CreateAggregatedAverage(MovingAverageMode
 return new AggregatedMovingAverage(indicators);
 }
 
-private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMode type, int length)
+private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageModes type, int length)
 {
 	LengthIndicator<decimal> indicator = type switch
 	{
-		MovingAverageMode.Exponential => new ExponentialMovingAverage(),
-		MovingAverageMode.Smoothed => new SmoothedMovingAverage(),
-		MovingAverageMode.Weighted => new WeightedMovingAverage(),
+		MovingAverageModes.Exponential => new ExponentialMovingAverage(),
+		MovingAverageModes.Smoothed => new SmoothedMovingAverage(),
+		MovingAverageModes.Weighted => new WeightedMovingAverage(),
 		_ => new SimpleMovingAverage(),
 	};
 
@@ -888,7 +888,7 @@ public Sides Side { get; }
 
 private struct ActiveTrade
 {
-	public CurrencyIndex Currency { get; set; }
+	public CurrencyIndexes Currency { get; set; }
 	public Security Security { get; set; }
 	public Sides Side { get; set; }
 	public decimal Volume { get; set; }
@@ -898,7 +898,7 @@ private struct ActiveTrade
 /// <summary>
 /// Moving-average calculation modes supported by the strategy.
 /// </summary>
-public enum MovingAverageMode
+public enum MovingAverageModes
 {
 	Simple,
 	Exponential,
@@ -906,7 +906,7 @@ public enum MovingAverageMode
 	Weighted,
 }
 
-private enum CurrencyIndex
+private enum CurrencyIndexes
 {
 	USD,
 	EUR,

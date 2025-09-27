@@ -28,9 +28,9 @@ public class MultiComboStrategy : Strategy
 	private readonly StrategyParam<int> _fastMaLength;
 	private readonly StrategyParam<int> _midMaLength;
 	private readonly StrategyParam<int> _slowMaLength;
-	private readonly StrategyParam<MaMethod> _fastMaMethod;
-	private readonly StrategyParam<MaMethod> _midMaMethod;
-	private readonly StrategyParam<MaMethod> _slowMaMethod;
+	private readonly StrategyParam<MaMethods> _fastMaMethod;
+	private readonly StrategyParam<MaMethods> _midMaMethod;
+	private readonly StrategyParam<MaMethods> _slowMaMethod;
 	private readonly StrategyParam<DataType> _maCandleType;
 
 	private readonly StrategyParam<bool> _useRsi;
@@ -138,11 +138,11 @@ public class MultiComboStrategy : Strategy
 
 	private readonly Queue<decimal> _rsiHistory = new();
 
-	private SignalDirection _lastMaSignal;
-	private SignalDirection _lastRsiSignal;
-	private SignalDirection _lastMacdSignal;
-	private SignalDirection _lastStochasticSignal;
-	private SignalDirection _lastSarSignal;
+	private SignalDirections _lastMaSignal;
+	private SignalDirections _lastRsiSignal;
+	private SignalDirections _lastMacdSignal;
+	private SignalDirections _lastStochasticSignal;
+	private SignalDirections _lastSarSignal;
 
 	private DateTimeOffset _lastTradeBarTime;
 
@@ -174,11 +174,11 @@ public class MultiComboStrategy : Strategy
 		_slowMaLength = Param(nameof(SlowMaLength), 38)
 		.SetDisplay("Slow MA Length", "Period of the slow moving average", "Moving Average")
 		.SetGreaterThanZero();
-		_fastMaMethod = Param(nameof(FastMaMethod), MaMethod.Exponential)
+		_fastMaMethod = Param(nameof(FastMaMethod), MaMethods.Exponential)
 		.SetDisplay("Fast MA Method", "Type of the fast moving average", "Moving Average");
-		_midMaMethod = Param(nameof(MidMaMethod), MaMethod.Exponential)
+		_midMaMethod = Param(nameof(MidMaMethod), MaMethods.Exponential)
 		.SetDisplay("Mid MA Method", "Type of the mid moving average", "Moving Average");
-		_slowMaMethod = Param(nameof(SlowMaMethod), MaMethod.Exponential)
+		_slowMaMethod = Param(nameof(SlowMaMethod), MaMethods.Exponential)
 		.SetDisplay("Slow MA Method", "Type of the slow moving average", "Moving Average");
 		_maCandleType = Param(nameof(MaCandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("MA Candle Type", "Candle type for moving averages", "Moving Average");
@@ -388,11 +388,11 @@ public class MultiComboStrategy : Strategy
 
 		_rsiHistory.Clear();
 
-		_lastMaSignal = SignalDirection.None;
-		_lastRsiSignal = SignalDirection.None;
-		_lastMacdSignal = SignalDirection.None;
-		_lastStochasticSignal = SignalDirection.None;
-		_lastSarSignal = SignalDirection.None;
+		_lastMaSignal = SignalDirections.None;
+		_lastRsiSignal = SignalDirections.None;
+		_lastMacdSignal = SignalDirections.None;
+		_lastStochasticSignal = SignalDirections.None;
+		_lastSarSignal = SignalDirections.None;
 
 		_lastTradeBarTime = DateTimeOffset.MinValue;
 	}
@@ -572,11 +572,11 @@ public class MultiComboStrategy : Strategy
 			HandleAutoExit(consensus, candle);
 		}
 
-		if (entrySignal == SignalDirection.Buy)
+		if (entrySignal == SignalDirections.Buy)
 		{
 			TryEnterLong(candle);
 		}
-		else if (entrySignal == SignalDirection.Sell)
+		else if (entrySignal == SignalDirections.Sell)
 		{
 			TryEnterShort(candle);
 		}
@@ -713,7 +713,7 @@ public class MultiComboStrategy : Strategy
 		return true;
 	}
 
-	private SignalDirection EvaluateConsensus()
+	private SignalDirections EvaluateConsensus()
 	{
 		var selected = 0;
 		var up = 0;
@@ -723,9 +723,9 @@ public class MultiComboStrategy : Strategy
 		{
 			selected++;
 			var signal = GetRsiSignal();
-			if (signal == SignalDirection.Buy)
+			if (signal == SignalDirections.Buy)
 			up++;
-			else if (signal == SignalDirection.Sell)
+			else if (signal == SignalDirections.Sell)
 			down++;
 		}
 
@@ -733,9 +733,9 @@ public class MultiComboStrategy : Strategy
 		{
 			selected++;
 			var signal = GetStochasticSignal();
-			if (signal == SignalDirection.Buy)
+			if (signal == SignalDirections.Buy)
 			up++;
-			else if (signal == SignalDirection.Sell)
+			else if (signal == SignalDirections.Sell)
 			down++;
 		}
 
@@ -743,9 +743,9 @@ public class MultiComboStrategy : Strategy
 		{
 			selected++;
 			var signal = GetSarSignal();
-			if (signal == SignalDirection.Buy)
+			if (signal == SignalDirections.Buy)
 			up++;
-			else if (signal == SignalDirection.Sell)
+			else if (signal == SignalDirections.Sell)
 			down++;
 		}
 
@@ -753,9 +753,9 @@ public class MultiComboStrategy : Strategy
 		{
 			selected++;
 			var signal = GetMaSignal();
-			if (signal == SignalDirection.Buy)
+			if (signal == SignalDirections.Buy)
 			up++;
-			else if (signal == SignalDirection.Sell)
+			else if (signal == SignalDirections.Sell)
 			down++;
 		}
 
@@ -763,50 +763,50 @@ public class MultiComboStrategy : Strategy
 		{
 			selected++;
 			var signal = GetMacdSignal();
-			if (signal == SignalDirection.Buy)
+			if (signal == SignalDirections.Buy)
 			up++;
-			else if (signal == SignalDirection.Sell)
+			else if (signal == SignalDirections.Sell)
 			down++;
 		}
 
 		if (selected == 0)
-		return SignalDirection.None;
+		return SignalDirections.None;
 
 		if (up == selected)
-		return SignalDirection.Buy;
+		return SignalDirections.Buy;
 
 		if (down == selected)
-		return SignalDirection.Sell;
+		return SignalDirections.Sell;
 
-		return SignalDirection.None;
+		return SignalDirections.None;
 	}
 
-	private TrendState EvaluateTrend()
+	private TrendStates EvaluateTrend()
 	{
 		if (!UseTrendDetection)
-		return TrendState.None;
+		return TrendStates.None;
 
 		if (_adxValue is not decimal adx || _adxPlus is not decimal plus || _adxMinus is not decimal minus)
-		return TrendState.None;
+		return TrendStates.None;
 
 		if (adx < AdxLevel)
 		{
-			return plus >= minus ? TrendState.RangeUp : TrendState.RangeDown;
+			return plus >= minus ? TrendStates.RangeUp : TrendStates.RangeDown;
 		}
 
-		return plus >= minus ? TrendState.Up : TrendState.Down;
+		return plus >= minus ? TrendStates.Up : TrendStates.Down;
 	}
 
-	private SignalDirection EvaluateBollingerSignal()
+	private SignalDirections EvaluateBollingerSignal()
 	{
 		if (!UseBollingerFilter)
-		return SignalDirection.None;
+		return SignalDirections.None;
 
 		if (_bollingerMediumLower is null || _bollingerMediumUpper is null || _bollingerWideLower is null || _bollingerWideUpper is null)
-		return SignalDirection.None;
+		return SignalDirections.None;
 
 		if (_lastBollingerCandle is null)
-		return SignalDirection.None;
+		return SignalDirections.None;
 
 		var candle = _lastBollingerCandle;
 
@@ -817,15 +817,15 @@ public class MultiComboStrategy : Strategy
 		var hasOverboughtRsi = RangeParameter <= 0 || HasRsiAbove(RsiSellLevel);
 
 		if (buyTouch && hasOversoldRsi)
-		return SignalDirection.Buy;
+		return SignalDirections.Buy;
 
 		if (sellTouch && hasOverboughtRsi)
-		return SignalDirection.Sell;
+		return SignalDirections.Sell;
 
-		return SignalDirection.None;
+		return SignalDirections.None;
 	}
 
-	private SignalDirection CombineSignals(SignalDirection consensus, TrendState trend, SignalDirection rangeSignal)
+	private SignalDirections CombineSignals(SignalDirections consensus, TrendStates trend, SignalDirections rangeSignal)
 	{
 		return ComboFactor switch
 		{
@@ -835,110 +835,110 @@ public class MultiComboStrategy : Strategy
 		};
 	}
 
-	private SignalDirection CombineFactorOne(SignalDirection consensus, TrendState trend, SignalDirection rangeSignal)
+	private SignalDirections CombineFactorOne(SignalDirections consensus, TrendStates trend, SignalDirections rangeSignal)
 	{
 		if (UseTrendDetection || UseBollingerFilter)
 		{
-			if (trend is TrendState.RangeDown or TrendState.RangeUp && UseBollingerFilter)
+			if (trend is TrendStates.RangeDown or TrendStates.RangeUp && UseBollingerFilter)
 			{
-				if (trend == TrendState.RangeUp && rangeSignal == SignalDirection.Buy)
-				return SignalDirection.Buy;
-				if (trend == TrendState.RangeDown && rangeSignal == SignalDirection.Sell)
-				return SignalDirection.Sell;
-				return SignalDirection.None;
+				if (trend == TrendStates.RangeUp && rangeSignal == SignalDirections.Buy)
+				return SignalDirections.Buy;
+				if (trend == TrendStates.RangeDown && rangeSignal == SignalDirections.Sell)
+				return SignalDirections.Sell;
+				return SignalDirections.None;
 			}
 
-			if (trend is TrendState.Up or TrendState.Down)
+			if (trend is TrendStates.Up or TrendStates.Down)
 			{
-				if (trend == TrendState.Up && consensus == SignalDirection.Buy)
-				return SignalDirection.Buy;
-				if (trend == TrendState.Down && consensus == SignalDirection.Sell)
-				return SignalDirection.Sell;
-				return SignalDirection.None;
+				if (trend == TrendStates.Up && consensus == SignalDirections.Buy)
+				return SignalDirections.Buy;
+				if (trend == TrendStates.Down && consensus == SignalDirections.Sell)
+				return SignalDirections.Sell;
+				return SignalDirections.None;
 			}
 		}
 
 		if (UseBollingerFilter)
 		{
-			if (rangeSignal != SignalDirection.None)
+			if (rangeSignal != SignalDirections.None)
 			return rangeSignal;
 		}
 
 		return consensus;
 	}
 
-	private SignalDirection CombineFactorTwo(SignalDirection consensus, TrendState trend, SignalDirection rangeSignal)
+	private SignalDirections CombineFactorTwo(SignalDirections consensus, TrendStates trend, SignalDirections rangeSignal)
 	{
 		if (UseTrendDetection && !UseBollingerFilter)
 		{
-			if (trend is TrendState.Up or TrendState.RangeUp)
-			return consensus == SignalDirection.Buy ? SignalDirection.Buy : SignalDirection.None;
-			if (trend is TrendState.Down or TrendState.RangeDown)
-			return consensus == SignalDirection.Sell ? SignalDirection.Sell : SignalDirection.None;
+			if (trend is TrendStates.Up or TrendStates.RangeUp)
+			return consensus == SignalDirections.Buy ? SignalDirections.Buy : SignalDirections.None;
+			if (trend is TrendStates.Down or TrendStates.RangeDown)
+			return consensus == SignalDirections.Sell ? SignalDirections.Sell : SignalDirections.None;
 		}
 
 		if (UseTrendDetection && UseBollingerFilter)
 		{
-			if (trend == TrendState.Up)
+			if (trend == TrendStates.Up)
 			{
-				if (consensus == SignalDirection.Buy && rangeSignal != SignalDirection.Sell)
-				return SignalDirection.Buy;
-				return SignalDirection.None;
+				if (consensus == SignalDirections.Buy && rangeSignal != SignalDirections.Sell)
+				return SignalDirections.Buy;
+				return SignalDirections.None;
 			}
-			if (trend == TrendState.Down)
+			if (trend == TrendStates.Down)
 			{
-				if (consensus == SignalDirection.Sell && rangeSignal != SignalDirection.Buy)
-				return SignalDirection.Sell;
-				return SignalDirection.None;
+				if (consensus == SignalDirections.Sell && rangeSignal != SignalDirections.Buy)
+				return SignalDirections.Sell;
+				return SignalDirections.None;
 			}
-			if (trend == TrendState.RangeUp)
+			if (trend == TrendStates.RangeUp)
 			{
-				if (consensus == SignalDirection.Buy && rangeSignal == SignalDirection.Buy)
-				return SignalDirection.Buy;
-				return SignalDirection.None;
+				if (consensus == SignalDirections.Buy && rangeSignal == SignalDirections.Buy)
+				return SignalDirections.Buy;
+				return SignalDirections.None;
 			}
-			if (trend == TrendState.RangeDown)
+			if (trend == TrendStates.RangeDown)
 			{
-				if (consensus == SignalDirection.Sell && rangeSignal == SignalDirection.Sell)
-				return SignalDirection.Sell;
-				return SignalDirection.None;
+				if (consensus == SignalDirections.Sell && rangeSignal == SignalDirections.Sell)
+				return SignalDirections.Sell;
+				return SignalDirections.None;
 			}
 		}
 
 		if (!UseTrendDetection && UseBollingerFilter)
 		{
-			if (rangeSignal == SignalDirection.Buy && consensus == SignalDirection.Buy)
-			return SignalDirection.Buy;
-			if (rangeSignal == SignalDirection.Sell && consensus == SignalDirection.Sell)
-			return SignalDirection.Sell;
-			return SignalDirection.None;
+			if (rangeSignal == SignalDirections.Buy && consensus == SignalDirections.Buy)
+			return SignalDirections.Buy;
+			if (rangeSignal == SignalDirections.Sell && consensus == SignalDirections.Sell)
+			return SignalDirections.Sell;
+			return SignalDirections.None;
 		}
 
 		return consensus;
 	}
 
-	private SignalDirection CombineFactorThree(SignalDirection consensus, TrendState trend, SignalDirection rangeSignal)
+	private SignalDirections CombineFactorThree(SignalDirections consensus, TrendStates trend, SignalDirections rangeSignal)
 	{
 		if (UseTrendDetection && UseBollingerFilter)
 		{
-			if (trend == TrendState.Up && consensus == SignalDirection.Buy && (rangeSignal == SignalDirection.Buy || rangeSignal == SignalDirection.None))
-			return SignalDirection.Buy;
-			if (trend == TrendState.Down && consensus == SignalDirection.Sell && (rangeSignal == SignalDirection.Sell || rangeSignal == SignalDirection.None))
-			return SignalDirection.Sell;
-			if (trend == TrendState.RangeUp && consensus == SignalDirection.Buy && rangeSignal == SignalDirection.Buy)
-			return SignalDirection.Buy;
-			if (trend == TrendState.RangeDown && consensus == SignalDirection.Sell && rangeSignal == SignalDirection.Sell)
-			return SignalDirection.Sell;
-			return SignalDirection.None;
+			if (trend == TrendStates.Up && consensus == SignalDirections.Buy && (rangeSignal == SignalDirections.Buy || rangeSignal == SignalDirections.None))
+			return SignalDirections.Buy;
+			if (trend == TrendStates.Down && consensus == SignalDirections.Sell && (rangeSignal == SignalDirections.Sell || rangeSignal == SignalDirections.None))
+			return SignalDirections.Sell;
+			if (trend == TrendStates.RangeUp && consensus == SignalDirections.Buy && rangeSignal == SignalDirections.Buy)
+			return SignalDirections.Buy;
+			if (trend == TrendStates.RangeDown && consensus == SignalDirections.Sell && rangeSignal == SignalDirections.Sell)
+			return SignalDirections.Sell;
+			return SignalDirections.None;
 		}
 
 		if (UseTrendDetection)
 		{
-			if (trend == TrendState.Up && consensus == SignalDirection.Buy)
-			return SignalDirection.Buy;
-			if (trend == TrendState.Down && consensus == SignalDirection.Sell)
-			return SignalDirection.Sell;
-			return SignalDirection.None;
+			if (trend == TrendStates.Up && consensus == SignalDirections.Buy)
+			return SignalDirections.Buy;
+			if (trend == TrendStates.Down && consensus == SignalDirections.Sell)
+			return SignalDirections.Sell;
+			return SignalDirections.None;
 		}
 
 		if (UseBollingerFilter)
@@ -949,16 +949,16 @@ public class MultiComboStrategy : Strategy
 		return consensus;
 	}
 
-	private void HandleAutoExit(SignalDirection consensus, ICandleMessage candle)
+	private void HandleAutoExit(SignalDirections consensus, ICandleMessage candle)
 	{
 		// Mirror the original auto-close logic by reacting immediately to opposite consensus.
-		if (Position > 0 && consensus == SignalDirection.Sell)
+		if (Position > 0 && consensus == SignalDirections.Sell)
 		{
 			SellMarket(Math.Abs(Position));
 			_lastTradeBarTime = candle.OpenTime;
 			LogInfo("Closed long position on opposite consensus.");
 		}
-		else if (Position < 0 && consensus == SignalDirection.Buy)
+		else if (Position < 0 && consensus == SignalDirections.Buy)
 		{
 			BuyMarket(Math.Abs(Position));
 			_lastTradeBarTime = candle.OpenTime;
@@ -1041,12 +1041,12 @@ public class MultiComboStrategy : Strategy
 		return false;
 	}
 
-	private SignalDirection GetMaSignal()
+	private SignalDirections GetMaSignal()
 	{
 		if (_fastMaCurrent is null || _fastMaPrev is null || _midMaCurrent is null || _midMaPrev is null || _slowMaCurrent is null || _slowMaPrev is null)
-		return UseLastMaSignal ? _lastMaSignal : SignalDirection.None;
+		return UseLastMaSignal ? _lastMaSignal : SignalDirections.None;
 
-		SignalDirection signal = MaMode switch
+		SignalDirections signal = MaMode switch
 		{
 			1 => DetectCross(_fastMaPrev.Value, _fastMaCurrent.Value, _midMaPrev.Value, _midMaCurrent.Value),
 			2 => DetectCross(_midMaPrev.Value, _midMaCurrent.Value, _slowMaPrev.Value, _slowMaCurrent.Value),
@@ -1062,12 +1062,12 @@ public class MultiComboStrategy : Strategy
 			),
 			DetectCross(_fastMaPrev.Value, _fastMaCurrent.Value, _slowMaPrev.Value, _slowMaCurrent.Value)
 			),
-			_ => SignalDirection.None
+			_ => SignalDirections.None
 		};
 
 		if (UseLastMaSignal)
 		{
-			if (signal != SignalDirection.None && signal != _lastMaSignal)
+			if (signal != SignalDirections.None && signal != _lastMaSignal)
 			_lastMaSignal = signal;
 			return _lastMaSignal;
 		}
@@ -1075,69 +1075,69 @@ public class MultiComboStrategy : Strategy
 		return signal;
 	}
 
-	private SignalDirection CombineSignals(SignalDirection first, SignalDirection second)
+	private SignalDirections CombineSignals(SignalDirections first, SignalDirections second)
 	{
-		if (first == SignalDirection.Buy || second == SignalDirection.Buy)
+		if (first == SignalDirections.Buy || second == SignalDirections.Buy)
 		{
-			if (first == SignalDirection.Buy && second != SignalDirection.Sell)
-			return SignalDirection.Buy;
-			if (second == SignalDirection.Buy && first != SignalDirection.Sell)
-			return SignalDirection.Buy;
+			if (first == SignalDirections.Buy && second != SignalDirections.Sell)
+			return SignalDirections.Buy;
+			if (second == SignalDirections.Buy && first != SignalDirections.Sell)
+			return SignalDirections.Buy;
 		}
 
-		if (first == SignalDirection.Sell || second == SignalDirection.Sell)
+		if (first == SignalDirections.Sell || second == SignalDirections.Sell)
 		{
-			if (first == SignalDirection.Sell && second != SignalDirection.Buy)
-			return SignalDirection.Sell;
-			if (second == SignalDirection.Sell && first != SignalDirection.Buy)
-			return SignalDirection.Sell;
+			if (first == SignalDirections.Sell && second != SignalDirections.Buy)
+			return SignalDirections.Sell;
+			if (second == SignalDirections.Sell && first != SignalDirections.Buy)
+			return SignalDirections.Sell;
 		}
 
-		return SignalDirection.None;
+		return SignalDirections.None;
 	}
 
-	private static SignalDirection DetectCross(decimal prevA, decimal currentA, decimal prevB, decimal currentB)
+	private static SignalDirections DetectCross(decimal prevA, decimal currentA, decimal prevB, decimal currentB)
 	{
 		var prevDiff = prevA - prevB;
 		var currentDiff = currentA - currentB;
 
 		if (prevDiff <= 0m && currentDiff > 0m)
-		return SignalDirection.Buy;
+		return SignalDirections.Buy;
 
 		if (prevDiff >= 0m && currentDiff < 0m)
-		return SignalDirection.Sell;
+		return SignalDirections.Sell;
 
-		return SignalDirection.None;
+		return SignalDirections.None;
 	}
 
-	private SignalDirection GetRsiSignal()
+	private SignalDirections GetRsiSignal()
 	{
 		if (_rsiCurrent is null || _rsiPrev is null)
-		return UseLastRsiSignal ? _lastRsiSignal : SignalDirection.None;
+		return UseLastRsiSignal ? _lastRsiSignal : SignalDirections.None;
 
 		var current = _rsiCurrent.Value;
 		var previous = _rsiPrev.Value;
 
-		SignalDirection signal = RsiMode switch
+		SignalDirections signal = RsiMode switch
 		{
-			1 => current < RsiBuyLevel ? SignalDirection.Buy : current > RsiSellLevel ? SignalDirection.Sell : SignalDirection.None,
-			2 => current > previous ? SignalDirection.Buy : current < previous ? SignalDirection.Sell : SignalDirection.None,
+			1 => current < RsiBuyLevel ? SignalDirections.Buy : current > RsiSellLevel ? SignalDirections.Sell : SignalDirections.None,
+			2 => current > previous ? SignalDirections.Buy : current < previous ? SignalDirections.Sell : SignalDirections.None,
 			3 => CombineSignals(
-			current < RsiBuyLevel ? SignalDirection.Buy : current > RsiSellLevel ? SignalDirection.Sell : SignalDirection.None,
-			current > previous ? SignalDirection.Buy : current < previous ? SignalDirection.Sell : SignalDirection.None
+			current < RsiBuyLevel ? SignalDirections.Buy : current > RsiSellLevel ? SignalDirections.Sell : SignalDirections.None,
+			current > previous ? SignalDirections.Buy : current < previous ? SignalDirections.Sell : SignalDirections.None
 			),
 			4 =>
 			current > previous && current >= RsiBuyZone && current <= RsiSellLevel
-			? SignalDirection.Buy
+			? SignalDirections.Buy
 			: current < previous && current <= RsiSellZone && current >= RsiBuyLevel
-			? SignalDirection.Sell
-			: SignalDirection.None,
-			_ => SignalDirection.None
+			? SignalDirections.Sell
+			: SignalDirections.None,
+			_ => SignalDirections.None
 		};
 
 		if (UseLastRsiSignal)
 		{
-			if (signal != SignalDirection.None && signal != _lastRsiSignal)
+			if (signal != SignalDirections.None && signal != _lastRsiSignal)
 			_lastRsiSignal = signal;
 			return _lastRsiSignal;
 		}
@@ -1145,50 +1145,50 @@ public class MultiComboStrategy : Strategy
 		return signal;
 	}
 
-	private SignalDirection GetMacdSignal()
+	private SignalDirections GetMacdSignal()
 	{
 		if (_macdMain is null || _macdMainPrev is null || _macdSignal is null || _macdSignalPrev is null)
-		return UseLastMacdSignal ? _lastMacdSignal : SignalDirection.None;
+		return UseLastMacdSignal ? _lastMacdSignal : SignalDirections.None;
 
 		var macd = _macdMain.Value;
 		var macdPrev = _macdMainPrev.Value;
 		var signal = _macdSignal.Value;
 		var signalPrev = _macdSignalPrev.Value;
 
-		SignalDirection result = MacdMode switch
+		SignalDirections result = MacdMode switch
 		{
 			1 =>
 			macd > macdPrev && signal > signalPrev && macd > signal
-			? SignalDirection.Buy
+			? SignalDirections.Buy
 			: macd < macdPrev && signal < signalPrev && macd < signal
-			? SignalDirection.Sell
-			: SignalDirection.None,
+			? SignalDirections.Sell
+			: SignalDirections.None,
 			2 =>
 			macd > signal && macdPrev <= signalPrev && macd < 0m && macdPrev < 0m
-			? SignalDirection.Buy
+			? SignalDirections.Buy
 			: macd < signal && macdPrev >= signalPrev && macd > 0m && macdPrev > 0m
-			? SignalDirection.Sell
-			: SignalDirection.None,
+			? SignalDirections.Sell
+			: SignalDirections.None,
 			3 =>
 			(macd > signal && macdPrev <= signalPrev && macd < 0m && macdPrev < 0m) ||
 			(macd > macdPrev && signal > signalPrev && macd > signal)
-			? SignalDirection.Buy
+			? SignalDirections.Buy
 			: (macd < signal && macdPrev >= signalPrev && macd > 0m && macdPrev > 0m) ||
 			(macd < macdPrev && signal < signalPrev && macd < signal)
-			? SignalDirection.Sell
-			: SignalDirection.None,
+			? SignalDirections.Sell
+			: SignalDirections.None,
 			4 =>
 			signal > 0m && signalPrev < 0m
-			? SignalDirection.Buy
+			? SignalDirections.Buy
 			: signal < 0m && signalPrev > 0m
-			? SignalDirection.Sell
-			: SignalDirection.None,
-			_ => SignalDirection.None
+			? SignalDirections.Sell
+			: SignalDirections.None,
+			_ => SignalDirections.None
 		};
 
 		if (UseLastMacdSignal)
 		{
-			if (result != SignalDirection.None && result != _lastMacdSignal)
+			if (result != SignalDirections.None && result != _lastMacdSignal)
 			_lastMacdSignal = result;
 			return _lastMacdSignal;
 		}
@@ -1196,38 +1196,38 @@ public class MultiComboStrategy : Strategy
 		return result;
 	}
 
-	private SignalDirection GetStochasticSignal()
+	private SignalDirections GetStochasticSignal()
 	{
 		if (_stochasticMain is null || _stochasticSignal is null)
-		return UseLastStochasticSignal ? _lastStochasticSignal : SignalDirection.None;
+		return UseLastStochasticSignal ? _lastStochasticSignal : SignalDirections.None;
 
 		var main = _stochasticMain.Value;
 		var signal = _stochasticSignal.Value;
 
-		SignalDirection result;
+		SignalDirections result;
 
 		if (StochasticUseThresholds)
 		{
 			if (main > signal && main > StochasticUpper)
-			result = SignalDirection.Buy;
+			result = SignalDirections.Buy;
 			else if (main < signal && main < StochasticLower)
-			result = SignalDirection.Sell;
+			result = SignalDirections.Sell;
 			else
-			result = SignalDirection.None;
+			result = SignalDirections.None;
 		}
 		else
 		{
 			if (main > signal)
-			result = SignalDirection.Buy;
+			result = SignalDirections.Buy;
 			else if (main < signal)
-			result = SignalDirection.Sell;
+			result = SignalDirections.Sell;
 			else
-			result = SignalDirection.None;
+			result = SignalDirections.None;
 		}
 
 		if (UseLastStochasticSignal)
 		{
-			if (result != SignalDirection.None && result != _lastStochasticSignal)
+			if (result != SignalDirections.None && result != _lastStochasticSignal)
 			_lastStochasticSignal = result;
 			return _lastStochasticSignal;
 		}
@@ -1235,16 +1235,16 @@ public class MultiComboStrategy : Strategy
 		return result;
 	}
 
-	private SignalDirection GetSarSignal()
+	private SignalDirections GetSarSignal()
 	{
 		if (_sarValue is null || _sarClose is null)
-		return UseLastSarSignal ? _lastSarSignal : SignalDirection.None;
+		return UseLastSarSignal ? _lastSarSignal : SignalDirections.None;
 
-		var result = _sarValue.Value < _sarClose.Value ? SignalDirection.Buy : SignalDirection.Sell;
+		var result = _sarValue.Value < _sarClose.Value ? SignalDirections.Buy : SignalDirections.Sell;
 
 		if (UseLastSarSignal)
 		{
-			if (result != SignalDirection.None && result != _lastSarSignal)
+			if (result != SignalDirections.None && result != _lastSarSignal)
 			_lastSarSignal = result;
 			return _lastSarSignal;
 		}
@@ -1252,15 +1252,15 @@ public class MultiComboStrategy : Strategy
 		return result;
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverage(MaMethod method, int length)
+	private LengthIndicator<decimal> CreateMovingAverage(MaMethods method, int length)
 	{
 		// Map the original MA method integers to StockSharp indicators.
 		return method switch
 		{
-			MaMethod.Simple => new SMA { Length = length },
-			MaMethod.Exponential => new EMA { Length = length },
-			MaMethod.Smoothed => new SMMA { Length = length },
-			MaMethod.Weighted => new WeightedMovingAverage { Length = length },
+			MaMethods.Simple => new SMA { Length = length },
+			MaMethods.Exponential => new EMA { Length = length },
+			MaMethods.Smoothed => new SMMA { Length = length },
+			MaMethods.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new SMA { Length = length }
 		};
 	}
@@ -1287,9 +1287,9 @@ public class MultiComboStrategy : Strategy
 	private int FastMaLength => _fastMaLength.Value;
 	private int MidMaLength => _midMaLength.Value;
 	private int SlowMaLength => _slowMaLength.Value;
-	private MaMethod FastMaMethod => _fastMaMethod.Value;
-	private MaMethod MidMaMethod => _midMaMethod.Value;
-	private MaMethod SlowMaMethod => _slowMaMethod.Value;
+	private MaMethods FastMaMethod => _fastMaMethod.Value;
+	private MaMethods MidMaMethod => _midMaMethod.Value;
+	private MaMethods SlowMaMethod => _slowMaMethod.Value;
 	private DataType MaCandleType => _maCandleType.Value;
 
 	private bool UseRsi => _useRsi.Value;
@@ -1350,14 +1350,14 @@ public class MultiComboStrategy : Strategy
 	private decimal TakeProfitOffset => _takeProfitOffset.Value;
 	private bool UseTrailingStop => _useTrailingStop.Value;
 
-	private enum SignalDirection
+	private enum SignalDirections
 	{
 		None,
 		Buy,
 		Sell
 	}
 
-	private enum TrendState
+	private enum TrendStates
 	{
 		None,
 		Up,
@@ -1369,7 +1369,7 @@ public class MultiComboStrategy : Strategy
 	/// <summary>
 	/// Moving average method.
 	/// </summary>
-	public enum MaMethod
+	public enum MaMethods
 	{
 		Simple,
 		Exponential,

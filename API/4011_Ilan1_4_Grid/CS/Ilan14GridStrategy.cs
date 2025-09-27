@@ -22,7 +22,7 @@ public class Ilan14GridStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _initialVolume;
 	private readonly StrategyParam<int> _volumeDigits;
-	private readonly StrategyParam<MoneyManagementMode> _moneyManagementMode;
+	private readonly StrategyParam<MoneyManagementModes> _moneyManagementMode;
 	private readonly StrategyParam<bool> _useCloseBeforeAdding;
 	private readonly StrategyParam<bool> _useAdd;
 	private readonly StrategyParam<decimal> _lotExponent;
@@ -52,7 +52,7 @@ public class Ilan14GridStrategy : Strategy
 	private DateTimeOffset? _basketExpiration;
 	private Sides? _basketDirection;
 
-	private enum MoneyManagementMode
+	private enum MoneyManagementModes
 	{
 		Fixed,
 		Geometric,
@@ -74,7 +74,7 @@ public Ilan14GridStrategy()
 			.SetNotNegative()
 			.SetDisplay("Volume digits", "Number of decimal places used to round trade volume.", "Trading");
 
-		_moneyManagementMode = Param(nameof(MoneyManagementMode), MoneyManagementMode.Geometric)
+		_moneyManagementMode = Param(nameof(MoneyManagementModes), MoneyManagementModes.Geometric)
 			.SetDisplay("Money management", "Volume calculation mode: fixed, geometric martingale or recover last loss.", "Trading");
 
 		_lotExponent = Param(nameof(LotExponent), 1.667m)
@@ -155,7 +155,7 @@ public Ilan14GridStrategy()
 		set => _volumeDigits.Value = value;
 	}
 
-	public MoneyManagementMode MoneyManagementMode
+	public MoneyManagementModes MoneyManagementModes
 	{
 		get => _moneyManagementMode.Value;
 		set => _moneyManagementMode.Value = value;
@@ -540,16 +540,16 @@ public Ilan14GridStrategy()
 	{
 		decimal volume;
 
-		switch (MoneyManagementMode)
+		switch (MoneyManagementModes)
 		{
-			case MoneyManagementMode.Fixed:
+			case MoneyManagementModes.Fixed:
 				volume = InitialVolume;
 				break;
-			case MoneyManagementMode.Geometric:
+			case MoneyManagementModes.Geometric:
 				var power = _tradeCount;
 				volume = InitialVolume * (decimal)Math.Pow((double)LotExponent, power);
 				break;
-			case MoneyManagementMode.RecoverLastLoss:
+			case MoneyManagementModes.RecoverLastLoss:
 				volume = _lastClosedWasLoss
 					? (_lastClosedOrderVolume > 0m ? _lastClosedOrderVolume : InitialVolume) * LotExponent
 					: InitialVolume;

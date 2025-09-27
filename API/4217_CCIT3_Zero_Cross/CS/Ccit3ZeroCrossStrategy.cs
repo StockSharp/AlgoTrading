@@ -16,7 +16,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Operating modes supported by <see cref="Ccit3ZeroCrossStrategy"/>.
 /// </summary>
-public enum Ccit3Mode
+public enum Ccit3Modes
 {
 	/// <summary>
 	/// Classic CCIT3 calculation with persistent Tillson T3 smoothing.
@@ -32,7 +32,7 @@ public enum Ccit3Mode
 /// <summary>
 /// Applied price options compatible with the CCIT3 port.
 /// </summary>
-public enum CciAppliedPriceType
+public enum CciAppliedPriceTypes
 {
 	/// <summary>
 	/// Use candle close price.
@@ -81,10 +81,10 @@ public class Ccit3ZeroCrossStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingPoints;
 	private readonly StrategyParam<bool> _tradeOverturn;
 	private readonly StrategyParam<int> _cciPeriod;
-	private readonly StrategyParam<CciAppliedPriceType> _cciPriceType;
+	private readonly StrategyParam<CciAppliedPriceTypes> _cciPriceType;
 	private readonly StrategyParam<int> _t3Period;
 	private readonly StrategyParam<decimal> _volumeFactor;
-	private readonly StrategyParam<Ccit3Mode> _mode;
+	private readonly StrategyParam<Ccit3Modes> _mode;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _maxDrawdownTarget;
 
@@ -133,7 +133,7 @@ public class Ccit3ZeroCrossStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(100, 400, 5);
 
-		_cciPriceType = Param(nameof(CciPriceType), CciAppliedPriceType.Typical)
+		_cciPriceType = Param(nameof(CciPriceType), CciAppliedPriceTypes.Typical)
 			.SetDisplay("CCI Price", "Applied price used for the CCI input", "Indicator");
 
 		_t3Period = Param(nameof(T3Period), 60)
@@ -145,7 +145,7 @@ public class Ccit3ZeroCrossStrategy : Strategy
 		_volumeFactor = Param(nameof(VolumeFactor), 0.618m)
 			.SetDisplay("T3 Volume Factor", "Tillson T3 volume factor (B coefficient)", "Indicator");
 
-		_mode = Param(nameof(Mode), Ccit3Mode.Simple)
+		_mode = Param(nameof(Mode), Ccit3Modes.Simple)
 			.SetDisplay("Mode", "Choose between Simple and NoRecalc CCIT3", "Indicator");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -213,7 +213,7 @@ public class Ccit3ZeroCrossStrategy : Strategy
 	/// <summary>
 	/// Applied price used as the CCI input.
 	/// </summary>
-	public CciAppliedPriceType CciPriceType
+	public CciAppliedPriceTypes CciPriceType
 	{
 		get => _cciPriceType.Value;
 		set => _cciPriceType.Value = value;
@@ -240,7 +240,7 @@ public class Ccit3ZeroCrossStrategy : Strategy
 	/// <summary>
 	/// Selected CCIT3 calculation mode.
 	/// </summary>
-	public Ccit3Mode Mode
+	public Ccit3Modes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -371,7 +371,7 @@ public class Ccit3ZeroCrossStrategy : Strategy
 
 	private decimal CalculateT3(decimal cciValue)
 	{
-		if (Mode == Ccit3Mode.Simple)
+		if (Mode == Ccit3Modes.Simple)
 		{
 			_simpleE1 = _alpha * cciValue + _beta * _simpleE1;
 			_simpleE2 = _alpha * _simpleE1 + _beta * _simpleE2;
@@ -500,17 +500,17 @@ public class Ccit3ZeroCrossStrategy : Strategy
 		_c4 = 1m + 3m * b + b3 + 3m * b2;
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, CciAppliedPriceType priceType)
+	private static decimal GetAppliedPrice(ICandleMessage candle, CciAppliedPriceTypes priceType)
 	{
 		return priceType switch
 		{
-			CciAppliedPriceType.Close => candle.ClosePrice,
-			CciAppliedPriceType.Open => candle.OpenPrice,
-			CciAppliedPriceType.High => candle.HighPrice,
-			CciAppliedPriceType.Low => candle.LowPrice,
-			CciAppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			CciAppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			CciAppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			CciAppliedPriceTypes.Close => candle.ClosePrice,
+			CciAppliedPriceTypes.Open => candle.OpenPrice,
+			CciAppliedPriceTypes.High => candle.HighPrice,
+			CciAppliedPriceTypes.Low => candle.LowPrice,
+			CciAppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			CciAppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			CciAppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}

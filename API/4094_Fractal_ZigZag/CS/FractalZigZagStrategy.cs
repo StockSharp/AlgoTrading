@@ -34,7 +34,7 @@ public class FractalZigZagStrategy : Strategy
 	private DateTimeOffset? _lastUpTime;
 	private DateTimeOffset? _lastDownTime;
 	private DateTimeOffset? _lastFractalTime;
-	private FractalType? _lastFractalType;
+	private FractalTypes? _lastFractalTypes;
 	private int _trend = 2;
 
 	private decimal _entryPrice;
@@ -42,7 +42,7 @@ public class FractalZigZagStrategy : Strategy
 	private decimal? _takeProfitPrice;
 	private decimal? _trailingStopPrice;
 
-	private enum FractalType
+	private enum FractalTypes
 	{
 		High,
 		Low
@@ -169,7 +169,7 @@ public class FractalZigZagStrategy : Strategy
 		_lastUpTime = null;
 		_lastDownTime = null;
 		_lastFractalTime = null;
-		_lastFractalType = null;
+		_lastFractalTypes = null;
 		_trend = 2;
 
 		ResetPositionState();
@@ -264,15 +264,15 @@ public class FractalZigZagStrategy : Strategy
 		}
 
 		if (isHigh && (_lastUpTime is null || center.Time > _lastUpTime.Value))
-		RegisterFractal(FractalType.High, center);
+		RegisterFractal(FractalTypes.High, center);
 
 		if (isLow && (_lastDownTime is null || center.Time > _lastDownTime.Value))
-		RegisterFractal(FractalType.Low, center);
+		RegisterFractal(FractalTypes.Low, center);
 	}
 
-	private void RegisterFractal(FractalType type, CandleInfo info)
+	private void RegisterFractal(FractalTypes type, CandleInfo info)
 	{
-		if (type == FractalType.High)
+		if (type == FractalTypes.High)
 		{
 			_lastUpFractal = info.High;
 			_lastUpTime = info.Time;
@@ -286,14 +286,14 @@ public class FractalZigZagStrategy : Strategy
 		if (_lastFractalTime is null || info.Time >= _lastFractalTime.Value)
 		{
 			_lastFractalTime = info.Time;
-			_lastFractalType = type;
-			_trend = type == FractalType.High ? 1 : 2;
+			_lastFractalTypes = type;
+			_trend = type == FractalTypes.High ? 1 : 2;
 		}
 	}
 
 	private void TryEnterPosition(ICandleMessage candle)
 	{
-		if (_lastFractalType is null)
+		if (_lastFractalTypes is null)
 		return;
 
 		var volume = Lots;
