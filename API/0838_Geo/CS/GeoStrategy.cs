@@ -13,15 +13,25 @@ namespace StockSharp.Samples.Strategies;
 public class GeoStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _tolerance;
+	private readonly StrategyParam<decimal> _phi;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// Golden ratio tolerance in percent.
-	/// </summary>
+/// <summary>
+/// Golden ratio tolerance in percent.
+/// </summary>
 	public decimal Tolerance
 	{
-	get => _tolerance.Value;
-	set => _tolerance.Value = value;
+		get => _tolerance.Value;
+		set => _tolerance.Value = value;
+	}
+
+/// <summary>
+/// Golden ratio value.
+/// </summary>
+	public decimal Phi
+	{
+		get => _phi.Value;
+		set => _phi.Value = value;
 	}
 
 	/// <summary>
@@ -39,10 +49,16 @@ public class GeoStrategy : Strategy
 	public GeoStrategy()
 	{
 	_tolerance = Param(nameof(Tolerance), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Tolerance", "Tolerance percent for phi ratio", "General")
-		.SetCanOptimize(true)
-		.SetOptimize(0.5m, 5m, 0.5m);
+			.SetGreaterThanZero()
+			.SetDisplay("Tolerance", "Tolerance percent for phi ratio", "General")
+			.SetCanOptimize(true)
+			.SetOptimize(0.5m, 5m, 0.5m);
+
+	_phi = Param(nameof(Phi), 1.61803398875m)
+			.SetGreaterThanZero()
+			.SetDisplay("Phi", "Golden ratio value", "General")
+			.SetCanOptimize(true)
+			.SetOptimize(1.4m, 1.8m, 0.01m);
 
 	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -90,8 +106,8 @@ public class GeoStrategy : Strategy
 	}
 	}
 
-	private static bool IsPhiRatio(decimal a, decimal b, decimal tolerance)
-	{
+	private bool IsPhiRatio(decimal a, decimal b, decimal tolerance)
+{
 	var loPhi = Phi * (1 - tolerance / 100m);
 	var hiPhi = Phi * (1 + tolerance / 100m);
 	var r = b / a;
@@ -103,5 +119,4 @@ public class GeoStrategy : Strategy
 	return Math.Abs(value1 - value2);
 	}
 
-	private const decimal Phi = 1.61803398875m;
 }
