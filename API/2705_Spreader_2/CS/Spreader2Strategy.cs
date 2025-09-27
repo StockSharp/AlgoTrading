@@ -16,13 +16,12 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class Spreader2Strategy : Strategy
 {
-	private const int DayBars = 1440;
-
 	private readonly StrategyParam<Security> _secondSecurityParam;
 	private readonly StrategyParam<decimal> _primaryVolumeParam;
 	private readonly StrategyParam<decimal> _targetProfitParam;
 	private readonly StrategyParam<int> _shiftParam;
 	private readonly StrategyParam<DataType> _candleTypeParam;
+	private readonly StrategyParam<int> _dayBarsParam;
 
 	private readonly Queue<ICandleMessage> _firstPending = new();
 	private readonly Queue<ICandleMessage> _secondPending = new();
@@ -76,6 +75,15 @@ public class Spreader2Strategy : Strategy
 	}
 
 	/// <summary>
+	/// Number of intraday bars considered when calculating daily statistics.
+	/// </summary>
+	public int DayBars
+	{
+		get => _dayBarsParam.Value;
+		set => _dayBarsParam.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type used for analysis.
 	/// </summary>
 	public DataType CandleType
@@ -113,6 +121,11 @@ public class Spreader2Strategy : Strategy
 
 		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for pair analysis", "General");
+
+		_dayBarsParam = Param(nameof(DayBars), 1440)
+			.SetGreaterThanZero()
+			.SetDisplay("Day Bars", "Number of intraday bars used for rolling statistics", "Data")
+			.SetCanOptimize(true);
 	}
 
 	/// <inheritdoc />

@@ -13,12 +13,11 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class JSChaosStrategy : Strategy
 {
-	private const int FractalLookback = 10;
-	private const int JawShift = 8;
-	private const int TeethShift = 5;
-	private const int LipsShift = 3;
-
 	private readonly StrategyParam<bool> _useTime;
+	private readonly StrategyParam<int> _fractalLookback;
+	private readonly StrategyParam<int> _jawShift;
+	private readonly StrategyParam<int> _teethShift;
+	private readonly StrategyParam<int> _lipsShift;
 	private readonly StrategyParam<int> _openHour;
 	private readonly StrategyParam<int> _closeHour;
 	private readonly StrategyParam<decimal> _baseVolume;
@@ -172,6 +171,42 @@ public class JSChaosStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Number of completed bars used to confirm fractals.
+	/// </summary>
+	public int FractalLookback
+	{
+		get => _fractalLookback.Value;
+		set => _fractalLookback.Value = value;
+	}
+
+	/// <summary>
+	/// Shift applied to the jaw moving average.
+	/// </summary>
+	public int JawShift
+	{
+		get => _jawShift.Value;
+		set => _jawShift.Value = value;
+	}
+
+	/// <summary>
+	/// Shift applied to the teeth moving average.
+	/// </summary>
+	public int TeethShift
+	{
+		get => _teethShift.Value;
+		set => _teethShift.Value = value;
+	}
+
+	/// <summary>
+	/// Shift applied to the lips moving average.
+	/// </summary>
+	public int LipsShift
+	{
+		get => _lipsShift.Value;
+		set => _lipsShift.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type used for calculations.
 	/// </summary>
 	public DataType CandleType
@@ -224,6 +259,26 @@ public class JSChaosStrategy : Strategy
 		_breakevenPlusPips = Param(nameof(BreakevenPlusPips), 1)
 			.SetRange(0, 1000)
 			.SetDisplay("Breakeven Plus", "Additional pips for breakeven", "Risk");
+
+		_fractalLookback = Param(nameof(FractalLookback), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Fractal Lookback", "Bars required to confirm fractal levels", "Indicator")
+			.SetCanOptimize(true);
+
+		_jawShift = Param(nameof(JawShift), 8)
+			.SetRange(1, 30)
+			.SetDisplay("Jaw Shift", "Shift applied to the jaw moving average", "Indicator")
+			.SetCanOptimize(true);
+
+		_teethShift = Param(nameof(TeethShift), 5)
+			.SetRange(1, 30)
+			.SetDisplay("Teeth Shift", "Shift applied to the teeth moving average", "Indicator")
+			.SetCanOptimize(true);
+
+		_lipsShift = Param(nameof(LipsShift), 3)
+			.SetRange(1, 30)
+			.SetDisplay("Lips Shift", "Shift applied to the lips moving average", "Indicator")
+			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");

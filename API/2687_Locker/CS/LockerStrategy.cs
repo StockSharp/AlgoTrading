@@ -29,6 +29,7 @@ public class LockerStrategy : Strategy
 	private readonly StrategyParam<decimal> _stepPoints;
 	private readonly StrategyParam<bool> _enableAutomation;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _maxOpenPositions;
 
 	private readonly List<PositionEntry> _entries = new();
 
@@ -36,14 +37,13 @@ public class LockerStrategy : Strategy
 	private decimal _lastEntryPrice;
 	private Sides? _lastEntrySide;
 
-	private const int MaxOpenPositions = 8;
-
 	public decimal ProfitTargetPercent { get => _profitTargetPercent.Value; set => _profitTargetPercent.Value = value; }
 	public decimal StartVolume { get => _startVolume.Value; set => _startVolume.Value = value; }
 	public decimal StepVolume { get => _stepVolume.Value; set => _stepVolume.Value = value; }
 	public decimal StepPoints { get => _stepPoints.Value; set => _stepPoints.Value = value; }
 	public bool EnableAutomation { get => _enableAutomation.Value; set => _enableAutomation.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int MaxOpenPositions { get => _maxOpenPositions.Value; set => _maxOpenPositions.Value = value; }
 
 	public LockerStrategy()
 	{
@@ -72,6 +72,11 @@ public class LockerStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for processing", "Data");
+
+		_maxOpenPositions = Param(nameof(MaxOpenPositions), 8)
+			.SetGreaterThanZero()
+			.SetDisplay("Max Open Positions", "Maximum number of hedged legs allowed", "Risk")
+			.SetCanOptimize(true);
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
