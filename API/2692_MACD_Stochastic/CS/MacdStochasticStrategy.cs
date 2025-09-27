@@ -384,10 +384,10 @@ public class MacdStochasticStrategy : Strategy
 			SignalMa = { Length = MacdSignalPeriod }
 		};
 
-		_stochastic = new Stochastic
+		_stochastic = new()
 		{
 			Length = StochasticLength,
-			KPeriod = StochasticKPeriod,
+			K = StochasticKPeriod,
 			DPeriod = StochasticDPeriod
 		};
 

@@ -58,7 +58,7 @@ public class ExpSpearmanRankCorrelationHistogramStrategy : Strategy
 			.SetDisplay("Max Range", "Upper bound for the allowed lookback length", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-			.SetMinMax(0, 50)
+			.SetRange(0, 50)
 			.SetDisplay("Signal Bar", "Historical offset where the histogram is checked", "Signals");
 
 		_highLevel = Param(nameof(HighLevel), 0.5m)

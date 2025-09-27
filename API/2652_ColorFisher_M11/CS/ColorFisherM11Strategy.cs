@@ -166,12 +166,12 @@ public class ColorFisherM11Strategy : Strategy
 
 		_priceSmoothing = Param(nameof(PriceSmoothing), 0.3m)
 			.SetNotNegative()
-			.SetLessOrEqual(0.99m)
+			.SetRange(0.0001m, 0.99m)
 			.SetDisplay("Price Smoothing", "Smoothing factor applied before Fisher transform", "Indicator");
 
 		_indexSmoothing = Param(nameof(IndexSmoothing), 0.3m)
 			.SetNotNegative()
-			.SetLessOrEqual(0.99m)
+			.SetRange(0.0001m, 0.99m)
 			.SetDisplay("Index Smoothing", "Smoothing factor applied after Fisher transform", "Indicator");
 
 		_highLevel = Param(nameof(HighLevel), 1.01m)

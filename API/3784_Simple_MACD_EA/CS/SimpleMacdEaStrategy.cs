@@ -103,7 +103,7 @@ public class SimpleMacdEaStrategy : Strategy
 			.SetDisplay("Trailing Updates", "Maximum trailing stop updates", "Risk");
 
 		_waitTimeBeforeStopLoss = Param(nameof(WaitTimeBeforeStopLoss), 10000)
-			.SetMinMax(0, 1000000)
+			.SetRange(0, 1000000)
 			.SetDisplay("Wait Cycles", "Cycles before enabling soft stop", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

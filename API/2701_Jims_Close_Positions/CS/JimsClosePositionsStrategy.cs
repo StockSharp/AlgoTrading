@@ -22,7 +22,7 @@ public class JimsClosePositionsStrategy : Strategy
 	private readonly StrategyParam<bool> _closeAllProfit;
 	private readonly StrategyParam<bool> _closeAllLoss;
 
-	private ISubscription _tradeSubscription;
+	private ISubscriptionHandler<ITickTradeMessage> _tradeSubscription;
 	private bool _isClosing;
 
 	/// <summary>

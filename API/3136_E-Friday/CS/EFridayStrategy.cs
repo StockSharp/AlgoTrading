@@ -77,7 +77,7 @@ public class EFridayStrategy : Strategy
 
 		_startHourParam = Param(nameof(StartHour), 5)
 		.SetDisplay("Start Hour", "Hour (exchange time) when trading becomes allowed", "Sessions")
-		.SetMinMax(0, 23)
+		.SetRange(0, 23)
 		.SetCanOptimize(true);
 
 		_useCloseHourParam = Param(nameof(UseCloseHour), true)
@@ -85,7 +85,7 @@ public class EFridayStrategy : Strategy
 
 		_endHourParam = Param(nameof(EndHour), 10)
 		.SetDisplay("End Hour", "Hour (exchange time) when positions are closed", "Sessions")
-		.SetMinMax(0, 23)
+		.SetRange(0, 23)
 		.SetCanOptimize(true);
 	}
 

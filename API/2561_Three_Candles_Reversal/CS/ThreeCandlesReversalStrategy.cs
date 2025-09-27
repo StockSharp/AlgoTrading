@@ -59,10 +59,10 @@ public class ThreeCandlesReversalStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for the candle subscription", "General");
 		_signalBar = Param(nameof(SignalBar), 1)
-			.SetMinMax(0, 20)
+			.SetRange(0, 20)
 			.SetDisplay("Signal Bar", "Historical offset where the signal is evaluated", "Pattern");
 		_maxBarSize = Param(nameof(MaxBarSize), 300)
-			.SetMinMax(0, 100000)
+			.SetRange(0, 100000)
 			.SetDisplay("Max Bar Size", "Disable the volume filter when the oldest candle range exceeds this value (in price steps)", "Pattern");
 		_volumeFilter = Param(nameof(VolumeFilter), ThreeCandlesVolumeTypes.Tick)
 			.SetDisplay("Volume Filter", "Volume filter used to confirm the reversal", "Pattern");
@@ -75,10 +75,10 @@ public class ThreeCandlesReversalStrategy : Strategy
 		_allowSellExit = Param(nameof(AllowSellExit), true)
 			.SetDisplay("Allow Sell Exit", "Close short positions when a bullish pattern appears", "Trading");
 		_stopLossPips = Param(nameof(StopLossPips), 1000m)
-			.SetMinMax(0m, 100000m)
+			.SetRange(0m, 100000m)
 			.SetDisplay("Stop Loss", "Distance to the protective stop in price steps", "Risk");
 		_takeProfitPips = Param(nameof(TakeProfitPips), 2000m)
-			.SetMinMax(0m, 100000m)
+			.SetRange(0m, 100000m)
 			.SetDisplay("Take Profit", "Distance to the profit target in price steps", "Risk");
 	}
 

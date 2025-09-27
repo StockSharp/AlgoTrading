@@ -62,11 +62,11 @@ public class CorrTimeStrategy : Strategy
 			.SetDisplay("Close On Opposite", "Close current position when an opposite signal appears", "Trading");
 
 		_entryHour = Param(nameof(EntryHour), 18)
-			.SetMinMax(0, 23)
+			.SetRange(0, 23)
 			.SetDisplay("Entry Hour", "Start of the daily trading window (exchange time)", "Trading");
 
 		_openHours = Param(nameof(OpenHours), 20)
-			.SetMinMax(0, 23)
+			.SetRange(0, 23)
 			.SetDisplay("Open Hours", "Duration of the allowed trading window", "Trading");
 
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)

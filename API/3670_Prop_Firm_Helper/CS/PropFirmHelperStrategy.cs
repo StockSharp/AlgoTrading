@@ -62,7 +62,7 @@ public class PropFirmHelperStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_entryShift = Param(nameof(EntryShift), 1)
-			.SetMinMax(0, 20)
+			.SetRange(0, 20)
 			.SetDisplay("Entry Shift", "Number of finished candles ignored when reading Donchian breakout", "Entries")
 			.SetCanOptimize(true);
 
@@ -72,7 +72,7 @@ public class PropFirmHelperStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_exitShift = Param(nameof(ExitShift), 1)
-			.SetMinMax(0, 20)
+			.SetRange(0, 20)
 			.SetDisplay("Exit Shift", "Number of finished candles ignored when reading trailing Donchian", "Exits")
 			.SetCanOptimize(true);
 

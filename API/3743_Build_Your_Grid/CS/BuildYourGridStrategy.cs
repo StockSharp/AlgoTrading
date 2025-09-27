@@ -380,7 +380,7 @@ public class BuildYourGridStrategy : Strategy
 
 		_maxOrders = Param(nameof(MaxOrders), 0)
 			.SetDisplay("Max Orders", "Maximum simultaneous positions (0 = unlimited)", "General")
-			.SetMinMax(0, 1000);
+			.SetRange(0, 1000);
 
 		_maxSpread = Param(nameof(MaxSpread), 0m)
 			.SetDisplay("Max Spread", "Maximum allowed spread in pips (0 = ignore)", "General")

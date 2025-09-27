@@ -85,19 +85,19 @@ _useTimeFilter = Param(nameof(UseTimeFilter), true)
 .SetDisplay("Use Time Filter", "Enable trading-hour windows", "Filters");
 
 _zone1StartHour = Param(nameof(Zone1StartHour), 10)
-.SetMinMax(0, 23)
+.SetRange(0, 23)
 .SetDisplay("Zone 1 Start", "First trading window start hour", "Filters");
 
 _zone1EndHour = Param(nameof(Zone1EndHour), 18)
-.SetMinMax(0, 23)
+.SetRange(0, 23)
 .SetDisplay("Zone 1 End", "First trading window end hour", "Filters");
 
 _zone2StartHour = Param(nameof(Zone2StartHour), 1)
-.SetMinMax(0, 23)
+.SetRange(0, 23)
 .SetDisplay("Zone 2 Start", "Second trading window start hour", "Filters");
 
 _zone2EndHour = Param(nameof(Zone2EndHour), 6)
-.SetMinMax(0, 23)
+.SetRange(0, 23)
 .SetDisplay("Zone 2 End", "Second trading window end hour", "Filters");
 
 _fastPeriod = Param(nameof(FastPeriod), 12)
@@ -116,7 +116,7 @@ _signalPeriod = Param(nameof(SignalPeriod), 9)
 .SetCanOptimize(true);
 
 _macdShift = Param(nameof(MacdShift), 1)
-.SetMinMax(0, 1)
+.SetRange(0, 1)
 .SetDisplay("MACD Shift", "Shift used when evaluating crossovers", "Indicators");
 
 _useZeroCross = Param(nameof(UseZeroCross), false)
