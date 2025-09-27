@@ -36,7 +36,7 @@ public class IStochasticTradingStrategy : Strategy
 	private readonly List<PositionEntry> _entries = new();
 	private StochasticOscillator _stochastic = null!;
 	private decimal _pipSize;
-	private PositionSide _currentDirection = PositionSide.None;
+	private PositionSides _currentDirection = PositionSides.None;
 
 	/// <summary>
 	/// Volume of the first position in lots.
@@ -223,7 +223,7 @@ public class IStochasticTradingStrategy : Strategy
 	{
 		base.OnReseted();
 		_entries.Clear();
-		_currentDirection = PositionSide.None;
+		_currentDirection = PositionSides.None;
 		_stochastic = null!;
 		_pipSize = 0m;
 	}
@@ -284,11 +284,11 @@ public class IStochasticTradingStrategy : Strategy
 
 			if (mainLine > signalLine && signalLine < ZoneBuy && Position <= 0)
 			{
-				OpenEntry(PositionSide.Long, candle.ClosePrice, OrderVolume);
+				OpenEntry(PositionSides.Long, candle.ClosePrice, OrderVolume);
 			}
 			else if (mainLine < signalLine && signalLine > ZoneSell && Position >= 0)
 			{
-				OpenEntry(PositionSide.Short, candle.ClosePrice, OrderVolume);
+				OpenEntry(PositionSides.Short, candle.ClosePrice, OrderVolume);
 			}
 		}
 		else
@@ -307,11 +307,11 @@ public class IStochasticTradingStrategy : Strategy
 		for (var i = _entries.Count - 1; i >= 0; i--)
 		{
 			var entry = _entries[i];
-			var stopTriggered = entry.Side == PositionSide.Long
+			var stopTriggered = entry.Side == PositionSides.Long
 				? entry.StopPrice > 0m && closePrice <= entry.StopPrice
 				: entry.StopPrice > 0m && closePrice >= entry.StopPrice;
 
-			var takeTriggered = !stopTriggered && (entry.Side == PositionSide.Long
+			var takeTriggered = !stopTriggered && (entry.Side == PositionSides.Long
 				? entry.TakePrice > 0m && closePrice >= entry.TakePrice
 				: entry.TakePrice > 0m && closePrice <= entry.TakePrice);
 
@@ -336,7 +336,7 @@ public class IStochasticTradingStrategy : Strategy
 
 		foreach (var entry in _entries)
 		{
-			if (entry.Side == PositionSide.Long)
+			if (entry.Side == PositionSides.Long)
 			{
 				var newStop = closePrice - trailingDistance;
 				if (newStop <= 0m)
@@ -372,34 +372,34 @@ public class IStochasticTradingStrategy : Strategy
 
 		var lastEntry = _entries[^1];
 
-		if (lastEntry.Side == PositionSide.Long)
+		if (lastEntry.Side == PositionSides.Long)
 		{
 			if (lastEntry.EntryPrice - gapDistance > price)
 			{
-				OpenEntry(PositionSide.Long, price, lastEntry.Volume * 2m);
+				OpenEntry(PositionSides.Long, price, lastEntry.Volume * 2m);
 			}
 		}
-		else if (lastEntry.Side == PositionSide.Short)
+		else if (lastEntry.Side == PositionSides.Short)
 		{
 			if (lastEntry.EntryPrice + gapDistance < price)
 			{
-				OpenEntry(PositionSide.Short, price, lastEntry.Volume * 2m);
+				OpenEntry(PositionSides.Short, price, lastEntry.Volume * 2m);
 			}
 		}
 	}
 
-	private void OpenEntry(PositionSide side, decimal price, decimal volume)
+	private void OpenEntry(PositionSides side, decimal price, decimal volume)
 	{
 		if (volume <= 0m)
 			return;
 
-		if (_currentDirection != PositionSide.None && _currentDirection != side)
+		if (_currentDirection != PositionSides.None && _currentDirection != side)
 			return;
 
 		if (MaxPositions > 0 && _entries.Count >= MaxPositions)
 			return;
 
-		if (side == PositionSide.Long)
+		if (side == PositionSides.Long)
 			BuyMarket(volume);
 		else
 			SellMarket(volume);
@@ -411,10 +411,10 @@ public class IStochasticTradingStrategy : Strategy
 		var takePrice = 0m;
 
 		if (stopDistance > 0m)
-			stopPrice = side == PositionSide.Long ? price - stopDistance : price + stopDistance;
+			stopPrice = side == PositionSides.Long ? price - stopDistance : price + stopDistance;
 
 		if (takeDistance > 0m)
-			takePrice = side == PositionSide.Long ? price + takeDistance : price - takeDistance;
+			takePrice = side == PositionSides.Long ? price + takeDistance : price - takeDistance;
 
 		_entries.Add(new PositionEntry
 		{
@@ -433,7 +433,7 @@ public class IStochasticTradingStrategy : Strategy
 		if (entry.Volume <= 0m)
 			return;
 
-		if (entry.Side == PositionSide.Long)
+		if (entry.Side == PositionSides.Long)
 			SellMarket(entry.Volume);
 		else
 			BuyMarket(entry.Volume);
@@ -441,7 +441,7 @@ public class IStochasticTradingStrategy : Strategy
 		_entries.RemoveAt(index);
 
 		if (_entries.Count == 0)
-			_currentDirection = PositionSide.None;
+			_currentDirection = PositionSides.None;
 	}
 
 	private void UpdatePriceParameters()
@@ -462,14 +462,14 @@ public class IStochasticTradingStrategy : Strategy
 
 	private sealed class PositionEntry
 	{
-		public PositionSide Side { get; set; }
+		public PositionSides Side { get; set; }
 		public decimal EntryPrice { get; set; }
 		public decimal Volume { get; set; }
 		public decimal StopPrice { get; set; }
 		public decimal TakePrice { get; set; }
 	}
 
-	private enum PositionSide
+	private enum PositionSides
 	{
 		None,
 		Long,

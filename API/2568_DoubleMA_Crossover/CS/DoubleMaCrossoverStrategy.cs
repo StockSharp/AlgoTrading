@@ -24,7 +24,7 @@ public class DoubleMaCrossoverStrategy : Strategy
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<bool> _useTrailingStop;
-	private readonly StrategyParam<TrailingType> _trailingMode;
+	private readonly StrategyParam<TrailingTypes> _trailingMode;
 	private readonly StrategyParam<int> _trailingStopPips;
 	private readonly StrategyParam<int> _level1TriggerPips;
 	private readonly StrategyParam<int> _level1OffsetPips;
@@ -87,7 +87,7 @@ public class DoubleMaCrossoverStrategy : Strategy
 		set => _useTrailingStop.Value = value;
 	}
 
-	public TrailingType TrailingMode
+	public TrailingTypes TrailingMode
 	{
 		get => _trailingMode.Value;
 		set => _trailingMode.Value = value;
@@ -190,7 +190,7 @@ public class DoubleMaCrossoverStrategy : Strategy
 		_useTrailingStop = Param(nameof(UseTrailingStop), false)
 		.SetDisplay("Use Trailing", "Enable trailing stop management.", "Risk");
 
-		_trailingMode = Param(nameof(TrailingMode), TrailingType.Type3)
+		_trailingMode = Param(nameof(TrailingMode), TrailingTypes.Type3)
 		.SetDisplay("Trailing Type", "Trailing stop behaviour.", "Risk")
 		.SetCanOptimize(true);
 
@@ -395,17 +395,17 @@ public class DoubleMaCrossoverStrategy : Strategy
 
 		switch (TrailingMode)
 		{
-			case TrailingType.Type1:
+			case TrailingTypes.Type1:
 			{
 				UpdateType1Trailing(entryPrice, closePrice, step);
 				break;
 			}
-			case TrailingType.Type2:
+			case TrailingTypes.Type2:
 			{
 				UpdateType2Trailing(entryPrice, closePrice, step);
 				break;
 			}
-			case TrailingType.Type3:
+			case TrailingTypes.Type3:
 			{
 				UpdateType3Trailing(entryPrice, closePrice, step);
 				break;
@@ -694,7 +694,7 @@ public class DoubleMaCrossoverStrategy : Strategy
 		ResetPositionState();
 	}
 
-	public enum TrailingType
+	public enum TrailingTypes
 	{
 		Type1,
 		Type2,

@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 public class WeightOscillatorDirectStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<WeightOscillatorTrendMode> _trendMode;
+	private readonly StrategyParam<WeightOscillatorTrendModes> _trendMode;
 	private readonly StrategyParam<int> _signalBar;
 
 	private readonly StrategyParam<decimal> _rsiWeight;
@@ -34,7 +34,7 @@ public class WeightOscillatorDirectStrategy : Strategy
 	private readonly StrategyParam<decimal> _deMarkerWeight;
 	private readonly StrategyParam<int> _deMarkerPeriod;
 
-	private readonly StrategyParam<WeightOscillatorSmoothingMethod> _smoothingMethod;
+	private readonly StrategyParam<WeightOscillatorSmoothingMethods> _smoothingMethod;
 	private readonly StrategyParam<int> _smoothingLength;
 
 	private readonly StrategyParam<int> _stopLossPoints;
@@ -61,7 +61,7 @@ public class WeightOscillatorDirectStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for indicator calculations", "General");
 
-		_trendMode = Param(nameof(TrendMode), WeightOscillatorTrendMode.Direct)
+		_trendMode = Param(nameof(TrendMode), WeightOscillatorTrendModes.Direct)
 		.SetDisplay("Trend Mode", "Trade with the oscillator slope or against it", "Trading");
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -109,7 +109,7 @@ public class WeightOscillatorDirectStrategy : Strategy
 		.SetRange(2, 200)
 		.SetCanOptimize(true);
 
-		_smoothingMethod = Param(nameof(SmoothingMethod), WeightOscillatorSmoothingMethod.Jurik)
+		_smoothingMethod = Param(nameof(SmoothingMethod), WeightOscillatorSmoothingMethods.Jurik)
 		.SetDisplay("Smoothing Method", "Moving average applied to the blended oscillator", "Oscillator");
 
 		_smoothingLength = Param(nameof(SmoothingLength), 5)
@@ -152,7 +152,7 @@ public class WeightOscillatorDirectStrategy : Strategy
 	/// <summary>
 	/// Defines whether the strategy trades with or against the oscillator direction.
 	/// </summary>
-	public WeightOscillatorTrendMode TrendMode
+	public WeightOscillatorTrendModes TrendMode
 	{
 		get => _trendMode.Value;
 		set => _trendMode.Value = value;
@@ -242,7 +242,7 @@ public class WeightOscillatorDirectStrategy : Strategy
 	/// <summary>
 	/// Smoothing method applied to the blended oscillator.
 	/// </summary>
-	public WeightOscillatorSmoothingMethod SmoothingMethod
+	public WeightOscillatorSmoothingMethods SmoothingMethod
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -399,7 +399,7 @@ public class WeightOscillatorDirectStrategy : Strategy
 		bool longSignal;
 		bool shortSignal;
 
-		if (TrendMode == WeightOscillatorTrendMode.Direct)
+		if (TrendMode == WeightOscillatorTrendModes.Direct)
 		{
 		longSignal = rising;
 		shortSignal = falling;
@@ -448,11 +448,11 @@ public class WeightOscillatorDirectStrategy : Strategy
 	{
 		return SmoothingMethod switch
 		{
-			WeightOscillatorSmoothingMethod.Simple => new SimpleMovingAverage { Length = SmoothingLength },
-			WeightOscillatorSmoothingMethod.Exponential => new ExponentialMovingAverage { Length = SmoothingLength },
-			WeightOscillatorSmoothingMethod.Smoothed => new SmoothedMovingAverage { Length = SmoothingLength },
-			WeightOscillatorSmoothingMethod.Weighted => new WeightedMovingAverage { Length = SmoothingLength },
-			WeightOscillatorSmoothingMethod.Kaufman => new KaufmanAdaptiveMovingAverage { Length = SmoothingLength },
+			WeightOscillatorSmoothingMethods.Simple => new SimpleMovingAverage { Length = SmoothingLength },
+			WeightOscillatorSmoothingMethods.Exponential => new ExponentialMovingAverage { Length = SmoothingLength },
+			WeightOscillatorSmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = SmoothingLength },
+			WeightOscillatorSmoothingMethods.Weighted => new WeightedMovingAverage { Length = SmoothingLength },
+			WeightOscillatorSmoothingMethods.Kaufman => new KaufmanAdaptiveMovingAverage { Length = SmoothingLength },
 			_ => new JurikMovingAverage { Length = SmoothingLength },
 		};
 	}
@@ -466,7 +466,7 @@ public class WeightOscillatorDirectStrategy : Strategy
 /// <summary>
 /// Defines how the strategy reacts to the oscillator slope.
 /// </summary>
-public enum WeightOscillatorTrendMode
+public enum WeightOscillatorTrendModes
 {
 	/// <summary>
 	/// Trade in the direction of the oscillator slope.
@@ -482,7 +482,7 @@ public enum WeightOscillatorTrendMode
 /// <summary>
 /// Available smoothing methods for the blended oscillator.
 /// </summary>
-public enum WeightOscillatorSmoothingMethod
+public enum WeightOscillatorSmoothingMethods
 {
 	/// <summary>
 	/// Simple moving average.

@@ -10,7 +10,7 @@ This utility strategy mirrors the original MetaTrader expert that plays a sound 
 - **Exit Criteria**: A trade whose direction is opposite to the previous position triggers the alert sequence.
 - **Stops**: No. Risk management is delegated to the strategy or trader generating the trades.
 - **Default Values**:
-  - `Sound` = NotificationSound.Alert2
+  - `Sound` = NotificationSounds.Alert2
   - `NotificationEnabled` = false
 - **Alerts**:
   - The terminal plays the chosen `.wav` file when the exit is detected.

@@ -11,7 +11,7 @@ The implementation relies exclusively on high-level StockSharp APIs: candle subs
 - Each candle becomes a binary digit:
   - `1` – the candle is bullish or neutral (`Close >= Open`).
   - `0` – the candle is bearish or neutral (`Close <= Open`). Doji candles match both digits, exactly as in the original expert.
-- The mask is selected from the `MorsePatternMask` enumeration. It contains every binary sequence from length 1 to length 5 that appeared in the MT5 version (for example `000`, `1011`, `11111`).
+- The mask is selected from the `MorsePatternMasks` enumeration. It contains every binary sequence from length 1 to length 5 that appeared in the MT5 version (for example `000`, `1011`, `11111`).
 - The strategy keeps a rolling window of the most recent candles. When the newest window matches the mask, the entry signal fires.
 
 This behaviour mirrors the MT5 implementation that called `CopyRates` and compared each bar with the pattern string character by character.
@@ -29,7 +29,7 @@ This behaviour mirrors the MT5 implementation that called `CopyRates` and compar
 | Name | Default | Description |
 | --- | --- | --- |
 | `CandleType` | 5-minute candles (`TimeSpan.FromMinutes(5).TimeFrame()`) | Data type used to build the Morse sequence. |
-| `Pattern` | `_0` (`"0"`) | Binary mask to match against the most recent candles. Values come directly from `MorsePatternMask`. |
+| `Pattern` | `_0` (`"0"`) | Binary mask to match against the most recent candles. Values come directly from `MorsePatternMasks`. |
 | `Direction` | `Sides.Buy` | Whether to open a long (`Buy`) or short (`Sell`) position when the pattern appears. |
 | `TakeProfitPips` | `50` | Distance from entry to take profit in pips. The strategy automatically adapts to 3- and 5-decimal forex quotes by multiplying the price step by ten. |
 | `StopLossPips` | `50` | Distance from entry to stop loss in pips, using the same pip calculation as above. |

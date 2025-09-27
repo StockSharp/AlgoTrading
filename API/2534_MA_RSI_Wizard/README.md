@@ -38,7 +38,7 @@ The strategy activates `StartProtection` once it starts. Distances are defined i
 | `ExpirationBars` | Cooldown in bars before re-entering in the same direction. | 4 |
 | `MaPeriod` | Moving average period. | 20 |
 | `MaShift` | Forward shift applied to the MA output (bars). | 3 |
-| `MaMethod` | Moving average method (Simple, Exponential, Smoothed, LinearWeighted). | Simple |
+| `MaMethods` | Moving average method (Simple, Exponential, Smoothed, LinearWeighted). | Simple |
 | `MaAppliedPrice` | Price source for the MA. | Close |
 | `MaWeight` | Weight assigned to the MA score. | 0.8 |
 | `RsiPeriod` | RSI period. | 3 |

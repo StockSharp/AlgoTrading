@@ -13,7 +13,7 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum TrailingPositionType
+public enum TrailingPositionTypes
 {
 	All,
 	Long,
@@ -28,7 +28,7 @@ public class TrailingStopAndTakeStrategy : Strategy
 	private readonly StrategyParam<decimal> _epsilon;
 
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<TrailingPositionType> _positionType;
+	private readonly StrategyParam<TrailingPositionTypes> _positionType;
 	private readonly StrategyParam<decimal> _initialStopLossPoints;
 	private readonly StrategyParam<decimal> _initialTakeProfitPoints;
 	private readonly StrategyParam<decimal> _trailingStopLossPoints;
@@ -55,7 +55,7 @@ public class TrailingStopAndTakeStrategy : Strategy
 			.SetDisplay("Candle Type", "Candle aggregation used for trailing decisions", "General");
 
 
-		_positionType = Param(nameof(PositionType), TrailingPositionType.All)
+		_positionType = Param(nameof(PositionType), TrailingPositionTypes.All)
 			.SetDisplay("Position Filter", "Positions managed by the trailing engine", "Trading");
 
 		_initialStopLossPoints = Param(nameof(InitialStopLossPoints), 400m)
@@ -111,7 +111,7 @@ public class TrailingStopAndTakeStrategy : Strategy
 	/// <summary>
 	/// Position filter managed by the trailing logic.
 	/// </summary>
-	public TrailingPositionType PositionType
+	public TrailingPositionTypes PositionType
 	{
 		get => _positionType.Value;
 		set => _positionType.Value = value;
@@ -239,7 +239,7 @@ public class TrailingStopAndTakeStrategy : Strategy
 		// Handle long positions first.
 		if (Position > 0m)
 		{
-			if (PositionType == TrailingPositionType.Short)
+			if (PositionType == TrailingPositionTypes.Short)
 			{
 				ResetLongLevels();
 			}
@@ -255,7 +255,7 @@ public class TrailingStopAndTakeStrategy : Strategy
 		}
 		else if (Position < 0m)
 		{
-			if (PositionType == TrailingPositionType.Long)
+			if (PositionType == TrailingPositionTypes.Long)
 			{
 				ResetShortLevels();
 			}
@@ -286,12 +286,12 @@ public class TrailingStopAndTakeStrategy : Strategy
 			return;
 
 		// Simple directional entry mirroring the tester behavior from the MQL script.
-		if (PositionType == TrailingPositionType.Long)
+		if (PositionType == TrailingPositionTypes.Long)
 		{
 			if (candle.ClosePrice > candle.OpenPrice)
 				BuyMarket(Volume);
 		}
-		else if (PositionType == TrailingPositionType.Short)
+		else if (PositionType == TrailingPositionTypes.Short)
 		{
 			if (candle.ClosePrice < candle.OpenPrice)
 				SellMarket(Volume);

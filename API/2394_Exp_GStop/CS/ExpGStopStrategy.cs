@@ -16,7 +16,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Specifies how stop limits are calculated.
 /// </summary>
-public enum StopMode
+public enum StopModes
 {
 	Percent,
 	Currency
@@ -27,7 +27,7 @@ public enum StopMode
 /// </summary>
 public class ExpGStopStrategy : Strategy
 {
-	private readonly StrategyParam<StopMode> _mode;
+	private readonly StrategyParam<StopModes> _mode;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<DataType> _candleType;
@@ -38,7 +38,7 @@ public class ExpGStopStrategy : Strategy
 	/// <summary>
 	/// Stop calculation mode.
 	/// </summary>
-	public StopMode Mode
+	public StopModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -76,7 +76,7 @@ public class ExpGStopStrategy : Strategy
 	/// </summary>
 	public ExpGStopStrategy()
 	{
-		_mode = Param(nameof(Mode), StopMode.Percent)
+		_mode = Param(nameof(Mode), StopModes.Percent)
 			.SetDisplay("Mode", "Stop mode", "Risk")
 			.SetCanOptimize(true);
 
@@ -119,7 +119,7 @@ public class ExpGStopStrategy : Strategy
 
 		if (!_stop)
 		{
-			var reached = Mode == StopMode.Percent
+			var reached = Mode == StopModes.Percent
 				? profit / _startValue * 100m <= -StopLoss || profit / _startValue * 100m >= TakeProfit
 				: profit <= -StopLoss || profit >= TakeProfit;
 

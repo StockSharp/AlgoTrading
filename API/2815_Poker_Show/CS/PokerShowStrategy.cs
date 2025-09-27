@@ -22,7 +22,7 @@ public class PokerShowStrategy : Strategy
 	/// <summary>
 	/// Moving average smoothing methods supported by the strategy.
 	/// </summary>
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		/// <summary>
 		/// Simple moving average.
@@ -48,7 +48,7 @@ public class PokerShowStrategy : Strategy
 	/// <summary>
 	/// Price sources emulating MetaTrader applied price options.
 	/// </summary>
-	public enum AppliedPrices
+	public enum AppliedPriceses
 	{
 		/// <summary>
 		/// Use close price.
@@ -86,7 +86,7 @@ public class PokerShowStrategy : Strategy
 		Weighted = 6
 	}
 
-	private readonly StrategyParam<PokerCombination> _combination;
+	private readonly StrategyParam<PokerCombinations> _combination;
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
@@ -95,7 +95,7 @@ public class PokerShowStrategy : Strategy
 	private readonly StrategyParam<int> _distancePoints;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageMethod> _maMethod;
+	private readonly StrategyParam<MovingAverageMethods> _maMethod;
 	private readonly StrategyParam<AppliedPrice> _appliedPrice;
 	private readonly StrategyParam<bool> _reverseSignal;
 	private readonly StrategyParam<DataType> _candleType;
@@ -111,7 +111,7 @@ public class PokerShowStrategy : Strategy
 	/// <summary>
 	/// Minimum poker hand value that must be greater than a random draw to enable a trade.
 	/// </summary>
-	public PokerCombination Combination
+	public PokerCombinations Combination
 	{
 		get => _combination.Value;
 		set => _combination.Value = value;
@@ -192,7 +192,7 @@ public class PokerShowStrategy : Strategy
 	/// <summary>
 	/// Moving average smoothing method.
 	/// </summary>
-	public MovingAverageMethod MaMethod
+	public MovingAverageMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -201,7 +201,7 @@ public class PokerShowStrategy : Strategy
 	/// <summary>
 	/// Price source for moving average calculations.
 	/// </summary>
-	public AppliedPrices AppliedPrice
+	public AppliedPriceses AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -230,7 +230,7 @@ public class PokerShowStrategy : Strategy
 	/// </summary>
 	public PokerShowStrategy()
 	{
-		_combination = Param(nameof(Combination), PokerCombination.Couple)
+		_combination = Param(nameof(Combination), PokerCombinations.Couple)
 		.SetDisplay("Poker Combination", "Probability gate for opening trades", "Signals");
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
@@ -259,10 +259,10 @@ public class PokerShowStrategy : Strategy
 		_maShift = Param(nameof(MaShift), 0)
 		.SetDisplay("MA Shift", "Horizontal shift applied to the moving average", "Moving Average");
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.Ema)
+		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Ema)
 		.SetDisplay("MA Method", "Moving average smoothing type", "Moving Average");
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPrices.Close)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceses.Close)
 		.SetDisplay("Applied Price", "Price input for the moving average", "Moving Average");
 
 		_reverseSignal = Param(nameof(ReverseSignal), false)
@@ -454,25 +454,25 @@ public class PokerShowStrategy : Strategy
 	{
 		return AppliedPrice switch
 		{
-			AppliedPrices.Close => candle.ClosePrice,
-			AppliedPrices.Open => candle.OpenPrice,
-			AppliedPrices.High => candle.HighPrice,
-			AppliedPrices.Low => candle.LowPrice,
-			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			AppliedPriceses.Close => candle.ClosePrice,
+			AppliedPriceses.Open => candle.OpenPrice,
+			AppliedPriceses.High => candle.HighPrice,
+			AppliedPriceses.Low => candle.LowPrice,
+			AppliedPriceses.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceses.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceses.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}
 
-	private static IIndicator CreateMovingAverage(MovingAverageMethod method, int period)
+	private static IIndicator CreateMovingAverage(MovingAverageMethods method, int period)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Sma => new SimpleMovingAverage { Length = period },
-			MovingAverageMethod.Ema => new ExponentialMovingAverage { Length = period },
-			MovingAverageMethod.Smma => new SmoothedMovingAverage { Length = period },
-			MovingAverageMethod.Lwma => new WeightedMovingAverage { Length = period },
+			MovingAverageMethods.Sma => new SimpleMovingAverage { Length = period },
+			MovingAverageMethods.Ema => new ExponentialMovingAverage { Length = period },
+			MovingAverageMethods.Smma => new SmoothedMovingAverage { Length = period },
+			MovingAverageMethods.Lwma => new WeightedMovingAverage { Length = period },
 			_ => new SimpleMovingAverage { Length = period }
 		};
 	}
@@ -481,7 +481,7 @@ public class PokerShowStrategy : Strategy
 /// <summary>
 /// Poker combination thresholds used to gate random trade execution.
 /// </summary>
-public enum PokerCombination
+public enum PokerCombinations
 {
 	/// <summary>
 	/// Straight flush probability threshold.

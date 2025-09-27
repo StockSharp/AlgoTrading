@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MfiLevelCrossStrategy : Strategy
 {
-	private enum TrendMode
+	private enum TrendModes
 	{
 		Direct,
 		Against
@@ -29,7 +29,7 @@ public class MfiLevelCrossStrategy : Strategy
 	private readonly StrategyParam<int> _mfiPeriod;
 	private readonly StrategyParam<decimal> _lowLevel;
 	private readonly StrategyParam<decimal> _highLevel;
-	private readonly StrategyParam<TrendMode> _trend;
+	private readonly StrategyParam<TrendModes> _trend;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 
@@ -59,7 +59,7 @@ public class MfiLevelCrossStrategy : Strategy
 	/// <summary>
 	/// Trading mode selection.
 	/// </summary>
-	public TrendMode Trend { get => _trend.Value; set => _trend.Value = value; }
+	public TrendModes Trend { get => _trend.Value; set => _trend.Value = value; }
 
 	/// <summary>
 	/// Stop loss in percent from entry price.
@@ -91,7 +91,7 @@ public class MfiLevelCrossStrategy : Strategy
 			.SetRange(0m, 100m)
 			.SetDisplay("High Level", "Overbought threshold for MFI", "Signal");
 
-		_trend = Param(nameof(Trend), TrendMode.Direct)
+		_trend = Param(nameof(Trend), TrendModes.Direct)
 			.SetDisplay("Trend Mode", "Trade with trend (Direct) or against it (Against)", "Signal");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
@@ -162,7 +162,7 @@ public class MfiLevelCrossStrategy : Strategy
 		var crossBelowLow = _prevMfi > LowLevel && mfiValue <= LowLevel;
 		var crossAboveHigh = _prevMfi < HighLevel && mfiValue >= HighLevel;
 
-		if (Trend == TrendMode.Direct)
+		if (Trend == TrendModes.Direct)
 		{
 			if (crossBelowLow && Position <= 0)
 				BuyMarket(Volume + Math.Abs(Position));

@@ -13,7 +13,7 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum ThreeCandlesVolumeType
+public enum ThreeCandlesVolumeTypes
 {
 	Tick,
 	Real,
@@ -31,7 +31,7 @@ public class ThreeCandlesReversalStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<int> _maxBarSize;
-	private readonly StrategyParam<ThreeCandlesVolumeType> _volumeFilter;
+	private readonly StrategyParam<ThreeCandlesVolumeTypes> _volumeFilter;
 	private readonly StrategyParam<bool> _allowBuyEntry;
 	private readonly StrategyParam<bool> _allowSellEntry;
 	private readonly StrategyParam<bool> _allowBuyExit;
@@ -46,7 +46,7 @@ public class ThreeCandlesReversalStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int SignalBar { get => _signalBar.Value; set => _signalBar.Value = value; }
 	public int MaxBarSize { get => _maxBarSize.Value; set => _maxBarSize.Value = value; }
-	public ThreeCandlesVolumeType VolumeFilter { get => _volumeFilter.Value; set => _volumeFilter.Value = value; }
+	public ThreeCandlesVolumeTypes VolumeFilter { get => _volumeFilter.Value; set => _volumeFilter.Value = value; }
 	public bool AllowBuyEntry { get => _allowBuyEntry.Value; set => _allowBuyEntry.Value = value; }
 	public bool AllowSellEntry { get => _allowSellEntry.Value; set => _allowSellEntry.Value = value; }
 	public bool AllowBuyExit { get => _allowBuyExit.Value; set => _allowBuyExit.Value = value; }
@@ -64,7 +64,7 @@ public class ThreeCandlesReversalStrategy : Strategy
 		_maxBarSize = Param(nameof(MaxBarSize), 300)
 			.SetMinMax(0, 100000)
 			.SetDisplay("Max Bar Size", "Disable the volume filter when the oldest candle range exceeds this value (in price steps)", "Pattern");
-		_volumeFilter = Param(nameof(VolumeFilter), ThreeCandlesVolumeType.Tick)
+		_volumeFilter = Param(nameof(VolumeFilter), ThreeCandlesVolumeTypes.Tick)
 			.SetDisplay("Volume Filter", "Volume filter used to confirm the reversal", "Pattern");
 		_allowBuyEntry = Param(nameof(AllowBuyEntry), true)
 			.SetDisplay("Allow Buy Entry", "Enable long entries on bullish signals", "Trading");
@@ -276,7 +276,7 @@ public class ThreeCandlesReversalStrategy : Strategy
 
 	private bool ShouldApplyVolumeFilter(ICandleMessage oldest, decimal priceStep)
 	{
-	if (VolumeFilter == ThreeCandlesVolumeType.None)
+	if (VolumeFilter == ThreeCandlesVolumeTypes.None)
 	return false;
 
 	if (MaxBarSize <= 0)

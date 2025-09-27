@@ -28,17 +28,17 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 	private readonly StrategyParam<int> _shortSignalBar;
 	private readonly StrategyParam<DataType> _longCandleType;
 	private readonly StrategyParam<DataType> _shortCandleType;
-	private readonly StrategyParam<XmaMethod> _longMethod1;
+	private readonly StrategyParam<XmaMethods> _longMethod1;
 	private readonly StrategyParam<int> _longLength1;
 	private readonly StrategyParam<int> _longPhase1;
-	private readonly StrategyParam<XmaMethod> _longMethod2;
+	private readonly StrategyParam<XmaMethods> _longMethod2;
 	private readonly StrategyParam<int> _longLength2;
 	private readonly StrategyParam<int> _longPhase2;
 	private readonly StrategyParam<AppliedPrice> _longPriceType;
-	private readonly StrategyParam<XmaMethod> _shortMethod1;
+	private readonly StrategyParam<XmaMethods> _shortMethod1;
 	private readonly StrategyParam<int> _shortLength1;
 	private readonly StrategyParam<int> _shortPhase1;
-	private readonly StrategyParam<XmaMethod> _shortMethod2;
+	private readonly StrategyParam<XmaMethods> _shortMethod2;
 	private readonly StrategyParam<int> _shortLength2;
 	private readonly StrategyParam<int> _shortPhase2;
 	private readonly StrategyParam<AppliedPrice> _shortPriceType;
@@ -93,7 +93,7 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Short Candle Type", "Timeframe for short indicator", "Data");
 
-		_longMethod1 = Param(nameof(LongMethod1), XmaMethod.Jurik)
+		_longMethod1 = Param(nameof(LongMethod1), XmaMethods.Jurik)
 			.SetDisplay("Long Fast Method", "Smoothing method for the fast long line", "Indicators");
 
 		_longLength1 = Param(nameof(LongLength1), 3)
@@ -103,7 +103,7 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 		_longPhase1 = Param(nameof(LongPhase1), 15)
 			.SetDisplay("Long Fast Phase", "Phase parameter for the fast long smoother", "Indicators");
 
-		_longMethod2 = Param(nameof(LongMethod2), XmaMethod.Jurik)
+		_longMethod2 = Param(nameof(LongMethod2), XmaMethods.Jurik)
 			.SetDisplay("Long Slow Method", "Smoothing method for the slow long line", "Indicators");
 
 		_longLength2 = Param(nameof(LongLength2), 5)
@@ -116,7 +116,7 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 		_longPriceType = Param(nameof(LongAppliedPrice), AppliedPrice.Close)
 			.SetDisplay("Long Applied Price", "Price type used for the long indicator", "Indicators");
 
-		_shortMethod1 = Param(nameof(ShortMethod1), XmaMethod.Jurik)
+		_shortMethod1 = Param(nameof(ShortMethod1), XmaMethods.Jurik)
 			.SetDisplay("Short Fast Method", "Smoothing method for the fast short line", "Indicators");
 
 		_shortLength1 = Param(nameof(ShortLength1), 3)
@@ -126,7 +126,7 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 		_shortPhase1 = Param(nameof(ShortPhase1), 15)
 			.SetDisplay("Short Fast Phase", "Phase parameter for the fast short smoother", "Indicators");
 
-		_shortMethod2 = Param(nameof(ShortMethod2), XmaMethod.Jurik)
+		_shortMethod2 = Param(nameof(ShortMethod2), XmaMethods.Jurik)
 			.SetDisplay("Short Slow Method", "Smoothing method for the slow short line", "Indicators");
 
 		_shortLength2 = Param(nameof(ShortLength2), 5)
@@ -249,7 +249,7 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 	/// <summary>
 	/// Smoothing method for fast long line.
 	/// </summary>
-	public XmaMethod LongMethod1
+	public XmaMethods LongMethod1
 	{
 		get => _longMethod1.Value;
 		set => _longMethod1.Value = value;
@@ -276,7 +276,7 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 	/// <summary>
 	/// Smoothing method for slow long line.
 	/// </summary>
-	public XmaMethod LongMethod2
+	public XmaMethods LongMethod2
 	{
 		get => _longMethod2.Value;
 		set => _longMethod2.Value = value;
@@ -312,7 +312,7 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 	/// <summary>
 	/// Smoothing method for fast short line.
 	/// </summary>
-	public XmaMethod ShortMethod1
+	public XmaMethods ShortMethod1
 	{
 		get => _shortMethod1.Value;
 		set => _shortMethod1.Value = value;
@@ -339,7 +339,7 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 	/// <summary>
 	/// Smoothing method for slow short line.
 	/// </summary>
-	public XmaMethod ShortMethod2
+	public XmaMethods ShortMethod2
 	{
 		get => _shortMethod2.Value;
 		set => _shortMethod2.Value = value;
@@ -720,7 +720,7 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 	private int _bufferIndex;
 	private int _bufferCount;
 
-	public XFatlXSatlCloudIndicator(XmaMethod fastMethod, int fastLength, int fastPhase, XmaMethod slowMethod, int slowLength, int slowPhase, AppliedPrice appliedPrice)
+	public XFatlXSatlCloudIndicator(XmaMethods fastMethod, int fastLength, int fastPhase, XmaMethods slowMethod, int slowLength, int slowPhase, AppliedPrice appliedPrice)
 	{
 	_fastSmoother = CreateSmoother(fastMethod, fastLength, fastPhase);
 	_slowSmoother = CreateSmoother(slowMethod, slowLength, slowPhase);
@@ -779,20 +779,20 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 	return sum;
 	}
 
-	private static IIndicator CreateSmoother(XmaMethod method, int length, int phase)
+	private static IIndicator CreateSmoother(XmaMethods method, int length, int phase)
 	{
 	length = Math.Max(1, length);
 
 	// Map the MQL smoothing options to the closest available StockSharp moving averages.
 	return method switch
 	{
-	XmaMethod.Sma => new SMA { Length = length },
-	XmaMethod.Ema => new EMA { Length = length },
-	XmaMethod.Smma => new SmoothedMovingAverage { Length = length },
-	XmaMethod.Lwma => new WMA { Length = length },
-	XmaMethod.Jurik => new JurikMovingAverage { Length = length },
-	XmaMethod.ZeroLag => new ZeroLagExponentialMovingAverage { Length = length },
-	XmaMethod.Kaufman => new KaufmanAdaptiveMovingAverage { Length = length },
+	XmaMethods.Sma => new SMA { Length = length },
+	XmaMethods.Ema => new EMA { Length = length },
+	XmaMethods.Smma => new SmoothedMovingAverage { Length = length },
+	XmaMethods.Lwma => new WMA { Length = length },
+	XmaMethods.Jurik => new JurikMovingAverage { Length = length },
+	XmaMethods.ZeroLag => new ZeroLagExponentialMovingAverage { Length = length },
+	XmaMethods.Kaufman => new KaufmanAdaptiveMovingAverage { Length = length },
 	_ => throw new ArgumentOutOfRangeException(nameof(method), method, "Unsupported smoothing method."),
 	};
 	}
@@ -850,7 +850,7 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 /// <summary>
 /// Supported smoothing methods for XFatlXSatlCloud indicator.
 /// </summary>
-public enum XmaMethod
+public enum XmaMethods
 {
 	/// <summary>
 	/// Simple moving average.

@@ -22,16 +22,16 @@ public class ExpXwamiMmRecStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _period;
-	private readonly StrategyParam<XwamiSmoothingMethod> _method1;
+	private readonly StrategyParam<XwamiSmoothingMethods> _method1;
 	private readonly StrategyParam<int> _length1;
 	private readonly StrategyParam<int> _phase1;
-	private readonly StrategyParam<XwamiSmoothingMethod> _method2;
+	private readonly StrategyParam<XwamiSmoothingMethods> _method2;
 	private readonly StrategyParam<int> _length2;
 	private readonly StrategyParam<int> _phase2;
-	private readonly StrategyParam<XwamiSmoothingMethod> _method3;
+	private readonly StrategyParam<XwamiSmoothingMethods> _method3;
 	private readonly StrategyParam<int> _length3;
 	private readonly StrategyParam<int> _phase3;
-	private readonly StrategyParam<XwamiSmoothingMethod> _method4;
+	private readonly StrategyParam<XwamiSmoothingMethods> _method4;
 	private readonly StrategyParam<int> _length4;
 	private readonly StrategyParam<int> _phase4;
 	private readonly StrategyParam<XwamiAppliedPrice> _appliedPrice;
@@ -79,7 +79,7 @@ public class ExpXwamiMmRecStrategy : Strategy
 		.SetDisplay("Momentum Shift", "Distance between the compared prices", "Indicator")
 		.SetCanOptimize(true);
 
-		_method1 = Param(nameof(Method1), XwamiSmoothingMethod.T3)
+		_method1 = Param(nameof(Method1), XwamiSmoothingMethods.T3)
 		.SetDisplay("Smoothing 1", "First smoothing method", "Indicator");
 		_length1 = Param(nameof(Length1), 4)
 		.SetDisplay("Length 1", "Length of the first smoothing", "Indicator")
@@ -87,7 +87,7 @@ public class ExpXwamiMmRecStrategy : Strategy
 		_phase1 = Param(nameof(Phase1), 15)
 		.SetDisplay("Phase 1", "Phase used by Jurik/T3 smoothers", "Indicator");
 
-		_method2 = Param(nameof(Method2), XwamiSmoothingMethod.Jjma)
+		_method2 = Param(nameof(Method2), XwamiSmoothingMethods.Jjma)
 		.SetDisplay("Smoothing 2", "Second smoothing method", "Indicator");
 		_length2 = Param(nameof(Length2), 13)
 		.SetDisplay("Length 2", "Length of the second smoothing", "Indicator")
@@ -95,7 +95,7 @@ public class ExpXwamiMmRecStrategy : Strategy
 		_phase2 = Param(nameof(Phase2), 15)
 		.SetDisplay("Phase 2", "Phase used by Jurik/T3 smoothers", "Indicator");
 
-		_method3 = Param(nameof(Method3), XwamiSmoothingMethod.Jjma)
+		_method3 = Param(nameof(Method3), XwamiSmoothingMethods.Jjma)
 		.SetDisplay("Smoothing 3", "Third smoothing method", "Indicator");
 		_length3 = Param(nameof(Length3), 13)
 		.SetDisplay("Length 3", "Length of the third smoothing", "Indicator")
@@ -103,7 +103,7 @@ public class ExpXwamiMmRecStrategy : Strategy
 		_phase3 = Param(nameof(Phase3), 15)
 		.SetDisplay("Phase 3", "Phase used by Jurik/T3 smoothers", "Indicator");
 
-		_method4 = Param(nameof(Method4), XwamiSmoothingMethod.Jjma)
+		_method4 = Param(nameof(Method4), XwamiSmoothingMethods.Jjma)
 		.SetDisplay("Smoothing 4", "Fourth smoothing method", "Indicator");
 		_length4 = Param(nameof(Length4), 4)
 		.SetDisplay("Length 4", "Length of the fourth smoothing", "Indicator")
@@ -175,7 +175,7 @@ public class ExpXwamiMmRecStrategy : Strategy
 	/// <summary>
 	/// First smoothing method.
 	/// </summary>
-	public XwamiSmoothingMethod Method1
+	public XwamiSmoothingMethods Method1
 	{
 		get => _method1.Value;
 		set => _method1.Value = value;
@@ -202,7 +202,7 @@ public class ExpXwamiMmRecStrategy : Strategy
 	/// <summary>
 	/// Second smoothing method.
 	/// </summary>
-	public XwamiSmoothingMethod Method2
+	public XwamiSmoothingMethods Method2
 	{
 		get => _method2.Value;
 		set => _method2.Value = value;
@@ -229,7 +229,7 @@ public class ExpXwamiMmRecStrategy : Strategy
 	/// <summary>
 	/// Third smoothing method.
 	/// </summary>
-	public XwamiSmoothingMethod Method3
+	public XwamiSmoothingMethods Method3
 	{
 		get => _method3.Value;
 		set => _method3.Value = value;
@@ -256,7 +256,7 @@ public class ExpXwamiMmRecStrategy : Strategy
 	/// <summary>
 	/// Fourth smoothing method.
 	/// </summary>
-	public XwamiSmoothingMethod Method4
+	public XwamiSmoothingMethods Method4
 	{
 		get => _method4.Value;
 		set => _method4.Value = value;
@@ -648,22 +648,22 @@ public class ExpXwamiMmRecStrategy : Strategy
 		return filter.IsFormed ? result : null;
 	}
 
-	private IXwamiFilter CreateFilter(XwamiSmoothingMethod method, int length, int phase)
+	private IXwamiFilter CreateFilter(XwamiSmoothingMethods method, int length, int phase)
 	{
 		var normalizedLength = Math.Max(1, length);
 
 		return method switch
 		{
-			XwamiSmoothingMethod.Sma => new IndicatorWrapper(new SimpleMovingAverage { Length = normalizedLength }),
-			XwamiSmoothingMethod.Ema => new IndicatorWrapper(new ExponentialMovingAverage { Length = normalizedLength }),
-			XwamiSmoothingMethod.Smma => new IndicatorWrapper(new SmoothedMovingAverage { Length = normalizedLength }),
-			XwamiSmoothingMethod.Lwma => new IndicatorWrapper(new WeightedMovingAverage { Length = normalizedLength }),
-			XwamiSmoothingMethod.Jjma => new IndicatorWrapper(new JurikMovingAverage { Length = normalizedLength, Phase = phase }),
-			XwamiSmoothingMethod.JurX => new IndicatorWrapper(new JurikMovingAverage { Length = normalizedLength, Phase = phase }),
-			XwamiSmoothingMethod.ParMa => new IndicatorWrapper(new ExponentialMovingAverage { Length = normalizedLength }),
-			XwamiSmoothingMethod.T3 => new TillsonT3Filter(normalizedLength, phase),
-			XwamiSmoothingMethod.Vidya => new IndicatorWrapper(new ExponentialMovingAverage { Length = normalizedLength }),
-			XwamiSmoothingMethod.Ama => new IndicatorWrapper(new KaufmanAdaptiveMovingAverage { Length = normalizedLength }),
+			XwamiSmoothingMethods.Sma => new IndicatorWrapper(new SimpleMovingAverage { Length = normalizedLength }),
+			XwamiSmoothingMethods.Ema => new IndicatorWrapper(new ExponentialMovingAverage { Length = normalizedLength }),
+			XwamiSmoothingMethods.Smma => new IndicatorWrapper(new SmoothedMovingAverage { Length = normalizedLength }),
+			XwamiSmoothingMethods.Lwma => new IndicatorWrapper(new WeightedMovingAverage { Length = normalizedLength }),
+			XwamiSmoothingMethods.Jjma => new IndicatorWrapper(new JurikMovingAverage { Length = normalizedLength, Phase = phase }),
+			XwamiSmoothingMethods.JurX => new IndicatorWrapper(new JurikMovingAverage { Length = normalizedLength, Phase = phase }),
+			XwamiSmoothingMethods.ParMa => new IndicatorWrapper(new ExponentialMovingAverage { Length = normalizedLength }),
+			XwamiSmoothingMethods.T3 => new TillsonT3Filter(normalizedLength, phase),
+			XwamiSmoothingMethods.Vidya => new IndicatorWrapper(new ExponentialMovingAverage { Length = normalizedLength }),
+			XwamiSmoothingMethods.Ama => new IndicatorWrapper(new KaufmanAdaptiveMovingAverage { Length = normalizedLength }),
 			_ => new IndicatorWrapper(new SimpleMovingAverage { Length = normalizedLength })
 		};
 	}
@@ -808,7 +808,7 @@ public class ExpXwamiMmRecStrategy : Strategy
 /// <summary>
 /// Smoothing modes supported by the XWAMI conversion.
 /// </summary>
-public enum XwamiSmoothingMethod
+public enum XwamiSmoothingMethods
 {
 	/// <summary>
 	/// Simple moving average.

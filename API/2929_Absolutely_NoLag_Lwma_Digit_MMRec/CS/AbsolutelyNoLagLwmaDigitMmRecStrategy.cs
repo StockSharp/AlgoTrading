@@ -27,7 +27,7 @@ public class AbsolutelyNoLagLwmaDigitMmRecStrategy : Strategy
 			"Module A",
 			TimeSpan.FromHours(12),
 			5,
-			AppliedPrice.Close,
+			AppliedPrices.Close,
 			2,
 			0.01m,
 			0.1m,
@@ -41,7 +41,7 @@ public class AbsolutelyNoLagLwmaDigitMmRecStrategy : Strategy
 			"Module B",
 			TimeSpan.FromHours(4),
 			5,
-			AppliedPrice.Close,
+			AppliedPrices.Close,
 			2,
 			0.01m,
 			0.1m,
@@ -55,7 +55,7 @@ public class AbsolutelyNoLagLwmaDigitMmRecStrategy : Strategy
 			"Module C",
 			TimeSpan.FromHours(2),
 			5,
-			AppliedPrice.Close,
+			AppliedPrices.Close,
 			1,
 			0.01m,
 			0.1m,
@@ -114,10 +114,10 @@ public class AbsolutelyNoLagLwmaDigitMmRecStrategy : Strategy
 
 		switch (trend)
 		{
-		case TrendDirection.Up:
+		case TrendDirections.Up:
 			module.HandleUpTrend(this, candle);
 			break;
-		case TrendDirection.Down:
+		case TrendDirections.Down:
 			module.HandleDownTrend(this, candle);
 			break;
 		}
@@ -129,14 +129,14 @@ public class AbsolutelyNoLagLwmaDigitMmRecStrategy : Strategy
 		return step is null or 0m ? 1m : step.Value;
 	}
 
-	private enum TrendDirection
+	private enum TrendDirections
 	{
 		None,
 		Up,
 		Down,
 	}
 
-	private enum AppliedPrice
+	private enum AppliedPrices
 	{
 		Close = 1,
 		Open,
@@ -156,7 +156,7 @@ public class AbsolutelyNoLagLwmaDigitMmRecStrategy : Strategy
 	{
 		private readonly StrategyParam<DataType> _candleType;
 		private readonly StrategyParam<int> _length;
-		private readonly StrategyParam<AppliedPrice> _appliedPrice;
+		private readonly StrategyParam<AppliedPrices> _appliedPrice;
 		private readonly StrategyParam<int> _digits;
 		private readonly StrategyParam<bool> _buyOpen;
 		private readonly StrategyParam<bool> _sellOpen;
@@ -173,7 +173,7 @@ public class AbsolutelyNoLagLwmaDigitMmRecStrategy : Strategy
 		private readonly Queue<bool> _sellLosses = new();
 
 		private decimal? _previousValue;
-		private TrendDirection _previousTrend = TrendDirection.None;
+		private TrendDirections _previousTrend = TrendDirections.None;
 
 		private decimal _positionVolume;
 		private decimal? _longEntry;
@@ -189,7 +189,7 @@ public class AbsolutelyNoLagLwmaDigitMmRecStrategy : Strategy
 		string displayName,
 		TimeSpan defaultTimeFrame,
 		int defaultLength,
-		AppliedPrice defaultPrice,
+		AppliedPrices defaultPrice,
 		int defaultDigits,
 		decimal defaultSmallVolume,
 		decimal defaultNormalVolume,
@@ -206,7 +206,7 @@ public class AbsolutelyNoLagLwmaDigitMmRecStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(3, 20, 1);
 
-			_appliedPrice = strategy.Param($"{prefix}AppliedPrice", defaultPrice)
+			_appliedPrice = strategy.Param($"{prefix}AppliedPrices", defaultPrice)
 			.SetDisplay($"{displayName} Price", $"Price type used by {displayName}.", displayName);
 
 			_digits = strategy.Param($"{prefix}Digits", defaultDigits)
@@ -247,7 +247,7 @@ public class AbsolutelyNoLagLwmaDigitMmRecStrategy : Strategy
 
 		public int Length => Math.Max(1, _length.Value);
 
-		public AppliedPrice PriceMode => _appliedPrice.Value;
+		public AppliedPrices PriceMode => _appliedPrice.Value;
 
 		public int Digits => Math.Max(0, _digits.Value);
 
@@ -281,7 +281,7 @@ public class AbsolutelyNoLagLwmaDigitMmRecStrategy : Strategy
 			Secondary = new WeightedMovingAverage { Length = Length };
 
 			_previousValue = null;
-			_previousTrend = TrendDirection.None;
+			_previousTrend = TrendDirections.None;
 		}
 
 		public void Reset()
@@ -290,7 +290,7 @@ public class AbsolutelyNoLagLwmaDigitMmRecStrategy : Strategy
 			_sellLosses.Clear();
 
 			_previousValue = null;
-			_previousTrend = TrendDirection.None;
+			_previousTrend = TrendDirections.None;
 
 			_positionVolume = 0m;
 			_longEntry = null;
@@ -325,23 +325,23 @@ public class AbsolutelyNoLagLwmaDigitMmRecStrategy : Strategy
 			return true;
 		}
 
-		public (TrendDirection trend, bool changed) UpdateTrend(decimal value)
+		public (TrendDirections trend, bool changed) UpdateTrend(decimal value)
 		{
 			if (_previousValue is null)
 			{
 				_previousValue = value;
-				_previousTrend = TrendDirection.None;
-				return (TrendDirection.None, false);
+				_previousTrend = TrendDirections.None;
+				return (TrendDirections.None, false);
 			}
 
 			var prevTrend = _previousTrend;
 			var prevValue = _previousValue.Value;
 
-			TrendDirection trend;
+			TrendDirections trend;
 			if (value > prevValue)
-			trend = TrendDirection.Up;
+			trend = TrendDirections.Up;
 			else if (value < prevValue)
-			trend = TrendDirection.Down;
+			trend = TrendDirections.Down;
 			else
 			trend = prevTrend;
 
@@ -449,26 +449,26 @@ public class AbsolutelyNoLagLwmaDigitMmRecStrategy : Strategy
 		{
 			return PriceMode switch
 			{
-				AppliedPrice.Close => candle.ClosePrice,
-				AppliedPrice.Open => candle.OpenPrice,
-				AppliedPrice.High => candle.HighPrice,
-				AppliedPrice.Low => candle.LowPrice,
-				AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-				AppliedPrice.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-				AppliedPrice.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-				AppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-				AppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-				AppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
+				AppliedPrices.Close => candle.ClosePrice,
+				AppliedPrices.Open => candle.OpenPrice,
+				AppliedPrices.High => candle.HighPrice,
+				AppliedPrices.Low => candle.LowPrice,
+				AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+				AppliedPrices.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+				AppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+				AppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+				AppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+				AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
 				? candle.HighPrice
 				: candle.ClosePrice < candle.OpenPrice
 				? candle.LowPrice
 				: candle.ClosePrice,
-				AppliedPrice.TrendFollow2 => candle.ClosePrice > candle.OpenPrice
+				AppliedPrices.TrendFollow2 => candle.ClosePrice > candle.OpenPrice
 				? (candle.HighPrice + candle.ClosePrice) / 2m
 				: candle.ClosePrice < candle.OpenPrice
 				? (candle.LowPrice + candle.ClosePrice) / 2m
 				: candle.ClosePrice,
-				AppliedPrice.Demark => CalculateDemarkPrice(candle),
+				AppliedPrices.Demark => CalculateDemarkPrice(candle),
 				_ => candle.ClosePrice,
 			};
 		}

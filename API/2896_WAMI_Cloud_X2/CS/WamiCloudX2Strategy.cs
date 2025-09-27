@@ -20,23 +20,23 @@ public class WamiCloudX2Strategy : Strategy
 {
 	private readonly StrategyParam<DataType> _trendCandleType;
 	private readonly StrategyParam<int> _trendPeriod1;
-	private readonly StrategyParam<MovingAverageMethod> _trendMethod1;
+	private readonly StrategyParam<MovingAverageMethods> _trendMethod1;
 	private readonly StrategyParam<int> _trendPeriod2;
-	private readonly StrategyParam<MovingAverageMethod> _trendMethod2;
+	private readonly StrategyParam<MovingAverageMethods> _trendMethod2;
 	private readonly StrategyParam<int> _trendPeriod3;
-	private readonly StrategyParam<MovingAverageMethod> _trendMethod3;
+	private readonly StrategyParam<MovingAverageMethods> _trendMethod3;
 	private readonly StrategyParam<int> _trendSignalPeriod;
-	private readonly StrategyParam<MovingAverageMethod> _trendSignalMethod;
+	private readonly StrategyParam<MovingAverageMethods> _trendSignalMethod;
 
 	private readonly StrategyParam<DataType> _signalCandleType;
 	private readonly StrategyParam<int> _signalPeriod1;
-	private readonly StrategyParam<MovingAverageMethod> _signalMethod1;
+	private readonly StrategyParam<MovingAverageMethods> _signalMethod1;
 	private readonly StrategyParam<int> _signalPeriod2;
-	private readonly StrategyParam<MovingAverageMethod> _signalMethod2;
+	private readonly StrategyParam<MovingAverageMethods> _signalMethod2;
 	private readonly StrategyParam<int> _signalPeriod3;
-	private readonly StrategyParam<MovingAverageMethod> _signalMethod3;
+	private readonly StrategyParam<MovingAverageMethods> _signalMethod3;
 	private readonly StrategyParam<int> _signalSignalPeriod;
-	private readonly StrategyParam<MovingAverageMethod> _signalSignalMethod;
+	private readonly StrategyParam<MovingAverageMethods> _signalSignalMethod;
 
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<bool> _enableBuyEntries;
@@ -73,7 +73,7 @@ public class WamiCloudX2Strategy : Strategy
 	/// <summary>
 	/// Method used for the first trend moving average.
 	/// </summary>
-	public MovingAverageMethod TrendMethod1
+	public MovingAverageMethods TrendMethod1
 	{
 		get => _trendMethod1.Value;
 		set => _trendMethod1.Value = value;
@@ -91,7 +91,7 @@ public class WamiCloudX2Strategy : Strategy
 	/// <summary>
 	/// Method used for the second trend moving average.
 	/// </summary>
-	public MovingAverageMethod TrendMethod2
+	public MovingAverageMethods TrendMethod2
 	{
 		get => _trendMethod2.Value;
 		set => _trendMethod2.Value = value;
@@ -109,7 +109,7 @@ public class WamiCloudX2Strategy : Strategy
 	/// <summary>
 	/// Method used for the third trend moving average.
 	/// </summary>
-	public MovingAverageMethod TrendMethod3
+	public MovingAverageMethods TrendMethod3
 	{
 		get => _trendMethod3.Value;
 		set => _trendMethod3.Value = value;
@@ -127,7 +127,7 @@ public class WamiCloudX2Strategy : Strategy
 	/// <summary>
 	/// Method of the signal line inside the trend WAMI chain.
 	/// </summary>
-	public MovingAverageMethod TrendSignalMethod
+	public MovingAverageMethods TrendSignalMethod
 	{
 		get => _trendSignalMethod.Value;
 		set => _trendSignalMethod.Value = value;
@@ -154,7 +154,7 @@ public class WamiCloudX2Strategy : Strategy
 	/// <summary>
 	/// Method of the first signal moving average.
 	/// </summary>
-	public MovingAverageMethod SignalMethod1
+	public MovingAverageMethods SignalMethod1
 	{
 		get => _signalMethod1.Value;
 		set => _signalMethod1.Value = value;
@@ -172,7 +172,7 @@ public class WamiCloudX2Strategy : Strategy
 	/// <summary>
 	/// Method of the second signal moving average.
 	/// </summary>
-	public MovingAverageMethod SignalMethod2
+	public MovingAverageMethods SignalMethod2
 	{
 		get => _signalMethod2.Value;
 		set => _signalMethod2.Value = value;
@@ -190,7 +190,7 @@ public class WamiCloudX2Strategy : Strategy
 	/// <summary>
 	/// Method of the third signal moving average.
 	/// </summary>
-	public MovingAverageMethod SignalMethod3
+	public MovingAverageMethods SignalMethod3
 	{
 		get => _signalMethod3.Value;
 		set => _signalMethod3.Value = value;
@@ -208,7 +208,7 @@ public class WamiCloudX2Strategy : Strategy
 	/// <summary>
 	/// Method of the signal line on the entry timeframe.
 	/// </summary>
-	public MovingAverageMethod SignalSignalMethod
+	public MovingAverageMethods SignalSignalMethod
 	{
 		get => _signalSignalMethod.Value;
 		set => _signalSignalMethod.Value = value;
@@ -298,28 +298,28 @@ public class WamiCloudX2Strategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Trend MA 1", "First smoothing period for trend WAMI", "Trend");
 
-		_trendMethod1 = Param(nameof(TrendMethod1), MovingAverageMethod.Sma)
+		_trendMethod1 = Param(nameof(TrendMethod1), MovingAverageMethods.Sma)
 		.SetDisplay("Trend MA 1 Method", "Method for the first trend MA", "Trend");
 
 		_trendPeriod2 = Param(nameof(TrendPeriod2), 13)
 		.SetGreaterThanZero()
 		.SetDisplay("Trend MA 2", "Second smoothing period for trend WAMI", "Trend");
 
-		_trendMethod2 = Param(nameof(TrendMethod2), MovingAverageMethod.Sma)
+		_trendMethod2 = Param(nameof(TrendMethod2), MovingAverageMethods.Sma)
 		.SetDisplay("Trend MA 2 Method", "Method for the second trend MA", "Trend");
 
 		_trendPeriod3 = Param(nameof(TrendPeriod3), 13)
 		.SetGreaterThanZero()
 		.SetDisplay("Trend MA 3", "Third smoothing period for trend WAMI", "Trend");
 
-		_trendMethod3 = Param(nameof(TrendMethod3), MovingAverageMethod.Sma)
+		_trendMethod3 = Param(nameof(TrendMethod3), MovingAverageMethods.Sma)
 		.SetDisplay("Trend MA 3 Method", "Method for the third trend MA", "Trend");
 
 		_trendSignalPeriod = Param(nameof(TrendSignalPeriod), 4)
 		.SetGreaterThanZero()
 		.SetDisplay("Trend Signal", "Signal period on the trend timeframe", "Trend");
 
-		_trendSignalMethod = Param(nameof(TrendSignalMethod), MovingAverageMethod.Sma)
+		_trendSignalMethod = Param(nameof(TrendSignalMethod), MovingAverageMethods.Sma)
 		.SetDisplay("Trend Signal Method", "Signal method on the trend timeframe", "Trend");
 
 		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(30).TimeFrame())
@@ -329,28 +329,28 @@ public class WamiCloudX2Strategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Signal MA 1", "First smoothing period for entry WAMI", "Signal");
 
-		_signalMethod1 = Param(nameof(SignalMethod1), MovingAverageMethod.Sma)
+		_signalMethod1 = Param(nameof(SignalMethod1), MovingAverageMethods.Sma)
 		.SetDisplay("Signal MA 1 Method", "Method for the first signal MA", "Signal");
 
 		_signalPeriod2 = Param(nameof(SignalPeriod2), 13)
 		.SetGreaterThanZero()
 		.SetDisplay("Signal MA 2", "Second smoothing period for entry WAMI", "Signal");
 
-		_signalMethod2 = Param(nameof(SignalMethod2), MovingAverageMethod.Sma)
+		_signalMethod2 = Param(nameof(SignalMethod2), MovingAverageMethods.Sma)
 		.SetDisplay("Signal MA 2 Method", "Method for the second signal MA", "Signal");
 
 		_signalPeriod3 = Param(nameof(SignalPeriod3), 13)
 		.SetGreaterThanZero()
 		.SetDisplay("Signal MA 3", "Third smoothing period for entry WAMI", "Signal");
 
-		_signalMethod3 = Param(nameof(SignalMethod3), MovingAverageMethod.Sma)
+		_signalMethod3 = Param(nameof(SignalMethod3), MovingAverageMethods.Sma)
 		.SetDisplay("Signal MA 3 Method", "Method for the third signal MA", "Signal");
 
 		_signalSignalPeriod = Param(nameof(SignalSignalPeriod), 4)
 		.SetGreaterThanZero()
 		.SetDisplay("Signal Line", "Signal period on the entry timeframe", "Signal");
 
-		_signalSignalMethod = Param(nameof(SignalSignalMethod), MovingAverageMethod.Sma)
+		_signalSignalMethod = Param(nameof(SignalSignalMethod), MovingAverageMethods.Sma)
 		.SetDisplay("Signal Line Method", "Signal method on the entry timeframe", "Signal");
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -452,13 +452,13 @@ public class WamiCloudX2Strategy : Strategy
 
 	private static WamiIndicator CreateWami(
 	int period1,
-	MovingAverageMethod method1,
+	MovingAverageMethods method1,
 	int period2,
-	MovingAverageMethod method2,
+	MovingAverageMethods method2,
 	int period3,
-	MovingAverageMethod method3,
+	MovingAverageMethods method3,
 	int signalPeriod,
-	MovingAverageMethod signalMethod)
+	MovingAverageMethods signalMethod)
 	{
 		return new WamiIndicator
 		{
@@ -670,7 +670,7 @@ public class WamiIndicator : BaseIndicator<WamiValue>
 	/// <summary>
 	/// Method of the first moving average in the chain.
 	/// </summary>
-	public MovingAverageMethod Method1 { get; set; } = MovingAverageMethod.Sma;
+	public MovingAverageMethods Method1 { get; set; } = MovingAverageMethods.Sma;
 
 	/// <summary>
 	/// Period of the second moving average in the chain.
@@ -680,7 +680,7 @@ public class WamiIndicator : BaseIndicator<WamiValue>
 	/// <summary>
 	/// Method of the second moving average in the chain.
 	/// </summary>
-	public MovingAverageMethod Method2 { get; set; } = MovingAverageMethod.Sma;
+	public MovingAverageMethods Method2 { get; set; } = MovingAverageMethods.Sma;
 
 	/// <summary>
 	/// Period of the third moving average in the chain.
@@ -690,7 +690,7 @@ public class WamiIndicator : BaseIndicator<WamiValue>
 	/// <summary>
 	/// Method of the third moving average in the chain.
 	/// </summary>
-	public MovingAverageMethod Method3 { get; set; } = MovingAverageMethod.Sma;
+	public MovingAverageMethods Method3 { get; set; } = MovingAverageMethods.Sma;
 
 	/// <summary>
 	/// Period of the final signal moving average.
@@ -700,7 +700,7 @@ public class WamiIndicator : BaseIndicator<WamiValue>
 	/// <summary>
 	/// Method of the final signal moving average.
 	/// </summary>
-	public MovingAverageMethod SignalMethod { get; set; } = MovingAverageMethod.Sma;
+	public MovingAverageMethods SignalMethod { get; set; } = MovingAverageMethods.Sma;
 
 	/// <inheritdoc />
 	protected override IIndicatorValue OnProcess(IIndicatorValue input)
@@ -753,13 +753,13 @@ public class WamiIndicator : BaseIndicator<WamiValue>
 		return new WamiValue(this, input, ma3, signal, true);
 	}
 
-	private static IIndicator CreateAverage(MovingAverageMethod method, int length)
+	private static IIndicator CreateAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Ema => new ExponentialMovingAverage { Length = length },
-			MovingAverageMethod.Smma => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.Lwma => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.Ema => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Smma => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.Lwma => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
@@ -768,7 +768,7 @@ public class WamiIndicator : BaseIndicator<WamiValue>
 /// <summary>
 /// Moving average methods supported by the WAMI implementation.
 /// </summary>
-public enum MovingAverageMethod
+public enum MovingAverageMethods
 {
 	/// <summary>
 	/// Simple moving average.

@@ -13,7 +13,7 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum PercentageChannelPriceMode
+public enum PercentageChannelPriceModes
 {
 	Close,
 	Open,
@@ -32,7 +32,7 @@ public class PercentageCrossoverChannelStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _percent;
-	private readonly StrategyParam<PercentageChannelPriceMode> _priceMode;
+	private readonly StrategyParam<PercentageChannelPriceModes> _priceMode;
 	private readonly StrategyParam<bool> _tradeOnMiddleCross;
 	private readonly StrategyParam<bool> _reverseSignals;
 	private readonly StrategyParam<int> _stopLossPoints;
@@ -74,7 +74,7 @@ public class PercentageCrossoverChannelStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetGreaterThanZero();
 
-		_priceMode = Param(nameof(PriceMode), PercentageChannelPriceMode.Close)
+		_priceMode = Param(nameof(PriceMode), PercentageChannelPriceModes.Close)
 			.SetDisplay("Applied Price", "Price source for channel calculations", "Channel");
 
 		_tradeOnMiddleCross = Param(nameof(TradeOnMiddleCross), false)
@@ -108,7 +108,7 @@ public class PercentageCrossoverChannelStrategy : Strategy
 		set => _percent.Value = value;
 	}
 
-	public PercentageChannelPriceMode PriceMode
+	public PercentageChannelPriceModes PriceMode
 	{
 		get => _priceMode.Value;
 		set => _priceMode.Value = value;
@@ -408,13 +408,13 @@ public class PercentageCrossoverChannelStrategy : Strategy
 		// Convert the selected price mode into a candle value.
 		return PriceMode switch
 		{
-			PercentageChannelPriceMode.Open => candle.OpenPrice,
-			PercentageChannelPriceMode.High => candle.HighPrice,
-			PercentageChannelPriceMode.Low => candle.LowPrice,
-			PercentageChannelPriceMode.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			PercentageChannelPriceMode.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			PercentageChannelPriceMode.Weighted => (candle.HighPrice + candle.LowPrice + (2m * candle.ClosePrice)) / 4m,
-			PercentageChannelPriceMode.Average => (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
+			PercentageChannelPriceModes.Open => candle.OpenPrice,
+			PercentageChannelPriceModes.High => candle.HighPrice,
+			PercentageChannelPriceModes.Low => candle.LowPrice,
+			PercentageChannelPriceModes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			PercentageChannelPriceModes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			PercentageChannelPriceModes.Weighted => (candle.HighPrice + candle.LowPrice + (2m * candle.ClosePrice)) / 4m,
+			PercentageChannelPriceModes.Average => (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}

@@ -25,10 +25,10 @@ public class ColorJFatlStDevStrategy : Strategy
     private readonly StrategyParam<int> _stdPeriod;
     private readonly StrategyParam<decimal> _k1;
     private readonly StrategyParam<decimal> _k2;
-    private readonly StrategyParam<SignalMode> _buyOpenMode;
-    private readonly StrategyParam<SignalMode> _sellOpenMode;
-    private readonly StrategyParam<SignalMode> _buyCloseMode;
-    private readonly StrategyParam<SignalMode> _sellCloseMode;
+    private readonly StrategyParam<SignalModes> _buyOpenMode;
+    private readonly StrategyParam<SignalModes> _sellOpenMode;
+    private readonly StrategyParam<SignalModes> _buyCloseMode;
+    private readonly StrategyParam<SignalModes> _sellCloseMode;
 
     private decimal? _prevJma;
     private decimal? _prevPrevJma;
@@ -90,7 +90,7 @@ public class ColorJFatlStDevStrategy : Strategy
     /// <summary>
     /// Buy open signal mode.
     /// </summary>
-    public SignalMode BuyOpenMode
+    public SignalModes BuyOpenMode
     {
         get => _buyOpenMode.Value;
         set => _buyOpenMode.Value = value;
@@ -99,7 +99,7 @@ public class ColorJFatlStDevStrategy : Strategy
     /// <summary>
     /// Sell open signal mode.
     /// </summary>
-    public SignalMode SellOpenMode
+    public SignalModes SellOpenMode
     {
         get => _sellOpenMode.Value;
         set => _sellOpenMode.Value = value;
@@ -108,7 +108,7 @@ public class ColorJFatlStDevStrategy : Strategy
     /// <summary>
     /// Buy close signal mode.
     /// </summary>
-    public SignalMode BuyCloseMode
+    public SignalModes BuyCloseMode
     {
         get => _buyCloseMode.Value;
         set => _buyCloseMode.Value = value;
@@ -117,7 +117,7 @@ public class ColorJFatlStDevStrategy : Strategy
     /// <summary>
     /// Sell close signal mode.
     /// </summary>
-    public SignalMode SellCloseMode
+    public SignalModes SellCloseMode
     {
         get => _sellCloseMode.Value;
         set => _sellCloseMode.Value = value;
@@ -148,16 +148,16 @@ public class ColorJFatlStDevStrategy : Strategy
         _k2 = Param(nameof(K2), 2.5m)
             .SetDisplay("K2", "Second deviation multiplier", "General");
 
-        _buyOpenMode = Param(nameof(BuyOpenMode), SignalMode.Point)
+        _buyOpenMode = Param(nameof(BuyOpenMode), SignalModes.Point)
             .SetDisplay("Buy Open", "Mode for opening long", "Signals");
 
-        _sellOpenMode = Param(nameof(SellOpenMode), SignalMode.Point)
+        _sellOpenMode = Param(nameof(SellOpenMode), SignalModes.Point)
             .SetDisplay("Sell Open", "Mode for opening short", "Signals");
 
-        _buyCloseMode = Param(nameof(BuyCloseMode), SignalMode.Direct)
+        _buyCloseMode = Param(nameof(BuyCloseMode), SignalModes.Direct)
             .SetDisplay("Buy Close", "Mode for closing long", "Signals");
 
-        _sellCloseMode = Param(nameof(SellCloseMode), SignalMode.Direct)
+        _sellCloseMode = Param(nameof(SellCloseMode), SignalModes.Direct)
             .SetDisplay("Sell Close", "Mode for closing short", "Signals");
     }
 
@@ -202,10 +202,10 @@ public class ColorJFatlStDevStrategy : Strategy
         // Evaluate buy open signal.
         switch (BuyOpenMode)
         {
-            case SignalMode.Point:
+            case SignalModes.Point:
                 buyOpen = candle.ClosePrice > upper1 || candle.ClosePrice > upper2;
                 break;
-            case SignalMode.Direct:
+            case SignalModes.Direct:
                 buyOpen = jmaValue > _prevJma && _prevJma < _prevPrevJma;
                 break;
         }
@@ -213,10 +213,10 @@ public class ColorJFatlStDevStrategy : Strategy
         // Evaluate sell open signal.
         switch (SellOpenMode)
         {
-            case SignalMode.Point:
+            case SignalModes.Point:
                 sellOpen = candle.ClosePrice < lower1 || candle.ClosePrice < lower2;
                 break;
-            case SignalMode.Direct:
+            case SignalModes.Direct:
                 sellOpen = jmaValue < _prevJma && _prevJma > _prevPrevJma;
                 break;
         }
@@ -224,10 +224,10 @@ public class ColorJFatlStDevStrategy : Strategy
         // Evaluate buy close signal.
         switch (BuyCloseMode)
         {
-            case SignalMode.Point:
+            case SignalModes.Point:
                 buyClose = candle.ClosePrice < lower1 || candle.ClosePrice < lower2;
                 break;
-            case SignalMode.Direct:
+            case SignalModes.Direct:
                 buyClose = jmaValue > _prevJma;
                 break;
         }
@@ -235,10 +235,10 @@ public class ColorJFatlStDevStrategy : Strategy
         // Evaluate sell close signal.
         switch (SellCloseMode)
         {
-            case SignalMode.Point:
+            case SignalModes.Point:
                 sellClose = candle.ClosePrice > upper1 || candle.ClosePrice > upper2;
                 break;
-            case SignalMode.Direct:
+            case SignalModes.Direct:
                 sellClose = jmaValue < _prevJma;
                 break;
         }
@@ -260,7 +260,7 @@ public class ColorJFatlStDevStrategy : Strategy
 /// <summary>
 /// Modes for signal evaluation.
 /// </summary>
-public enum SignalMode
+public enum SignalModes
 {
     /// <summary>
     /// Use indicator buffer signals.

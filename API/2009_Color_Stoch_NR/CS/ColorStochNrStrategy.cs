@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ColorStochNrStrategy : Strategy
 {
-	public enum AlgMode
+	public enum AlgModes
 	{
 		Breakdown,
 		OscTwist,
@@ -27,7 +27,7 @@ public class ColorStochNrStrategy : Strategy
 		SignalBreakdown
 	}
 
-	private readonly StrategyParam<AlgMode> _mode;
+	private readonly StrategyParam<AlgModes> _mode;
 	private readonly StrategyParam<int> _kPeriod;
 	private readonly StrategyParam<int> _dPeriod;
 	private readonly StrategyParam<decimal> _stopLossPercent;
@@ -39,7 +39,7 @@ public class ColorStochNrStrategy : Strategy
 	private decimal _prevKDelta;
 	private decimal _prevDDelta;
 
-	public AlgMode Mode
+	public AlgModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -77,7 +77,7 @@ public class ColorStochNrStrategy : Strategy
 
 	public ColorStochNrStrategy()
 	{
-		_mode = Param(nameof(Mode), AlgMode.OscDisposition)
+		_mode = Param(nameof(Mode), AlgModes.OscDisposition)
 			.SetDisplay("Algorithm Mode", "Trading algorithm to use", "Parameters");
 
 		_kPeriod = Param(nameof(KPeriod), 5)
@@ -176,31 +176,31 @@ public class ColorStochNrStrategy : Strategy
 
 		switch (Mode)
 		{
-			case AlgMode.Breakdown:
+			case AlgModes.Breakdown:
 				if (_prevK <= 50m && k > 50m)
 					buy = true;
 				else if (_prevK >= 50m && k < 50m)
 					sell = true;
 				break;
-			case AlgMode.OscTwist:
+			case AlgModes.OscTwist:
 				if (_prevKDelta <= 0m && deltaK > 0m)
 					buy = true;
 				else if (_prevKDelta >= 0m && deltaK < 0m)
 					sell = true;
 				break;
-			case AlgMode.SignalTwist:
+			case AlgModes.SignalTwist:
 				if (_prevDDelta <= 0m && deltaD > 0m)
 					buy = true;
 				else if (_prevDDelta >= 0m && deltaD < 0m)
 					sell = true;
 				break;
-			case AlgMode.OscDisposition:
+			case AlgModes.OscDisposition:
 				if (_prevK <= _prevD && k > d)
 					buy = true;
 				else if (_prevK >= _prevD && k < d)
 					sell = true;
 				break;
-			case AlgMode.SignalBreakdown:
+			case AlgModes.SignalBreakdown:
 				if (_prevD <= 50m && d > 50m)
 					buy = true;
 				else if (_prevD >= 50m && d < 50m)

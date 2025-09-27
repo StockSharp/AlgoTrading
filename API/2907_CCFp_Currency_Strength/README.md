@@ -1,4 +1,4 @@
-# CCFp Currency Strength Strategy
+# CCFp Currencies Strength Strategy
 
 ## Overview
 This strategy ports the classic MetaTrader CCFp expert advisor into the StockSharp high-level API. It calculates a relative strength score for the eight major currencies (USD, EUR, GBP, CHF, JPY, AUD, CAD, NZD) using ratios between fast and slow simple moving averages on the seven USD-based majors (EURUSD, GBPUSD, AUDUSD, NZDUSD, USDCAD, USDCHF, USDJPY). When the difference between two currency strengths breaks above a configurable threshold, the strategy opens market positions that express the stronger currency against the weaker one.

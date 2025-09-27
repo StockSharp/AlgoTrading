@@ -16,7 +16,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Smoothing methods available for XPeriod synthetic candles.
 /// </summary>
-public enum XPeriodCandleSmoothingMethod
+public enum XPeriodCandleSmoothingMethods
 {
 	/// <summary>
 	/// Simple moving average smoothing.
@@ -72,8 +72,8 @@ public class ExpXPeriodCandleX2Strategy : Strategy
 	private readonly StrategyParam<decimal> _entryPhase;
 	private readonly StrategyParam<int> _trendSignalBar;
 	private readonly StrategyParam<int> _entrySignalBar;
-	private readonly StrategyParam<XPeriodCandleSmoothingMethod> _trendSmoothing;
-	private readonly StrategyParam<XPeriodCandleSmoothingMethod> _entrySmoothing;
+	private readonly StrategyParam<XPeriodCandleSmoothingMethods> _trendSmoothing;
+	private readonly StrategyParam<XPeriodCandleSmoothingMethods> _entrySmoothing;
 	private readonly StrategyParam<bool> _enableLongEntries;
 	private readonly StrategyParam<bool> _enableShortEntries;
 	private readonly StrategyParam<bool> _closeLongOnTrendFlip;
@@ -148,10 +148,10 @@ public class ExpXPeriodCandleX2Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Signal Bar", "Shift of the smoothed entry candle", "Entry");
 
-		_trendSmoothing = Param(nameof(TrendSmoothing), XPeriodCandleSmoothingMethod.Jurik)
+		_trendSmoothing = Param(nameof(TrendSmoothing), XPeriodCandleSmoothingMethods.Jurik)
 			.SetDisplay("Trend Smoothing", "Smoothing method for trend candles", "Trend");
 
-		_entrySmoothing = Param(nameof(EntrySmoothing), XPeriodCandleSmoothingMethod.Jurik)
+		_entrySmoothing = Param(nameof(EntrySmoothing), XPeriodCandleSmoothingMethods.Jurik)
 			.SetDisplay("Entry Smoothing", "Smoothing method for entry candles", "Entry");
 
 		_enableLongEntries = Param(nameof(EnableLongEntries), true)
@@ -284,7 +284,7 @@ public class ExpXPeriodCandleX2Strategy : Strategy
 	/// <summary>
 	/// Smoothing method for the trend timeframe.
 	/// </summary>
-	public XPeriodCandleSmoothingMethod TrendSmoothing
+	public XPeriodCandleSmoothingMethods TrendSmoothing
 	{
 		get => _trendSmoothing.Value;
 		set => _trendSmoothing.Value = value;
@@ -293,7 +293,7 @@ public class ExpXPeriodCandleX2Strategy : Strategy
 	/// <summary>
 	/// Smoothing method for the entry timeframe.
 	/// </summary>
-	public XPeriodCandleSmoothingMethod EntrySmoothing
+	public XPeriodCandleSmoothingMethods EntrySmoothing
 	{
 		get => _entrySmoothing.Value;
 		set => _entrySmoothing.Value = value;
@@ -583,18 +583,18 @@ public class ExpXPeriodCandleX2Strategy : Strategy
 		return true;
 	}
 
-	private static IIndicator CreateMovingAverage(XPeriodCandleSmoothingMethod method, int length, decimal phase)
+	private static IIndicator CreateMovingAverage(XPeriodCandleSmoothingMethods method, int length, decimal phase)
 	{
 		length = Math.Max(1, length);
 
 		IIndicator indicator = method switch
 		{
-			XPeriodCandleSmoothingMethod.Simple => new SimpleMovingAverage { Length = length },
-			XPeriodCandleSmoothingMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			XPeriodCandleSmoothingMethod.Smoothed => new SMMA { Length = length },
-			XPeriodCandleSmoothingMethod.Weighted => new WeightedMovingAverage { Length = length },
-			XPeriodCandleSmoothingMethod.Hull => new HullMovingAverage { Length = length },
-			XPeriodCandleSmoothingMethod.KaufmanAdaptive => new KaufmanAdaptiveMovingAverage { Length = length },
+			XPeriodCandleSmoothingMethods.Simple => new SimpleMovingAverage { Length = length },
+			XPeriodCandleSmoothingMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			XPeriodCandleSmoothingMethods.Smoothed => new SMMA { Length = length },
+			XPeriodCandleSmoothingMethods.Weighted => new WeightedMovingAverage { Length = length },
+			XPeriodCandleSmoothingMethods.Hull => new HullMovingAverage { Length = length },
+			XPeriodCandleSmoothingMethods.KaufmanAdaptive => new KaufmanAdaptiveMovingAverage { Length = length },
 			_ => new JurikMovingAverage { Length = length }
 		};
 

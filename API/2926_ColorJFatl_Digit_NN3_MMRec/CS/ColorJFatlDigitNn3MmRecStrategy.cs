@@ -24,7 +24,7 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 	private readonly StrategyParam<int> _jmaLengthA;
 	private readonly StrategyParam<int> _jmaPhaseA;
 	private readonly StrategyParam<int> _signalBarA;
-	private readonly StrategyParam<AppliedPrice> _appliedPriceA;
+	private readonly StrategyParam<AppliedPrices> _appliedPriceA;
 	private readonly StrategyParam<bool> _allowBuyOpenA;
 	private readonly StrategyParam<bool> _allowSellOpenA;
 	private readonly StrategyParam<bool> _allowBuyCloseA;
@@ -35,7 +35,7 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 	private readonly StrategyParam<int> _jmaLengthB;
 	private readonly StrategyParam<int> _jmaPhaseB;
 	private readonly StrategyParam<int> _signalBarB;
-	private readonly StrategyParam<AppliedPrice> _appliedPriceB;
+	private readonly StrategyParam<AppliedPrices> _appliedPriceB;
 	private readonly StrategyParam<bool> _allowBuyOpenB;
 	private readonly StrategyParam<bool> _allowSellOpenB;
 	private readonly StrategyParam<bool> _allowBuyCloseB;
@@ -46,7 +46,7 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 	private readonly StrategyParam<int> _jmaLengthC;
 	private readonly StrategyParam<int> _jmaPhaseC;
 	private readonly StrategyParam<int> _signalBarC;
-	private readonly StrategyParam<AppliedPrice> _appliedPriceC;
+	private readonly StrategyParam<AppliedPrices> _appliedPriceC;
 	private readonly StrategyParam<bool> _allowBuyOpenC;
 	private readonly StrategyParam<bool> _allowSellOpenC;
 	private readonly StrategyParam<bool> _allowBuyCloseC;
@@ -72,7 +72,7 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 		_signalBarA = Param(nameof(SignalBarA), 1)
 		.SetNotNegative()
 		.SetDisplay("A Signal Bar", "Delay in bars before acting on module A signals", "Module A");
-		_appliedPriceA = Param(nameof(AppliedPriceA), AppliedPrice.Close)
+		_appliedPriceA = Param(nameof(AppliedPriceA), AppliedPrices.Close)
 		.SetDisplay("A Applied Price", "Price source used by module A", "Module A");
 		_allowBuyOpenA = Param(nameof(AllowBuyOpenA), true)
 		.SetDisplay("A Allow Buy Open", "Enable opening long positions for module A", "Module A");
@@ -96,7 +96,7 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 		_signalBarB = Param(nameof(SignalBarB), 1)
 		.SetNotNegative()
 		.SetDisplay("B Signal Bar", "Delay in bars before acting on module B signals", "Module B");
-		_appliedPriceB = Param(nameof(AppliedPriceB), AppliedPrice.Close)
+		_appliedPriceB = Param(nameof(AppliedPriceB), AppliedPrices.Close)
 		.SetDisplay("B Applied Price", "Price source used by module B", "Module B");
 		_allowBuyOpenB = Param(nameof(AllowBuyOpenB), true)
 		.SetDisplay("B Allow Buy Open", "Enable opening long positions for module B", "Module B");
@@ -120,7 +120,7 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 		_signalBarC = Param(nameof(SignalBarC), 1)
 		.SetNotNegative()
 		.SetDisplay("C Signal Bar", "Delay in bars before acting on module C signals", "Module C");
-		_appliedPriceC = Param(nameof(AppliedPriceC), AppliedPrice.Close)
+		_appliedPriceC = Param(nameof(AppliedPriceC), AppliedPrices.Close)
 		.SetDisplay("C Applied Price", "Price source used by module C", "Module C");
 		_allowBuyOpenC = Param(nameof(AllowBuyOpenC), true)
 		.SetDisplay("C Allow Buy Open", "Enable opening long positions for module C", "Module C");
@@ -178,7 +178,7 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 	/// <summary>
 	/// Applied price mode for module A.
 	/// </summary>
-	public AppliedPrice AppliedPriceA
+	public AppliedPrices AppliedPriceA
 	{
 		get => _appliedPriceA.Value;
 		set => _appliedPriceA.Value = value;
@@ -268,7 +268,7 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 	/// <summary>
 	/// Applied price mode for module B.
 	/// </summary>
-	public AppliedPrice AppliedPriceB
+	public AppliedPrices AppliedPriceB
 	{
 		get => _appliedPriceB.Value;
 		set => _appliedPriceB.Value = value;
@@ -358,7 +358,7 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 	/// <summary>
 	/// Applied price mode for module C.
 	/// </summary>
-	public AppliedPrice AppliedPriceC
+	public AppliedPrices AppliedPriceC
 	{
 		get => _appliedPriceC.Value;
 		set => _appliedPriceC.Value = value;
@@ -451,30 +451,30 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 		StartProtection();
 	}
 
-	private static decimal SelectPrice(ICandleMessage candle, AppliedPrice mode)
+	private static decimal SelectPrice(ICandleMessage candle, AppliedPrices mode)
 	{
 		return mode switch
 		{
-			AppliedPrice.Close => candle.ClosePrice,
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-			AppliedPrice.Weighted => (candle.ClosePrice * 2m + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			AppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
+			AppliedPrices.Close => candle.ClosePrice,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+			AppliedPrices.Weighted => (candle.ClosePrice * 2m + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			AppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
 			? candle.HighPrice
 			: candle.ClosePrice < candle.OpenPrice
 			? candle.LowPrice
 			: candle.ClosePrice,
-			AppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
+			AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
 			? (candle.HighPrice + candle.ClosePrice) / 2m
 			: candle.ClosePrice < candle.OpenPrice
 			? (candle.LowPrice + candle.ClosePrice) / 2m
 			: candle.ClosePrice,
-			AppliedPrice.DeMark => CalculateDeMark(candle),
+			AppliedPrices.DeMark => CalculateDeMark(candle),
 			_ => candle.ClosePrice,
 		};
 	}
@@ -493,7 +493,7 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 		return ((res - candle.LowPrice) + (res - candle.HighPrice)) / 2m;
 	}
 
-	private enum SignalColor
+	private enum SignalColors
 	{
 		Down,
 		Neutral,
@@ -506,7 +506,7 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 		private readonly StrategyParam<DataType> _candleType;
 		private readonly StrategyParam<int> _jmaLength;
 		private readonly StrategyParam<int> _signalBar;
-		private readonly StrategyParam<AppliedPrice> _appliedPrice;
+		private readonly StrategyParam<AppliedPrices> _appliedPrice;
 		private readonly StrategyParam<bool> _allowBuyOpen;
 		private readonly StrategyParam<bool> _allowSellOpen;
 		private readonly StrategyParam<bool> _allowBuyClose;
@@ -515,16 +515,16 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 
 		private JurikMovingAverage _jma;
 		private decimal? _prevJma;
-		private SignalColor _lastColor = SignalColor.Neutral;
-		private readonly Queue<SignalColor> _pending = new();
-		private SignalColor? _lastProcessed;
+		private SignalColors _lastColor = SignalColors.Neutral;
+		private readonly Queue<SignalColors> _pending = new();
+		private SignalColors? _lastProcessed;
 
 		public SignalModule(
 		ColorJFatlDigitNn3MmRecStrategy strategy,
 		StrategyParam<DataType> candleType,
 		StrategyParam<int> jmaLength,
 		StrategyParam<int> signalBar,
-		StrategyParam<AppliedPrice> appliedPrice,
+		StrategyParam<AppliedPrices> appliedPrice,
 		StrategyParam<bool> allowBuyOpen,
 		StrategyParam<bool> allowSellOpen,
 		StrategyParam<bool> allowBuyClose,
@@ -555,7 +555,7 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 		{
 			_jma = null;
 			_prevJma = null;
-			_lastColor = SignalColor.Neutral;
+			_lastColor = SignalColors.Neutral;
 			_pending.Clear();
 			_lastProcessed = null;
 		}
@@ -578,9 +578,9 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 			var diff = jmaValue - prev;
 
 			var color = diff > 0m
-			? SignalColor.Up
+			? SignalColors.Up
 			: diff < 0m
-			? SignalColor.Down
+			? SignalColors.Down
 			: _lastColor;
 
 			_prevJma = jmaValue;
@@ -596,7 +596,7 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 			return;
 
 			var signalColor = _pending.Dequeue();
-			var previous = _lastProcessed ?? SignalColor.Neutral;
+			var previous = _lastProcessed ?? SignalColors.Neutral;
 
 			if (signalColor == previous)
 			{
@@ -612,10 +612,10 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 
 			switch (signalColor)
 			{
-				case SignalColor.Up:
+				case SignalColors.Up:
 				HandleUpSignal();
 				break;
-				case SignalColor.Down:
+				case SignalColors.Down:
 				HandleDownSignal();
 				break;
 			}
@@ -665,7 +665,7 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 	/// <summary>
 	/// Applied price modes replicated from the original indicator.
 	/// </summary>
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		Close = 1,
 		Open,

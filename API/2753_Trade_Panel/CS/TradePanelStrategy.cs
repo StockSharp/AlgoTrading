@@ -13,7 +13,7 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum TradePanelCloseMode
+public enum TradePanelCloseModes
 {
 	CloseAll,
 	CloseLast,
@@ -31,7 +31,7 @@ public class TradePanelStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _partialCloseVolume;
-	private readonly StrategyParam<TradePanelCloseMode> _closeMode;
+	private readonly StrategyParam<TradePanelCloseModes> _closeMode;
 	private readonly StrategyParam<bool> _buyRequest;
 	private readonly StrategyParam<bool> _sellRequest;
 	private readonly StrategyParam<bool> _closeRequest;
@@ -65,7 +65,7 @@ public class TradePanelStrategy : Strategy
 		set => _partialCloseVolume.Value = value;
 	}
 
-	public TradePanelCloseMode CloseMode
+	public TradePanelCloseModes CloseMode
 	{
 		get => _closeMode.Value;
 		set => _closeMode.Value = value;
@@ -105,7 +105,7 @@ public class TradePanelStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Partial Close Volume", "Volume to close when using partial or last close modes.", "Manual Controls");
 
-		_closeMode = Param(nameof(CloseMode), TradePanelCloseMode.CloseAll)
+		_closeMode = Param(nameof(CloseMode), TradePanelCloseModes.CloseAll)
 			.SetDisplay("Close Mode", "Defines how manual close requests are processed.", "Manual Controls");
 
 		_buyRequest = Param(nameof(BuyRequest), false)
@@ -209,21 +209,21 @@ public class TradePanelStrategy : Strategy
 
 		switch (CloseMode)
 		{
-			case TradePanelCloseMode.CloseAll:
+			case TradePanelCloseModes.CloseAll:
 				CloseEntirePosition();
 				break;
-			case TradePanelCloseMode.CloseLast:
+			case TradePanelCloseModes.CloseLast:
 				CloseVolume(OrderVolume);
 				break;
-			case TradePanelCloseMode.CloseProfit:
+			case TradePanelCloseModes.CloseProfit:
 				if (IsPositionProfitable())
 					CloseEntirePosition();
 				break;
-			case TradePanelCloseMode.CloseLoss:
+			case TradePanelCloseModes.CloseLoss:
 				if (IsPositionLosing())
 					CloseEntirePosition();
 				break;
-			case TradePanelCloseMode.ClosePartial:
+			case TradePanelCloseModes.ClosePartial:
 				CloseVolume(PartialCloseVolume);
 				break;
 		}

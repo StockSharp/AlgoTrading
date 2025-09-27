@@ -16,7 +16,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// MACD based strategy that interprets histogram or signal line slope.
 /// </summary>
-public enum MacdSignalMode
+public enum MacdSignalModes
 {
 	Histogram,
 	SignalLine
@@ -27,7 +27,7 @@ public enum MacdSignalMode
 /// </summary>
 public class ColorXMacdCandleStrategy : Strategy
 {
-	private readonly StrategyParam<MacdSignalMode> _mode;
+	private readonly StrategyParam<MacdSignalModes> _mode;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _signalPeriod;
@@ -47,7 +47,7 @@ public class ColorXMacdCandleStrategy : Strategy
 	/// <summary>
 	/// Source of signals.
 	/// </summary>
-	public MacdSignalMode Mode
+	public MacdSignalModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -130,7 +130,7 @@ public class ColorXMacdCandleStrategy : Strategy
 	/// </summary>
 	public ColorXMacdCandleStrategy()
 	{
-		_mode = Param(nameof(Mode), MacdSignalMode.Histogram)
+		_mode = Param(nameof(Mode), MacdSignalModes.Histogram)
 				.SetDisplay("Mode", "Source of signals", "Parameters");
 
 		_fastPeriod = Param(nameof(FastPeriod), 12)
@@ -209,9 +209,9 @@ public class ColorXMacdCandleStrategy : Strategy
 			return;
 		}
 
-		var isUp = Mode == MacdSignalMode.Histogram ? histValue > _prevHist : signalValue > _prevSignal;
+		var isUp = Mode == MacdSignalModes.Histogram ? histValue > _prevHist : signalValue > _prevSignal;
 
-		if (Mode == MacdSignalMode.Histogram)
+		if (Mode == MacdSignalModes.Histogram)
 			_prevHist = histValue;
 		else
 			_prevSignal = signalValue;

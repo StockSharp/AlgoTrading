@@ -38,7 +38,7 @@
 | Indicator | `SmoothingMethod` | 平滑方法。`JurX`、`ParMa`、`Vidya` 在 StockSharp 中采用 EMA 近似。 |
 | Indicator | `SmoothingLength` | 平滑移动平均的长度。 |
 | Indicator | `SmoothingPhase` | 某些平滑算法使用的相位参数。 |
-| Indicator | `AppliedPrice` | 指标所用的价格类型（收盘、开盘、最高、最低等）。 |
+| Indicator | `AppliedPrices` | 指标所用的价格类型（收盘、开盘、最高、最低等）。 |
 | Indicator | `RoundingDigits` | 最终值的保留小数位数。 |
 | Logic | `SignalBar` | 读取颜色缓冲区时的历史位移。 |
 | Permissions | `EnableBuyEntries` / `EnableSellEntries` | 是否允许开多/开空。 |

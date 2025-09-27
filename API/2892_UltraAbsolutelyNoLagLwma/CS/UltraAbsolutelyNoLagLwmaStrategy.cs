@@ -17,12 +17,12 @@ public class UltraAbsolutelyNoLagLwmaStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _baseLength;
-	private readonly StrategyParam<AppliedPrice> _appliedPrice;
-	private readonly StrategyParam<UltraSmoothMethod> _trendMethod;
+	private readonly StrategyParam<AppliedPrices> _appliedPrice;
+	private readonly StrategyParam<UltraSmoothMethods> _trendMethod;
 	private readonly StrategyParam<int> _startLength;
 	private readonly StrategyParam<int> _stepSize;
 	private readonly StrategyParam<int> _stepsTotal;
-	private readonly StrategyParam<UltraSmoothMethod> _smoothingMethod;
+	private readonly StrategyParam<UltraSmoothMethods> _smoothingMethod;
 	private readonly StrategyParam<int> _smoothingLength;
 	private readonly StrategyParam<decimal> _upLevelPercent;
 	private readonly StrategyParam<decimal> _downLevelPercent;
@@ -60,13 +60,13 @@ public class UltraAbsolutelyNoLagLwmaStrategy : Strategy
 		set => _baseLength.Value = value;
 	}
 
-	public AppliedPrice AppliedPriceMode
+	public AppliedPrices AppliedPriceMode
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
 	}
 
-	public UltraSmoothMethod TrendMethod
+	public UltraSmoothMethods TrendMethod
 	{
 		get => _trendMethod.Value;
 		set => _trendMethod.Value = value;
@@ -90,7 +90,7 @@ public class UltraAbsolutelyNoLagLwmaStrategy : Strategy
 		set => _stepsTotal.Value = value;
 	}
 
-	public UltraSmoothMethod SmoothingMethod
+	public UltraSmoothMethods SmoothingMethod
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -165,10 +165,10 @@ public class UltraAbsolutelyNoLagLwmaStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Base LWMA Length", "Length for the initial double LWMA", "Indicator");
 
-		_appliedPrice = Param(nameof(AppliedPriceMode), AppliedPrice.Close)
+		_appliedPrice = Param(nameof(AppliedPriceMode), AppliedPrices.Close)
 			.SetDisplay("Applied Price", "Price source for calculations", "Indicator");
 
-		_trendMethod = Param(nameof(TrendMethod), UltraSmoothMethod.Jurik)
+		_trendMethod = Param(nameof(TrendMethod), UltraSmoothMethods.Jurik)
 			.SetDisplay("Trend Method", "Smoothing method for intermediate curves", "Indicator");
 
 		_startLength = Param(nameof(StartLength), 3)
@@ -183,7 +183,7 @@ public class UltraAbsolutelyNoLagLwmaStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Steps Total", "Number of smoothing steps to evaluate", "Indicator");
 
-		_smoothingMethod = Param(nameof(SmoothingMethod), UltraSmoothMethod.Jurik)
+		_smoothingMethod = Param(nameof(SmoothingMethod), UltraSmoothMethods.Jurik)
 			.SetDisplay("Smoother Method", "Method used to smooth bullish/bearish counts", "Indicator");
 
 		_smoothingLength = Param(nameof(SmoothingLength), 3)
@@ -481,26 +481,26 @@ public class UltraAbsolutelyNoLagLwmaStrategy : Strategy
 	{
 		return AppliedPriceMode switch
 		{
-			AppliedPrice.Close => candle.ClosePrice,
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-			AppliedPrice.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.Simplified => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			AppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
+			AppliedPrices.Close => candle.ClosePrice,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+			AppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.Simplified => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			AppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
 				? candle.HighPrice
 				: candle.ClosePrice < candle.OpenPrice
 					? candle.LowPrice
 					: candle.ClosePrice,
-			AppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
+			AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
 				? (candle.HighPrice + candle.ClosePrice) / 2m
 				: candle.ClosePrice < candle.OpenPrice
 					? (candle.LowPrice + candle.ClosePrice) / 2m
 					: candle.ClosePrice,
-			AppliedPrice.DeMark => CalculateDeMarkPrice(candle),
+			AppliedPrices.DeMark => CalculateDeMarkPrice(candle),
 			_ => candle.ClosePrice,
 		};
 	}
@@ -520,27 +520,27 @@ public class UltraAbsolutelyNoLagLwmaStrategy : Strategy
 		return ((adjusted - candle.LowPrice) + (adjusted - candle.HighPrice)) / 2m;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(UltraSmoothMethod method, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(UltraSmoothMethods method, int length)
 	{
 		var normalizedLength = Math.Max(1, length);
 
 		return method switch
 		{
-			UltraSmoothMethod.Sma => new SMA { Length = normalizedLength },
-			UltraSmoothMethod.Ema => new EMA { Length = normalizedLength },
-			UltraSmoothMethod.Smma => new SmoothedMovingAverage { Length = normalizedLength },
-			UltraSmoothMethod.Lwma => new WeightedMovingAverage { Length = normalizedLength },
-			UltraSmoothMethod.Jurik => new JurikMovingAverage { Length = normalizedLength },
-			UltraSmoothMethod.JurX => new JurikMovingAverage { Length = normalizedLength },
-			UltraSmoothMethod.T3 => new JurikMovingAverage { Length = normalizedLength },
-			UltraSmoothMethod.Vidya => new EMA { Length = normalizedLength },
-			UltraSmoothMethod.Ama => new KaufmanAdaptiveMovingAverage { Length = normalizedLength },
+			UltraSmoothMethods.Sma => new SMA { Length = normalizedLength },
+			UltraSmoothMethods.Ema => new EMA { Length = normalizedLength },
+			UltraSmoothMethods.Smma => new SmoothedMovingAverage { Length = normalizedLength },
+			UltraSmoothMethods.Lwma => new WeightedMovingAverage { Length = normalizedLength },
+			UltraSmoothMethods.Jurik => new JurikMovingAverage { Length = normalizedLength },
+			UltraSmoothMethods.JurX => new JurikMovingAverage { Length = normalizedLength },
+			UltraSmoothMethods.T3 => new JurikMovingAverage { Length = normalizedLength },
+			UltraSmoothMethods.Vidya => new EMA { Length = normalizedLength },
+			UltraSmoothMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = normalizedLength },
 			_ => new EMA { Length = normalizedLength },
 		};
 	}
 }
 
-public enum AppliedPrice
+public enum AppliedPrices
 {
 	Close = 1,
 	Open,
@@ -556,7 +556,7 @@ public enum AppliedPrice
 	DeMark
 }
 
-public enum UltraSmoothMethod
+public enum UltraSmoothMethods
 {
 	Sma,
 	Ema,

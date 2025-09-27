@@ -27,7 +27,7 @@ returns inside the channel, a long entry is allowed (if enabled) and any short p
 - `CandleType` – timeframe used for analysis and trading.
 - `TradeVolume` – quantity sent with market orders.
 - `EmaLength` – fractional length used by every EMA layer in the PEMA chain.
-- `AppliedPrice` – source price (close, open, median, weighted, trend-follow, DeMark, etc.).
+- `AppliedPrices` – source price (close, open, median, weighted, trend-follow, DeMark, etc.).
 - `DeviationPercent` – percentage distance for both envelopes around PEMA.
 - `Shift` – number of completed candles used to offset the envelope comparison.
 - `PriceShift` – additional absolute shift applied to both envelopes.
@@ -42,7 +42,7 @@ returns inside the channel, a long entry is allowed (if enabled) and any short p
 - `CandleType = TimeSpan.FromHours(4).TimeFrame()`
 - `TradeVolume = 1m`
 - `EmaLength = 50.01m`
-- `AppliedPrice = AppliedPrice.Close`
+- `AppliedPrices = AppliedPrices.Close`
 - `DeviationPercent = 0.1m`
 - `Shift = 1`
 - `PriceShift = 0m`

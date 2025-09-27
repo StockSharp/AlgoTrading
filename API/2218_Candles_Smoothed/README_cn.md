@@ -19,7 +19,7 @@
 
 - `CandleType` – 处理蜡烛的时间框架，默认 1 小时。
 - `MaLength` – 平滑移动平均的长度，默认 30。
-- `MaMethod` – 移动平均算法：`Simple`、`Exponential`、`Smma`、`Weighted`，默认 `Weighted`。
+- `MaMethods` – 移动平均算法：`Simple`、`Exponential`、`Smma`、`Weighted`，默认 `Weighted`。
 
 ## 说明
 

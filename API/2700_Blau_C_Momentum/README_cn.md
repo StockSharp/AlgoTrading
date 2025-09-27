@@ -17,15 +17,15 @@
 4. 生成交易信号：
    - **Breakdown**：前一根K线在零线上方且信号K线≤0 时做多；前一根K线在零线下方且信号K线≥0 时做空。可选的退出开关会在同一条件下关闭反向仓位。
    - **Twist**：比较更早的两根K线。如果动量加速上行且信号K线确认，则做多；若动量加速下行则做空。
-5. 使用 `MoneyManagement` 和 `MarginMode` 控制仓位大小。参数为负数时表示固定手数。策略会设置简单的时间锁，避免在同一根K线内重复入场。
+5. 使用 `MoneyManagement` 和 `MarginModes` 控制仓位大小。参数为负数时表示固定手数。策略会设置简单的时间锁，避免在同一根K线内重复入场。
 
 ## 主要参数
 - `MoneyManagement`：资金管理比例，负值代表固定手数。
-- `MarginMode`：资金管理模式（按资金占比或按风险占比计算）。
+- `MarginModes`：资金管理模式（按资金占比或按风险占比计算）。
 - `StopLossPoints` / `TakeProfitPoints`：止损/止盈距离（单位为价格步长）。
 - `EnableLongEntry` / `EnableShortEntry`：是否允许开多/开空。
 - `EnableLongExit` / `EnableShortExit`：是否允许根据指标平仓。
-- `EntryMode`：`Breakdown` 或 `Twist` 模式。
+- `EntryModes`：`Breakdown` 或 `Twist` 模式。
 - `CandleType`：指标计算使用的时间框架。
 - `SmoothingMethod`：平滑方法（Simple、Exponential、Smoothed、LinearWeighted、Jurik、TripleExponential、Adaptive）。
 - `MomentumLength`、`FirstSmoothLength`、`SecondSmoothLength`、`ThirdSmoothLength`、`Phase`：动量与平滑参数。

@@ -21,7 +21,7 @@ public class SoundAlertEntryOutStrategy : Strategy
 	/// <summary>
 	/// Available notification sounds.
 	/// </summary>
-	public enum NotificationSound
+	public enum NotificationSounds
 	{
 		Alert,
 		Alert2,
@@ -38,7 +38,7 @@ public class SoundAlertEntryOutStrategy : Strategy
 		Wait,
 	}
 
-	private readonly StrategyParam<NotificationSound> _sound;
+	private readonly StrategyParam<NotificationSounds> _sound;
 	private readonly StrategyParam<bool> _notificationEnabled;
 
 	private decimal _previousPosition;
@@ -47,7 +47,7 @@ public class SoundAlertEntryOutStrategy : Strategy
 	/// <summary>
 	/// Selected sound that will be played on exit events.
 	/// </summary>
-	public NotificationSound Sound
+	public NotificationSounds Sound
 	{
 		get => _sound.Value;
 		set => _sound.Value = value;
@@ -67,7 +67,7 @@ public class SoundAlertEntryOutStrategy : Strategy
 	/// </summary>
 	public SoundAlertEntryOutStrategy()
 	{
-		_sound = Param(nameof(Sound), NotificationSound.Alert2)
+		_sound = Param(nameof(Sound), NotificationSounds.Alert2)
 			.SetDisplay("Sound", "Sound file used for alerts.", "Notifications")
 			.SetCanOptimize(true);
 
@@ -124,23 +124,23 @@ public class SoundAlertEntryOutStrategy : Strategy
 		LogInfo($"Deal #{tradeId ?? "N/A"} {directionText} {tradeVolume:F2} {symbol}, profit: {profit:F2}");
 	}
 
-	private static string GetSoundFileName(NotificationSound sound)
+	private static string GetSoundFileName(NotificationSounds sound)
 	{
 		return sound switch
 		{
-			NotificationSound.Alert => "alert.wav",
-			NotificationSound.Alert2 => "alert2.wav",
-			NotificationSound.Connect => "connect.wav",
-			NotificationSound.Disconnect => "disconnect.wav",
-			NotificationSound.Email => "email.wav",
-			NotificationSound.Expert => "expert.wav",
-			NotificationSound.News => "news.wav",
-			NotificationSound.Ok => "ok.wav",
-			NotificationSound.Request => "request.wav",
-			NotificationSound.Stops => "stops.wav",
-			NotificationSound.Tick => "tick.wav",
-			NotificationSound.Timeout => "timeout.wav",
-			NotificationSound.Wait => "wait.wav",
+			NotificationSounds.Alert => "alert.wav",
+			NotificationSounds.Alert2 => "alert2.wav",
+			NotificationSounds.Connect => "connect.wav",
+			NotificationSounds.Disconnect => "disconnect.wav",
+			NotificationSounds.Email => "email.wav",
+			NotificationSounds.Expert => "expert.wav",
+			NotificationSounds.News => "news.wav",
+			NotificationSounds.Ok => "ok.wav",
+			NotificationSounds.Request => "request.wav",
+			NotificationSounds.Stops => "stops.wav",
+			NotificationSounds.Tick => "tick.wav",
+			NotificationSounds.Timeout => "timeout.wav",
+			NotificationSounds.Wait => "wait.wav",
 			_ => "alert2.wav",
 		};
 	}

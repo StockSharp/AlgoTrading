@@ -52,8 +52,8 @@ public class CloudsTrade2Strategy : Strategy
 	private decimal _l3;
 	private decimal _l4;
 	private decimal _l5;
-	private FractalType? _latestFractal;
-	private FractalType? _previousFractal;
+	private FractalTypes? _latestFractal;
+	private FractalTypes? _previousFractal;
 	private int _fractalBufferCount;
 
 	private decimal? _stopPrice;
@@ -61,7 +61,7 @@ public class CloudsTrade2Strategy : Strategy
 	private decimal _entryPrice;
 	private DateTime? _lastEntryDate;
 
-	private enum FractalType
+	private enum FractalTypes
 	{
 		Up,
 		Down
@@ -367,10 +367,10 @@ public class CloudsTrade2Strategy : Strategy
 		var downFractal = _l3 < _l1 && _l3 < _l2 && _l3 < _l4 && _l3 < _l5;
 
 		if (upFractal)
-		RegisterFractal(FractalType.Up);
+		RegisterFractal(FractalTypes.Up);
 
 		if (downFractal)
-		RegisterFractal(FractalType.Down);
+		RegisterFractal(FractalTypes.Down);
 	}
 
 	private int GetFractalSignal()
@@ -381,16 +381,16 @@ public class CloudsTrade2Strategy : Strategy
 		if (_latestFractal is null || _previousFractal is null)
 		return 0;
 
-		if (_latestFractal == FractalType.Up && _previousFractal == FractalType.Up)
+		if (_latestFractal == FractalTypes.Up && _previousFractal == FractalTypes.Up)
 		return 2;
 
-		if (_latestFractal == FractalType.Down && _previousFractal == FractalType.Down)
+		if (_latestFractal == FractalTypes.Down && _previousFractal == FractalTypes.Down)
 		return 1;
 
 		return 0;
 	}
 
-	private void RegisterFractal(FractalType type)
+	private void RegisterFractal(FractalTypes type)
 	{
 		_previousFractal = _latestFractal;
 		_latestFractal = type;

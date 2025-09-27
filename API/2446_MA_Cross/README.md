@@ -35,7 +35,7 @@ All parameters can be optimized inside StockSharp because the constructor regist
 - **Execution style:** Orders are sent with `BuyMarket` or `SellMarket`. The strategy does not configure stop-loss or take-profit levels; risk management can be layered through other StockSharp modules if required.
 
 ## Conversion Notes
-- Indicator creation mirrors the MetaTrader `iMA` calls. The custom `MovingAverageMethod` enumeration maps `MODE_SMA`, `MODE_EMA`, `MODE_SMMA`, and `MODE_LWMA` to StockSharp's `SimpleMovingAverage`, `ExponentialMovingAverage`, `SmoothedMovingAverage`, and `WeightedMovingAverage` respectively.
+- Indicator creation mirrors the MetaTrader `iMA` calls. The custom `MovingAverageMethods` enumeration maps `MODE_SMA`, `MODE_EMA`, `MODE_SMMA`, and `MODE_LWMA` to StockSharp's `SimpleMovingAverage`, `ExponentialMovingAverage`, `SmoothedMovingAverage`, and `WeightedMovingAverage` respectively.
 - Applied-price handling reproduces the MetaTrader `ENUM_APPLIED_PRICE` options by calculating median, typical, and weighted prices directly from the candle data.
 - The shift parameters reuse the original logic: the strategy buffers indicator values and retrieves the entry and exit comparisons from earlier bars when `FastShift` or `SlowShift` are positive.
 - Position-management logic matches the original approach where opposite signals first close the existing position and then establish a position in the new direction on the same bar.

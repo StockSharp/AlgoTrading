@@ -21,7 +21,7 @@ public class GlobalStopLossTimeStrategy : Strategy
 	/// <summary>
 	/// Loss measurement mode.
 	/// </summary>
-	public enum LossMeasurementMode
+	public enum LossMeasurementModes
 	{
 		/// <summary>
 		/// Stop loss is evaluated as percentage of the account balance.
@@ -34,7 +34,7 @@ public class GlobalStopLossTimeStrategy : Strategy
 		Currency
 	}
 
-	private readonly StrategyParam<LossMeasurementMode> _lossMode;
+	private readonly StrategyParam<LossMeasurementModes> _lossMode;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<bool> _useTimeFilter;
 	private readonly StrategyParam<TimeSpan> _startTime;
@@ -49,7 +49,7 @@ public class GlobalStopLossTimeStrategy : Strategy
 	/// </summary>
 	public GlobalStopLossTimeStrategy()
 	{
-		_lossMode = Param(nameof(LossMode), LossMeasurementMode.Percent)
+		_lossMode = Param(nameof(LossMode), LossMeasurementModes.Percent)
 			.SetDisplay("Loss Mode", "How the loss threshold is measured", "Risk");
 
 		_stopLoss = Param(nameof(StopLoss), 20m)
@@ -73,7 +73,7 @@ public class GlobalStopLossTimeStrategy : Strategy
 	/// <summary>
 	/// Selected loss mode.
 	/// </summary>
-	public LossMeasurementMode LossMode
+	public LossMeasurementModes LossMode
 	{
 		get => _lossMode.Value;
 		set => _lossMode.Value = value;
@@ -201,7 +201,7 @@ public class GlobalStopLossTimeStrategy : Strategy
 	{
 		switch (LossMode)
 		{
-			case LossMeasurementMode.Percent:
+			case LossMeasurementModes.Percent:
 			{
 				var balance = Portfolio.CurrentValue ?? 0m;
 				if (balance <= 0m)
@@ -216,7 +216,7 @@ public class GlobalStopLossTimeStrategy : Strategy
 				break;
 			}
 
-			case LossMeasurementMode.Currency:
+			case LossMeasurementModes.Currency:
 			{
 				var loss = Math.Abs(profit);
 				if (loss >= StopLoss)

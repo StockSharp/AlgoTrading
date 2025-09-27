@@ -21,7 +21,7 @@ public class WprLevelCrossStrategy : Strategy
 	private readonly StrategyParam<int> _wprPeriod;
 	private readonly StrategyParam<decimal> _highLevel;
 	private readonly StrategyParam<decimal> _lowLevel;
-	private readonly StrategyParam<TrendMode> _trend;
+	private readonly StrategyParam<TrendModes> _trend;
 	private readonly StrategyParam<bool> _enableBuyEntry;
 	private readonly StrategyParam<bool> _enableSellEntry;
 	private readonly StrategyParam<bool> _enableBuyExit;
@@ -62,7 +62,7 @@ public class WprLevelCrossStrategy : Strategy
 	/// <summary>
 	/// Trend mode: Direct trades with indicator, Against inverts signals.
 	/// </summary>
-	public TrendMode Trend
+	public TrendModes Trend
 	{
 		get => _trend.Value;
 		set => _trend.Value = value;
@@ -147,7 +147,7 @@ public class WprLevelCrossStrategy : Strategy
 		_lowLevel = Param(nameof(LowLevel), -60m)
 			.SetDisplay("Low Level", "Oversold threshold", "Indicators");
 
-		_trend = Param(nameof(Trend), TrendMode.Direct)
+		_trend = Param(nameof(Trend), TrendModes.Direct)
 			.SetDisplay("Trend Mode", "Direct - trade with indicator; Against - inverse signals", "General");
 
 		_enableBuyEntry = Param(nameof(EnableBuyEntry), true)
@@ -222,7 +222,7 @@ public class WprLevelCrossStrategy : Strategy
 		var crossedBelowLow = _prevWr > LowLevel && wr <= LowLevel;
 		var crossedAboveHigh = _prevWr < HighLevel && wr >= HighLevel;
 
-		if (Trend == TrendMode.Direct)
+		if (Trend == TrendModes.Direct)
 		{
 			if (crossedBelowLow)
 			{
@@ -269,7 +269,7 @@ public class WprLevelCrossStrategy : Strategy
 	/// <summary>
 	/// Trend modes for interpreting Williams %R signals.
 	/// </summary>
-	public enum TrendMode
+	public enum TrendModes
 	{
 		/// <summary>
 		/// Trade in the direction of indicator signals.

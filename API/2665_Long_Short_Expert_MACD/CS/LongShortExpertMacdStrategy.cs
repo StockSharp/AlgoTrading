@@ -23,7 +23,7 @@ public class LongShortExpertMacdStrategy : Strategy
 	/// <summary>
 	/// Trade directions supported by the strategy.
 	/// </summary>
-	public enum AllowedPositionType
+	public enum AllowedPositionTypes
 	{
 		/// <summary>
 		/// Long trades only.
@@ -41,7 +41,7 @@ public class LongShortExpertMacdStrategy : Strategy
 		Both
 	}
 
-	private readonly StrategyParam<AllowedPositionType> _allowedPosition;
+	private readonly StrategyParam<AllowedPositionTypes> _allowedPosition;
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<int> _signalLength;
@@ -60,7 +60,7 @@ public class LongShortExpertMacdStrategy : Strategy
 	/// </summary>
 	public LongShortExpertMacdStrategy()
 	{
-		_allowedPosition = Param(nameof(AllowedPosition), AllowedPositionType.Both)
+		_allowedPosition = Param(nameof(AllowedPosition), AllowedPositionTypes.Both)
 			.SetDisplay("Allowed Positions", "Permitted trade direction", "General");
 
 		_fastLength = Param(nameof(FastLength), 12)
@@ -102,7 +102,7 @@ public class LongShortExpertMacdStrategy : Strategy
 	/// <summary>
 	/// Allowed trade direction.
 	/// </summary>
-	public AllowedPositionType AllowedPosition
+	public AllowedPositionTypes AllowedPosition
 	{
 		get => _allowedPosition.Value;
 		set => _allowedPosition.Value = value;
@@ -162,9 +162,9 @@ public class LongShortExpertMacdStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	private bool CanEnterLong => AllowedPosition != AllowedPositionType.Short;
-	private bool CanEnterShort => AllowedPosition != AllowedPositionType.Long;
-	private bool AllowReverse => AllowedPosition == AllowedPositionType.Both;
+	private bool CanEnterLong => AllowedPosition != AllowedPositionTypes.Short;
+	private bool CanEnterShort => AllowedPosition != AllowedPositionTypes.Long;
+	private bool AllowReverse => AllowedPosition == AllowedPositionTypes.Both;
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()

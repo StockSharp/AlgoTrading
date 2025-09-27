@@ -26,10 +26,10 @@ public class PipsoverChaikinHedgeStrategy : Strategy
 	private readonly StrategyParam<decimal> _breakevenPips;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageTypeOption> _maType;
+	private readonly StrategyParam<MovingAverageTypeOptions> _maType;
 	private readonly StrategyParam<int> _chaikinFastPeriod;
 	private readonly StrategyParam<int> _chaikinSlowPeriod;
-	private readonly StrategyParam<MovingAverageTypeOption> _chaikinMaType;
+	private readonly StrategyParam<MovingAverageTypeOptions> _chaikinMaType;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private AccumulationDistributionLine _adLine = null!;
@@ -126,7 +126,7 @@ public class PipsoverChaikinHedgeStrategy : Strategy
 	/// <summary>
 	/// Moving average type for price filter.
 	/// </summary>
-	public MovingAverageTypeOption MaType
+	public MovingAverageTypeOptions MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -153,7 +153,7 @@ public class PipsoverChaikinHedgeStrategy : Strategy
 	/// <summary>
 	/// Moving average type used in Chaikin oscillator.
 	/// </summary>
-	public MovingAverageTypeOption ChaikinMaType
+	public MovingAverageTypeOptions ChaikinMaType
 	{
 		get => _chaikinMaType.Value;
 		set => _chaikinMaType.Value = value;
@@ -200,7 +200,7 @@ public class PipsoverChaikinHedgeStrategy : Strategy
 		_maShift = Param(nameof(MaShift), 0)
 		.SetDisplay("MA Shift", "Price moving average shift", "Trend");
 
-		_maType = Param(nameof(MaType), MovingAverageTypeOption.Simple)
+		_maType = Param(nameof(MaType), MovingAverageTypeOptions.Simple)
 		.SetDisplay("MA Type", "Price moving average type", "Trend");
 
 		_chaikinFastPeriod = Param(nameof(ChaikinFastPeriod), 3)
@@ -211,7 +211,7 @@ public class PipsoverChaikinHedgeStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Chaikin Slow", "Slow Chaikin length", "Chaikin");
 
-		_chaikinMaType = Param(nameof(ChaikinMaType), MovingAverageTypeOption.Exponential)
+		_chaikinMaType = Param(nameof(ChaikinMaType), MovingAverageTypeOptions.Exponential)
 		.SetDisplay("Chaikin MA Type", "Chaikin moving average type", "Chaikin");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -530,14 +530,14 @@ public class PipsoverChaikinHedgeStrategy : Strategy
 		return decimals == 3 || decimals == 5 ? step * 10m : step;
 	}
 
-	private static IIndicator CreateMovingAverage(MovingAverageTypeOption type, int length)
+	private static IIndicator CreateMovingAverage(MovingAverageTypeOptions type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypeOption.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageTypeOption.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageTypeOption.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageTypeOption.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageTypeOptions.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageTypeOptions.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypeOptions.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageTypeOptions.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
@@ -545,7 +545,7 @@ public class PipsoverChaikinHedgeStrategy : Strategy
 	/// <summary>
 	/// Moving average options matching the MetaTrader configuration.
 	/// </summary>
-	public enum MovingAverageTypeOption
+	public enum MovingAverageTypeOptions
 	{
 		Simple,
 		Exponential,

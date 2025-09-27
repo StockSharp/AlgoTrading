@@ -20,7 +20,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Defines how positions should be filtered by symbol.
 /// </summary>
-public enum PositionSelectionMode
+public enum PositionSelectionModes
 {
 	/// <summary>
 	/// Include positions from all symbols available in the portfolio.
@@ -39,7 +39,7 @@ public enum PositionSelectionMode
 public class ListPositionsStrategy : Strategy
 {
 	private readonly StrategyParam<string> _strategyIdFilter;
-	private readonly StrategyParam<PositionSelectionMode> _selectionMode;
+	private readonly StrategyParam<PositionSelectionModes> _selectionMode;
 	private readonly StrategyParam<TimeSpan> _timerInterval;
 
 	private Timer _timer;
@@ -57,7 +57,7 @@ public class ListPositionsStrategy : Strategy
 	/// <summary>
 	/// Gets or sets which symbols should be scanned for positions.
 	/// </summary>
-	public PositionSelectionMode SelectionMode
+	public PositionSelectionModes SelectionMode
 	{
 		get => _selectionMode.Value;
 		set => _selectionMode.Value = value;
@@ -80,7 +80,7 @@ public class ListPositionsStrategy : Strategy
 		_strategyIdFilter = Param(nameof(StrategyIdFilter), string.Empty)
 			.SetDisplay("Strategy Id Filter", "Skip positions with this strategy id", "General");
 
-		_selectionMode = Param(nameof(SelectionMode), PositionSelectionMode.AllSymbols)
+		_selectionMode = Param(nameof(SelectionMode), PositionSelectionModes.AllSymbols)
 			.SetDisplay("Selection Mode", "Choose whether to scan all symbols or only the current one", "General");
 
 		_timerInterval = Param(nameof(TimerInterval), TimeSpan.FromSeconds(6))
@@ -135,7 +135,7 @@ public class ListPositionsStrategy : Strategy
 
 			foreach (var position in portfolio.Positions)
 			{
-				if (selectionMode == PositionSelectionMode.CurrentSymbol && currentSecurity != null && !Equals(position.Security, currentSecurity))
+				if (selectionMode == PositionSelectionModes.CurrentSymbol && currentSecurity != null && !Equals(position.Security, currentSecurity))
 					continue;
 
 				if (!filter.IsEmpty())

@@ -30,7 +30,7 @@ public class StopreversalTrailingStrategy : Strategy
 	private readonly StrategyParam<bool> _buyPositionClose;
 	private readonly StrategyParam<bool> _sellPositionClose;
 	private readonly StrategyParam<decimal> _npips;
-	private readonly StrategyParam<AppliedPriceMode> _priceMode;
+	private readonly StrategyParam<AppliedPriceModes> _priceMode;
 	private readonly StrategyParam<int> _signalBar;
 
 	private readonly List<SignalInfo> _signals = new();
@@ -83,7 +83,7 @@ public class StopreversalTrailingStrategy : Strategy
 		.SetDisplay("Trailing Offset", "Fractional offset applied to the stop line", "Indicator")
 		.SetCanOptimize(true);
 
-		_priceMode = Param(nameof(PriceMode), AppliedPriceMode.Close)
+		_priceMode = Param(nameof(PriceMode), AppliedPriceModes.Close)
 		.SetDisplay("Applied Price", "Price source used by the trailing stop", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -176,7 +176,7 @@ public class StopreversalTrailingStrategy : Strategy
 	/// <summary>
 	/// Price source used when computing the trailing level.
 	/// </summary>
-	public AppliedPriceMode PriceMode
+	public AppliedPriceModes PriceMode
 	{
 		get => _priceMode.Value;
 		set => _priceMode.Value = value;
@@ -412,18 +412,18 @@ public class StopreversalTrailingStrategy : Strategy
 
 		return PriceMode switch
 		{
-			AppliedPriceMode.Close => close,
-			AppliedPriceMode.Open => open,
-			AppliedPriceMode.High => high,
-			AppliedPriceMode.Low => low,
-			AppliedPriceMode.Median => (high + low) / 2m,
-			AppliedPriceMode.Typical => (close + high + low) / 3m,
-			AppliedPriceMode.Weighted => (2m * close + high + low) / 4m,
-			AppliedPriceMode.Simple => (open + close) / 2m,
-			AppliedPriceMode.Quarter => (open + close + high + low) / 4m,
-			AppliedPriceMode.TrendFollow0 => close > open ? high : close < open ? low : close,
-			AppliedPriceMode.TrendFollow1 => close > open ? (high + close) / 2m : close < open ? (low + close) / 2m : close,
-			AppliedPriceMode.Demark => CalculateDemarkPrice(open, high, low, close),
+			AppliedPriceModes.Close => close,
+			AppliedPriceModes.Open => open,
+			AppliedPriceModes.High => high,
+			AppliedPriceModes.Low => low,
+			AppliedPriceModes.Median => (high + low) / 2m,
+			AppliedPriceModes.Typical => (close + high + low) / 3m,
+			AppliedPriceModes.Weighted => (2m * close + high + low) / 4m,
+			AppliedPriceModes.Simple => (open + close) / 2m,
+			AppliedPriceModes.Quarter => (open + close + high + low) / 4m,
+			AppliedPriceModes.TrendFollow0 => close > open ? high : close < open ? low : close,
+			AppliedPriceModes.TrendFollow1 => close > open ? (high + close) / 2m : close < open ? (low + close) / 2m : close,
+			AppliedPriceModes.Demark => CalculateDemarkPrice(open, high, low, close),
 			_ => close
 		};
 	}
@@ -453,7 +453,7 @@ public class StopreversalTrailingStrategy : Strategy
 	/// <summary>
 	/// Available price calculation modes.
 	/// </summary>
-	public enum AppliedPriceMode
+	public enum AppliedPriceModes
 	{
 		/// <summary>
 		/// Closing price.

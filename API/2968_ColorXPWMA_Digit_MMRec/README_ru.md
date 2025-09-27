@@ -38,7 +38,7 @@
 | Indicator | `SmoothingMethod` | Метод дополнительного сглаживания (JurX, ParMa и Vidya аппроксимируются EMA). |
 | Indicator | `SmoothingLength` | Длина сглаживающей скользящей средней. |
 | Indicator | `SmoothingPhase` | Параметр фазы для совместимых методов. |
-| Indicator | `AppliedPrice` | Источник цены (close, open, high, low и т.д.). |
+| Indicator | `AppliedPrices` | Источник цены (close, open, high, low и т.д.). |
 | Indicator | `RoundingDigits` | Количество знаков округления индикатора. |
 | Logic | `SignalBar` | Смещение (в барах) для чтения цветового буфера. |
 | Permissions | `EnableBuyEntries` / `EnableSellEntries` | Разрешение на открытие лонгов/шортов. |

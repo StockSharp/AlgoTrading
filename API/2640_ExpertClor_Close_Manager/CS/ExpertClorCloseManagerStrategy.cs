@@ -21,11 +21,11 @@ public class ExpertClorCloseManagerStrategy : Strategy
 	private readonly StrategyParam<bool> _maCloseEnabled;
 	private readonly StrategyParam<bool> _atrCloseEnabled;
 	private readonly StrategyParam<int> _fastMaPeriod;
-	private readonly StrategyParam<MovingAverageMethod> _fastMaMethod;
-	private readonly StrategyParam<PriceTypeEnum> _fastPriceType;
+	private readonly StrategyParam<MovingAverageMethods> _fastMaMethod;
+	private readonly StrategyParam<PriceTypes> _fastPriceType;
 	private readonly StrategyParam<int> _slowMaPeriod;
-	private readonly StrategyParam<MovingAverageMethod> _slowMaMethod;
-	private readonly StrategyParam<PriceTypeEnum> _slowPriceType;
+	private readonly StrategyParam<MovingAverageMethods> _slowMaMethod;
+	private readonly StrategyParam<PriceTypes> _slowPriceType;
 	private readonly StrategyParam<int> _breakevenPips;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrTarget;
@@ -60,13 +60,13 @@ public class ExpertClorCloseManagerStrategy : Strategy
 		set => _fastMaPeriod.Value = value;
 	}
 
-	public MovingAverageMethod FastMaMethod
+	public MovingAverageMethods FastMaMethod
 	{
 		get => _fastMaMethod.Value;
 		set => _fastMaMethod.Value = value;
 	}
 
-	public PriceTypeEnum FastPriceType
+	public PriceTypes FastPriceType
 	{
 		get => _fastPriceType.Value;
 		set => _fastPriceType.Value = value;
@@ -78,13 +78,13 @@ public class ExpertClorCloseManagerStrategy : Strategy
 		set => _slowMaPeriod.Value = value;
 	}
 
-	public MovingAverageMethod SlowMaMethod
+	public MovingAverageMethods SlowMaMethod
 	{
 		get => _slowMaMethod.Value;
 		set => _slowMaMethod.Value = value;
 	}
 
-	public PriceTypeEnum SlowPriceType
+	public PriceTypes SlowPriceType
 	{
 		get => _slowPriceType.Value;
 		set => _slowPriceType.Value = value;
@@ -127,10 +127,10 @@ public class ExpertClorCloseManagerStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(3, 30, 1);
 
-		_fastMaMethod = Param(nameof(FastMaMethod), MovingAverageMethod.Exponential)
+		_fastMaMethod = Param(nameof(FastMaMethod), MovingAverageMethods.Exponential)
 			.SetDisplay("Fast MA Method", "Type of the fast moving average", "Moving Averages");
 
-		_fastPriceType = Param(nameof(FastPriceType), PriceTypeEnum.Close)
+		_fastPriceType = Param(nameof(FastPriceType), PriceTypes.Close)
 			.SetDisplay("Fast Price", "Applied price for the fast moving average", "Moving Averages");
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 7)
@@ -138,10 +138,10 @@ public class ExpertClorCloseManagerStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(5, 60, 1);
 
-		_slowMaMethod = Param(nameof(SlowMaMethod), MovingAverageMethod.Exponential)
+		_slowMaMethod = Param(nameof(SlowMaMethod), MovingAverageMethods.Exponential)
 			.SetDisplay("Slow MA Method", "Type of the slow moving average", "Moving Averages");
 
-		_slowPriceType = Param(nameof(SlowPriceType), PriceTypeEnum.Open)
+		_slowPriceType = Param(nameof(SlowPriceType), PriceTypes.Open)
 			.SetDisplay("Slow Price", "Applied price for the slow moving average", "Moving Averages");
 
 		_breakevenPips = Param(nameof(BreakevenPips), 0)
@@ -354,33 +354,33 @@ public class ExpertClorCloseManagerStrategy : Strategy
 		return BreakevenPips * step;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethod method, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new ExponentialMovingAverage { Length = length },
 		};
 	}
 
-	private static decimal GetPrice(ICandleMessage candle, PriceTypeEnum type)
+	private static decimal GetPrice(ICandleMessage candle, PriceTypes type)
 	{
 		return type switch
 		{
-			PriceTypeEnum.Open => candle.OpenPrice,
-			PriceTypeEnum.High => candle.HighPrice,
-			PriceTypeEnum.Low => candle.LowPrice,
-			PriceTypeEnum.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			PriceTypeEnum.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			PriceTypeEnum.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			PriceTypes.Open => candle.OpenPrice,
+			PriceTypes.High => candle.HighPrice,
+			PriceTypes.Low => candle.LowPrice,
+			PriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			PriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			PriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
 
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		Simple,
 		Exponential,
@@ -388,7 +388,7 @@ public class ExpertClorCloseManagerStrategy : Strategy
 		Weighted
 	}
 
-	public enum PriceTypeEnum
+	public enum PriceTypes
 	{
 		Close,
 		Open,

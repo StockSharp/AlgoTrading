@@ -16,7 +16,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Defines how the strategy manages simultaneous entries.
 /// </summary>
-public enum SmallInsideBarOpenMode
+public enum SmallInsideBarOpenModes
 {
 	/// <summary>
 	/// Open a new position on every signal without forcing opposite positions to close.
@@ -46,7 +46,7 @@ public class SmallInsideBarStrategy : Strategy
 	private readonly StrategyParam<bool> _enableLong;
 	private readonly StrategyParam<bool> _enableShort;
 	private readonly StrategyParam<bool> _reverseSignals;
-	private readonly StrategyParam<SmallInsideBarOpenMode> _openMode;
+	private readonly StrategyParam<SmallInsideBarOpenModes> _openMode;
 
 	private ICandleMessage _previousCandle;
 	private ICandleMessage _twoBackCandle;
@@ -99,7 +99,7 @@ public class SmallInsideBarStrategy : Strategy
 	/// <summary>
 	/// Mode for handling position entries.
 	/// </summary>
-	public SmallInsideBarOpenMode OpenMode
+	public SmallInsideBarOpenModes OpenMode
 	{
 		get => _openMode.Value;
 		set => _openMode.Value = value;
@@ -128,7 +128,7 @@ public class SmallInsideBarStrategy : Strategy
 		_reverseSignals = Param(nameof(ReverseSignals), false)
 			.SetDisplay("Reverse Signals", "Invert long and short signals", "Trading");
 
-		_openMode = Param(nameof(OpenMode), SmallInsideBarOpenMode.SwingWithRefill)
+		_openMode = Param(nameof(OpenMode), SmallInsideBarOpenModes.SwingWithRefill)
 			.SetDisplay("Open Mode", "Position management mode", "Trading");
 	}
 
@@ -259,18 +259,18 @@ public class SmallInsideBarStrategy : Strategy
 
 		if (isLong)
 		{
-			if (OpenMode == SmallInsideBarOpenMode.SingleSwing && position > 0)
+			if (OpenMode == SmallInsideBarOpenModes.SingleSwing && position > 0)
 				return 0;
 
-			if (position < 0 && OpenMode != SmallInsideBarOpenMode.AnySignal)
+			if (position < 0 && OpenMode != SmallInsideBarOpenModes.AnySignal)
 				baseVolume += Math.Abs(position);
 		}
 		else
 		{
-			if (OpenMode == SmallInsideBarOpenMode.SingleSwing && position < 0)
+			if (OpenMode == SmallInsideBarOpenModes.SingleSwing && position < 0)
 				return 0;
 
-			if (position > 0 && OpenMode != SmallInsideBarOpenMode.AnySignal)
+			if (position > 0 && OpenMode != SmallInsideBarOpenModes.AnySignal)
 				baseVolume += Math.Abs(position);
 		}
 

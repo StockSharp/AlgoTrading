@@ -24,7 +24,7 @@ public class ITrendStrategy : Strategy
 	private readonly StrategyParam<decimal> _bbDeviation;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<AppliedPrice> _priceType;
-	private readonly StrategyParam<BandMode> _bbMode;
+	private readonly StrategyParam<BandModes> _bbMode;
 	
 	private decimal _prevInd;
 	private decimal _prevSign;
@@ -78,7 +78,7 @@ public class ITrendStrategy : Strategy
 	/// <summary>
 	/// Selected Bollinger Band line.
 	/// </summary>
-	public BandMode BbMode
+	public BandModes BbMode
 	{
 		get => _bbMode.Value;
 		set => _bbMode.Value = value;
@@ -110,7 +110,7 @@ public class ITrendStrategy : Strategy
 		_priceType = Param(nameof(PriceType), AppliedPrice.PriceClose)
 		.SetDisplay("Price Type", "Applied price for iTrend", "General");
 		
-		_bbMode = Param(nameof(BbMode), BandMode.Upper)
+		_bbMode = Param(nameof(BbMode), BandModes.Upper)
 		.SetDisplay("Band Mode", "Bollinger Band line used for comparison", "General");
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -170,8 +170,8 @@ public class ITrendStrategy : Strategy
 		
 		var band = BbMode switch
 		{
-			BandMode.Upper => upperBand,
-			BandMode.Lower => lowerBand,
+			BandModes.Upper => upperBand,
+			BandModes.Lower => lowerBand,
 			_ => middleBand,
 		};
 		
@@ -245,7 +245,7 @@ public class ITrendStrategy : Strategy
 /// <summary>
 /// Bollinger Band line selection.
 /// </summary>
-public enum BandMode
+public enum BandModes
 {
 	Upper,
 	Lower,

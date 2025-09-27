@@ -18,9 +18,9 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class PositionsChangeInformerStrategy : Strategy
 {
-	private readonly StrategyParam<AlertType> _alertType;
+	private readonly StrategyParam<AlertTypes> _alertType;
 	private readonly StrategyParam<string> _soundName;
-	private readonly StrategyParam<MessageLanguage> _language;
+	private readonly StrategyParam<MessageLanguages> _language;
 
 	private decimal _position;
 	private decimal _avgPrice;
@@ -28,7 +28,7 @@ public class PositionsChangeInformerStrategy : Strategy
 	/// <summary>
 	/// Type of alert to use.
 	/// </summary>
-	public enum AlertType
+	public enum AlertTypes
 	{
 		/// <summary>Write to the log.</summary>
 		Alert,
@@ -43,7 +43,7 @@ public class PositionsChangeInformerStrategy : Strategy
 	/// <summary>
 	/// Language for notification messages.
 	/// </summary>
-	public enum MessageLanguage
+	public enum MessageLanguages
 	{
 		/// <summary>English language.</summary>
 		English,
@@ -55,7 +55,7 @@ public class PositionsChangeInformerStrategy : Strategy
 	/// <summary>
 	/// Selected alert type.
 	/// </summary>
-	public AlertType Alert
+	public AlertTypes Alert
 	{
 		get => _alertType.Value;
 		set => _alertType.Value = value;
@@ -73,7 +73,7 @@ public class PositionsChangeInformerStrategy : Strategy
 	/// <summary>
 	/// Message language.
 	/// </summary>
-	public MessageLanguage Language
+	public MessageLanguages Language
 	{
 		get => _language.Value;
 		set => _language.Value = value;
@@ -84,9 +84,9 @@ public class PositionsChangeInformerStrategy : Strategy
 	/// </summary>
 	public PositionsChangeInformerStrategy()
 	{
-		_alertType = Param(AlertType.Alert, nameof(Alert)).SetDisplay("Alert type");
+		_alertType = Param(AlertTypes.Alert, nameof(Alert)).SetDisplay("Alert type");
 		_soundName = Param("alert.wav", nameof(SoundName)).SetDisplay("Sound filename");
-		_language = Param(MessageLanguage.Russian, nameof(Language)).SetDisplay("Language");
+		_language = Param(MessageLanguages.Russian, nameof(Language)).SetDisplay("Language");
 	}
 
 	/// <inheritdoc />
@@ -153,7 +153,7 @@ public class PositionsChangeInformerStrategy : Strategy
 	private string GetSideName(Sides side)
 	{
 		return side == Sides.Buy
-			? (Language == MessageLanguage.Russian ? "покупка" : "buy")
-			: (Language == MessageLanguage.Russian ? "продажа" : "sell");
+			? (Language == MessageLanguages.Russian ? "покупка" : "buy")
+			: (Language == MessageLanguages.Russian ? "продажа" : "sell");
 	}
 }

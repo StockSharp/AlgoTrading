@@ -22,7 +22,7 @@ namespace StockSharp.Samples.Strategies;
 public class BlauCMomentumStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _moneyManagement;
-	private readonly StrategyParam<MarginMode> _marginMode;
+	private readonly StrategyParam<MarginModes> _marginMode;
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<int> _slippagePoints;
@@ -30,17 +30,17 @@ public class BlauCMomentumStrategy : Strategy
 	private readonly StrategyParam<bool> _enableShortEntry;
 	private readonly StrategyParam<bool> _enableLongExit;
 	private readonly StrategyParam<bool> _enableShortExit;
-	private readonly StrategyParam<EntryMode> _entryMode;
+	private readonly StrategyParam<EntryModes> _entryMode;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly StrategyParam<SmoothMethod> _smoothingMethod;
+	private readonly StrategyParam<SmoothMethods> _smoothingMethod;
 	private readonly StrategyParam<int> _momentumLength;
 	private readonly StrategyParam<int> _firstSmoothLength;
 	private readonly StrategyParam<int> _secondSmoothLength;
 	private readonly StrategyParam<int> _thirdSmoothLength;
 	private readonly StrategyParam<int> _phase;
-	private readonly StrategyParam<AppliedPrice> _priceForClose;
-	private readonly StrategyParam<AppliedPrice> _priceForOpen;
+	private readonly StrategyParam<AppliedPrices> _priceForClose;
+	private readonly StrategyParam<AppliedPrices> _priceForOpen;
 	private readonly StrategyParam<int> _signalBar;
 
 	private BlauMomentumCalculator _momentum;
@@ -58,7 +58,7 @@ public class BlauCMomentumStrategy : Strategy
 			.SetDisplay("Money Management", "Fraction of capital used to size positions (negative value = fixed volume)", "Trading")
 			.SetCanOptimize(true);
 
-		_marginMode = Param(nameof(MarginMode), MarginMode.FreeMarginShare)
+		_marginMode = Param(nameof(MarginModes), MarginModes.FreeMarginShare)
 			.SetDisplay("Margin Mode", "Interpretation of money management parameter", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
@@ -84,13 +84,13 @@ public class BlauCMomentumStrategy : Strategy
 		_enableShortExit = Param(nameof(EnableShortExit), true)
 			.SetDisplay("Enable Short Exit", "Allow closing short positions", "Trading");
 
-		_entryMode = Param(nameof(EntryMode), EntryMode.Twist)
+		_entryMode = Param(nameof(EntryModes), EntryModes.Twist)
 			.SetDisplay("Entry Mode", "Choose between zero breakout or twist logic", "Logic");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Indicator Timeframe", "Candle type used for indicator calculations", "Data");
 
-		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothMethod.Exponential)
+		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothMethods.Exponential)
 			.SetDisplay("Smoothing Method", "Smoothing method applied to the momentum", "Indicator")
 			.SetCanOptimize(true);
 
@@ -117,10 +117,10 @@ public class BlauCMomentumStrategy : Strategy
 		_phase = Param(nameof(Phase), 15)
 			.SetDisplay("Phase", "Phase parameter used by Jurik-style moving averages", "Indicator");
 
-		_priceForClose = Param(nameof(PriceForClose), AppliedPrice.Close)
+		_priceForClose = Param(nameof(PriceForClose), AppliedPrices.Close)
 			.SetDisplay("Close Price Source", "Applied price used as the reference close", "Indicator");
 
-		_priceForOpen = Param(nameof(PriceForOpen), AppliedPrice.Open)
+		_priceForOpen = Param(nameof(PriceForOpen), AppliedPrices.Open)
 			.SetDisplay("Open Price Source", "Applied price used for the entry reference", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -140,7 +140,7 @@ public class BlauCMomentumStrategy : Strategy
 	/// <summary>
 	/// Interpretation of the money management parameter.
 	/// </summary>
-	public MarginMode MarginMode
+	public MarginModes MarginModes
 	{
 		get => _marginMode.Value;
 		set => _marginMode.Value = value;
@@ -212,7 +212,7 @@ public class BlauCMomentumStrategy : Strategy
 	/// <summary>
 	/// Entry logic: zero-line breakdown or twist detection.
 	/// </summary>
-	public EntryMode EntryMode
+	public EntryModes EntryModes
 	{
 		get => _entryMode.Value;
 		set => _entryMode.Value = value;
@@ -230,7 +230,7 @@ public class BlauCMomentumStrategy : Strategy
 	/// <summary>
 	/// Smoothing method applied to Blau momentum.
 	/// </summary>
-	public SmoothMethod SmoothingMethod
+	public SmoothMethods SmoothingMethod
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -284,7 +284,7 @@ public class BlauCMomentumStrategy : Strategy
 	/// <summary>
 	/// Applied price for the "closing" component.
 	/// </summary>
-	public AppliedPrice PriceForClose
+	public AppliedPrices PriceForClose
 	{
 		get => _priceForClose.Value;
 		set => _priceForClose.Value = value;
@@ -293,7 +293,7 @@ public class BlauCMomentumStrategy : Strategy
 	/// <summary>
 	/// Applied price for the "opening" component.
 	/// </summary>
-	public AppliedPrice PriceForOpen
+	public AppliedPrices PriceForOpen
 	{
 		get => _priceForOpen.Value;
 		set => _priceForOpen.Value = value;
@@ -385,9 +385,9 @@ public class BlauCMomentumStrategy : Strategy
 	var openLong = false;
 	var openShort = false;
 
-	switch (EntryMode)
+	switch (EntryModes)
 	{
-	case EntryMode.Breakdown:
+	case EntryModes.Breakdown:
 	{
 	if (previous.Value > 0m)
 	{
@@ -416,7 +416,7 @@ public class BlauCMomentumStrategy : Strategy
 	}
 	break;
 	}
-	case EntryMode.Twist:
+	case EntryModes.Twist:
 	{
 	var older = GetHistoryValue(SignalBar + 2);
 	if (older is null)
@@ -542,17 +542,17 @@ public class BlauCMomentumStrategy : Strategy
 	if (capital <= 0m)
 	return minVolume;
 
-	switch (MarginMode)
+	switch (MarginModes)
 	{
-	case MarginMode.FreeMarginShare:
-	case MarginMode.BalanceShare:
+	case MarginModes.FreeMarginShare:
+	case MarginModes.BalanceShare:
 	{
 	var budget = capital * moneyManagement;
 	volume = budget / price;
 	break;
 	}
-	case MarginMode.FreeMarginRisk:
-	case MarginMode.BalanceRisk:
+	case MarginModes.FreeMarginRisk:
+	case MarginModes.BalanceRisk:
 	{
 	var riskCapital = capital * moneyManagement;
 	var stepPrice = Security?.StepPrice ?? 1m;
@@ -583,7 +583,7 @@ public class BlauCMomentumStrategy : Strategy
 	/// <summary>
 	/// Entry mode replication.
 	/// </summary>
-	public enum EntryMode
+	public enum EntryModes
 	{
 	/// <summary>
 	/// Entry when the indicator breaks zero.
@@ -599,7 +599,7 @@ public class BlauCMomentumStrategy : Strategy
 	/// <summary>
 	/// Applied price selection.
 	/// </summary>
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 	/// <summary>
 	/// Closing price.
@@ -665,7 +665,7 @@ public class BlauCMomentumStrategy : Strategy
 	/// <summary>
 	/// Money management interpretation.
 	/// </summary>
-	public enum MarginMode
+	public enum MarginModes
 	{
 	/// <summary>
 	/// Use a fraction of account capital (approximation of free margin share).
@@ -691,7 +691,7 @@ public class BlauCMomentumStrategy : Strategy
 	/// <summary>
 	/// Smoothing methods available for Blau momentum.
 	/// </summary>
-	public enum SmoothMethod
+	public enum SmoothMethods
 	{
 	/// <summary>
 	/// Simple moving average.
@@ -731,14 +731,14 @@ public class BlauCMomentumStrategy : Strategy
 
 	private sealed class BlauMomentumCalculator
 	{
-	private readonly SmoothMethod _method;
+	private readonly SmoothMethods _method;
 	private readonly int _momentumLength;
 	private readonly int _firstLength;
 	private readonly int _secondLength;
 	private readonly int _thirdLength;
 	private readonly int _phase;
-	private readonly AppliedPrice _price1;
-	private readonly AppliedPrice _price2;
+	private readonly AppliedPrices _price1;
+	private readonly AppliedPrices _price2;
 
 	private readonly Queue<decimal> _priceBuffer = new();
 	private readonly LengthIndicator<decimal> _ma1;
@@ -746,14 +746,14 @@ public class BlauCMomentumStrategy : Strategy
 	private readonly LengthIndicator<decimal> _ma3;
 
 	public BlauMomentumCalculator(
-	SmoothMethod method,
+	SmoothMethods method,
 	int momentumLength,
 	int firstLength,
 	int secondLength,
 	int thirdLength,
 	int phase,
-	AppliedPrice price1,
-	AppliedPrice price2)
+	AppliedPrices price1,
+	AppliedPrices price2)
 	{
 	_method = method;
 	_momentumLength = Math.Max(1, momentumLength);
@@ -803,37 +803,37 @@ public class BlauCMomentumStrategy : Strategy
 	_ma3.Reset();
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(SmoothMethod method, int length, int phase)
+	private static LengthIndicator<decimal> CreateMovingAverage(SmoothMethods method, int length, int phase)
 	{
 	return method switch
 	{
-	SmoothMethod.Simple => new SimpleMovingAverage { Length = length },
-	SmoothMethod.Exponential => new ExponentialMovingAverage { Length = length },
-	SmoothMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-	SmoothMethod.LinearWeighted => new WeightedMovingAverage { Length = length },
-	SmoothMethod.Jurik => new JurikMovingAverage { Length = length, Phase = phase },
-	SmoothMethod.TripleExponential => new TripleExponentialMovingAverage { Length = length },
-	SmoothMethod.Adaptive => new KaufmanAdaptiveMovingAverage { Length = length },
+	SmoothMethods.Simple => new SimpleMovingAverage { Length = length },
+	SmoothMethods.Exponential => new ExponentialMovingAverage { Length = length },
+	SmoothMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+	SmoothMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
+	SmoothMethods.Jurik => new JurikMovingAverage { Length = length, Phase = phase },
+	SmoothMethods.TripleExponential => new TripleExponentialMovingAverage { Length = length },
+	SmoothMethods.Adaptive => new KaufmanAdaptiveMovingAverage { Length = length },
 	_ => new ExponentialMovingAverage { Length = length }
 	};
 	}
 
-	private static decimal GetAppliedPrice(AppliedPrice price, ICandleMessage candle)
+	private static decimal GetAppliedPrice(AppliedPrices price, ICandleMessage candle)
 	{
 	return price switch
 	{
-	AppliedPrice.Close => candle.ClosePrice,
-	AppliedPrice.Open => candle.OpenPrice,
-	AppliedPrice.High => candle.HighPrice,
-	AppliedPrice.Low => candle.LowPrice,
-	AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-	AppliedPrice.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-	AppliedPrice.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-	AppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-	AppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-	AppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
-	AppliedPrice.TrendFollow2 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
-	AppliedPrice.Demark => CalculateDemarkPrice(candle),
+	AppliedPrices.Close => candle.ClosePrice,
+	AppliedPrices.Open => candle.OpenPrice,
+	AppliedPrices.High => candle.HighPrice,
+	AppliedPrices.Low => candle.LowPrice,
+	AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+	AppliedPrices.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+	AppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+	AppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+	AppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+	AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
+	AppliedPrices.TrendFollow2 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
+	AppliedPrices.Demark => CalculateDemarkPrice(candle),
 	_ => candle.ClosePrice
 	};
 	}

@@ -24,7 +24,7 @@ public class KalmanFilterSignalStrategy : Strategy
 	private readonly StrategyParam<decimal> _processNoise;
 	private readonly StrategyParam<decimal> _measurementNoise;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<SignalMode> _signalMode;
+	private readonly StrategyParam<SignalModes> _signalMode;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
 
@@ -62,7 +62,7 @@ public class KalmanFilterSignalStrategy : Strategy
 	/// <summary>
 	/// Mode used to calculate signals.
 	/// </summary>
-	public SignalMode Mode
+	public SignalModes Mode
 	{
 		get => _signalMode.Value;
 		set => _signalMode.Value = value;
@@ -102,7 +102,7 @@ public class KalmanFilterSignalStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(3).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 
-		_signalMode = Param(nameof(Mode), SignalMode.Kalman)
+		_signalMode = Param(nameof(Mode), SignalModes.Kalman)
 			.SetDisplay("Signal Mode", "Use price vs filter or filter slope", "Signal");
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
@@ -165,7 +165,7 @@ public class KalmanFilterSignalStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var signal = Mode == SignalMode.Kalman
+		var signal = Mode == SignalModes.Kalman
 			? candle.ClosePrice > filterValue ? 1m : 0m
 			: (_prevFilter.HasValue && filterValue >= _prevFilter.Value ? 1m : 0m);
 
@@ -192,7 +192,7 @@ public class KalmanFilterSignalStrategy : Strategy
 	/// <summary>
 	/// Signal calculation mode.
 	/// </summary>
-	public enum SignalMode
+	public enum SignalModes
 	{
 		/// <summary>
 		/// Use Kalman filter value relative to price.

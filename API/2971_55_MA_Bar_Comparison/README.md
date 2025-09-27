@@ -29,8 +29,8 @@ The strategy replicates the MetaTrader 5 "55 MA" expert advisor by comparing two
 | `CloseOppositePositions` | `bool` | `false` | If enabled, increases the order size to close any position in the opposite direction before opening the new trade. |
 | `MaShift` | `int` | 0 | Horizontal shift applied to the moving average line. Positive values access older MA points. |
 | `MaLength` | `int` | 55 | Period of the moving average. |
-| `MaMethod` | `MovingAverageMethod` | `Exponential` | Smoothing method (`Simple`, `Exponential`, `Smoothed`, `Weighted`). |
-| `AppliedPrice` | `AppliedPriceType` | `Median` | Price used as MA input (`Close`, `Open`, `High`, `Low`, `Median`, `Typical`, `Weighted`). |
+| `MaMethod` | `MovingAverageMethods` | `Exponential` | Smoothing method (`Simple`, `Exponential`, `Smoothed`, `Weighted`). |
+| `AppliedPrice` | `AppliedPriceTypes` | `Median` | Price used as MA input (`Close`, `Open`, `High`, `Low`, `Median`, `Typical`, `Weighted`). |
 
 ## Position Management
 - Set the strategy `Volume` to control the base trade size. It is combined with the current position when `CloseOppositePositions` is active.

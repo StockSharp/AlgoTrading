@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class FiboCandlesTrendStrategy : Strategy
 {
-	public enum FiboLevel
+	public enum FiboLevels
 	{
 		Level1 = 1,
 		Level2,
@@ -32,7 +32,7 @@ public class FiboCandlesTrendStrategy : Strategy
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _period;
-	private readonly StrategyParam<FiboLevel> _fiboLevel;
+	private readonly StrategyParam<FiboLevels> _fiboLevel;
 	private readonly StrategyParam<int> _stopLoss;
 	private readonly StrategyParam<int> _takeProfit;
 
@@ -63,7 +63,7 @@ public class FiboCandlesTrendStrategy : Strategy
 	/// <summary>
 	/// Fibonacci level used by the indicator logic.
 	/// </summary>
-	public FiboLevel Level
+	public FiboLevels Level
 	{
 		get => _fiboLevel.Value;
 		set => _fiboLevel.Value = value;
@@ -101,7 +101,7 @@ public class FiboCandlesTrendStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(5, 30, 5);
 
-		_fiboLevel = Param(nameof(Level), FiboLevel.Level1)
+		_fiboLevel = Param(nameof(Level), FiboLevels.Level1)
 			.SetDisplay("Fibo Level", "Fibonacci ratio level", "FiboCandles");
 
 		_stopLoss = Param(nameof(StopLoss), 1000)
@@ -212,15 +212,15 @@ public class FiboCandlesTrendStrategy : Strategy
 		_trend = trend;
 	}
 
-	private static decimal GetLevelMultiplier(FiboLevel level)
+	private static decimal GetLevelMultiplier(FiboLevels level)
 	{
 		return level switch
 		{
-			FiboLevel.Level1 => 0.236m,
-			FiboLevel.Level2 => 0.382m,
-			FiboLevel.Level3 => 0.500m,
-			FiboLevel.Level4 => 0.618m,
-			FiboLevel.Level5 => 0.762m,
+			FiboLevels.Level1 => 0.236m,
+			FiboLevels.Level2 => 0.382m,
+			FiboLevels.Level3 => 0.500m,
+			FiboLevels.Level4 => 0.618m,
+			FiboLevels.Level5 => 0.762m,
 			_ => 0.236m
 		};
 	}

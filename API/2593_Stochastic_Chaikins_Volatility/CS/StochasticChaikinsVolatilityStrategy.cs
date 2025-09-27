@@ -20,9 +20,9 @@ namespace StockSharp.Samples.Strategies;
 public class StochasticChaikinsVolatilityStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<SmoothMethod> _primaryMethod;
+	private readonly StrategyParam<SmoothMethods> _primaryMethod;
 	private readonly StrategyParam<int> _primaryLength;
-	private readonly StrategyParam<SmoothMethod> _secondaryMethod;
+	private readonly StrategyParam<SmoothMethods> _secondaryMethod;
 	private readonly StrategyParam<int> _secondaryLength;
 	private readonly StrategyParam<int> _stochasticLength;
 	private readonly StrategyParam<int> _signalShift;
@@ -51,7 +51,7 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 	/// <summary>
 	/// Smoothing method applied to the high-low spread.
 	/// </summary>
-	public SmoothMethod PrimaryMethod
+	public SmoothMethods PrimaryMethod
 	{
 		get => _primaryMethod.Value;
 		set => _primaryMethod.Value = value;
@@ -69,7 +69,7 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 	/// <summary>
 	/// Smoothing method applied to the stochastic ratio.
 	/// </summary>
-	public SmoothMethod SecondaryMethod
+	public SmoothMethods SecondaryMethod
 	{
 		get => _secondaryMethod.Value;
 		set => _secondaryMethod.Value = value;
@@ -173,7 +173,7 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for indicator calculations", "General");
 		
-		_primaryMethod = Param(nameof(PrimaryMethod), SmoothMethod.Sma)
+		_primaryMethod = Param(nameof(PrimaryMethod), SmoothMethods.Sma)
 		.SetDisplay("Primary Method", "Smoothing applied to high-low spread", "Indicator")
 		.SetCanOptimize(true);
 		
@@ -182,7 +182,7 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 		.SetDisplay("Primary Length", "Periods for primary smoothing", "Indicator")
 		.SetCanOptimize(true);
 		
-		_secondaryMethod = Param(nameof(SecondaryMethod), SmoothMethod.Jurik)
+		_secondaryMethod = Param(nameof(SecondaryMethod), SmoothMethods.Jurik)
 		.SetDisplay("Secondary Method", "Smoothing applied to stochastic ratio", "Indicator")
 		.SetCanOptimize(true);
 		
@@ -358,15 +358,15 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 		queue.Dequeue();
 	}
 	
-	private static LengthIndicator<decimal> CreateSmoother(SmoothMethod method, int length)
+	private static LengthIndicator<decimal> CreateSmoother(SmoothMethods method, int length)
 	{
 		return method switch
 		{
-			SmoothMethod.Sma => new SimpleMovingAverage { Length = length },
-			SmoothMethod.Ema => new ExponentialMovingAverage { Length = length },
-			SmoothMethod.Smma => new SmoothedMovingAverage { Length = length },
-			SmoothMethod.Lwma => new WeightedMovingAverage { Length = length },
-			SmoothMethod.Jurik => new JurikMovingAverage { Length = length },
+			SmoothMethods.Sma => new SimpleMovingAverage { Length = length },
+			SmoothMethods.Ema => new ExponentialMovingAverage { Length = length },
+			SmoothMethods.Smma => new SmoothedMovingAverage { Length = length },
+			SmoothMethods.Lwma => new WeightedMovingAverage { Length = length },
+			SmoothMethods.Jurik => new JurikMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -374,7 +374,7 @@ public class StochasticChaikinsVolatilityStrategy : Strategy
 	/// <summary>
 	/// Available smoothing methods supported by the strategy.
 	/// </summary>
-	public enum SmoothMethod
+	public enum SmoothMethods
 	{
 		/// <summary>
 		/// Simple moving average.

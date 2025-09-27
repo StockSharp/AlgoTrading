@@ -21,7 +21,7 @@ public class FractalWprStrategy : Strategy
 	private readonly StrategyParam<int> _wprPeriod;
 	private readonly StrategyParam<decimal> _highLevel;
 	private readonly StrategyParam<decimal> _lowLevel;
-	private readonly StrategyParam<TrendMode> _trend;
+	private readonly StrategyParam<TrendModes> _trend;
 	private readonly StrategyParam<bool> _buyPositionOpen;
 	private readonly StrategyParam<bool> _sellPositionOpen;
 	private readonly StrategyParam<bool> _buyPositionClose;
@@ -51,7 +51,7 @@ public class FractalWprStrategy : Strategy
 	/// <summary>
 	/// Trading direction mode.
 	/// </summary>
-	public TrendMode Trend { get => _trend.Value; set => _trend.Value = value; }
+	public TrendModes Trend { get => _trend.Value; set => _trend.Value = value; }
 
 	/// <summary>
 	/// Allow opening long positions.
@@ -104,7 +104,7 @@ public class FractalWprStrategy : Strategy
 		_lowLevel = Param(nameof(LowLevel), -70m)
 			.SetDisplay("Low Level", "Oversold threshold", "Levels");
 
-		_trend = Param(nameof(Trend), TrendMode.Direct)
+		_trend = Param(nameof(Trend), TrendModes.Direct)
 			.SetDisplay("Trend Mode", "Trading direction mode", "General");
 
 		_buyPositionOpen = Param(nameof(BuyPositionOpen), true)
@@ -172,7 +172,7 @@ public class FractalWprStrategy : Strategy
 
 		if (_prevWpr.HasValue && IsFormedAndOnlineAndAllowTrading())
 		{
-			if (Trend == TrendMode.Direct)
+			if (Trend == TrendModes.Direct)
 			{
 				if (_prevWpr > LowLevel && wpr <= LowLevel)
 				{
@@ -216,7 +216,7 @@ public class FractalWprStrategy : Strategy
 	/// <summary>
 	/// Trend trading modes.
 	/// </summary>
-	public enum TrendMode
+	public enum TrendModes
 	{
 		Direct,
 		Against

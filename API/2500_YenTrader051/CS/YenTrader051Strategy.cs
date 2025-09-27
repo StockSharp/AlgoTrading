@@ -21,16 +21,16 @@ public class YenTrader051Strategy : Strategy
 	private readonly StrategyParam<Security> _majorSecurity;
 	private readonly StrategyParam<Security> _usdJpySecurity;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<YenTraderMajorDirection> _majorDirection;
-	private readonly StrategyParam<YenTraderEntryMode> _entryMode;
-	private readonly StrategyParam<YenTraderPriceReference> _priceReference;
+	private readonly StrategyParam<YenTraderMajorDirections> _majorDirection;
+	private readonly StrategyParam<YenTraderEntryModes> _entryMode;
+	private readonly StrategyParam<YenTraderPriceReferences> _priceReference;
 	private readonly StrategyParam<int> _loopBackBars;
 	private readonly StrategyParam<bool> _useRsiFilter;
 	private readonly StrategyParam<bool> _useCciFilter;
 	private readonly StrategyParam<bool> _useRviFilter;
 	private readonly StrategyParam<bool> _useMovingAverageFilter;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<MovingAverageMode> _maMode;
+	private readonly StrategyParam<MovingAverageModes> _maMode;
 	private readonly StrategyParam<decimal> _fixedLotSize;
 	private readonly StrategyParam<decimal> _balancePercentLotSize;
 	private readonly StrategyParam<int> _maxOpenPositions;
@@ -113,11 +113,11 @@ public class YenTrader051Strategy : Strategy
 			.SetDisplay("USDJPY Security", "USDJPY pair used for confirmation", "Instruments");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Signal Candles", "Primary timeframe for signals", "Data");
-		_majorDirection = Param(nameof(MajorDirection), YenTraderMajorDirection.Left)
+		_majorDirection = Param(nameof(MajorDirection), YenTraderMajorDirections.Left)
 			.SetDisplay("Major Direction", "Alignment between major and cross", "Filters");
-		_entryMode = Param(nameof(EntryMode), YenTraderEntryMode.Both)
+		_entryMode = Param(nameof(EntryMode), YenTraderEntryModes.Both)
 			.SetDisplay("Entry Mode", "Control averaging or pyramiding behaviour", "Filters");
-		_priceReference = Param(nameof(PriceReference), YenTraderPriceReference.HighLow)
+		_priceReference = Param(nameof(PriceReference), YenTraderPriceReferences.HighLow)
 			.SetDisplay("Price Reference", "Breakout reference for loop back bars", "Filters");
 		_loopBackBars = Param(nameof(LoopBackBars), 2)
 			.SetDisplay("Loop Back Bars", "Number of historical bars for breakout logic", "Filters");
@@ -132,7 +132,7 @@ public class YenTrader051Strategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Moving average period", "Indicators");
-		_maMode = Param(nameof(MaMode), MovingAverageMode.Smoothed)
+		_maMode = Param(nameof(MaMode), MovingAverageModes.Smoothed)
 			.SetDisplay("MA Mode", "Moving average calculation mode", "Indicators");
 		_fixedLotSize = Param(nameof(FixedLotSize), 0m)
 			.SetDisplay("Fixed Volume", "Fixed volume per trade (0 = disabled)", "Risk");
@@ -205,7 +205,7 @@ public class YenTrader051Strategy : Strategy
 	/// <summary>
 	/// Relationship between the major pair and the traded cross.
 	/// </summary>
-	public YenTraderMajorDirection MajorDirection
+	public YenTraderMajorDirections MajorDirection
 	{
 		get => _majorDirection.Value;
 		set => _majorDirection.Value = value;
@@ -214,7 +214,7 @@ public class YenTrader051Strategy : Strategy
 	/// <summary>
 	/// Entry behaviour when stacking orders.
 	/// </summary>
-	public YenTraderEntryMode EntryMode
+	public YenTraderEntryModes EntryMode
 	{
 		get => _entryMode.Value;
 		set => _entryMode.Value = value;
@@ -223,7 +223,7 @@ public class YenTrader051Strategy : Strategy
 	/// <summary>
 	/// Price reference used for breakout detection.
 	/// </summary>
-	public YenTraderPriceReference PriceReference
+	public YenTraderPriceReferences PriceReference
 	{
 		get => _priceReference.Value;
 		set => _priceReference.Value = value;
@@ -286,7 +286,7 @@ public class YenTrader051Strategy : Strategy
 	/// <summary>
 	/// Moving average calculation mode.
 	/// </summary>
-	public MovingAverageMode MaMode
+	public MovingAverageModes MaMode
 	{
 		get => _maMode.Value;
 		set => _maMode.Value = value;
@@ -596,12 +596,12 @@ public class YenTrader051Strategy : Strategy
 
 	private void ApplyEntryMode(ICandleMessage candle, ref bool longSignal, ref bool shortSignal)
 	{
-		if (EntryMode == YenTraderEntryMode.Averaging)
+		if (EntryMode == YenTraderEntryModes.Averaging)
 		{
 			longSignal &= candle.ClosePrice < candle.OpenPrice;
 			shortSignal &= candle.ClosePrice > candle.OpenPrice;
 		}
-		else if (EntryMode == YenTraderEntryMode.Pyramiding)
+		else if (EntryMode == YenTraderEntryModes.Pyramiding)
 		{
 			longSignal &= candle.ClosePrice > candle.OpenPrice;
 			shortSignal &= candle.ClosePrice < candle.OpenPrice;
@@ -620,7 +620,7 @@ public class YenTrader051Strategy : Strategy
 				longSignal = false;
 				shortSignal = false;
 			}
-			else if (MajorDirection == YenTraderMajorDirection.Left)
+			else if (MajorDirection == YenTraderMajorDirections.Left)
 			{
 				longSignal &= _majorRsiValue > 50m && _usdJpyRsiValue > 50m;
 				shortSignal &= _majorRsiValue < 50m && _usdJpyRsiValue < 50m;
@@ -639,7 +639,7 @@ public class YenTrader051Strategy : Strategy
 				longSignal = false;
 				shortSignal = false;
 			}
-			else if (MajorDirection == YenTraderMajorDirection.Left)
+			else if (MajorDirection == YenTraderMajorDirections.Left)
 			{
 				longSignal &= _majorCciValue > 0m && _usdJpyCciValue > 0m;
 				shortSignal &= _majorCciValue < 0m && _usdJpyCciValue < 0m;
@@ -658,7 +658,7 @@ public class YenTrader051Strategy : Strategy
 				longSignal = false;
 				shortSignal = false;
 			}
-			else if (MajorDirection == YenTraderMajorDirection.Left)
+			else if (MajorDirection == YenTraderMajorDirections.Left)
 			{
 				longSignal &= _majorRviValue > _majorRviSignalValue && _usdJpyRviValue > _usdJpyRviSignalValue;
 				shortSignal &= _majorRviValue < _majorRviSignalValue && _usdJpyRviValue < _usdJpyRviSignalValue;
@@ -677,7 +677,7 @@ public class YenTrader051Strategy : Strategy
 				longSignal = false;
 				shortSignal = false;
 			}
-			else if (MajorDirection == YenTraderMajorDirection.Left)
+			else if (MajorDirection == YenTraderMajorDirections.Left)
 			{
 				longSignal &= _majorLastClose > _majorMaValue && _usdJpyLastClose > _usdJpyMaValue;
 				shortSignal &= _majorLastClose < _majorMaValue && _usdJpyLastClose < _usdJpyMaValue;
@@ -698,12 +698,12 @@ public class YenTrader051Strategy : Strategy
 		if (LoopBackBars <= 1)
 			return true;
 
-		if (PriceReference == YenTraderPriceReference.HighLow)
+		if (PriceReference == YenTraderPriceReferences.HighLow)
 		{
 			if (_majorHighestValue == null || _majorLowestValue == null || _usdJpyHighestValue == null || _usdJpyLowestValue == null)
 				return false;
 
-			return MajorDirection == YenTraderMajorDirection.Left
+			return MajorDirection == YenTraderMajorDirections.Left
 				? isLong
 					? _majorLastClose > _majorHighestValue && _usdJpyLastClose > _usdJpyHighestValue
 					: _majorLastClose < _majorLowestValue && _usdJpyLastClose < _usdJpyLowestValue
@@ -715,7 +715,7 @@ public class YenTrader051Strategy : Strategy
 		if (_majorLookbackClose == null || _usdJpyLookbackClose == null)
 			return false;
 
-		return MajorDirection == YenTraderMajorDirection.Left
+		return MajorDirection == YenTraderMajorDirections.Left
 			? isLong
 				? _majorLastClose > _majorLookbackClose && _usdJpyLastClose > _usdJpyLookbackClose
 				: _majorLastClose < _majorLookbackClose && _usdJpyLastClose < _usdJpyLookbackClose
@@ -1002,7 +1002,7 @@ public class YenTrader051Strategy : Strategy
 
 		if (LoopBackBars > 1)
 		{
-			if (PriceReference == YenTraderPriceReference.HighLow)
+			if (PriceReference == YenTraderPriceReferences.HighLow)
 			{
 				if (_majorHighestValue == null || _majorLowestValue == null || _usdJpyHighestValue == null || _usdJpyLowestValue == null)
 					return false;
@@ -1119,16 +1119,16 @@ public class YenTrader051Strategy : Strategy
 		}
 	}
 
-	private static IIndicator CreateMovingAverage(MovingAverageMode mode, int period)
+	private static IIndicator CreateMovingAverage(MovingAverageModes mode, int period)
 	{
 		var length = Math.Max(1, period);
 
 		return mode switch
 		{
-			MovingAverageMode.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMode.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMode.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMode.LinearWeighted => new WeightedMovingAverage { Length = length },
+			MovingAverageModes.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageModes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageModes.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageModes.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -1136,7 +1136,7 @@ public class YenTrader051Strategy : Strategy
 	/// <summary>
 	/// Entry stacking behaviour.
 	/// </summary>
-	public enum YenTraderEntryMode
+	public enum YenTraderEntryModes
 	{
 		/// <summary>Allow both averaging and pyramiding entries.</summary>
 		Both,
@@ -1149,7 +1149,7 @@ public class YenTrader051Strategy : Strategy
 	/// <summary>
 	/// Mapping between major pair and traded cross.
 	/// </summary>
-	public enum YenTraderMajorDirection
+	public enum YenTraderMajorDirections
 	{
 		/// <summary>Major pair acts as the left component.</summary>
 		Left,
@@ -1160,7 +1160,7 @@ public class YenTrader051Strategy : Strategy
 	/// <summary>
 	/// Breakout reference type.
 	/// </summary>
-	public enum YenTraderPriceReference
+	public enum YenTraderPriceReferences
 	{
 		/// <summary>Use delayed close values.</summary>
 		Close,
@@ -1171,7 +1171,7 @@ public class YenTrader051Strategy : Strategy
 	/// <summary>
 	/// Moving average calculation modes supported by the strategy.
 	/// </summary>
-	public enum MovingAverageMode
+	public enum MovingAverageModes
 	{
 		/// <summary>Simple moving average.</summary>
 		Simple,

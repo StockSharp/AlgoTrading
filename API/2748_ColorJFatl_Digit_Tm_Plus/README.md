@@ -59,7 +59,7 @@ parameter.
 | `HoldingMinutes` | Holding period in minutes when the timed exit is active. |
 | `CandleType` | Time frame used for calculations (default 4 hours). |
 | `JmaLength` | Jurik Moving Average smoothing length applied to the FATL output. |
-| `AppliedPrice` | Price source for the digital filter (close, open, median, Demark, etc.). |
+| `AppliedPrices` | Price source for the digital filter (close, open, median, Demark, etc.). |
 | `RoundingDigits` | Number of digits used when rounding the smoothed line. |
 | `SignalBar` | Offset of the finished bar used to evaluate the indicator state. |
 
@@ -67,7 +67,7 @@ parameter.
 
 - The strategy processes only fully completed candles and therefore works well
   with historical backtests.
-- `AppliedPrice.Demark` reproduces the same calculation as the original MQL
+- `AppliedPrices.Demark` reproduces the same calculation as the original MQL
   indicator.
 - Because StockSharp handles order execution asynchronously, the internal
   tracking of the entry price is updated whenever a new position is opened and

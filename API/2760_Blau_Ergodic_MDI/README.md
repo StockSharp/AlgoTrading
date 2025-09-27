@@ -29,12 +29,12 @@ Supported smoothing families are **EMA**, **SMA**, **SMMA/RMA**, and **WMA**. Th
 | `AllowLongExits` / `AllowShortExits` | Allow closing existing positions on opposite signals. |
 | `Mode` | Entry mode (Breakdown / Twist / CloudTwist). |
 | `CandleType` | Timeframe of candles used for calculations (default 4H). |
-| `SmoothingMethod` | Moving average family used in all smoothing steps. |
+| `SmoothingMethods` | Moving average family used in all smoothing steps. |
 | `PrimaryLength` | Baseline smoothing length for the applied price. |
 | `FirstSmoothingLength` | First smoothing length applied to momentum. |
 | `SecondSmoothingLength` | Second smoothing length forming the histogram. |
 | `SignalLength` | Smoothing length of the histogram to create the signal line. |
-| `AppliedPrice` | Price source used in indicator calculations. |
+| `AppliedPrices` | Price source used in indicator calculations. |
 | `SignalBarShift` | Number of closed bars to look back when evaluating signals. |
 | `Phase` | Reserved parameter kept for compatibility (not used in the current implementation). |
 

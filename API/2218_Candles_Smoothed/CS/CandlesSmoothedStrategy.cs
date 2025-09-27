@@ -23,7 +23,7 @@ public class CandlesSmoothedStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<MaMethod> _maMethod;
+	private readonly StrategyParam<MaMethods> _maMethod;
 
 	private IIndicator _ma;
 	private int? _prevColor;
@@ -49,7 +49,7 @@ public class CandlesSmoothedStrategy : Strategy
 	/// <summary>
 	/// Moving average smoothing method.
 	/// </summary>
-	public MaMethod MaMethod
+	public MaMethods MaMethods
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -68,7 +68,7 @@ public class CandlesSmoothedStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(10, 60, 5);
 
-		_maMethod = Param(nameof(MaMethod), MaMethod.Weighted)
+		_maMethod = Param(nameof(MaMethods), MaMethods.Weighted)
 			.SetDisplay("MA Method", "Smoothing algorithm for candle difference", "Indicator");
 	}
 
@@ -83,11 +83,11 @@ public class CandlesSmoothedStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_ma = MaMethod switch
+		_ma = MaMethods switch
 		{
-			MaMethod.Simple => new SMA { Length = MaLength },
-			MaMethod.Exponential => new EMA { Length = MaLength },
-			MaMethod.Smma => new SMMA { Length = MaLength },
+			MaMethods.Simple => new SMA { Length = MaLength },
+			MaMethods.Exponential => new EMA { Length = MaLength },
+			MaMethods.Smma => new SMMA { Length = MaLength },
 			_ => new WeightedMovingAverage { Length = MaLength },
 		};
 
@@ -148,7 +148,7 @@ public class CandlesSmoothedStrategy : Strategy
 /// <summary>
 /// Moving average types for smoothing.
 /// </summary>
-public enum MaMethod
+public enum MaMethods
 {
 	/// <summary>
 	/// Simple Moving Average.

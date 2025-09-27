@@ -23,8 +23,8 @@ public class OneMaChannelBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MaMethod> _maMethod;
-	private readonly StrategyParam<AppliedPrice> _appliedPrice;
+	private readonly StrategyParam<MaMethods> _maMethod;
+	private readonly StrategyParam<AppliedPrices> _appliedPrice;
 	private readonly StrategyParam<int> _maBarShift;
 	private readonly StrategyParam<int> _priceBarShift;
 	private readonly StrategyParam<decimal> _channelHighPips;
@@ -63,7 +63,7 @@ public class OneMaChannelBreakoutStrategy : Strategy
 	/// <summary>
 	/// Type of moving average used in calculations.
 	/// </summary>
-	public MaMethod MaMethodParam
+	public MaMethods MaMethodParam
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -72,7 +72,7 @@ public class OneMaChannelBreakoutStrategy : Strategy
 	/// <summary>
 	/// Price source for moving average input.
 	/// </summary>
-	public AppliedPrice AppliedPriceType
+	public AppliedPrices AppliedPriceType
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -166,10 +166,10 @@ public class OneMaChannelBreakoutStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(0, 10, 1);
 
-		_maMethod = Param(nameof(MaMethodParam), MaMethod.Ema)
+		_maMethod = Param(nameof(MaMethodParam), MaMethods.Ema)
 			.SetDisplay("MA Method", "Moving average calculation method", "Indicator");
 
-		_appliedPrice = Param(nameof(AppliedPriceType), AppliedPrice.Close)
+		_appliedPrice = Param(nameof(AppliedPriceType), AppliedPrices.Close)
 			.SetDisplay("Applied Price", "Price source for MA", "Indicator");
 
 		_maBarShift = Param(nameof(MaBarShift), 0)
@@ -348,13 +348,13 @@ public class OneMaChannelBreakoutStrategy : Strategy
 		return _priceBuffer[index];
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MaMethod method, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MaMethods method, int length)
 	{
 		return method switch
 		{
-			MaMethod.Sma => new SimpleMovingAverage { Length = length },
-			MaMethod.Smma => new SmoothedMovingAverage { Length = length },
-			MaMethod.Lwma => new WeightedMovingAverage { Length = length },
+			MaMethods.Sma => new SimpleMovingAverage { Length = length },
+			MaMethods.Smma => new SmoothedMovingAverage { Length = length },
+			MaMethods.Lwma => new WeightedMovingAverage { Length = length },
 			_ => new ExponentialMovingAverage { Length = length },
 		};
 	}
@@ -363,12 +363,12 @@ public class OneMaChannelBreakoutStrategy : Strategy
 	{
 		return AppliedPriceType switch
 		{
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.Weighted => (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
@@ -389,7 +389,7 @@ public class OneMaChannelBreakoutStrategy : Strategy
 		public decimal Close { get; }
 	}
 
-	public enum MaMethod
+	public enum MaMethods
 	{
 		Sma = 0,
 		Ema = 1,
@@ -397,7 +397,7 @@ public class OneMaChannelBreakoutStrategy : Strategy
 		Lwma = 3
 	}
 
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		Close = 0,
 		Open = 1,

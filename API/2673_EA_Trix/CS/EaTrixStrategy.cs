@@ -20,7 +20,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class EaTrixStrategy : Strategy
 {
-	private enum SignalDirection
+	private enum SignalDirections
 	{
 		Buy,
 		Sell,
@@ -48,7 +48,7 @@ public class EaTrixStrategy : Strategy
 	private decimal? _prevTrix;
 	private decimal? _prevSignal;
 
-	private SignalDirection? _pendingSignal;
+	private SignalDirections? _pendingSignal;
 	private decimal? _entryPrice;
 	private decimal? _stopPrice;
 	private decimal? _takePrice;
@@ -260,16 +260,16 @@ public class EaTrixStrategy : Strategy
 		if (crossUp)
 		{
 			if (TradeOnCloseBar)
-				_pendingSignal = SignalDirection.Buy;
+				_pendingSignal = SignalDirections.Buy;
 			else
-				ExecuteSignal(SignalDirection.Buy, candle, candle.ClosePrice);
+				ExecuteSignal(SignalDirections.Buy, candle, candle.ClosePrice);
 		}
 		else if (crossDown)
 		{
 			if (TradeOnCloseBar)
-				_pendingSignal = SignalDirection.Sell;
+				_pendingSignal = SignalDirections.Sell;
 			else
-				ExecuteSignal(SignalDirection.Sell, candle, candle.ClosePrice);
+				ExecuteSignal(SignalDirections.Sell, candle, candle.ClosePrice);
 		}
 
 		_prevTrix = trix;
@@ -288,7 +288,7 @@ public class EaTrixStrategy : Strategy
 		_pendingSignal = null;
 	}
 
-	private void ExecuteSignal(SignalDirection direction, ICandleMessage candle, decimal fillPrice)
+	private void ExecuteSignal(SignalDirections direction, ICandleMessage candle, decimal fillPrice)
 	{
 		if (Volume <= 0m)
 			return;
@@ -297,7 +297,7 @@ public class EaTrixStrategy : Strategy
 
 		switch (direction)
 		{
-			case SignalDirection.Buy:
+			case SignalDirections.Buy:
 				if (Position < 0m)
 					volume += Math.Abs(Position);
 
@@ -309,7 +309,7 @@ public class EaTrixStrategy : Strategy
 				_takePrice = TakeProfit > 0m ? fillPrice + TakeProfit : null;
 				break;
 
-			case SignalDirection.Sell:
+			case SignalDirections.Sell:
 				if (Position > 0m)
 					volume += Position;
 

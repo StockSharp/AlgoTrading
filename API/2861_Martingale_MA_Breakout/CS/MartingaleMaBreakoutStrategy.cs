@@ -26,8 +26,8 @@ public class MartingaleMaBreakoutStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageMode> _maMethod;
-	private readonly StrategyParam<AppliedPrice> _appliedPrice;
+	private readonly StrategyParam<MovingAverageModes> _maMethod;
+	private readonly StrategyParam<AppliedPrices> _appliedPrice;
 	private readonly StrategyParam<decimal> _riskPercent;
 
 	private LengthIndicator<decimal> _movingAverage;
@@ -81,12 +81,12 @@ public class MartingaleMaBreakoutStrategy : Strategy
 	/// <summary>
 	/// Type of moving average smoothing.
 	/// </summary>
-	public MovingAverageMode MaMethod { get => _maMethod.Value; set => _maMethod.Value = value; }
+	public MovingAverageModes MaMethod { get => _maMethod.Value; set => _maMethod.Value = value; }
 
 	/// <summary>
 	/// Price source used for moving average calculations.
 	/// </summary>
-	public AppliedPrice MaAppliedPrice { get => _appliedPrice.Value; set => _appliedPrice.Value = value; }
+	public AppliedPrices MaAppliedPrice { get => _appliedPrice.Value; set => _appliedPrice.Value = value; }
 
 	/// <summary>
 	/// Risk percentage used to calculate position size.
@@ -123,10 +123,10 @@ public class MartingaleMaBreakoutStrategy : Strategy
 		_maShift = Param(nameof(MaShift), 3)
 			.SetDisplay("MA Shift", "Moving average shift", "Indicators");
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageMode.Simple)
+		_maMethod = Param(nameof(MaMethod), MovingAverageModes.Simple)
 			.SetDisplay("MA Method", "Moving average smoothing", "Indicators");
 
-		_appliedPrice = Param(nameof(MaAppliedPrice), AppliedPrice.Weighted)
+		_appliedPrice = Param(nameof(MaAppliedPrice), AppliedPrices.Weighted)
 			.SetDisplay("Applied Price", "Price used for MA", "Indicators");
 
 		_riskPercent = Param(nameof(RiskPercent), 5m)
@@ -426,31 +426,31 @@ public class MartingaleMaBreakoutStrategy : Strategy
 		return step;
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrice priceType)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrices priceType)
 	{
 		// Derive the numeric input for the moving average from the candle data.
 		return priceType switch
 		{
-			AppliedPrice.Close => candle.ClosePrice,
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
+			AppliedPrices.Close => candle.ClosePrice,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
 			_ => candle.ClosePrice
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMode mode, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageModes mode, int length)
 	{
 		// Instantiate the requested moving average implementation.
 		return mode switch
 		{
-			MovingAverageMode.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMode.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMode.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMode.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageModes.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageModes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageModes.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageModes.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
@@ -458,7 +458,7 @@ public class MartingaleMaBreakoutStrategy : Strategy
 	/// <summary>
 	/// Moving average smoothing types.
 	/// </summary>
-	public enum MovingAverageMode
+	public enum MovingAverageModes
 	{
 		Simple,
 		Exponential,
@@ -469,7 +469,7 @@ public class MartingaleMaBreakoutStrategy : Strategy
 	/// <summary>
 	/// Price sources used for moving average calculations.
 	/// </summary>
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		Close,
 		Open,

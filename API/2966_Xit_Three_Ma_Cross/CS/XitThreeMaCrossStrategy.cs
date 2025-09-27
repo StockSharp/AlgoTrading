@@ -22,9 +22,9 @@ public class XitThreeMaCrossStrategy : Strategy
 	private readonly StrategyParam<int> _slowMaLength;
 	private readonly StrategyParam<int> _intermediateMaLength;
 	private readonly StrategyParam<int> _fastMaLength;
-	private readonly StrategyParam<MovingAverageTypeEnum> _slowMaType;
-	private readonly StrategyParam<MovingAverageTypeEnum> _intermediateMaType;
-	private readonly StrategyParam<MovingAverageTypeEnum> _fastMaType;
+	private readonly StrategyParam<MovingAverageTypes> _slowMaType;
+	private readonly StrategyParam<MovingAverageTypes> _intermediateMaType;
+	private readonly StrategyParam<MovingAverageTypes> _fastMaType;
 	private readonly StrategyParam<int> _macdFastLength;
 	private readonly StrategyParam<int> _macdSlowLength;
 	private readonly StrategyParam<int> _macdSignalLength;
@@ -52,9 +52,9 @@ public class XitThreeMaCrossStrategy : Strategy
 	public int SlowMaLength { get => _slowMaLength.Value; set => _slowMaLength.Value = value; }
 	public int IntermediateMaLength { get => _intermediateMaLength.Value; set => _intermediateMaLength.Value = value; }
 	public int FastMaLength { get => _fastMaLength.Value; set => _fastMaLength.Value = value; }
-	public MovingAverageTypeEnum SlowMaType { get => _slowMaType.Value; set => _slowMaType.Value = value; }
-	public MovingAverageTypeEnum IntermediateMaType { get => _intermediateMaType.Value; set => _intermediateMaType.Value = value; }
-	public MovingAverageTypeEnum FastMaType { get => _fastMaType.Value; set => _fastMaType.Value = value; }
+	public MovingAverageTypes SlowMaType { get => _slowMaType.Value; set => _slowMaType.Value = value; }
+	public MovingAverageTypes IntermediateMaType { get => _intermediateMaType.Value; set => _intermediateMaType.Value = value; }
+	public MovingAverageTypes FastMaType { get => _fastMaType.Value; set => _fastMaType.Value = value; }
 	public int MacdFastLength { get => _macdFastLength.Value; set => _macdFastLength.Value = value; }
 	public int MacdSlowLength { get => _macdSlowLength.Value; set => _macdSlowLength.Value = value; }
 	public int MacdSignalLength { get => _macdSignalLength.Value; set => _macdSignalLength.Value = value; }
@@ -81,13 +81,13 @@ public class XitThreeMaCrossStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Length", "Length of trigger MA", "Indicators");
 
-		_slowMaType = Param(nameof(SlowMaType), MovingAverageTypeEnum.Simple)
+		_slowMaType = Param(nameof(SlowMaType), MovingAverageTypes.Simple)
 			.SetDisplay("Slow MA Type", "Type of slow moving average", "Indicators");
 
-		_intermediateMaType = Param(nameof(IntermediateMaType), MovingAverageTypeEnum.Simple)
+		_intermediateMaType = Param(nameof(IntermediateMaType), MovingAverageTypes.Simple)
 			.SetDisplay("Intermediate MA Type", "Type of intermediate moving average", "Indicators");
 
-		_fastMaType = Param(nameof(FastMaType), MovingAverageTypeEnum.Simple)
+		_fastMaType = Param(nameof(FastMaType), MovingAverageTypes.Simple)
 			.SetDisplay("Fast MA Type", "Type of fast moving average", "Indicators");
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
@@ -362,19 +362,19 @@ public class XitThreeMaCrossStrategy : Strategy
 		return MacdTriggerPoints * step;
 	}
 
-	private static IIndicator CreateMovingAverage(MovingAverageTypeEnum type, int length)
+	private static IIndicator CreateMovingAverage(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypeEnum.Simple => new SMA { Length = length },
-			MovingAverageTypeEnum.Exponential => new EMA { Length = length },
-			MovingAverageTypeEnum.Smoothed => new SMMA { Length = length },
-			MovingAverageTypeEnum.Weighted => new WMA { Length = length },
+			MovingAverageTypes.Simple => new SMA { Length = length },
+			MovingAverageTypes.Exponential => new EMA { Length = length },
+			MovingAverageTypes.Smoothed => new SMMA { Length = length },
+			MovingAverageTypes.Weighted => new WMA { Length = length },
 			_ => new SMA { Length = length }
 		};
 	}
 
-	public enum MovingAverageTypeEnum
+	public enum MovingAverageTypes
 	{
 		Simple,
 		Exponential,

@@ -16,7 +16,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Indicator mode options for the The 20s breakout strategy.
 /// </summary>
-public enum The20sMode
+public enum The20sModes
 {
 	Mode1,
 	Mode2,
@@ -39,7 +39,7 @@ public class The20sBreakoutStrategy : Strategy
 	private readonly StrategyParam<int> _levelPoints;
 	private readonly StrategyParam<decimal> _ratio;
 	private readonly StrategyParam<bool> _isDirect;
-	private readonly StrategyParam<The20sMode> _mode;
+	private readonly StrategyParam<The20sModes> _mode;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly List<ICandleMessage> _candles = new();
@@ -151,7 +151,7 @@ public class The20sBreakoutStrategy : Strategy
 	/// <summary>
 	/// Selects between the two indicator algorithms described in the original source.
 	/// </summary>
-	public The20sMode Mode
+	public The20sModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -211,7 +211,7 @@ public class The20sBreakoutStrategy : Strategy
 		_isDirect = Param(nameof(IsDirect), false)
 		.SetDisplay("Direct Signals", "Match original or inverted signals", "Indicator");
 
-		_mode = Param(nameof(Mode), The20sMode.Mode1)
+		_mode = Param(nameof(Mode), The20sModes.Mode1)
 		.SetDisplay("Indicator Mode", "Choose between algorithm option 1 or 2", "Indicator");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -311,7 +311,7 @@ public class The20sBreakoutStrategy : Strategy
 		bool buySignal = false;
 		bool sellSignal = false;
 
-		if (Mode == The20sMode.Mode1)
+		if (Mode == The20sModes.Mode1)
 		{
 			var compressionBreakdown = prev1.OpenPrice >= top20 && prev1.ClosePrice <= bottom20 &&
 			current.LowPrice <= prev1.LowPrice - levelDistance;

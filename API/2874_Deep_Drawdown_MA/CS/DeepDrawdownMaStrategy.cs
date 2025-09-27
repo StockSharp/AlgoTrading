@@ -23,18 +23,18 @@ public class DeepDrawdownMaStrategy : Strategy
 	private readonly StrategyParam<bool> _closeLosses;
 	private readonly StrategyParam<int> _fastMaPeriod;
 	private readonly StrategyParam<int> _fastMaShift;
-	private readonly StrategyParam<PriceSource> _fastPriceType;
+	private readonly StrategyParam<PriceSources> _fastPriceType;
 	private readonly StrategyParam<int> _slowMaPeriod;
 	private readonly StrategyParam<int> _slowMaShift;
-	private readonly StrategyParam<PriceSource> _slowPriceType;
-	private readonly StrategyParam<MovingAverageMethod> _maMethod;
+	private readonly StrategyParam<PriceSources> _slowPriceType;
+	private readonly StrategyParam<MovingAverageMethods> _maMethod;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private IIndicator _fastMa;
 	private IIndicator _slowMa;
 	private readonly Queue<decimal> _fastValues = new();
 	private readonly Queue<decimal> _slowValues = new();
-	private PositionDirection _lastEntryDirection = PositionDirection.None;
+	private PositionDirections _lastEntryDirection = PositionDirections.None;
 	private decimal _currentPositionPrice;
 	private decimal _currentPositionVolume;
 	private bool _longBreakEvenActive;
@@ -88,7 +88,7 @@ public class DeepDrawdownMaStrategy : Strategy
 	/// <summary>
 	/// Price source used for the fast moving average.
 	/// </summary>
-	public PriceSource FastPriceType
+	public PriceSources FastPriceType
 	{
 		get => _fastPriceType.Value;
 		set => _fastPriceType.Value = value;
@@ -115,7 +115,7 @@ public class DeepDrawdownMaStrategy : Strategy
 	/// <summary>
 	/// Price source used for the slow moving average.
 	/// </summary>
-	public PriceSource SlowPriceType
+	public PriceSources SlowPriceType
 	{
 		get => _slowPriceType.Value;
 		set => _slowPriceType.Value = value;
@@ -124,7 +124,7 @@ public class DeepDrawdownMaStrategy : Strategy
 	/// <summary>
 	/// Moving average method shared by the fast and slow averages.
 	/// </summary>
-	public MovingAverageMethod MaMethod
+	public MovingAverageMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -167,7 +167,7 @@ public class DeepDrawdownMaStrategy : Strategy
 			.SetDisplay("Fast MA Shift", "Shift applied to the fast moving average", "Indicators")
 			.SetNotNegative();
 
-		_fastPriceType = Param(nameof(FastPriceType), PriceSource.Close)
+		_fastPriceType = Param(nameof(FastPriceType), PriceSources.Close)
 			.SetDisplay("Fast Price", "Price source for the fast moving average", "Indicators");
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 30)
@@ -180,10 +180,10 @@ public class DeepDrawdownMaStrategy : Strategy
 			.SetDisplay("Slow MA Shift", "Shift applied to the slow moving average", "Indicators")
 			.SetNotNegative();
 
-		_slowPriceType = Param(nameof(SlowPriceType), PriceSource.Close)
+		_slowPriceType = Param(nameof(SlowPriceType), PriceSources.Close)
 			.SetDisplay("Slow Price", "Price source for the slow moving average", "Indicators");
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.Sma)
+		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Sma)
 			.SetDisplay("MA Method", "Moving average smoothing method", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -205,7 +205,7 @@ public class DeepDrawdownMaStrategy : Strategy
 		_slowMa = null;
 		_fastValues.Clear();
 		_slowValues.Clear();
-		_lastEntryDirection = PositionDirection.None;
+		_lastEntryDirection = PositionDirections.None;
 		_currentPositionPrice = 0m;
 		_currentPositionVolume = 0m;
 		_longBreakEvenActive = false;
@@ -310,12 +310,12 @@ public class DeepDrawdownMaStrategy : Strategy
 		}
 
 		// Evaluate entry conditions after risk checks are complete.
-		if (fastAboveSlow && _lastEntryDirection != PositionDirection.Long && CanOpenLong())
+		if (fastAboveSlow && _lastEntryDirection != PositionDirections.Long && CanOpenLong())
 		{
 			var requiredVolume = OrderVolume + Math.Max(0m, -Position);
 			BuyMarket(requiredVolume);
 		}
-		else if (fastBelowSlow && _lastEntryDirection != PositionDirection.Short && CanOpenShort())
+		else if (fastBelowSlow && _lastEntryDirection != PositionDirections.Short && CanOpenShort())
 		{
 			var requiredVolume = OrderVolume + Math.Max(0m, Position);
 			SellMarket(requiredVolume);
@@ -363,28 +363,28 @@ public class DeepDrawdownMaStrategy : Strategy
 		return projected <= maxVolume;
 	}
 
-	private static decimal GetPrice(ICandleMessage candle, PriceSource priceType)
+	private static decimal GetPrice(ICandleMessage candle, PriceSources priceType)
 	{
 		return priceType switch
 		{
-			PriceSource.Open => candle.OpenPrice,
-			PriceSource.High => candle.HighPrice,
-			PriceSource.Low => candle.LowPrice,
-			PriceSource.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			PriceSource.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			PriceSource.Weighted => (candle.HighPrice + candle.LowPrice + (candle.ClosePrice * 2m)) / 4m,
+			PriceSources.Open => candle.OpenPrice,
+			PriceSources.High => candle.HighPrice,
+			PriceSources.Low => candle.LowPrice,
+			PriceSources.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			PriceSources.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			PriceSources.Weighted => (candle.HighPrice + candle.LowPrice + (candle.ClosePrice * 2m)) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
 
-	private static IIndicator CreateMovingAverage(MovingAverageMethod method, int length)
+	private static IIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Sma => new SimpleMovingAverage { Length = length },
-			MovingAverageMethod.Ema => new ExponentialMovingAverage { Length = length },
-			MovingAverageMethod.Smma => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.Lwma => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.Sma => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Ema => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Smma => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.Lwma => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
@@ -453,11 +453,11 @@ public class DeepDrawdownMaStrategy : Strategy
 				_currentPositionPrice = tradePrice;
 			}
 
-			_lastEntryDirection = direction == Sides.Buy ? PositionDirection.Long : PositionDirection.Short;
+			_lastEntryDirection = direction == Sides.Buy ? PositionDirections.Long : PositionDirections.Short;
 		}
 		else if (newAbs < prevAbs)
 		{
-			_lastEntryDirection = PositionDirection.None;
+			_lastEntryDirection = PositionDirections.None;
 
 			if (newPosition == 0m)
 			{
@@ -473,7 +473,7 @@ public class DeepDrawdownMaStrategy : Strategy
 		else if (newAbs == 0m)
 		{
 			_currentPositionPrice = 0m;
-			_lastEntryDirection = PositionDirection.None;
+			_lastEntryDirection = PositionDirections.None;
 			_longBreakEvenActive = false;
 			_shortBreakEvenActive = false;
 		}
@@ -491,7 +491,7 @@ public class DeepDrawdownMaStrategy : Strategy
 		}
 	}
 
-	private enum PositionDirection
+	private enum PositionDirections
 	{
 		None,
 		Long,
@@ -502,7 +502,7 @@ public class DeepDrawdownMaStrategy : Strategy
 /// <summary>
 /// Price source types matching the original MetaTrader 5 implementation.
 /// </summary>
-public enum PriceSource
+public enum PriceSources
 {
 	Close,
 	Open,
@@ -516,7 +516,7 @@ public enum PriceSource
 /// <summary>
 /// Moving average methods supported by the strategy.
 /// </summary>
-public enum MovingAverageMethod
+public enum MovingAverageMethods
 {
 	Sma,
 	Ema,

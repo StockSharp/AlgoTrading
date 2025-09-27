@@ -17,10 +17,10 @@ public class ExpIinMaSignalMmrecStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
-	private readonly StrategyParam<MovingAverageType> _fastType;
-	private readonly StrategyParam<MovingAverageType> _slowType;
-	private readonly StrategyParam<AppliedPriceType> _fastPrice;
-	private readonly StrategyParam<AppliedPriceType> _slowPrice;
+	private readonly StrategyParam<MovingAverageTypes> _fastType;
+	private readonly StrategyParam<MovingAverageTypes> _slowType;
+	private readonly StrategyParam<AppliedPriceTypes> _fastPrice;
+	private readonly StrategyParam<AppliedPriceTypes> _slowPrice;
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<bool> _allowBuyOpen;
 	private readonly StrategyParam<bool> _allowSellOpen;
@@ -34,14 +34,14 @@ public class ExpIinMaSignalMmrecStrategy : Strategy
 	private readonly StrategyParam<decimal> _reducedVolume;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
-	private readonly StrategyParam<MoneyManagementMode> _moneyMode;
+	private readonly StrategyParam<MoneyManagementModes> _moneyMode;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private IIndicator _fastMa = null!;
 	private IIndicator _slowMa = null!;
 	private decimal? _prevFast;
 	private decimal? _prevSlow;
-	private readonly Queue<SignalType> _signals = new();
+	private readonly Queue<SignalTypes> _signals = new();
 	private readonly Queue<decimal> _recentBuyPnL = new();
 	private readonly Queue<decimal> _recentSellPnL = new();
 	private Sides? _currentSide;
@@ -60,25 +60,25 @@ public class ExpIinMaSignalMmrecStrategy : Strategy
 		set => _slowPeriod.Value = value;
 	}
 
-	public MovingAverageType FastType
+	public MovingAverageTypes FastType
 	{
 		get => _fastType.Value;
 		set => _fastType.Value = value;
 	}
 
-	public MovingAverageType SlowType
+	public MovingAverageTypes SlowType
 	{
 		get => _slowType.Value;
 		set => _slowType.Value = value;
 	}
 
-	public AppliedPriceType FastPrice
+	public AppliedPriceTypes FastPrice
 	{
 		get => _fastPrice.Value;
 		set => _fastPrice.Value = value;
 	}
 
-	public AppliedPriceType SlowPrice
+	public AppliedPriceTypes SlowPrice
 	{
 		get => _slowPrice.Value;
 		set => _slowPrice.Value = value;
@@ -162,7 +162,7 @@ public class ExpIinMaSignalMmrecStrategy : Strategy
 		set => _takeProfitPoints.Value = value;
 	}
 
-	public MoneyManagementMode MoneyMode
+	public MoneyManagementModes MoneyMode
 	{
 		get => _moneyMode.Value;
 		set => _moneyMode.Value = value;
@@ -184,16 +184,16 @@ public class ExpIinMaSignalMmrecStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Period", "Period for the slow moving average", "Indicator");
 
-		_fastType = Param(nameof(FastType), MovingAverageType.Exponential)
+		_fastType = Param(nameof(FastType), MovingAverageTypes.Exponential)
 			.SetDisplay("Fast MA Type", "Type of the fast moving average", "Indicator");
 
-		_slowType = Param(nameof(SlowType), MovingAverageType.Simple)
+		_slowType = Param(nameof(SlowType), MovingAverageTypes.Simple)
 			.SetDisplay("Slow MA Type", "Type of the slow moving average", "Indicator");
 
-		_fastPrice = Param(nameof(FastPrice), AppliedPriceType.Close)
+		_fastPrice = Param(nameof(FastPrice), AppliedPriceTypes.Close)
 			.SetDisplay("Fast MA Price", "Price input for the fast moving average", "Indicator");
 
-		_slowPrice = Param(nameof(SlowPrice), AppliedPriceType.Close)
+		_slowPrice = Param(nameof(SlowPrice), AppliedPriceTypes.Close)
 			.SetDisplay("Slow MA Price", "Price input for the slow moving average", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -239,7 +239,7 @@ public class ExpIinMaSignalMmrecStrategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
 			.SetDisplay("Take Profit (pts)", "Take profit distance in price points", "Risk");
 
-		_moneyMode = Param(nameof(MoneyMode), MoneyManagementMode.Lot)
+		_moneyMode = Param(nameof(MoneyMode), MoneyManagementModes.Lot)
 			.SetDisplay("Money Management Mode", "Volume calculation mode", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -304,14 +304,14 @@ public class ExpIinMaSignalMmrecStrategy : Strategy
 		var fast = fastValue.GetValue<decimal>();
 		var slow = slowValue.GetValue<decimal>();
 
-		var signal = SignalType.None;
+		var signal = SignalTypes.None;
 
 		if (_prevFast is decimal prevFast && _prevSlow is decimal prevSlow)
 		{
 			if (prevFast <= prevSlow && fast > slow)
-				signal = SignalType.Buy;
+				signal = SignalTypes.Buy;
 			else if (prevFast >= prevSlow && fast < slow)
-				signal = SignalType.Sell;
+				signal = SignalTypes.Sell;
 		}
 
 		_prevFast = fast;
@@ -323,17 +323,17 @@ public class ExpIinMaSignalMmrecStrategy : Strategy
 		if (_signals.Count > required)
 		{
 			var toProcess = _signals.Dequeue();
-			if (toProcess != SignalType.None)
+			if (toProcess != SignalTypes.None)
 				HandleSignal(toProcess, candle);
 		}
 	}
 
 	// React to the evaluated signal by managing entries and exits.
-	private void HandleSignal(SignalType signal, ICandleMessage candle)
+	private void HandleSignal(SignalTypes signal, ICandleMessage candle)
 	{
 		switch (signal)
 		{
-			case SignalType.Buy:
+			case SignalTypes.Buy:
 			{
 				if (_currentSide == Sides.Sell)
 				{
@@ -351,7 +351,7 @@ public class ExpIinMaSignalMmrecStrategy : Strategy
 				}
 				break;
 			}
-			case SignalType.Sell:
+			case SignalTypes.Sell:
 			{
 				if (_currentSide == Sides.Buy)
 				{
@@ -548,13 +548,13 @@ public class ExpIinMaSignalMmrecStrategy : Strategy
 
 		switch (MoneyMode)
 		{
-			case MoneyManagementMode.Lot:
+			case MoneyManagementModes.Lot:
 				return mmValue;
-			case MoneyManagementMode.Balance:
-			case MoneyManagementMode.FreeMargin:
+			case MoneyManagementModes.Balance:
+			case MoneyManagementModes.FreeMargin:
 				return price > 0m ? capital * mmValue / price : 0m;
-			case MoneyManagementMode.BalanceRisk:
-			case MoneyManagementMode.FreeMarginRisk:
+			case MoneyManagementModes.BalanceRisk:
+			case MoneyManagementModes.FreeMarginRisk:
 				if (stopDistance > 0m)
 					return capital > 0m ? capital * mmValue / stopDistance : 0m;
 				return price > 0m ? capital * mmValue / price : 0m;
@@ -564,29 +564,29 @@ public class ExpIinMaSignalMmrecStrategy : Strategy
 	}
 
 	// Pick the requested price component from the candle.
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceType type)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceTypes type)
 	{
 		return type switch
 		{
-			AppliedPriceType.Open => candle.OpenPrice,
-			AppliedPriceType.High => candle.HighPrice,
-			AppliedPriceType.Low => candle.LowPrice,
-			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			AppliedPriceTypes.Open => candle.OpenPrice,
+			AppliedPriceTypes.High => candle.HighPrice,
+			AppliedPriceTypes.Low => candle.LowPrice,
+			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
 
 	// Instantiate the requested moving average indicator.
-	private static IIndicator CreateMovingAverage(MovingAverageType type, int length)
+	private static IIndicator CreateMovingAverage(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageType.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageType.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageType.Weighted => new WeightedMovingAverage { Length = length },
-			MovingAverageType.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
+			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -627,7 +627,7 @@ public class ExpIinMaSignalMmrecStrategy : Strategy
 			queue.Dequeue();
 	}
 
-	public enum MovingAverageType
+	public enum MovingAverageTypes
 	{
 		Simple,
 		Exponential,
@@ -636,7 +636,7 @@ public class ExpIinMaSignalMmrecStrategy : Strategy
 		VolumeWeighted
 	}
 
-	public enum AppliedPriceType
+	public enum AppliedPriceTypes
 	{
 		Close,
 		Open,
@@ -647,7 +647,7 @@ public class ExpIinMaSignalMmrecStrategy : Strategy
 		Weighted
 	}
 
-	public enum MoneyManagementMode
+	public enum MoneyManagementModes
 	{
 		FreeMargin,
 		Balance,
@@ -656,7 +656,7 @@ public class ExpIinMaSignalMmrecStrategy : Strategy
 		Lot
 	}
 
-	private enum SignalType
+	private enum SignalTypes
 	{
 		None,
 		Buy,

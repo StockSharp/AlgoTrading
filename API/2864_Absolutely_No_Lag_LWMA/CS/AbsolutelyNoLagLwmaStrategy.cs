@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies;
 public class AbsolutelyNoLagLwmaStrategy : Strategy
 {
 	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<AppliedPriceType> _priceType;
+	private readonly StrategyParam<AppliedPriceTypes> _priceType;
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<bool> _enableBuyEntries;
 	private readonly StrategyParam<bool> _enableSellEntries;
@@ -47,7 +47,7 @@ public class AbsolutelyNoLagLwmaStrategy : Strategy
 	/// <summary>
 	/// Price source used for LWMA calculations.
 	/// </summary>
-	public AppliedPriceType PriceType
+	public AppliedPriceTypes PriceType
 	{
 		get => _priceType.Value;
 		set => _priceType.Value = value;
@@ -118,7 +118,7 @@ public class AbsolutelyNoLagLwmaStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(3, 20, 1);
 
-		_priceType = Param(nameof(PriceType), AppliedPriceType.Close)
+		_priceType = Param(nameof(PriceType), AppliedPriceTypes.Close)
 		.SetDisplay("Price Type", "Price source for LWMA", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -257,18 +257,18 @@ public class AbsolutelyNoLagLwmaStrategy : Strategy
 
 	return PriceType switch
 	{
-	AppliedPriceType.Close => close,
-	AppliedPriceType.Open => open,
-	AppliedPriceType.High => high,
-	AppliedPriceType.Low => low,
-	AppliedPriceType.Median => (high + low) / 2m,
-	AppliedPriceType.Typical => (close + high + low) / 3m,
-	AppliedPriceType.Weighted => (2m * close + high + low) / 4m,
-	AppliedPriceType.Simpl => (open + close) / 2m,
-	AppliedPriceType.Quarter => (open + close + high + low) / 4m,
-	AppliedPriceType.TrendFollow0 => close > open ? high : close < open ? low : close,
-	AppliedPriceType.TrendFollow1 => close > open ? (high + close) / 2m : close < open ? (low + close) / 2m : close,
-	AppliedPriceType.Demark => CalculateDemarkPrice(open, high, low, close),
+	AppliedPriceTypes.Close => close,
+	AppliedPriceTypes.Open => open,
+	AppliedPriceTypes.High => high,
+	AppliedPriceTypes.Low => low,
+	AppliedPriceTypes.Median => (high + low) / 2m,
+	AppliedPriceTypes.Typical => (close + high + low) / 3m,
+	AppliedPriceTypes.Weighted => (2m * close + high + low) / 4m,
+	AppliedPriceTypes.Simpl => (open + close) / 2m,
+	AppliedPriceTypes.Quarter => (open + close + high + low) / 4m,
+	AppliedPriceTypes.TrendFollow0 => close > open ? high : close < open ? low : close,
+	AppliedPriceTypes.TrendFollow1 => close > open ? (high + close) / 2m : close < open ? (low + close) / 2m : close,
+	AppliedPriceTypes.Demark => CalculateDemarkPrice(open, high, low, close),
 	_ => close
 	};
 	}
@@ -291,7 +291,7 @@ public class AbsolutelyNoLagLwmaStrategy : Strategy
 /// <summary>
 /// Available price sources matching the original MQL inputs.
 /// </summary>
-public enum AppliedPriceType
+public enum AppliedPriceTypes
 {
 	Close = 1,
 	Open,

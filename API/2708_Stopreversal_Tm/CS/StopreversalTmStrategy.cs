@@ -16,7 +16,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Available price sources for the Stopreversal trailing stop.
 /// </summary>
-public enum StopreversalAppliedPrice
+public enum StopreversalAppliedPrices
 {
 	Close = 1,
 	Open,
@@ -49,7 +49,7 @@ public class StopreversalTmStrategy : Strategy
 	private readonly StrategyParam<decimal> _nPips;
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<StopreversalAppliedPrice> _appliedPrice;
+	private readonly StrategyParam<StopreversalAppliedPrices> _appliedPrice;
 
 	private readonly Queue<SignalInfo> _signalQueue = new();
 
@@ -110,7 +110,7 @@ public class StopreversalTmStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for calculations", "General");
 
-		_appliedPrice = Param(nameof(AppliedPrice), StopreversalAppliedPrice.Close)
+		_appliedPrice = Param(nameof(AppliedPrice), StopreversalAppliedPrices.Close)
 			.SetDisplay("Applied Price", "Price source for the trailing stop", "Indicator")
 			.SetCanOptimize(true);
 	}
@@ -127,7 +127,7 @@ public class StopreversalTmStrategy : Strategy
 	public decimal Npips { get => _nPips.Value; set => _nPips.Value = value; }
 	public int SignalBar { get => _signalBar.Value; set => _signalBar.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public StopreversalAppliedPrice AppliedPrice { get => _appliedPrice.Value; set => _appliedPrice.Value = value; }
+	public StopreversalAppliedPrices AppliedPrice { get => _appliedPrice.Value; set => _appliedPrice.Value = value; }
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -242,26 +242,26 @@ public class StopreversalTmStrategy : Strategy
 	{
 		return AppliedPrice switch
 		{
-			StopreversalAppliedPrice.Close => candle.ClosePrice,
-			StopreversalAppliedPrice.Open => candle.OpenPrice,
-			StopreversalAppliedPrice.High => candle.HighPrice,
-			StopreversalAppliedPrice.Low => candle.LowPrice,
-			StopreversalAppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			StopreversalAppliedPrice.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-			StopreversalAppliedPrice.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			StopreversalAppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			StopreversalAppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			StopreversalAppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
+			StopreversalAppliedPrices.Close => candle.ClosePrice,
+			StopreversalAppliedPrices.Open => candle.OpenPrice,
+			StopreversalAppliedPrices.High => candle.HighPrice,
+			StopreversalAppliedPrices.Low => candle.LowPrice,
+			StopreversalAppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			StopreversalAppliedPrices.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+			StopreversalAppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			StopreversalAppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			StopreversalAppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			StopreversalAppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
 				? candle.HighPrice
 				: candle.ClosePrice < candle.OpenPrice
 					? candle.LowPrice
 					: candle.ClosePrice,
-			StopreversalAppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
+			StopreversalAppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
 				? (candle.HighPrice + candle.ClosePrice) / 2m
 				: candle.ClosePrice < candle.OpenPrice
 					? (candle.LowPrice + candle.ClosePrice) / 2m
 					: candle.ClosePrice,
-			StopreversalAppliedPrice.Demark => CalculateDemarkPrice(candle),
+			StopreversalAppliedPrices.Demark => CalculateDemarkPrice(candle),
 			_ => candle.ClosePrice
 		};
 	}

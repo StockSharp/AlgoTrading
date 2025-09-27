@@ -29,8 +29,8 @@
 | `CloseOppositePositions` | `bool` | `false` | 若启用，在开新单前先平掉反向持仓。 |
 | `MaShift` | `int` | 0 | 均线的水平位移，正值访问更早的均线点。 |
 | `MaLength` | `int` | 55 | 移动平均线周期。 |
-| `MaMethod` | `MovingAverageMethod` | `Exponential` | 均线类型（`Simple`、`Exponential`、`Smoothed`、`Weighted`）。 |
-| `AppliedPrice` | `AppliedPriceType` | `Median` | 均线所使用的价格（`Close`、`Open`、`High`、`Low`、`Median`、`Typical`、`Weighted`）。 |
+| `MaMethod` | `MovingAverageMethods` | `Exponential` | 均线类型（`Simple`、`Exponential`、`Smoothed`、`Weighted`）。 |
+| `AppliedPrice` | `AppliedPriceTypes` | `Median` | 均线所使用的价格（`Close`、`Open`、`High`、`Low`、`Median`、`Typical`、`Weighted`）。 |
 
 ## 仓位管理
 - 通过设置策略 `Volume` 控制基础下单数量；启用 `CloseOppositePositions` 时会自动叠加当前反向仓位的绝对值。

@@ -20,9 +20,9 @@ public class IinMaSignalStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _fastPeriod;
-	private readonly StrategyParam<MaType> _fastMaType;
+	private readonly StrategyParam<MaTypes> _fastMaType;
 	private readonly StrategyParam<int> _slowPeriod;
-	private readonly StrategyParam<MaType> _slowMaType;
+	private readonly StrategyParam<MaTypes> _slowMaType;
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<bool> _allowLongEntries;
 	private readonly StrategyParam<bool> _allowShortEntries;
@@ -46,7 +46,7 @@ public class IinMaSignalStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetCanOptimize(true);
 
-		_fastMaType = Param(nameof(FastMaType), MaType.Ema)
+		_fastMaType = Param(nameof(FastMaType), MaTypes.Ema)
 			.SetDisplay("Fast MA Type", "Moving average type for the fast line (SMA, EMA, SMMA, LWMA).", "Moving averages");
 
 		_slowPeriod = Param(nameof(SlowPeriod), 22)
@@ -54,7 +54,7 @@ public class IinMaSignalStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetCanOptimize(true);
 
-		_slowMaType = Param(nameof(SlowMaType), MaType.Sma)
+		_slowMaType = Param(nameof(SlowMaType), MaTypes.Sma)
 			.SetDisplay("Slow MA Type", "Moving average type for the slow line (SMA, EMA, SMMA, LWMA).", "Moving averages");
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -93,7 +93,7 @@ public class IinMaSignalStrategy : Strategy
 		set => _fastPeriod.Value = value;
 	}
 
-	public MaType FastMaType
+	public MaTypes FastMaType
 	{
 		get => _fastMaType.Value;
 		set => _fastMaType.Value = value;
@@ -105,7 +105,7 @@ public class IinMaSignalStrategy : Strategy
 		set => _slowPeriod.Value = value;
 	}
 
-	public MaType SlowMaType
+	public MaTypes SlowMaType
 	{
 		get => _slowMaType.Value;
 		set => _slowMaType.Value = value;
@@ -265,14 +265,14 @@ public class IinMaSignalStrategy : Strategy
 		}
 	}
 
-	private static LengthIndicator<decimal> CreateMa(MaType type, int length)
+	private static LengthIndicator<decimal> CreateMa(MaTypes type, int length)
 	{
 		return type switch
 		{
-			MaType.Sma => new SimpleMovingAverage { Length = length },
-			MaType.Ema => new ExponentialMovingAverage { Length = length },
-			MaType.Smma => new SmoothedMovingAverage { Length = length },
-			MaType.Lwma => new WeightedMovingAverage { Length = length },
+			MaTypes.Sma => new SimpleMovingAverage { Length = length },
+			MaTypes.Ema => new ExponentialMovingAverage { Length = length },
+			MaTypes.Smma => new SmoothedMovingAverage { Length = length },
+			MaTypes.Lwma => new WeightedMovingAverage { Length = length },
 			_ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unsupported moving average type."),
 		};
 	}
@@ -289,7 +289,7 @@ public class IinMaSignalStrategy : Strategy
 		public decimal Slow { get; }
 	}
 
-	public enum MaType
+	public enum MaTypes
 	{
 		Sma,
 		Ema,

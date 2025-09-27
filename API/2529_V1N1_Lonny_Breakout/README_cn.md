@@ -17,7 +17,7 @@ V1N1 Lonny 突破策略是对 MetaTrader 平台 "V1N1 LONNY" 专家顾问的复�
 - `StartTrade`：交易开始时间。
 - `EndTrade`：交易结束时间。
 - `SwitchDst`：夏令时处理方式（欧洲/美国/不调整）。
-- `RiskMode`：仓位计算模式（按百分比或固定手数）。
+- `RiskModes`：仓位计算模式（按百分比或固定手数）。
 - `PositionRisk`：风险百分比或固定手数。
 - `TradeRange`：构建开盘区间所需的K线数量。
 - `MinRangePoints` / `MaxRangePoints`：区间大小的最小与最大限制（点数）。
@@ -37,7 +37,7 @@ V1N1 Lonny 突破策略是对 MetaTrader 平台 "V1N1 LONNY" 专家顾问的复�
 - 所有以“点”为单位的参数都会乘以标的物的 `PriceStep`，从而转换为价格距离。
 - 策略订阅委托簿以估算实时点差；若缺少最佳买卖报价，则跳过点差过滤。
 - 移动止损与超时退出都在K线收盘时检查，与原版MQL逻辑保持一致。
-- 当 `RiskMode` 设置为百分比时，需要可用的账户权益数值 (`Portfolio.CurrentValue`)；若不可用则退回到固定手数模式。
+- 当 `RiskModes` 设置为百分比时，需要可用的账户权益数值 (`Portfolio.CurrentValue`)；若不可用则退回到固定手数模式。
 
 ## 文件列表
 - `CS/V1n1LonnyBreakoutStrategy.cs` – StockSharp 平台的策略实现。

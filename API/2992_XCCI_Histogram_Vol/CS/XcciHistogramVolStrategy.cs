@@ -29,7 +29,7 @@ public class XcciHistogramVolStrategy : Strategy
 	private readonly StrategyParam<decimal> _lowLevel1;
 	private readonly StrategyParam<decimal> _lowLevel2;
 	private readonly StrategyParam<int> _signalBarOffset;
-	private readonly StrategyParam<SmoothingMethod> _smoothingMethod;
+	private readonly StrategyParam<SmoothingMethods> _smoothingMethod;
 	private readonly StrategyParam<bool> _allowLongEntries;
 	private readonly StrategyParam<bool> _allowShortEntries;
 	private readonly StrategyParam<bool> _allowLongExits;
@@ -110,7 +110,7 @@ public class XcciHistogramVolStrategy : Strategy
 			.SetDisplay("Extreme Negative Color", "Chart color index for the strongest bearish zone", "Visualization");
 
 
-		_smoothingMethod = Param(nameof(Smoothing), SmoothingMethod.Simple)
+		_smoothingMethod = Param(nameof(Smoothing), SmoothingMethods.Simple)
 		.SetDisplay("Smoothing", "Moving average used to smooth indicator and volume", "Indicator");
 
 		_allowLongEntries = Param(nameof(AllowLongEntries), true)
@@ -217,7 +217,7 @@ public class XcciHistogramVolStrategy : Strategy
 	/// <summary>
 	/// Moving average type used for smoothing.
 	/// </summary>
-	public SmoothingMethod Smoothing
+	public SmoothingMethods Smoothing
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -616,15 +616,15 @@ public class XcciHistogramVolStrategy : Strategy
 		return volume;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(SmoothingMethod method, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(SmoothingMethods method, int length)
 	{
 		LengthIndicator<decimal> indicator = method switch
 		{
-			SmoothingMethod.Exponential => new ExponentialMovingAverage(),
-			SmoothingMethod.Smoothed => new SmoothedMovingAverage(),
-			SmoothingMethod.Weighted => new WeightedMovingAverage(),
-			SmoothingMethod.Hull => new HullMovingAverage(),
-			SmoothingMethod.VolumeWeighted => new VolumeWeightedMovingAverage(),
+			SmoothingMethods.Exponential => new ExponentialMovingAverage(),
+			SmoothingMethods.Smoothed => new SmoothedMovingAverage(),
+			SmoothingMethods.Weighted => new WeightedMovingAverage(),
+			SmoothingMethods.Hull => new HullMovingAverage(),
+			SmoothingMethods.VolumeWeighted => new VolumeWeightedMovingAverage(),
 			_ => new SimpleMovingAverage(),
 		};
 
@@ -635,7 +635,7 @@ public class XcciHistogramVolStrategy : Strategy
 	/// <summary>
 	/// Supported smoothing methods.
 	/// </summary>
-	public enum SmoothingMethod
+	public enum SmoothingMethods
 	{
 		Simple,
 		Exponential,

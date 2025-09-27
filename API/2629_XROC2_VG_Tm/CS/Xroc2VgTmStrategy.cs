@@ -23,9 +23,9 @@ public class Xroc2VgTmStrategy : Strategy
 	private readonly StrategyParam<int> _rocPeriod2;
 	private readonly StrategyParam<int> _smoothLength1;
 	private readonly StrategyParam<int> _smoothLength2;
-	private readonly StrategyParam<SmoothingMethod> _smoothMethod1;
-	private readonly StrategyParam<SmoothingMethod> _smoothMethod2;
-	private readonly StrategyParam<RocCalculationType> _rocType;
+	private readonly StrategyParam<SmoothingMethods> _smoothMethod1;
+	private readonly StrategyParam<SmoothingMethods> _smoothMethod2;
+	private readonly StrategyParam<RocCalculationTypes> _rocType;
 	private readonly StrategyParam<int> _signalShift;
 	private readonly StrategyParam<bool> _allowBuyOpen;
 	private readonly StrategyParam<bool> _allowSellOpen;
@@ -51,7 +51,7 @@ public class Xroc2VgTmStrategy : Strategy
 	/// <summary>
 	/// Rate-of-change calculation mode.
 	/// </summary>
-	public enum RocCalculationType
+	public enum RocCalculationTypes
 	{
 		/// <summary>Momentum (difference between closes).</summary>
 		Momentum,
@@ -72,7 +72,7 @@ public class Xroc2VgTmStrategy : Strategy
 	/// <summary>
 	/// Smoothing method used for ROC lines.
 	/// </summary>
-	public enum SmoothingMethod
+	public enum SmoothingMethods
 	{
 		/// <summary>Simple moving average.</summary>
 		Simple,
@@ -113,13 +113,13 @@ public class Xroc2VgTmStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Smoothing", "Smoothing length for the second line", "Indicator");
 
-		_smoothMethod1 = Param(nameof(SmoothMethod1), SmoothingMethod.Exponential)
+		_smoothMethod1 = Param(nameof(SmoothMethod1), SmoothingMethods.Exponential)
 			.SetDisplay("Fast Method", "Smoothing method for the first line", "Indicator");
 
-		_smoothMethod2 = Param(nameof(SmoothMethod2), SmoothingMethod.Exponential)
+		_smoothMethod2 = Param(nameof(SmoothMethod2), SmoothingMethods.Exponential)
 			.SetDisplay("Slow Method", "Smoothing method for the second line", "Indicator");
 
-		_rocType = Param(nameof(RocType), RocCalculationType.Momentum)
+		_rocType = Param(nameof(RocType), RocCalculationTypes.Momentum)
 			.SetDisplay("ROC Mode", "Calculation used for rate of change", "Indicator");
 
 		_signalShift = Param(nameof(SignalShift), 1)
@@ -208,7 +208,7 @@ public class Xroc2VgTmStrategy : Strategy
 	/// <summary>
 	/// Smoothing method for the first line.
 	/// </summary>
-	public SmoothingMethod SmoothMethod1
+	public SmoothingMethods SmoothMethod1
 	{
 		get => _smoothMethod1.Value;
 		set => _smoothMethod1.Value = value;
@@ -217,7 +217,7 @@ public class Xroc2VgTmStrategy : Strategy
 	/// <summary>
 	/// Smoothing method for the second line.
 	/// </summary>
-	public SmoothingMethod SmoothMethod2
+	public SmoothingMethods SmoothMethod2
 	{
 		get => _smoothMethod2.Value;
 		set => _smoothMethod2.Value = value;
@@ -226,7 +226,7 @@ public class Xroc2VgTmStrategy : Strategy
 	/// <summary>
 	/// Type of ROC calculation.
 	/// </summary>
-	public RocCalculationType RocType
+	public RocCalculationTypes RocType
 	{
 		get => _rocType.Value;
 		set => _rocType.Value = value;
@@ -532,16 +532,16 @@ public class Xroc2VgTmStrategy : Strategy
 		var current = _closeHistory[0];
 		var previous = _closeHistory[period];
 
-		if (previous == 0m && (RocType == RocCalculationType.RateOfChange || RocType == RocCalculationType.Percent || RocType == RocCalculationType.Ratio || RocType == RocCalculationType.RatioPercent))
+		if (previous == 0m && (RocType == RocCalculationTypes.RateOfChange || RocType == RocCalculationTypes.Percent || RocType == RocCalculationTypes.Ratio || RocType == RocCalculationTypes.RatioPercent))
 			return null;
 
 		return RocType switch
 		{
-			RocCalculationType.Momentum => current - previous,
-			RocCalculationType.RateOfChange => previous == 0m ? null : (decimal?)((current / previous) - 1m) * 100m,
-			RocCalculationType.Percent => previous == 0m ? null : (decimal?)((current - previous) / previous),
-			RocCalculationType.Ratio => previous == 0m ? null : (decimal?)(current / previous),
-			RocCalculationType.RatioPercent => previous == 0m ? null : (decimal?)(current / previous * 100m),
+			RocCalculationTypes.Momentum => current - previous,
+			RocCalculationTypes.RateOfChange => previous == 0m ? null : (decimal?)((current / previous) - 1m) * 100m,
+			RocCalculationTypes.Percent => previous == 0m ? null : (decimal?)((current - previous) / previous),
+			RocCalculationTypes.Ratio => previous == 0m ? null : (decimal?)(current / previous),
+			RocCalculationTypes.RatioPercent => previous == 0m ? null : (decimal?)(current / previous * 100m),
 			_ => current - previous
 		};
 	}
@@ -574,13 +574,13 @@ public class Xroc2VgTmStrategy : Strategy
 		_shortEntryPrice = null;
 	}
 
-	private static IIndicator CreateSmoothingIndicator(SmoothingMethod method, int length)
+	private static IIndicator CreateSmoothingIndicator(SmoothingMethods method, int length)
 	{
 		var indicator = method switch
 		{
-			SmoothingMethod.Simple => new SimpleMovingAverage { Length = length },
-			SmoothingMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			SmoothingMethod.Weighted => new WeightedMovingAverage { Length = length },
+			SmoothingMethods.Simple => new SimpleMovingAverage { Length = length },
+			SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			SmoothingMethods.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new ExponentialMovingAverage { Length = length }
 		};
 

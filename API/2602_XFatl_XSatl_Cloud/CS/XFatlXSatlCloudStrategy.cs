@@ -19,10 +19,10 @@ namespace StockSharp.Samples.Strategies;
 public class XFatlXSatlCloudStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<SmoothMethod> _fastMethod;
+	private readonly StrategyParam<SmoothMethods> _fastMethod;
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _fastPhase;
-	private readonly StrategyParam<SmoothMethod> _slowMethod;
+	private readonly StrategyParam<SmoothMethods> _slowMethod;
 	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<int> _slowPhase;
 	private readonly StrategyParam<int> _signalBar;
@@ -42,7 +42,7 @@ public class XFatlXSatlCloudStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for indicator calculations", "General");
 
-		_fastMethod = Param(nameof(FastMethod), SmoothMethod.Jurik)
+		_fastMethod = Param(nameof(FastMethod), SmoothMethods.Jurik)
 			.SetDisplay("Fast Method", "Smoothing algorithm for the fast line", "Indicators");
 
 		_fastLength = Param(nameof(FastLength), 3)
@@ -52,7 +52,7 @@ public class XFatlXSatlCloudStrategy : Strategy
 		_fastPhase = Param(nameof(FastPhase), 15)
 			.SetDisplay("Fast Phase", "Phase parameter for Jurik smoothing", "Indicators");
 
-		_slowMethod = Param(nameof(SlowMethod), SmoothMethod.Jurik)
+		_slowMethod = Param(nameof(SlowMethod), SmoothMethods.Jurik)
 			.SetDisplay("Slow Method", "Smoothing algorithm for the slow line", "Indicators");
 
 		_slowLength = Param(nameof(SlowLength), 5)
@@ -97,7 +97,7 @@ public class XFatlXSatlCloudStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	public SmoothMethod FastMethod
+	public SmoothMethods FastMethod
 	{
 		get => _fastMethod.Value;
 		set => _fastMethod.Value = value;
@@ -115,7 +115,7 @@ public class XFatlXSatlCloudStrategy : Strategy
 		set => _fastPhase.Value = value;
 	}
 
-	public SmoothMethod SlowMethod
+	public SmoothMethods SlowMethod
 	{
 		get => _slowMethod.Value;
 		set => _slowMethod.Value = value;
@@ -291,14 +291,14 @@ public class XFatlXSatlCloudStrategy : Strategy
 		return 0m;
 	}
 
-	private static IIndicator CreateIndicator(SmoothMethod method, int length, int phase)
+	private static IIndicator CreateIndicator(SmoothMethods method, int length, int phase)
 	{
 		return method switch
 		{
-			SmoothMethod.Sma => new SimpleMovingAverage { Length = length },
-			SmoothMethod.Ema => new ExponentialMovingAverage { Length = length },
-			SmoothMethod.Smma => new SmoothedMovingAverage { Length = length },
-			SmoothMethod.Wma => new WeightedMovingAverage { Length = length },
+			SmoothMethods.Sma => new SimpleMovingAverage { Length = length },
+			SmoothMethods.Ema => new ExponentialMovingAverage { Length = length },
+			SmoothMethods.Smma => new SmoothedMovingAverage { Length = length },
+			SmoothMethods.Wma => new WeightedMovingAverage { Length = length },
 			_ => CreateJurikIndicator(length, phase),
 		};
 	}
@@ -318,7 +318,7 @@ public class XFatlXSatlCloudStrategy : Strategy
 		return jurik;
 	}
 
-	public enum SmoothMethod
+	public enum SmoothMethods
 	{
 		Sma = 1,
 		Ema,

@@ -26,8 +26,8 @@ public class Exp2XmaIchimokuOscillatorStrategy : Strategy
 	private readonly StrategyParam<int> _xLength1;
 	private readonly StrategyParam<int> _xLength2;
 	private readonly StrategyParam<int> _signalBar;
-	private readonly StrategyParam<SmoothingMethod> _method1;
-	private readonly StrategyParam<SmoothingMethod> _method2;
+	private readonly StrategyParam<SmoothingMethods> _method1;
+	private readonly StrategyParam<SmoothingMethods> _method2;
 	private readonly StrategyParam<bool> _enableBuyOpen;
 	private readonly StrategyParam<bool> _enableSellOpen;
 	private readonly StrategyParam<bool> _enableBuyClose;
@@ -40,7 +40,7 @@ public class Exp2XmaIchimokuOscillatorStrategy : Strategy
 	private IIndicator _smoother1 = null!;
 	private IIndicator _smoother2 = null!;
 
-	private TrendColor?[] _colorHistory = Array.Empty<TrendColor?>();
+	private TrendColors?[] _colorHistory = Array.Empty<TrendColors?>();
 	private decimal? _previousOscillator;
 
 	/// <summary>
@@ -85,10 +85,10 @@ public class Exp2XmaIchimokuOscillatorStrategy : Strategy
 			.SetDisplay("Signal Bar", "Shift used to evaluate oscillator colors", "Signals")
 			.SetGreaterThanZero();
 
-		_method1 = Param(nameof(Method1), SmoothingMethod.Simple)
+		_method1 = Param(nameof(Method1), SmoothingMethods.Simple)
 			.SetDisplay("Smoothing Method #1", "Moving average type for the first series", "Smoothing");
 
-		_method2 = Param(nameof(Method2), SmoothingMethod.Simple)
+		_method2 = Param(nameof(Method2), SmoothingMethods.Simple)
 			.SetDisplay("Smoothing Method #2", "Moving average type for the second series", "Smoothing");
 
 		_enableBuyOpen = Param(nameof(EnableBuyOpen), true)
@@ -181,7 +181,7 @@ public class Exp2XmaIchimokuOscillatorStrategy : Strategy
 	/// <summary>
 	/// Smoothing method for the first averaged series.
 	/// </summary>
-	public SmoothingMethod Method1
+	public SmoothingMethods Method1
 	{
 		get => _method1.Value;
 		set => _method1.Value = value;
@@ -190,7 +190,7 @@ public class Exp2XmaIchimokuOscillatorStrategy : Strategy
 	/// <summary>
 	/// Smoothing method for the second averaged series.
 	/// </summary>
-	public SmoothingMethod Method2
+	public SmoothingMethods Method2
 	{
 		get => _method2.Value;
 		set => _method2.Value = value;
@@ -244,7 +244,7 @@ public class Exp2XmaIchimokuOscillatorStrategy : Strategy
 		base.OnReseted();
 
 		_previousOscillator = null;
-		_colorHistory = Array.Empty<TrendColor?>();
+		_colorHistory = Array.Empty<TrendColors?>();
 	}
 
 	/// <inheritdoc />
@@ -261,7 +261,7 @@ public class Exp2XmaIchimokuOscillatorStrategy : Strategy
 		_smoother1 = CreateMovingAverage(Method1, XLength1);
 		_smoother2 = CreateMovingAverage(Method2, XLength2);
 
-		_colorHistory = new TrendColor?[SignalBar + 2];
+		_colorHistory = new TrendColors?[SignalBar + 2];
 		_previousOscillator = null;
 
 		var subscription = SubscribeCandles(CandleType);
@@ -326,18 +326,18 @@ public class Exp2XmaIchimokuOscillatorStrategy : Strategy
 			if (recentColor.HasValue && olderColor.HasValue)
 			{
 				// Recreate the original MQL condition set.
-				if (olderColor.Value is TrendColor.PositiveRising or TrendColor.NegativeRising)
+				if (olderColor.Value is TrendColors.PositiveRising or TrendColors.NegativeRising)
 				{
-					if (EnableBuyOpen && recentColor.Value is TrendColor.PositiveFalling or TrendColor.NegativeFalling)
+					if (EnableBuyOpen && recentColor.Value is TrendColors.PositiveFalling or TrendColors.NegativeFalling)
 						buyOpenSignal = true;
 
 					if (EnableSellClose)
 						sellCloseSignal = true;
 				}
 
-				if (olderColor.Value is TrendColor.PositiveFalling or TrendColor.NegativeFalling)
+				if (olderColor.Value is TrendColors.PositiveFalling or TrendColors.NegativeFalling)
 				{
-					if (EnableSellOpen && recentColor.Value is TrendColor.PositiveRising or TrendColor.NegativeRising)
+					if (EnableSellOpen && recentColor.Value is TrendColors.PositiveRising or TrendColors.NegativeRising)
 						sellOpenSignal = true;
 
 					if (EnableBuyClose)
@@ -378,7 +378,7 @@ public class Exp2XmaIchimokuOscillatorStrategy : Strategy
 		UpdateState(color, oscillator);
 	}
 
-	private void UpdateState(TrendColor color, decimal oscillator)
+	private void UpdateState(TrendColors color, decimal oscillator)
 	{
 		_previousOscillator = oscillator;
 
@@ -393,43 +393,43 @@ public class Exp2XmaIchimokuOscillatorStrategy : Strategy
 		_colorHistory[0] = color;
 	}
 
-	private TrendColor CalculateColor(decimal oscillator)
+	private TrendColors CalculateColor(decimal oscillator)
 	{
 		if (!_previousOscillator.HasValue)
-		return TrendColor.Neutral;
+		return TrendColors.Neutral;
 
 		var prev = _previousOscillator.Value;
 
 		if (oscillator >= 0m)
 		{
 			if (oscillator > prev)
-				return TrendColor.PositiveRising;
+				return TrendColors.PositiveRising;
 
 			if (oscillator < prev)
-				return TrendColor.PositiveFalling;
+				return TrendColors.PositiveFalling;
 		}
 		else
 		{
 			if (oscillator < prev)
-				return TrendColor.NegativeFalling;
+				return TrendColors.NegativeFalling;
 
 			if (oscillator > prev)
-				return TrendColor.NegativeRising;
+				return TrendColors.NegativeRising;
 		}
 
 		return _colorHistory.Length > 0 && _colorHistory[0].HasValue
 		? _colorHistory[0]!.Value
-		: TrendColor.Neutral;
+		: TrendColors.Neutral;
 	}
 
-	private static IIndicator CreateMovingAverage(SmoothingMethod method, int length)
+	private static IIndicator CreateMovingAverage(SmoothingMethods method, int length)
 	{
 		return method switch
 		{
-			SmoothingMethod.Simple => new SimpleMovingAverage { Length = length },
-			SmoothingMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			SmoothingMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			SmoothingMethod.Weighted => new WeightedMovingAverage { Length = length },
+			SmoothingMethods.Simple => new SimpleMovingAverage { Length = length },
+			SmoothingMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			SmoothingMethods.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -437,7 +437,7 @@ public class Exp2XmaIchimokuOscillatorStrategy : Strategy
 	/// <summary>
 	/// Supported smoothing methods.
 	/// </summary>
-	public enum SmoothingMethod
+	public enum SmoothingMethods
 	{
 		Simple,
 		Exponential,
@@ -445,7 +445,7 @@ public class Exp2XmaIchimokuOscillatorStrategy : Strategy
 		Weighted,
 	}
 
-	private enum TrendColor
+	private enum TrendColors
 	{
 		Neutral = 2,
 		PositiveRising = 0,

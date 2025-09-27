@@ -8,7 +8,7 @@
 
 1. 订阅三个周期的蜡烛数据（默认：日线、8 小时、3 小时）。
 2. 对每根已完成蜡烛执行：
-   - 根据 *AppliedPrice* 选择价格输入。
+   - 根据 *AppliedPrices* 选择价格输入。
    - 用 Jurik MA 平滑价格。
    - 计算当前与前一值的差，确定状态（上升、下降或保持不变）。
    - 根据 *SignalBar* 参数将状态放入队列，实现延迟信号。
@@ -27,7 +27,7 @@
 - **JmaLength**：Jurik MA 周期。
 - **JmaPhase**：保留原脚本的参数，StockSharp 的 JMA 暂不支持调整相位。
 - **SignalBar**：执行信号前需要等待的已完成蜡烛数。
-- **AppliedPrice**：价格类型，支持 Close、Open、Median、Typical、Weighted、Simple、Quarter、TrendFollow、DeMark 等。
+- **AppliedPrices**：价格类型，支持 Close、Open、Median、Typical、Weighted、Simple、Quarter、TrendFollow、DeMark 等。
 - **AllowBuyOpen / AllowSellOpen**：允许开多 / 开空。
 - **AllowBuyClose / AllowSellClose**：允许在反向信号时平多 / 平空。
 - **Volume**：开仓数量。
@@ -38,7 +38,7 @@
 
 - `GetWorkingSecurities()` 会自动注册所需的所有蜡烛序列。
 - 所有信号都在蜡烛收盘后触发，避免重绘。
-- *AppliedPrice* 枚举完整复制了原指标的选项，包括两个 TrendFollow 价格和 DeMark 价格。
+- *AppliedPrices* 枚举完整复制了原指标的选项，包括两个 TrendFollow 价格和 DeMark 价格。
 - 未移植 MQL 中的补仓算法，可通过调整 Volume 或 `StartProtection()` 控制风险。
 - 代码中包含英文注释，方便维护及后续可能的 Python 版本移植。
 

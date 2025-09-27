@@ -59,7 +59,7 @@ public class SimpleLevelsStrategy : Strategy
 	/// <summary>
 	/// Adds a new trend line.
 	/// </summary>
-	public void AddLine(DateTimeOffset time1, decimal price1, DateTimeOffset time2, decimal price2, LineDirection direction)
+	public void AddLine(DateTimeOffset time1, decimal price1, DateTimeOffset time2, decimal price2, LineDirections direction)
 	{
 		_lines.Add(new TrendLine(time1, price1, time2, price2, direction));
 	}
@@ -121,7 +121,7 @@ public class SimpleLevelsStrategy : Strategy
 			var crossedUp = _prevCandle.ClosePrice < linePricePrev && candle.ClosePrice > linePriceCurr;
 			var crossedDown = _prevCandle.ClosePrice > linePricePrev && candle.ClosePrice < linePriceCurr;
 
-			if (crossedUp && (line.Direction == LineDirection.Buy || line.Direction == LineDirection.Both))
+			if (crossedUp && (line.Direction == LineDirections.Buy || line.Direction == LineDirections.Both))
 			{
 				_entryPrice = candle.ClosePrice;
 				_stopPrice = _entryPrice - StopLoss * Security.PriceStep;
@@ -129,7 +129,7 @@ public class SimpleLevelsStrategy : Strategy
 				BuyMarket(Volume);
 				line.IsActive = false;
 			}
-			else if (crossedDown && (line.Direction == LineDirection.Sell || line.Direction == LineDirection.Both))
+			else if (crossedDown && (line.Direction == LineDirections.Sell || line.Direction == LineDirections.Both))
 			{
 				_entryPrice = candle.ClosePrice;
 				_stopPrice = _entryPrice + StopLoss * Security.PriceStep;
@@ -155,7 +155,7 @@ public class SimpleLevelsStrategy : Strategy
 
 	private sealed class TrendLine
 	{
-		public TrendLine(DateTimeOffset time1, decimal price1, DateTimeOffset time2, decimal price2, LineDirection direction)
+		public TrendLine(DateTimeOffset time1, decimal price1, DateTimeOffset time2, decimal price2, LineDirections direction)
 		{
 			Time1 = time1;
 			Price1 = price1;
@@ -168,7 +168,7 @@ public class SimpleLevelsStrategy : Strategy
 		public decimal Price1 { get; }
 		public DateTimeOffset Time2 { get; }
 		public decimal Price2 { get; }
-		public LineDirection Direction { get; }
+		public LineDirections Direction { get; }
 		public bool IsActive { get; set; } = true;
 
 		public decimal GetPrice(DateTimeOffset time)
@@ -184,7 +184,7 @@ public class SimpleLevelsStrategy : Strategy
 	/// <summary>
 	/// Trade direction for the level.
 	/// </summary>
-	public enum LineDirection
+	public enum LineDirections
 	{
 		/// <summary>
 		/// Buy when price crosses upward.

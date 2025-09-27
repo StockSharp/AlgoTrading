@@ -28,7 +28,7 @@ public class SilverTrendColorJFatlDigitStrategy : Strategy
 	private readonly StrategyParam<DataType> _colorJfatlCandleType;
 	private readonly StrategyParam<int> _jmaLength;
 	private readonly StrategyParam<int> _jmaSignalBar;
-	private readonly StrategyParam<AppliedPrice> _jmaPriceType;
+	private readonly StrategyParam<AppliedPrices> _jmaPriceType;
 	private readonly StrategyParam<int> _jmaRoundDigits;
 
 	private Highest _silverTrendHighest = null!;
@@ -48,7 +48,7 @@ public class SilverTrendColorJFatlDigitStrategy : Strategy
 	/// <summary>
 	/// Enumeration of price calculation modes that replicate the MQL applied price options.
 	/// </summary>
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		/// <summary>Use candle close price.</summary>
 		Close = 1,
@@ -114,7 +114,7 @@ public class SilverTrendColorJFatlDigitStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(0, 3, 1);
 
-		_jmaPriceType = Param(nameof(JmaPriceType), AppliedPrice.Close)
+		_jmaPriceType = Param(nameof(JmaPriceType), AppliedPrices.Close)
 		.SetDisplay("JMA Price", "Applied price used as input for the Jurik filter", "ColorJFatl");
 
 		_jmaRoundDigits = Param(nameof(JmaRoundDigits), 2)
@@ -173,7 +173,7 @@ public class SilverTrendColorJFatlDigitStrategy : Strategy
 	}
 
 	/// <summary>Applied price used as input for the Jurik moving average.</summary>
-	public AppliedPrice JmaPriceType
+	public AppliedPrices JmaPriceType
 	{
 		get => _jmaPriceType.Value;
 		set => _jmaPriceType.Value = value;
@@ -449,7 +449,7 @@ public class SilverTrendColorJFatlDigitStrategy : Strategy
 		}
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrice priceType)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrices priceType)
 	{
 		var open = candle.OpenPrice;
 		var high = candle.HighPrice;
@@ -458,18 +458,18 @@ public class SilverTrendColorJFatlDigitStrategy : Strategy
 
 		return priceType switch
 		{
-			AppliedPrice.Close => close,
-			AppliedPrice.Open => open,
-			AppliedPrice.High => high,
-			AppliedPrice.Low => low,
-			AppliedPrice.Median => (high + low) / 2m,
-			AppliedPrice.Typical => (close + high + low) / 3m,
-			AppliedPrice.Weighted => (2m * close + high + low) / 4m,
-			AppliedPrice.Simple => (open + close) / 2m,
-			AppliedPrice.Quarter => (open + close + high + low) / 4m,
-			AppliedPrice.TrendFollow0 => close > open ? high : close < open ? low : close,
-			AppliedPrice.TrendFollow1 => close > open ? (high + close) / 2m : close < open ? (low + close) / 2m : close,
-			AppliedPrice.Demark => CalculateDemarkPrice(open, high, low, close),
+			AppliedPrices.Close => close,
+			AppliedPrices.Open => open,
+			AppliedPrices.High => high,
+			AppliedPrices.Low => low,
+			AppliedPrices.Median => (high + low) / 2m,
+			AppliedPrices.Typical => (close + high + low) / 3m,
+			AppliedPrices.Weighted => (2m * close + high + low) / 4m,
+			AppliedPrices.Simple => (open + close) / 2m,
+			AppliedPrices.Quarter => (open + close + high + low) / 4m,
+			AppliedPrices.TrendFollow0 => close > open ? high : close < open ? low : close,
+			AppliedPrices.TrendFollow1 => close > open ? (high + close) / 2m : close < open ? (low + close) / 2m : close,
+			AppliedPrices.Demark => CalculateDemarkPrice(open, high, low, close),
 			_ => close,
 		};
 	}

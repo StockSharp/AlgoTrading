@@ -31,12 +31,12 @@ public class SvDailyBreakoutStrategy : Strategy
 	private readonly StrategyParam<int> _interval;
 	private readonly StrategyParam<int> _fastMaPeriod;
 	private readonly StrategyParam<int> _fastMaShift;
-	private readonly StrategyParam<MovingAverageMethod> _fastMaMethod;
-	private readonly StrategyParam<AppliedPrice> _fastAppliedPrice;
+	private readonly StrategyParam<MovingAverageMethods> _fastMaMethod;
+	private readonly StrategyParam<AppliedPrices> _fastAppliedPrice;
 	private readonly StrategyParam<int> _slowMaPeriod;
 	private readonly StrategyParam<int> _slowMaShift;
-	private readonly StrategyParam<MovingAverageMethod> _slowMaMethod;
-	private readonly StrategyParam<AppliedPrice> _slowAppliedPrice;
+	private readonly StrategyParam<MovingAverageMethods> _slowMaMethod;
+	private readonly StrategyParam<AppliedPrices> _slowAppliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private LengthIndicator<decimal> _fastMa;
@@ -167,7 +167,7 @@ public class SvDailyBreakoutStrategy : Strategy
 	/// <summary>
 	/// Fast moving average calculation method.
 	/// </summary>
-	public MovingAverageMethod FastMaMethod
+	public MovingAverageMethods FastMaMethod
 	{
 		get => _fastMaMethod.Value;
 		set => _fastMaMethod.Value = value;
@@ -176,7 +176,7 @@ public class SvDailyBreakoutStrategy : Strategy
 	/// <summary>
 	/// Applied price used for the fast moving average.
 	/// </summary>
-	public AppliedPrice FastAppliedPrice
+	public AppliedPrices FastAppliedPrice
 	{
 		get => _fastAppliedPrice.Value;
 		set => _fastAppliedPrice.Value = value;
@@ -203,7 +203,7 @@ public class SvDailyBreakoutStrategy : Strategy
 	/// <summary>
 	/// Slow moving average calculation method.
 	/// </summary>
-	public MovingAverageMethod SlowMaMethod
+	public MovingAverageMethods SlowMaMethod
 	{
 		get => _slowMaMethod.Value;
 		set => _slowMaMethod.Value = value;
@@ -212,7 +212,7 @@ public class SvDailyBreakoutStrategy : Strategy
 	/// <summary>
 	/// Applied price used for the slow moving average.
 	/// </summary>
-	public AppliedPrice SlowAppliedPrice
+	public AppliedPrices SlowAppliedPrice
 	{
 		get => _slowAppliedPrice.Value;
 		set => _slowAppliedPrice.Value = value;
@@ -278,10 +278,10 @@ public class SvDailyBreakoutStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Fast MA Shift", "Horizontal shift for the fast moving average", "Indicators");
 
-		_fastMaMethod = Param(nameof(FastMaMethod), MovingAverageMethod.Smma)
+		_fastMaMethod = Param(nameof(FastMaMethod), MovingAverageMethods.Smma)
 			.SetDisplay("Fast MA Method", "Calculation method for the fast moving average", "Indicators");
 
-		_fastAppliedPrice = Param(nameof(FastAppliedPrice), AppliedPrice.Median)
+		_fastAppliedPrice = Param(nameof(FastAppliedPrice), AppliedPrices.Median)
 			.SetDisplay("Fast Applied Price", "Price type used for the fast moving average", "Indicators");
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 41)
@@ -292,10 +292,10 @@ public class SvDailyBreakoutStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Slow MA Shift", "Horizontal shift for the slow moving average", "Indicators");
 
-		_slowMaMethod = Param(nameof(SlowMaMethod), MovingAverageMethod.Smma)
+		_slowMaMethod = Param(nameof(SlowMaMethod), MovingAverageMethods.Smma)
 			.SetDisplay("Slow MA Method", "Calculation method for the slow moving average", "Indicators");
 
-		_slowAppliedPrice = Param(nameof(SlowAppliedPrice), AppliedPrice.Median)
+		_slowAppliedPrice = Param(nameof(SlowAppliedPrice), AppliedPrices.Median)
 			.SetDisplay("Slow Applied Price", "Price type used for the slow moving average", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -472,7 +472,7 @@ public class SvDailyBreakoutStrategy : Strategy
 		}
 	}
 
-	private decimal? ProcessMovingAverage(LengthIndicator<decimal> indicator, AppliedPrice priceMode, List<decimal> buffer, int shift, ICandleMessage candle)
+	private decimal? ProcessMovingAverage(LengthIndicator<decimal> indicator, AppliedPrices priceMode, List<decimal> buffer, int shift, ICandleMessage candle)
 	{
 		var price = GetAppliedPrice(candle, priceMode);
 		var result = indicator.Process(price, candle.OpenTime, true);
@@ -678,28 +678,28 @@ public class SvDailyBreakoutStrategy : Strategy
 		return volume;
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrice mode)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrices mode)
 	{
 		return mode switch
 		{
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethod method, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Sma => new SimpleMovingAverage { Length = length },
-			MovingAverageMethod.Ema => new ExponentialMovingAverage { Length = length },
-			MovingAverageMethod.Smma => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.Lwma => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.Sma => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Ema => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Smma => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.Lwma => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -715,7 +715,7 @@ public class SvDailyBreakoutStrategy : Strategy
 	/// <summary>
 	/// Available moving average calculation methods.
 	/// </summary>
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		/// <summary>
 		/// Simple moving average.
@@ -741,7 +741,7 @@ public class SvDailyBreakoutStrategy : Strategy
 	/// <summary>
 	/// Price sources supported by the moving averages.
 	/// </summary>
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		/// <summary>
 		/// Close price.
