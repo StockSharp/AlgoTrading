@@ -1,5 +1,10 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -186,4 +191,3 @@ else if ((Direction is null or Sides.Sell) && rsiValue < 40m && trendDir == -1)
 		}
 	}
 }
-

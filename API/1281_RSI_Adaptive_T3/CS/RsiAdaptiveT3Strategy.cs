@@ -1,5 +1,10 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -126,4 +131,3 @@ public class RsiAdaptiveT3Strategy : Strategy
 		return c1 * _e6.Value + c2 * _e5.Value + c3 * _e4.Value + c4 * _e3.Value;
 	}
 }
-

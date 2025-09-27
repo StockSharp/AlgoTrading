@@ -1,14 +1,18 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
-using System.Drawing;
 
 using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
 
-using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using System.Drawing;
+using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 

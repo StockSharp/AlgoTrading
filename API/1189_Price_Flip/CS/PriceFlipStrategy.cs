@@ -1,5 +1,10 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -195,4 +200,3 @@ public class PriceFlipStrategy : Strategy
 		_prevClose = candle.ClosePrice;
 	}
 }
-

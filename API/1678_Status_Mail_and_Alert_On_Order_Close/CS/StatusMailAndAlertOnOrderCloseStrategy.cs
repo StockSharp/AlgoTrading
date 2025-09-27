@@ -1,6 +1,12 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -150,4 +156,3 @@ public class StatusMailAndAlertOnOrderCloseStrategy : Strategy
 		AddInfo($"Closed {order.Direction} order #{order.Id} at {trade.Trade.Price:0.####}. Balance {Portfolio?.CurrentValue ?? 0m:0.##}. PnL {PnL:0.##}.");
 	}
 }
-
