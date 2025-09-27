@@ -32,7 +32,7 @@ public class XoSignalReopenStrategy : Strategy
 		Demark
 	}
 
-	private const int AtrPeriod = 13;
+	private readonly StrategyParam<int> _atrPeriod;
 
 	private readonly StrategyParam<int> _stopLossTicks;
 	private readonly StrategyParam<int> _takeProfitTicks;
@@ -68,6 +68,15 @@ public class XoSignalReopenStrategy : Strategy
 	private decimal? _shortStopPrice;
 	private decimal? _shortTakePrice;
 
+
+	/// <summary>
+	/// ATR lookback period used for volatility assessment.
+	/// </summary>
+	public int AtrPeriod
+	{
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
+	}
 
 	/// <summary>
 	/// Stop loss distance in ticks (0 disables it).
@@ -182,6 +191,11 @@ public class XoSignalReopenStrategy : Strategy
 	/// </summary>
 	public XoSignalReopenStrategy()
 	{
+		_atrPeriod = Param(nameof(AtrPeriod), 13)
+		.SetGreaterThanZero()
+		.SetDisplay("ATR Period", "ATR lookback used for volatility assessment", "Indicator")
+		.SetCanOptimize(true);
+
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 1000)
 			.SetDisplay("Stop Loss", "Stop loss in ticks", "Risk")
