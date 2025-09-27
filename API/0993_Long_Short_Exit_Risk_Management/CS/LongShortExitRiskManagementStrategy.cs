@@ -14,7 +14,7 @@ namespace StockSharp.Samples.Strategies;
 
 
 
-public enum TradingDirection
+public enum TradingDirections
 {
 	LongOnly,
 	ShortOnly,
@@ -27,7 +27,7 @@ public enum TradingDirection
 /// </summary>
 public class LongShortExitRiskManagementStrategy : Strategy
 {
-	private readonly StrategyParam<TradingDirection> _tradingDirection;
+	private readonly StrategyParam<TradingDirections> _tradingDirection;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 	private readonly StrategyParam<int> _exitBars;
@@ -48,7 +48,7 @@ public class LongShortExitRiskManagementStrategy : Strategy
 	/// <summary>
 	/// Allowed trading direction.
 	/// </summary>
-	public TradingDirection TradingDirection
+	public TradingDirections TradingDirection
 	{
 		get => _tradingDirection.Value;
 		set => _tradingDirection.Value = value;
@@ -149,7 +149,7 @@ public class LongShortExitRiskManagementStrategy : Strategy
 	/// </summary>
 	public LongShortExitRiskManagementStrategy()
 	{
-		_tradingDirection = Param(nameof(TradingDirection), TradingDirection.All)
+		_tradingDirection = Param(nameof(TradingDirection), TradingDirections.All)
 			.SetDisplay("Trading Direction", "Allowed trading direction", "General");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
@@ -252,8 +252,8 @@ public class LongShortExitRiskManagementStrategy : Strategy
 			if (_tradesToday >= MaxTradesPerDay)
 				return;
 
-			var allowLong = TradingDirection == TradingDirection.All || TradingDirection == TradingDirection.LongOnly;
-			var allowShort = TradingDirection == TradingDirection.All || TradingDirection == TradingDirection.ShortOnly;
+			var allowLong = TradingDirection == TradingDirections.All || TradingDirection == TradingDirections.LongOnly;
+			var allowShort = TradingDirection == TradingDirections.All || TradingDirection == TradingDirections.ShortOnly;
 
 			var longSignal = candle.ClosePrice == LongValue;
 			var shortSignal = candle.ClosePrice == ShortValue;

@@ -13,7 +13,7 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum CloseTrigger
+public enum CloseTriggers
 {
 Price,
 Signal,
@@ -45,16 +45,16 @@ private StrategyParam<int> _fldSmoothing;
 private StrategyParam<int> _signalCycleLength;
 private StrategyParam<int> _tradeCycleLength;
 private StrategyParam<int> _trendCycleLength;
-private StrategyParam<CloseTrigger> _closeTrigger1;
-private StrategyParam<CloseTrigger> _closeTrigger2;
+private StrategyParam<CloseTriggers> _closeTrigger1;
+private StrategyParam<CloseTriggers> _closeTrigger2;
 
 public bool SmoothFld { get => _smoothFld.Value; set => _smoothFld.Value = value; }
 public int FldSmoothing { get => _fldSmoothing.Value; set => _fldSmoothing.Value = value; }
 public int SignalCycleLength { get => _signalCycleLength.Value; set => _signalCycleLength.Value = value; }
 public int TradeCycleLength { get => _tradeCycleLength.Value; set => _tradeCycleLength.Value = value; }
 public int TrendCycleLength { get => _trendCycleLength.Value; set => _trendCycleLength.Value = value; }
-public CloseTrigger CloseTrigger1 { get => _closeTrigger1.Value; set => _closeTrigger1.Value = value; }
-public CloseTrigger CloseTrigger2 { get => _closeTrigger2.Value; set => _closeTrigger2.Value = value; }
+public CloseTriggers CloseTrigger1 { get => _closeTrigger1.Value; set => _closeTrigger1.Value = value; }
+public CloseTriggers CloseTrigger2 { get => _closeTrigger2.Value; set => _closeTrigger2.Value = value; }
 
 public HurstFutureLinesOfDemarcationStrategy()
 {
@@ -68,9 +68,9 @@ _tradeCycleLength = Param(nameof(TradeCycleLength), 20)
 .SetDisplay("Trade Cycle Length", "Trade cycle length", "Cycles");
 _trendCycleLength = Param(nameof(TrendCycleLength), 80)
 .SetDisplay("Trend Cycle Length", "Trend cycle length", "Cycles");
-_closeTrigger1 = Param(nameof(CloseTrigger1), CloseTrigger.Price)
+_closeTrigger1 = Param(nameof(CloseTrigger1), CloseTriggers.Price)
 .SetDisplay("Close Trigger 1", "First value for exit cross", "Exit");
-_closeTrigger2 = Param(nameof(CloseTrigger2), CloseTrigger.Trade)
+_closeTrigger2 = Param(nameof(CloseTrigger2), CloseTriggers.Trade)
 .SetDisplay("Close Trigger 2", "Second value for exit cross", "Exit");
 }
 
@@ -159,14 +159,14 @@ _prevPrice = price;
 _prevSignal = _signal;
 }
 
-private static decimal? GetTriggerValue(CloseTrigger trigger, decimal price, decimal? signal, decimal? trade, decimal? trend)
+private static decimal? GetTriggerValue(CloseTriggers trigger, decimal price, decimal? signal, decimal? trade, decimal? trend)
 {
 return trigger switch
 {
-CloseTrigger.Price => price,
-CloseTrigger.Signal => signal,
-CloseTrigger.Trade => trade,
-CloseTrigger.Trend => trend,
+CloseTriggers.Price => price,
+CloseTriggers.Signal => signal,
+CloseTriggers.Trade => trade,
+CloseTriggers.Trend => trend,
 _ => null,
 };
 }

@@ -20,7 +20,7 @@ public class DualPhaseTrendRegimeStrategy : Strategy
 {
 private readonly StrategyParam<DataType> _candleType;
 private readonly StrategyParam<Sides?> _direction;
-private readonly StrategyParam<SignalSource> _signalSource;
+private readonly StrategyParam<SignalSources> _signalSource;
 private readonly StrategyParam<int> _lengthSlow;
 private readonly StrategyParam<int> _lengthFast;
 private readonly StrategyParam<int> _refitBars;
@@ -46,7 +46,7 @@ private LinearRegression _oscFast = null!;
 /// <summary>
 /// Signal source options.
 /// </summary>
-public enum SignalSource
+public enum SignalSources
 {
 RegimeShift,
 OscillatorCross
@@ -65,7 +65,7 @@ public Sides? Direction { get => _direction.Value; set => _direction.Value = val
 /// <summary>
 /// Source of entry signals.
 /// </summary>
-public SignalSource Source { get => _signalSource.Value; set => _signalSource.Value = value; }
+public SignalSources Source { get => _signalSource.Value; set => _signalSource.Value = value; }
 
 /// <summary>
 /// Slow oscillator period.
@@ -103,7 +103,7 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 _direction = Param(nameof(Direction), (Sides?)null)
 .SetDisplay("Trade Direction", "Allowed trade direction", "General");
 
-_signalSource = Param(nameof(Source), SignalSource.RegimeShift)
+_signalSource = Param(nameof(Source), SignalSources.RegimeShift)
 .SetDisplay("Signal Source", "Entry signal type", "General");
 
 _lengthSlow = Param(nameof(LengthSlow), 36)
@@ -224,7 +224,7 @@ var crossUp = _prevFastOsc <= _prevSlowOsc && fastSlope > slowSlope;
 var crossDown = _prevFastOsc >= _prevSlowOsc && fastSlope < slowSlope;
 
 bool longE, shortE, longX, shortX;
-if (Source == SignalSource.RegimeShift)
+if (Source == SignalSources.RegimeShift)
 {
 longE = bullShift;
 shortE = bearShift;

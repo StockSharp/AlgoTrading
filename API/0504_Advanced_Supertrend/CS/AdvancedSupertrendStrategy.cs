@@ -28,7 +28,7 @@ public class AdvancedSupertrendStrategy : Strategy
 	private readonly StrategyParam<decimal> _rsiOversold;
 	private readonly StrategyParam<bool> _useMaFilter;
 	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<MaTypeEnum> _maType;
+	private readonly StrategyParam<MaTypes> _maType;
 	private readonly StrategyParam<bool> _useStopLoss;
 	private readonly StrategyParam<decimal> _slMultiplier;
 	private readonly StrategyParam<bool> _useTakeProfit;
@@ -126,7 +126,7 @@ public class AdvancedSupertrendStrategy : Strategy
 	/// <summary>
 	/// Moving average type.
 	/// </summary>
-	public MaTypeEnum MaType
+	public MaTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -241,7 +241,7 @@ public class AdvancedSupertrendStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(20, 100, 10);
 
-		_maType = Param(nameof(MaType), MaTypeEnum.Weighted)
+		_maType = Param(nameof(MaType), MaTypes.Weighted)
 			.SetDisplay("MA Type", "Type of moving average", "MA Filter");
 
 		_useStopLoss = Param(nameof(UseStopLoss), true)
@@ -301,8 +301,8 @@ public class AdvancedSupertrendStrategy : Strategy
 
 		_ma = MaType switch
 		{
-			MaTypeEnum.Exponential => new ExponentialMovingAverage { Length = MaLength },
-			MaTypeEnum.Weighted => new WeightedMovingAverage { Length = MaLength },
+			MaTypes.Exponential => new ExponentialMovingAverage { Length = MaLength },
+			MaTypes.Weighted => new WeightedMovingAverage { Length = MaLength },
 			_ => new SimpleMovingAverage { Length = MaLength }
 		};
 
@@ -398,7 +398,7 @@ public class AdvancedSupertrendStrategy : Strategy
 	/// <summary>
 	/// Moving average types.
 	/// </summary>
-	public enum MaTypeEnum
+	public enum MaTypes
 	{
 		/// <summary>Simple moving average.</summary>
 		Simple,

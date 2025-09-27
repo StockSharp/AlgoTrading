@@ -13,7 +13,7 @@ namespace StockSharp.Samples.Strategies;
 
 
 
-public enum SignalCondition
+public enum SignalConditions
 {
 	ZeroCrossing,
 	SignalLineCrossing,
@@ -28,9 +28,9 @@ public class DeltaRsiOscillatorStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleTypeParam;
 	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<int> _signalLength;
-	private readonly StrategyParam<SignalCondition> _buyCondition;
-	private readonly StrategyParam<SignalCondition> _sellCondition;
-	private readonly StrategyParam<SignalCondition> _exitCondition;
+	private readonly StrategyParam<SignalConditions> _buyCondition;
+	private readonly StrategyParam<SignalConditions> _sellCondition;
+	private readonly StrategyParam<SignalConditions> _exitCondition;
 	private readonly StrategyParam<bool> _useLong;
 	private readonly StrategyParam<bool> _useShort;
 
@@ -60,19 +60,19 @@ public class DeltaRsiOscillatorStrategy : Strategy
 		set => _signalLength.Value = value;
 	}
 
-	public SignalCondition BuyCondition
+	public SignalConditions BuyCondition
 	{
 		get => _buyCondition.Value;
 		set => _buyCondition.Value = value;
 	}
 
-	public SignalCondition SellCondition
+	public SignalConditions SellCondition
 	{
 		get => _sellCondition.Value;
 		set => _sellCondition.Value = value;
 	}
 
-	public SignalCondition ExitCondition
+	public SignalConditions ExitCondition
 	{
 		get => _exitCondition.Value;
 		set => _exitCondition.Value = value;
@@ -95,9 +95,9 @@ public class DeltaRsiOscillatorStrategy : Strategy
 		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
 		_rsiLength = Param(nameof(RsiLength), 21).SetRange(1, 100).SetDisplay("RSI Length", "RSI period", "Model Parameters").SetCanOptimize(true);
 		_signalLength = Param(nameof(SignalLength), 9).SetRange(1, 100).SetDisplay("Signal Length", "EMA period", "Model Parameters").SetCanOptimize(true);
-		_buyCondition = Param(nameof(BuyCondition), SignalCondition.ZeroCrossing).SetDisplay("Buy Condition", "Entry condition for longs", "Conditions");
-		_sellCondition = Param(nameof(SellCondition), SignalCondition.ZeroCrossing).SetDisplay("Sell Condition", "Entry condition for shorts", "Conditions");
-		_exitCondition = Param(nameof(ExitCondition), SignalCondition.ZeroCrossing).SetDisplay("Exit Condition", "Exit condition", "Conditions");
+		_buyCondition = Param(nameof(BuyCondition), SignalConditions.ZeroCrossing).SetDisplay("Buy Condition", "Entry condition for longs", "Conditions");
+		_sellCondition = Param(nameof(SellCondition), SignalConditions.ZeroCrossing).SetDisplay("Sell Condition", "Entry condition for shorts", "Conditions");
+		_exitCondition = Param(nameof(ExitCondition), SignalConditions.ZeroCrossing).SetDisplay("Exit Condition", "Exit condition", "Conditions");
 		_useLong = Param(nameof(UseLong), true).SetDisplay("Enable Long", "Allow long trades", "General");
 		_useShort = Param(nameof(UseShort), true).SetDisplay("Enable Short", "Allow short trades", "General");
 	}
@@ -182,29 +182,29 @@ public class DeltaRsiOscillatorStrategy : Strategy
 
 		var goLong = BuyCondition switch
 		{
-			SignalCondition.DirectionChange => dirChangeUp,
-			SignalCondition.SignalLineCrossing => crossSignalUp,
+			SignalConditions.DirectionChange => dirChangeUp,
+			SignalConditions.SignalLineCrossing => crossSignalUp,
 			_ => crossUp,
 		};
 
 		var goShort = SellCondition switch
 		{
-			SignalCondition.DirectionChange => dirChangeDown,
-			SignalCondition.SignalLineCrossing => crossSignalDown,
+			SignalConditions.DirectionChange => dirChangeDown,
+			SignalConditions.SignalLineCrossing => crossSignalDown,
 			_ => crossDown,
 		};
 
 		var exitLong = ExitCondition switch
 		{
-			SignalCondition.DirectionChange => dirChangeDown,
-			SignalCondition.SignalLineCrossing => crossSignalDown,
+			SignalConditions.DirectionChange => dirChangeDown,
+			SignalConditions.SignalLineCrossing => crossSignalDown,
 			_ => crossDown,
 		};
 
 		var exitShort = ExitCondition switch
 		{
-			SignalCondition.DirectionChange => dirChangeUp,
-			SignalCondition.SignalLineCrossing => crossSignalUp,
+			SignalConditions.DirectionChange => dirChangeUp,
+			SignalConditions.SignalLineCrossing => crossSignalUp,
 			_ => crossUp,
 		};
 

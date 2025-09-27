@@ -21,12 +21,12 @@ public class BreakoutsWithTimeFilterStrategy : Strategy
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<bool> _useMaFilter;
-	private readonly StrategyParam<MaTypeEnum> _maType;
+	private readonly StrategyParam<MaTypes> _maType;
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<bool> _useTimeFilter;
 	private readonly StrategyParam<TimeSpan> _startTime;
 	private readonly StrategyParam<TimeSpan> _endTime;
-	private readonly StrategyParam<StopLossType> _slType;
+	private readonly StrategyParam<StopLossTypes> _slType;
 	private readonly StrategyParam<int> _slLength;
 	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<decimal> _atrMultiplier;
@@ -40,12 +40,12 @@ public class BreakoutsWithTimeFilterStrategy : Strategy
 	public int Length { get => _length.Value; set => _length.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public bool UseMaFilter { get => _useMaFilter.Value; set => _useMaFilter.Value = value; }
-	public MaTypeEnum MaType { get => _maType.Value; set => _maType.Value = value; }
+	public MaTypes MaType { get => _maType.Value; set => _maType.Value = value; }
 	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
 	public bool UseTimeFilter { get => _useTimeFilter.Value; set => _useTimeFilter.Value = value; }
 	public TimeSpan StartTime { get => _startTime.Value; set => _startTime.Value = value; }
 	public TimeSpan EndTime { get => _endTime.Value; set => _endTime.Value = value; }
-	public StopLossType SlType { get => _slType.Value; set => _slType.Value = value; }
+	public StopLossTypes SlType { get => _slType.Value; set => _slType.Value = value; }
 	public int SlLength { get => _slLength.Value; set => _slLength.Value = value; }
 	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
 	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
@@ -65,7 +65,7 @@ public class BreakoutsWithTimeFilterStrategy : Strategy
 		_useMaFilter = Param(nameof(UseMaFilter), false)
 			.SetDisplay("Use MA Filter", "Enable moving average filter", "MA Filter");
 
-		_maType = Param(nameof(MaType), MaTypeEnum.Hull)
+		_maType = Param(nameof(MaType), MaTypes.Hull)
 			.SetDisplay("MA Type", "Moving average type", "MA Filter");
 
 		_maLength = Param(nameof(MaLength), 99)
@@ -82,7 +82,7 @@ public class BreakoutsWithTimeFilterStrategy : Strategy
 		_endTime = Param(nameof(EndTime), new TimeSpan(15, 0, 0))
 			.SetDisplay("End Time", "End of trading window", "Time Filter");
 
-		_slType = Param(nameof(SlType), StopLossType.Atr)
+		_slType = Param(nameof(SlType), StopLossTypes.Atr)
 			.SetDisplay("Stop Loss Type", "Stop loss calculation", "Risk Management");
 
 		_slLength = Param(nameof(SlLength), 0)
@@ -123,10 +123,10 @@ public class BreakoutsWithTimeFilterStrategy : Strategy
 		var atr = new AverageTrueRange { Length = AtrLength };
 		var ma = MaType switch
 		{
-			MaTypeEnum.Sma => new SimpleMovingAverage { Length = MaLength },
-			MaTypeEnum.Ema => new ExponentialMovingAverage { Length = MaLength },
-			MaTypeEnum.Wma => new WeightedMovingAverage { Length = MaLength },
-			MaTypeEnum.Vwma => new VolumeWeightedMovingAverage { Length = MaLength },
+			MaTypes.Sma => new SimpleMovingAverage { Length = MaLength },
+			MaTypes.Ema => new ExponentialMovingAverage { Length = MaLength },
+			MaTypes.Wma => new WeightedMovingAverage { Length = MaLength },
+			MaTypes.Vwma => new VolumeWeightedMovingAverage { Length = MaLength },
 			_ => new HullMovingAverage { Length = MaLength }
 		};
 
@@ -180,9 +180,9 @@ public class BreakoutsWithTimeFilterStrategy : Strategy
 	{
 		_stopLevel = SlType switch
 		{
-			StopLossType.Atr => candle.ClosePrice - atrValue * AtrMultiplier,
-			StopLossType.Candle => GetCandleStop(false),
-			StopLossType.Points => candle.ClosePrice - PointsStop,
+			StopLossTypes.Atr => candle.ClosePrice - atrValue * AtrMultiplier,
+			StopLossTypes.Candle => GetCandleStop(false),
+			StopLossTypes.Points => candle.ClosePrice - PointsStop,
 			_ => 0m
 		};
 
@@ -196,9 +196,9 @@ public class BreakoutsWithTimeFilterStrategy : Strategy
 	{
 		_stopLevel = SlType switch
 		{
-			StopLossType.Atr => candle.ClosePrice + atrValue * AtrMultiplier,
-			StopLossType.Candle => GetCandleStop(true),
-			StopLossType.Points => candle.ClosePrice + PointsStop,
+			StopLossTypes.Atr => candle.ClosePrice + atrValue * AtrMultiplier,
+			StopLossTypes.Candle => GetCandleStop(true),
+			StopLossTypes.Points => candle.ClosePrice + PointsStop,
 			_ => 0m
 		};
 
@@ -224,7 +224,7 @@ public class BreakoutsWithTimeFilterStrategy : Strategy
 		return StartTime <= EndTime ? t >= StartTime && t <= EndTime : t >= StartTime || t <= EndTime;
 	}
 
-	public enum MaTypeEnum
+	public enum MaTypes
 	{
 		Sma,
 		Ema,
@@ -233,7 +233,7 @@ public class BreakoutsWithTimeFilterStrategy : Strategy
 		Hull
 	}
 
-	public enum StopLossType
+	public enum StopLossTypes
 	{
 		Atr,
 		Candle,

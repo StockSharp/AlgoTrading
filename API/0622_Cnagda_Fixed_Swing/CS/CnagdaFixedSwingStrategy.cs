@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 public class CnagdaFixedSwingStrategy : Strategy
 {
 private readonly StrategyParam<DataType> _candleType;
-private readonly StrategyParam<TradeLogic> _tradeLogic;
+private readonly StrategyParam<TradeLogics> _tradeLogic;
 private readonly StrategyParam<int> _swingLookback;
 private readonly StrategyParam<int> _riskReward;
 
@@ -44,14 +44,14 @@ private bool _prevHighVol;
 
 private decimal? _refHigh;
 private decimal? _refLow;
-private ScalpState _scalpState;
-private ScalpState _prevScalpState;
+private ScalpStates _scalpState;
+private ScalpStates _prevScalpState;
 
 private decimal? _rsiSignalHigh;
 private decimal? _rsiSignalLow;
 private int? _rsiSignalBar;
-private RsiEntryState _rsiEntryState;
-private RsiEntryState _prevRsiEntryState;
+private RsiEntryStates _rsiEntryState;
+private RsiEntryStates _prevRsiEntryState;
 
 private decimal? _slLong;
 private decimal? _tgLong;
@@ -63,7 +63,7 @@ public CnagdaFixedSwingStrategy()
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles for calculations", "General");
 
-_tradeLogic = Param(nameof(Logic), TradeLogic.Rsi)
+_tradeLogic = Param(nameof(Logic), TradeLogics.Rsi)
 .SetDisplay("Trade Logic", "RSI or Scalp entry logic", "General");
 
 _swingLookback = Param(nameof(SwingLookback), 34)
@@ -81,7 +81,7 @@ get => _candleType.Value;
 set => _candleType.Value = value;
 }
 
-public TradeLogic Logic
+public TradeLogics Logic
 {
 get => _tradeLogic.Value;
 set => _tradeLogic.Value = value;
@@ -124,13 +124,13 @@ _prevRsiEma10 = 0;
 _prevHighVol = false;
 _refHigh = null;
 _refLow = null;
-_scalpState = ScalpState.Neutral;
-_prevScalpState = ScalpState.Neutral;
+_scalpState = ScalpStates.Neutral;
+_prevScalpState = ScalpStates.Neutral;
 _rsiSignalHigh = null;
 _rsiSignalLow = null;
 _rsiSignalBar = null;
-_rsiEntryState = RsiEntryState.None;
-_prevRsiEntryState = RsiEntryState.None;
+_rsiEntryState = RsiEntryStates.None;
+_prevRsiEntryState = RsiEntryStates.None;
 _slLong = null;
 _tgLong = null;
 _slShort = null;
@@ -190,24 +190,24 @@ if (buySignal || sellSignal)
 {
 _refHigh = haHigh;
 _refLow = haLow;
-_scalpState = ScalpState.WaitEntry;
+_scalpState = ScalpStates.WaitEntry;
 }
 
-if ((_scalpState == ScalpState.WaitEntry || _scalpState == ScalpState.Sell) && _refHigh != null && haClose > _refHigh)
-_scalpState = ScalpState.Buy;
+if ((_scalpState == ScalpStates.WaitEntry || _scalpState == ScalpStates.Sell) && _refHigh != null && haClose > _refHigh)
+_scalpState = ScalpStates.Buy;
 
-if ((_scalpState == ScalpState.WaitEntry || _scalpState == ScalpState.Buy) && _refLow != null && haClose < _refLow)
-_scalpState = ScalpState.Sell;
+if ((_scalpState == ScalpStates.WaitEntry || _scalpState == ScalpStates.Buy) && _refLow != null && haClose < _refLow)
+_scalpState = ScalpStates.Sell;
 
-if (_scalpState == ScalpState.Buy && haClose < maAvg)
+if (_scalpState == ScalpStates.Buy && haClose < maAvg)
 {
-_scalpState = ScalpState.Neutral;
+_scalpState = ScalpStates.Neutral;
 _refHigh = null;
 _refLow = null;
 }
-if (_scalpState == ScalpState.Sell && haClose > maAvg)
+if (_scalpState == ScalpStates.Sell && haClose > maAvg)
 {
-_scalpState = ScalpState.Neutral;
+_scalpState = ScalpStates.Neutral;
 _refHigh = null;
 _refLow = null;
 }
@@ -224,14 +224,14 @@ if (rsiCrossBull)
 _rsiSignalHigh = candle.HighPrice;
 _rsiSignalLow = null;
 _rsiSignalBar = _barIndex;
-_rsiEntryState = RsiEntryState.WaitEntry;
+_rsiEntryState = RsiEntryStates.WaitEntry;
 }
 else if (rsiCrossBear)
 {
 _rsiSignalLow = candle.LowPrice;
 _rsiSignalHigh = null;
 _rsiSignalBar = _barIndex;
-_rsiEntryState = RsiEntryState.WaitEntry;
+_rsiEntryState = RsiEntryStates.WaitEntry;
 }
 else if (_rsiSignalBar != null)
 {
@@ -239,49 +239,49 @@ if (_rsiSignalHigh != null)
 {
 if (candle.ClosePrice > _rsiSignalHigh && _barIndex > _rsiSignalBar)
 {
-_rsiEntryState = RsiEntryState.Buy;
+_rsiEntryState = RsiEntryStates.Buy;
 _rsiSignalHigh = null;
 _rsiSignalBar = null;
 }
 else
-_rsiEntryState = RsiEntryState.WaitEntry;
+_rsiEntryState = RsiEntryStates.WaitEntry;
 }
 else if (_rsiSignalLow != null)
 {
 if (candle.ClosePrice < _rsiSignalLow && _barIndex > _rsiSignalBar)
 {
-_rsiEntryState = RsiEntryState.Sell;
+_rsiEntryState = RsiEntryStates.Sell;
 _rsiSignalLow = null;
 _rsiSignalBar = null;
 }
 else
-_rsiEntryState = RsiEntryState.WaitEntry;
+_rsiEntryState = RsiEntryStates.WaitEntry;
 }
 else
 {
-_rsiEntryState = RsiEntryState.None;
+_rsiEntryState = RsiEntryStates.None;
 }
 }
 else
 {
-_rsiEntryState = RsiEntryState.None;
+_rsiEntryState = RsiEntryStates.None;
 }
 
-var longCondition = Logic == TradeLogic.Rsi
-? _rsiEntryState == RsiEntryState.Buy && _prevRsiEntryState != RsiEntryState.Buy
-: _scalpState == ScalpState.Buy && _prevScalpState != ScalpState.Buy;
+var longCondition = Logic == TradeLogics.Rsi
+? _rsiEntryState == RsiEntryStates.Buy && _prevRsiEntryState != RsiEntryStates.Buy
+: _scalpState == ScalpStates.Buy && _prevScalpState != ScalpStates.Buy;
 
-var shortCondition = Logic == TradeLogic.Rsi
-? _rsiEntryState == RsiEntryState.Sell && _prevRsiEntryState != RsiEntryState.Sell
-: _scalpState == ScalpState.Sell && _prevScalpState != ScalpState.Sell;
+var shortCondition = Logic == TradeLogics.Rsi
+? _rsiEntryState == RsiEntryStates.Sell && _prevRsiEntryState != RsiEntryStates.Sell
+: _scalpState == ScalpStates.Sell && _prevScalpState != ScalpStates.Sell;
 
-var exitLongCondition = Logic == TradeLogic.Rsi
-? _rsiEntryState == RsiEntryState.Sell && _prevRsiEntryState != RsiEntryState.Sell
-: _scalpState == ScalpState.Sell && _prevScalpState != ScalpState.Sell;
+var exitLongCondition = Logic == TradeLogics.Rsi
+? _rsiEntryState == RsiEntryStates.Sell && _prevRsiEntryState != RsiEntryStates.Sell
+: _scalpState == ScalpStates.Sell && _prevScalpState != ScalpStates.Sell;
 
-var exitShortCondition = Logic == TradeLogic.Rsi
-? _rsiEntryState == RsiEntryState.Buy && _prevRsiEntryState != RsiEntryState.Buy
-: _scalpState == ScalpState.Buy && _prevScalpState != ScalpState.Buy;
+var exitShortCondition = Logic == TradeLogics.Rsi
+? _rsiEntryState == RsiEntryStates.Buy && _prevRsiEntryState != RsiEntryStates.Buy
+: _scalpState == ScalpStates.Buy && _prevScalpState != ScalpStates.Buy;
 
 if (longCondition && swingLow != null)
 {
@@ -355,7 +355,7 @@ _prevScalpState = _scalpState;
 _prevRsiEntryState = _rsiEntryState;
 }
 
-private enum ScalpState
+private enum ScalpStates
 {
 Neutral,
 WaitEntry,
@@ -363,7 +363,7 @@ Buy,
 Sell
 }
 
-private enum RsiEntryState
+private enum RsiEntryStates
 {
 None,
 WaitEntry,
@@ -371,7 +371,7 @@ Buy,
 Sell
 }
 
-public enum TradeLogic
+public enum TradeLogics
 {
 Rsi,
 Scalp

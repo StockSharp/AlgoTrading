@@ -20,7 +20,7 @@ namespace StockSharp.Samples.Strategies;
 public class HighYieldSpreadWithSmaFilterStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<Basis> _basis;
+	private readonly StrategyParam<Bases> _basis;
 	private readonly StrategyParam<decimal> _threshold;
 	private readonly StrategyParam<Sides> _direction;
 	private readonly StrategyParam<int> _holdingPeriod;
@@ -42,9 +42,9 @@ public class HighYieldSpreadWithSmaFilterStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Basis selection.
+	/// Bases selection.
 	/// </summary>
-	public Basis BasisSelection
+	public Bases BasisSelection
 	{
 		get => _basis.Value;
 		set => _basis.Value = value;
@@ -103,8 +103,8 @@ public class HighYieldSpreadWithSmaFilterStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_basis = Param(nameof(BasisSelection), Basis.HighYieldSpread)
-			.SetDisplay("Basis", "Spread basis", "General");
+		_basis = Param(nameof(BasisSelection), Bases.HighYieldSpread)
+			.SetDisplay("Bases", "Spread basis", "General");
 
 		_threshold = Param(nameof(Threshold), 5m)
 			.SetDisplay("Threshold", "Spread threshold", "Parameters")
@@ -133,7 +133,7 @@ public class HighYieldSpreadWithSmaFilterStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		_basisSecurity = BasisSelection == Basis.HighYieldSpread
+		_basisSecurity = BasisSelection == Bases.HighYieldSpread
 			? new Security { Id = "FRED:BAMLH0A0HYM2" }
 			: new Security { Id = "CBOE:VIX" };
 
@@ -231,7 +231,7 @@ public class HighYieldSpreadWithSmaFilterStrategy : Strategy
 	/// <summary>
 	/// Spread basis options.
 	/// </summary>
-	public enum Basis
+	public enum Bases
 	{
 		HighYieldSpread,
 		Vix

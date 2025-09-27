@@ -23,7 +23,7 @@ public class LongAndShortWithMultiIndicatorsStrategy : Strategy
 	private readonly StrategyParam<int> _rsiOversold;
 	private readonly StrategyParam<int> _rocLength;
 	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<MaType> _maType;
+	private readonly StrategyParam<MaTypes> _maType;
 	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<int> _bearishMaLength;
@@ -66,7 +66,7 @@ public class LongAndShortWithMultiIndicatorsStrategy : Strategy
 	/// <summary>
 	/// Moving average type.
 	/// </summary>
-	public MaType MaTypeParam { get => _maType.Value; set => _maType.Value = value; }
+	public MaTypes MaTypeParam { get => _maType.Value; set => _maType.Value = value; }
 
 	/// <summary>
 	/// ATR length.
@@ -128,7 +128,7 @@ public class LongAndShortWithMultiIndicatorsStrategy : Strategy
 			.SetDisplay("MA Length", "Length of moving average", "Indicators")
 			.SetGreaterThanZero();
 
-		_maType = Param(nameof(MaTypeParam), MaType.Tema)
+		_maType = Param(nameof(MaTypeParam), MaTypes.Tema)
 			.SetDisplay("MA Type", "Type of moving average", "Indicators");
 
 		_atrLength = Param(nameof(AtrLength), 14)
@@ -236,17 +236,17 @@ public class LongAndShortWithMultiIndicatorsStrategy : Strategy
 		}
 	}
 
-	private static IIndicator CreateMa(MaType type, int length)
+	private static IIndicator CreateMa(MaTypes type, int length)
 	{
 		return type switch
 		{
-			MaType.Sma => new SimpleMovingAverage { Length = length },
-			MaType.Ema => new ExponentialMovingAverage { Length = length },
-			MaType.Wma => new WeightedMovingAverage { Length = length },
-			MaType.Hma => new HullMovingAverage { Length = length },
-			MaType.Vwma => new VolumeWeightedMovingAverage { Length = length },
-			MaType.Rma => new SmoothedMovingAverage { Length = length },
-			MaType.Tema => new TripleExponentialMovingAverage { Length = length },
+			MaTypes.Sma => new SimpleMovingAverage { Length = length },
+			MaTypes.Ema => new ExponentialMovingAverage { Length = length },
+			MaTypes.Wma => new WeightedMovingAverage { Length = length },
+			MaTypes.Hma => new HullMovingAverage { Length = length },
+			MaTypes.Vwma => new VolumeWeightedMovingAverage { Length = length },
+			MaTypes.Rma => new SmoothedMovingAverage { Length = length },
+			MaTypes.Tema => new TripleExponentialMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
@@ -254,7 +254,7 @@ public class LongAndShortWithMultiIndicatorsStrategy : Strategy
 	/// <summary>
 	/// Moving average types.
 	/// </summary>
-	public enum MaType
+	public enum MaTypes
 	{
 		Sma = 1,
 		Ema,

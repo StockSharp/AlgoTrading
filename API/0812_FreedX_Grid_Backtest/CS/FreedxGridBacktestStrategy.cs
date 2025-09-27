@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class FreedxGridBacktestStrategy : Strategy
 {
-	public enum GridMode
+	public enum GridModes
 	{
 		Neutral,
 		Long,
@@ -29,7 +29,7 @@ public class FreedxGridBacktestStrategy : Strategy
 	private readonly StrategyParam<decimal> _topLevel;
 	private readonly StrategyParam<decimal> _bottomLevel;
 	private readonly StrategyParam<int> _gridLevels;
-	private readonly StrategyParam<GridMode> _mode;
+	private readonly StrategyParam<GridModes> _mode;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _reference;
@@ -67,7 +67,7 @@ public class FreedxGridBacktestStrategy : Strategy
 	/// <summary>
 	/// Trading mode for the grid.
 	/// </summary>
-	public GridMode Mode
+	public GridModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -97,7 +97,7 @@ public class FreedxGridBacktestStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Grid Levels", "Number of grid levels", "Grid Settings");
 
-		_mode = Param(nameof(Mode), GridMode.Neutral)
+		_mode = Param(nameof(Mode), GridModes.Neutral)
 			.SetDisplay("Mode", "Trading direction", "Grid Settings");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -148,7 +148,7 @@ public class FreedxGridBacktestStrategy : Strategy
 			return;
 
 		// Long side
-		if (Mode == GridMode.Neutral || Mode == GridMode.Long)
+		if (Mode == GridModes.Neutral || Mode == GridModes.Long)
 		{
 			while (candle.LowPrice <= _reference - _step * (_longIndex + 1))
 			{
@@ -164,7 +164,7 @@ public class FreedxGridBacktestStrategy : Strategy
 		}
 
 		// Short side
-		if (Mode == GridMode.Neutral || Mode == GridMode.Short)
+		if (Mode == GridModes.Neutral || Mode == GridModes.Short)
 		{
 			while (candle.HighPrice >= _reference + _step * (_shortIndex + 1))
 			{

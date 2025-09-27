@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 public class EarningsTradingStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<TradeSide> _direction;
+	private readonly StrategyParam<TradeSides> _direction;
 	private readonly StrategyParam<DateTimeOffset> _entryDate1;
 	private readonly StrategyParam<DateTimeOffset> _exitDate1;
 	private readonly StrategyParam<DateTimeOffset> _entryDate2;
@@ -29,7 +29,7 @@ public class EarningsTradingStrategy : Strategy
 	/// <summary>
 	/// Trade direction.
 	/// </summary>
-	public enum TradeSide
+	public enum TradeSides
 	{
 		Long,
 		Short
@@ -43,7 +43,7 @@ public class EarningsTradingStrategy : Strategy
 	/// <summary>
 	/// Trade direction.
 	/// </summary>
-	public TradeSide Direction { get => _direction.Value; set => _direction.Value = value; }
+	public TradeSides Direction { get => _direction.Value; set => _direction.Value = value; }
 
 	/// <summary>
 	/// First entry date.
@@ -78,7 +78,7 @@ public class EarningsTradingStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
-		_direction = Param(nameof(Direction), TradeSide.Long)
+		_direction = Param(nameof(Direction), TradeSides.Long)
 			.SetDisplay("Direction", "Trade direction", "General");
 
 		_entryDate1 = Param(nameof(EntryDate1), new DateTimeOffset(2025, 3, 13, 0, 0, 0, TimeSpan.Zero))
@@ -124,7 +124,7 @@ public class EarningsTradingStrategy : Strategy
 		var isEntry = date == EntryDate1.Date || date == EntryDate2.Date;
 		var isExit = date == ExitDate1.Date || date == ExitDate2.Date;
 
-		if (Direction == TradeSide.Long)
+		if (Direction == TradeSides.Long)
 		{
 			if (isEntry && Position <= 0)
 			{

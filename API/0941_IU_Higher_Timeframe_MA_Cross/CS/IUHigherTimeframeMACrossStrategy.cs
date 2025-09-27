@@ -19,10 +19,10 @@ public class IUHigherTimeframeMACrossStrategy : Strategy
 	private readonly StrategyParam<decimal> _riskToReward;
 	private readonly StrategyParam<DataType> _ma1CandleType;
 	private readonly StrategyParam<int> _ma1Length;
-	private readonly StrategyParam<MovingAverageTypeEnum> _ma1Type;
+	private readonly StrategyParam<MovingAverageTypes> _ma1Type;
 	private readonly StrategyParam<DataType> _ma2CandleType;
 	private readonly StrategyParam<int> _ma2Length;
-	private readonly StrategyParam<MovingAverageTypeEnum> _ma2Type;
+	private readonly StrategyParam<MovingAverageTypes> _ma2Type;
 
 	private decimal? _ma1;
 	private decimal? _ma2;
@@ -58,7 +58,7 @@ public class IUHigherTimeframeMACrossStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(5, 100, 5);
 
-		_ma1Type = Param(nameof(Ma1Type), MovingAverageTypeEnum.Exponential)
+		_ma1Type = Param(nameof(Ma1Type), MovingAverageTypes.Exponential)
 		.SetDisplay("MA1 Type", "Type of first MA", "Moving Averages");
 
 		_ma2CandleType = Param(nameof(Ma2CandleType), TimeSpan.FromMinutes(60).TimeFrame())
@@ -70,17 +70,17 @@ public class IUHigherTimeframeMACrossStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(10, 200, 5);
 
-		_ma2Type = Param(nameof(Ma2Type), MovingAverageTypeEnum.Exponential)
+		_ma2Type = Param(nameof(Ma2Type), MovingAverageTypes.Exponential)
 		.SetDisplay("MA2 Type", "Type of second MA", "Moving Averages");
 	}
 
 	public decimal RiskToReward { get => _riskToReward.Value; set => _riskToReward.Value = value; }
 	public DataType Ma1CandleType { get => _ma1CandleType.Value; set => _ma1CandleType.Value = value; }
 	public int Ma1Length { get => _ma1Length.Value; set => _ma1Length.Value = value; }
-	public MovingAverageTypeEnum Ma1Type { get => _ma1Type.Value; set => _ma1Type.Value = value; }
+	public MovingAverageTypes Ma1Type { get => _ma1Type.Value; set => _ma1Type.Value = value; }
 	public DataType Ma2CandleType { get => _ma2CandleType.Value; set => _ma2CandleType.Value = value; }
 	public int Ma2Length { get => _ma2Length.Value; set => _ma2Length.Value = value; }
-	public MovingAverageTypeEnum Ma2Type { get => _ma2Type.Value; set => _ma2Type.Value = value; }
+	public MovingAverageTypes Ma2Type { get => _ma2Type.Value; set => _ma2Type.Value = value; }
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	=> [(Security, Ma1CandleType), (Security, Ma2CandleType)];
@@ -193,20 +193,20 @@ public class IUHigherTimeframeMACrossStrategy : Strategy
 		_takePrice = null;
 	}
 
-	private static LengthIndicator<decimal> CreateMa(MovingAverageTypeEnum type, int length)
+	private static LengthIndicator<decimal> CreateMa(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypeEnum.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageTypeEnum.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageTypeEnum.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageTypeEnum.Weighted => new WeightedMovingAverage { Length = length },
-			MovingAverageTypeEnum.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
+			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
 
-	public enum MovingAverageTypeEnum
+	public enum MovingAverageTypes
 	{
 		Simple,
 		Exponential,

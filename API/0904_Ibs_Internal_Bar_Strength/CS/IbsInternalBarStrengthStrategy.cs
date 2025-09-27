@@ -13,7 +13,7 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum TradeType
+public enum TradeTypes
 {
 	Long,
 	Short,
@@ -30,7 +30,7 @@ public class IbsInternalBarStrengthStrategy : Strategy
 	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<decimal> _minEntryPct;
 	private readonly StrategyParam<int> _maxTradeDuration;
-	private readonly StrategyParam<TradeType> _entryType;
+	private readonly StrategyParam<TradeTypes> _entryType;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private ICandleMessage _prevCandle;
@@ -85,7 +85,7 @@ public class IbsInternalBarStrengthStrategy : Strategy
 	/// <summary>
 	/// Allowed trade directions.
 	/// </summary>
-	public TradeType EntryType
+	public TradeTypes EntryType
 	{
 		get => _entryType.Value;
 		set => _entryType.Value = value;
@@ -123,7 +123,7 @@ public class IbsInternalBarStrengthStrategy : Strategy
 			.SetDisplay("Max Duration", "Maximum trade duration in days", "Risk")
 			.SetGreaterThanZero();
 
-		_entryType = Param(nameof(EntryType), TradeType.Long)
+		_entryType = Param(nameof(EntryType), TradeTypes.Long)
 			.SetDisplay("Entry Type", "Allowed trade directions", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
@@ -224,8 +224,8 @@ public class IbsInternalBarStrengthStrategy : Strategy
 
 		var emaLong = EmaPeriod == 0 || candle.ClosePrice > ema;
 		var emaShort = EmaPeriod == 0 || candle.ClosePrice < ema;
-		var allowLong = EntryType == TradeType.Long || EntryType == TradeType.All;
-		var allowShort = EntryType == TradeType.Short || EntryType == TradeType.All;
+		var allowLong = EntryType == TradeTypes.Long || EntryType == TradeTypes.All;
+		var allowShort = EntryType == TradeTypes.Short || EntryType == TradeTypes.All;
 
 		var enterLong = ibs < IbsEntryThreshold && emaLong && allowLong;
 		var enterShort = ibs > IbsExitThreshold && emaShort && allowShort;

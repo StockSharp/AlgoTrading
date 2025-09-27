@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// the high 25 bars ago, Tenkan-sen above Kijun-sen and close above EMA.
 /// Exits when Tenkan-sen crosses below Kijun-sen.
 /// </summary>
-public enum TradeMode
+public enum TradeModes
 {
 	Ichi,
 	Cloud
@@ -32,7 +32,7 @@ public class EnhancedIchimokuCloudStrategy : Strategy
 	private readonly StrategyParam<int> _laggingSpan2Periods;
 	private readonly StrategyParam<int> _displacement;
 	private readonly StrategyParam<int> _emaPeriod;
-	private readonly StrategyParam<TradeMode> _modeParam;
+	private readonly StrategyParam<TradeModes> _modeParam;
 	private readonly StrategyParam<DateTimeOffset> _startDate;
 	private readonly StrategyParam<DateTimeOffset> _endDate;
 	private readonly StrategyParam<DataType> _candleType;
@@ -51,7 +51,7 @@ public class EnhancedIchimokuCloudStrategy : Strategy
 	public int LaggingSpan2Periods { get => _laggingSpan2Periods.Value; set => _laggingSpan2Periods.Value = value; }
 	public int Displacement { get => _displacement.Value; set => _displacement.Value = value; }
 	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
-	public TradeMode Mode { get => _modeParam.Value; set => _modeParam.Value = value; }
+	public TradeModes Mode { get => _modeParam.Value; set => _modeParam.Value = value; }
 	public DateTimeOffset StartDate { get => _startDate.Value; set => _startDate.Value = value; }
 	public DateTimeOffset EndDate { get => _endDate.Value; set => _endDate.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
@@ -81,7 +81,7 @@ public class EnhancedIchimokuCloudStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(150, 200, 5);
 
-		_modeParam = Param(nameof(Mode), TradeMode.Ichi)
+		_modeParam = Param(nameof(Mode), TradeModes.Ichi)
 			.SetDisplay("Trade Setup", "Trading logic", "General");
 
 		_startDate = Param(nameof(StartDate), new DateTimeOffset(2018, 1, 1, 0, 0, 0, TimeSpan.Zero))
@@ -212,7 +212,7 @@ public class EnhancedIchimokuCloudStrategy : Strategy
 		bool buySignal;
 		bool sellSignal;
 
-		if (Mode == TradeMode.Ichi)
+		if (Mode == TradeModes.Ichi)
 		{
 			buySignal = longCond;
 			sellSignal = shortCond;

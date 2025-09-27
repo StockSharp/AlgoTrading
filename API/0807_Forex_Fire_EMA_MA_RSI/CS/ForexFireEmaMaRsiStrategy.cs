@@ -24,7 +24,7 @@ public class ForexFireEmaMaRsiStrategy : Strategy
 	private readonly StrategyParam<int> _emaShortLength;
 	private readonly StrategyParam<int> _emaLongLength;
 	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<MovingAverageTypeEnum> _maType;
+	private readonly StrategyParam<MovingAverageTypes> _maType;
 	private readonly StrategyParam<int> _rsiSlowLength;
 	private readonly StrategyParam<int> _rsiFastLength;
 	private readonly StrategyParam<decimal> _rsiOverbought;
@@ -85,7 +85,7 @@ public class ForexFireEmaMaRsiStrategy : Strategy
 			.SetDisplay("MA Length", string.Empty, "General")
 			.SetCanOptimize(true);
 
-		_maType = Param(nameof(MaType), MovingAverageTypeEnum.Simple)
+		_maType = Param(nameof(MaType), MovingAverageTypes.Simple)
 			.SetDisplay("MA Type", string.Empty, "General");
 
 		_rsiSlowLength = Param(nameof(RsiSlowLength), 28)
@@ -167,7 +167,7 @@ public class ForexFireEmaMaRsiStrategy : Strategy
 	/// <summary>
 	/// Moving average type.
 	/// </summary>
-	public MovingAverageTypeEnum MaType
+	public MovingAverageTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -472,14 +472,14 @@ public class ForexFireEmaMaRsiStrategy : Strategy
 		_prevMa = ma;
 	}
 
-	private static IIndicator CreateMa(MovingAverageTypeEnum type, int length)
+	private static IIndicator CreateMa(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypeEnum.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageTypeEnum.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageTypeEnum.Weighted => new WeightedMovingAverage { Length = length },
-			MovingAverageTypeEnum.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
+			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -487,7 +487,7 @@ public class ForexFireEmaMaRsiStrategy : Strategy
 	/// <summary>
 	/// Available moving average types.
 	/// </summary>
-	public enum MovingAverageTypeEnum
+	public enum MovingAverageTypes
 	{
 		/// <summary>Simple moving average.</summary>
 		Simple,

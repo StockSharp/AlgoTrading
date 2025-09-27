@@ -24,7 +24,7 @@ public class BullishBsRsiDivergenceStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfit;
 	private readonly StrategyParam<int> _rangeUpper;
 	private readonly StrategyParam<int> _rangeLower;
-	private readonly StrategyParam<TrailingStopType> _stopType;
+	private readonly StrategyParam<TrailingStopTypes> _stopType;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<decimal> _atrMultiplier;
@@ -60,7 +60,7 @@ public class BullishBsRsiDivergenceStrategy : Strategy
 	public int TakeProfitRsiLevel { get => _takeProfit.Value; set => _takeProfit.Value = value; }
 	public int RangeUpper { get => _rangeUpper.Value; set => _rangeUpper.Value = value; }
 	public int RangeLower { get => _rangeLower.Value; set => _rangeLower.Value = value; }
-	public TrailingStopType StopType { get => _stopType.Value; set => _stopType.Value = value; }
+	public TrailingStopTypes StopType { get => _stopType.Value; set => _stopType.Value = value; }
 	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
 	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
 	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
@@ -73,7 +73,7 @@ public class BullishBsRsiDivergenceStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfitRsiLevel), 80).SetDisplay("RSI Take Profit", "RSI level", "Risk Management");
 		_rangeUpper = Param(nameof(RangeUpper), 60).SetDisplay("Range Upper", "Max bars between pivots", "General");
 		_rangeLower = Param(nameof(RangeLower), 5).SetDisplay("Range Lower", "Min bars between pivots", "General");
-		_stopType = Param(nameof(StopType), TrailingStopType.None).SetDisplay("Stop Type", "Trailing stop type", "Risk Management");
+		_stopType = Param(nameof(StopType), TrailingStopTypes.None).SetDisplay("Stop Type", "Trailing stop type", "Risk Management");
 		_stopLoss = Param(nameof(StopLoss), 5m).SetDisplay("Stop Loss %", "Percent stop", "Risk Management");
 		_atrLength = Param(nameof(AtrLength), 14).SetDisplay("ATR Length", "ATR period", "Indicators");
 		_atrMultiplier = Param(nameof(AtrMultiplier), 3.5m).SetDisplay("ATR Multiplier", "ATR multiplier", "Risk Management");
@@ -213,9 +213,9 @@ public class BullishBsRsiDivergenceStrategy : Strategy
 		}
 		else if (Position > 0)
 		{
-			if (StopType != TrailingStopType.None)
+			if (StopType != TrailingStopTypes.None)
 			{
-				var slVal = StopType == TrailingStopType.Atr ? atr * AtrMultiplier : candle.ClosePrice * StopLoss / 100m;
+				var slVal = StopType == TrailingStopTypes.Atr ? atr * AtrMultiplier : candle.ClosePrice * StopLoss / 100m;
 				var newStop = candle.LowPrice - slVal;
 				_trailingStop = _trailingStop is decimal prev ? Math.Max(prev, newStop) : newStop;
 				if (candle.ClosePrice < _trailingStop)
@@ -238,7 +238,7 @@ public class BullishBsRsiDivergenceStrategy : Strategy
 /// <summary>
 /// Trailing stop-loss types.
 /// </summary>
-public enum TrailingStopType
+public enum TrailingStopTypes
 {
 	/// <summary> No trailing stop. </summary>
 	None,

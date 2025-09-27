@@ -20,11 +20,11 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class LiquidPulseStrategy : Strategy
 {
-	public enum VolumeSensitivityLevel { Low, Medium, High }
-	public enum MacdSpeedOption { Fast, Medium, Slow }
+	public enum VolumeSensitivityLevels { Low, Medium, High }
+	public enum MacdSpeedOptions { Fast, Medium, Slow }
 	
-	private readonly StrategyParam<VolumeSensitivityLevel> _volumeSensitivity;
-	private readonly StrategyParam<MacdSpeedOption> _macdSpeed;
+	private readonly StrategyParam<VolumeSensitivityLevels> _volumeSensitivity;
+	private readonly StrategyParam<MacdSpeedOptions> _macdSpeed;
 	private readonly StrategyParam<int> _dailyTradeLimit;
 	private readonly StrategyParam<int> _adxTrendThreshold;
 	private readonly StrategyParam<int> _atrPeriod;
@@ -39,8 +39,8 @@ public class LiquidPulseStrategy : Strategy
 	private DateTime _day;
 	private int _trades;
 	
-	public VolumeSensitivityLevel VolumeSensitivity { get => _volumeSensitivity.Value; set => _volumeSensitivity.Value = value; }
-	public MacdSpeedOption MacdSpeed { get => _macdSpeed.Value; set => _macdSpeed.Value = value; }
+	public VolumeSensitivityLevels VolumeSensitivity { get => _volumeSensitivity.Value; set => _volumeSensitivity.Value = value; }
+	public MacdSpeedOptions MacdSpeed { get => _macdSpeed.Value; set => _macdSpeed.Value = value; }
 	public int DailyTradeLimit { get => _dailyTradeLimit.Value; set => _dailyTradeLimit.Value = value; }
 	public int AdxTrendThreshold { get => _adxTrendThreshold.Value; set => _adxTrendThreshold.Value = value; }
 	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
@@ -48,9 +48,9 @@ public class LiquidPulseStrategy : Strategy
 	
 	public LiquidPulseStrategy()
 	{
-		_volumeSensitivity = Param(nameof(VolumeSensitivity), VolumeSensitivityLevel.Medium)
+		_volumeSensitivity = Param(nameof(VolumeSensitivity), VolumeSensitivityLevels.Medium)
 		.SetDisplay("Volume Sensitivity", "Volume sensitivity", "General");
-		_macdSpeed = Param(nameof(MacdSpeed), MacdSpeedOption.Medium)
+		_macdSpeed = Param(nameof(MacdSpeed), MacdSpeedOptions.Medium)
 		.SetDisplay("MACD Speed", "MACD speed", "General");
 		_dailyTradeLimit = Param(nameof(DailyTradeLimit), 20)
 		.SetDisplay("Daily Trade Limit", "Max trades per day", "Risk");
@@ -82,16 +82,16 @@ public class LiquidPulseStrategy : Strategy
 		
 		var (lookback, threshold) = VolumeSensitivity switch
 		{
-			VolumeSensitivityLevel.Low => (30, 1.5m),
-			VolumeSensitivityLevel.Medium => (20, 1.8m),
+			VolumeSensitivityLevels.Low => (30, 1.5m),
+			VolumeSensitivityLevels.Medium => (20, 1.8m),
 			_ => (11, 2m)
 		};
 		_volSma = new SimpleMovingAverage { Length = lookback };
 		
 		var (fast, slow, signal) = MacdSpeed switch
 		{
-			MacdSpeedOption.Fast => (2, 7, 5),
-			MacdSpeedOption.Medium => (5, 13, 9),
+			MacdSpeedOptions.Fast => (2, 7, 5),
+			MacdSpeedOptions.Medium => (5, 13, 9),
 			_ => (12, 26, 9)
 		};
 		_macd = new()

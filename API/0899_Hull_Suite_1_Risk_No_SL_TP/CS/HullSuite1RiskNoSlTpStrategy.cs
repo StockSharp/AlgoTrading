@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 public class HullSuite1RiskNoSlTpStrategy : Strategy
 {
 	private readonly StrategyParam<int> _hullLength;
-	private readonly StrategyParam<HullVariation> _mode;
+	private readonly StrategyParam<HullVariations> _mode;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private HullMovingAverage _hma;
@@ -48,7 +48,7 @@ public class HullSuite1RiskNoSlTpStrategy : Strategy
 	/// <summary>
 	/// Hull variation.
 	/// </summary>
-	public HullVariation Mode
+	public HullVariations Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -74,7 +74,7 @@ public class HullSuite1RiskNoSlTpStrategy : Strategy
 						  .SetCanOptimize(true)
 						  .SetOptimize(20, 80, 5);
 
-		_mode = Param(nameof(Mode), HullVariation.Hma)
+		_mode = Param(nameof(Mode), HullVariations.Hma)
 					.SetDisplay("Hull Variation", "Type of Hull moving average", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -104,17 +104,17 @@ public class HullSuite1RiskNoSlTpStrategy : Strategy
 
 		switch (Mode)
 		{
-		case HullVariation.Hma:
+		case HullVariations.Hma:
 			_hma = new HullMovingAverage { Length = HullLength };
 			_hullIndicator = _hma;
 			break;
-		case HullVariation.Ehma:
+		case HullVariations.Ehma:
 			_ehmaFull = new ExponentialMovingAverage { Length = HullLength };
 			_ehmaHalf = new ExponentialMovingAverage { Length = HullLength / 2 };
 			_ehmaResult = new ExponentialMovingAverage { Length = (int)Math.Round(Math.Sqrt(HullLength)) };
 			_hullIndicator = _ehmaResult;
 			break;
-		case HullVariation.Thma:
+		case HullVariations.Thma:
 			_thmaFull = new WeightedMovingAverage { Length = HullLength };
 			_thmaHalf = new WeightedMovingAverage { Length = HullLength / 2 };
 			_thmaThird = new WeightedMovingAverage { Length = Math.Max(1, HullLength / 3) };
@@ -169,11 +169,11 @@ public class HullSuite1RiskNoSlTpStrategy : Strategy
 	{
 		switch (Mode)
 		{
-			case HullVariation.Hma:
+			case HullVariations.Hma:
 			{
 				return _hma.Process(price).ToNullableDecimal();
 			}
-			case HullVariation.Ehma:
+			case HullVariations.Ehma:
 			{
 				var emaFull = _ehmaFull.Process(price).ToNullableDecimal();
 				var emaHalf = _ehmaHalf.Process(price).ToNullableDecimal();
@@ -182,7 +182,7 @@ public class HullSuite1RiskNoSlTpStrategy : Strategy
 				var diff = 2m * half - full;
 				return _ehmaResult.Process(diff).ToNullableDecimal();
 			}
-			case HullVariation.Thma:
+			case HullVariations.Thma:
 			{
 				var wmaFull = _thmaFull.Process(price).ToNullableDecimal();
 				var wmaHalf = _thmaHalf.Process(price).ToNullableDecimal();
@@ -199,7 +199,7 @@ public class HullSuite1RiskNoSlTpStrategy : Strategy
 	}
 }
 
-public enum HullVariation
+public enum HullVariations
 {
 	Hma,
 	Ehma,

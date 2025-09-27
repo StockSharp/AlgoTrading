@@ -22,7 +22,7 @@ private readonly StrategyParam<int> _maLength;
 private readonly StrategyParam<decimal> _entryAtrMultiplier;
 private readonly StrategyParam<decimal> _profitAtrMultiplier;
 private readonly StrategyParam<decimal> _exitAtrMultiplier;
-private readonly StrategyParam<MovingAverageTypeEnum> _maType;
+private readonly StrategyParam<MovingAverageTypes> _maType;
 private readonly StrategyParam<int> _shortMaLength;
 private readonly StrategyParam<int> _longMaLength;
 private readonly StrategyParam<DataType> _candleType;
@@ -50,7 +50,7 @@ public decimal ExitAtrMultiplier { get => _exitAtrMultiplier.Value; set => _exit
 /// <summary>
 /// Basis MA type.
 /// </summary>
-public MovingAverageTypeEnum MaType { get => _maType.Value; set => _maType.Value = value; }
+public MovingAverageTypes MaType { get => _maType.Value; set => _maType.Value = value; }
 
 /// <summary>
 /// Short MA length for golden cross.
@@ -89,7 +89,7 @@ _exitAtrMultiplier = Param(nameof(ExitAtrMultiplier), -1m)
 .SetDisplay("Exit Mult", "ATR multiplier for stop", "Risk")
 .SetCanOptimize(true);
 
-_maType = Param(nameof(MaType), MovingAverageTypeEnum.Simple)
+_maType = Param(nameof(MaType), MovingAverageTypes.Simple)
 .SetDisplay("MA Type", "Type of basis moving average", "General");
 
 _shortMaLength = Param(nameof(ShortMaLength), 50)
@@ -135,12 +135,12 @@ DrawOwnTrades(area);
 }
 }
 
-private MovingAverage CreateMa(MovingAverageTypeEnum type, int length)
+private MovingAverage CreateMa(MovingAverageTypes type, int length)
 {
 return type switch
 {
-MovingAverageTypeEnum.Exponential => new ExponentialMovingAverage { Length = length },
-MovingAverageTypeEnum.Weighted => new WeightedMovingAverage { Length = length },
+MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
 _ => new SimpleMovingAverage { Length = length },
 };
 }
@@ -188,7 +188,7 @@ SellMarket(Volume);
 /// <summary>
 /// Moving average type.
 /// </summary>
-public enum MovingAverageTypeEnum
+public enum MovingAverageTypes
 {
 /// <summary>
 /// Simple moving average.

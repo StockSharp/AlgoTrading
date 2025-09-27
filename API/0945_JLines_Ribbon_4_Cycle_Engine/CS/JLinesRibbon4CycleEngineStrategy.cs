@@ -32,8 +32,8 @@ public class JLinesRibbon4CycleEngineStrategy : Strategy
 	private ExponentialMovingAverage _ema445;
 	private AverageDirectionalIndex _adx;
 
-	private enum CycleState { Chop, Long, Short }
-	private CycleState _cycle = CycleState.Chop;
+	private enum CycleStates { Chop, Long, Short }
+	private CycleStates _cycle = CycleStates.Chop;
 	private bool _newCycle;
 
 	private decimal _prevEma72;
@@ -125,19 +125,19 @@ public class JLinesRibbon4CycleEngineStrategy : Strategy
 		var trendLong = !inChop && ema72 > ema89;
 		var trendShort = !inChop && ema72 < ema89;
 
-		if (inChop && _cycle != CycleState.Chop)
+		if (inChop && _cycle != CycleStates.Chop)
 		{
-			_cycle = CycleState.Chop;
+			_cycle = CycleStates.Chop;
 			_newCycle = true;
 		}
-		else if (trendLong && _cycle != CycleState.Long)
+		else if (trendLong && _cycle != CycleStates.Long)
 		{
-			_cycle = CycleState.Long;
+			_cycle = CycleStates.Long;
 			_newCycle = true;
 		}
-		else if (trendShort && _cycle != CycleState.Short)
+		else if (trendShort && _cycle != CycleStates.Short)
 		{
-			_cycle = CycleState.Short;
+			_cycle = CycleStates.Short;
 			_newCycle = true;
 		}
 		else
@@ -145,14 +145,14 @@ public class JLinesRibbon4CycleEngineStrategy : Strategy
 			_newCycle = false;
 		}
 
-		if (_newCycle && _cycle == CycleState.Chop && Position != 0)
+		if (_newCycle && _cycle == CycleStates.Chop && Position != 0)
 			ClosePosition();
 
 		if (_newCycle)
 		{
-			if (_cycle == CycleState.Long && Position <= 0)
+			if (_cycle == CycleStates.Long && Position <= 0)
 				BuyMarket();
-			else if (_cycle == CycleState.Short && Position >= 0)
+			else if (_cycle == CycleStates.Short && Position >= 0)
 				SellMarket();
 		}
 
@@ -163,7 +163,7 @@ public class JLinesRibbon4CycleEngineStrategy : Strategy
 		var xAbove126 = _prevClose <= _prevEma126 && candle.ClosePrice > ema126;
 		var xBelow126 = _prevClose >= _prevEma126 && candle.ClosePrice < ema126;
 
-		if (_cycle == CycleState.Long)
+		if (_cycle == CycleStates.Long)
 		{
 			if (flipLongEvt)
 				BuyMarket();
@@ -191,7 +191,7 @@ public class JLinesRibbon4CycleEngineStrategy : Strategy
 			if (Position > 0 && candle.LowPrice <= _lastLow)
 				ClosePosition();
 		}
-		else if (_cycle == CycleState.Short)
+		else if (_cycle == CycleStates.Short)
 		{
 			if (Position == 0 && ema72 < ema89)
 				SellMarket();

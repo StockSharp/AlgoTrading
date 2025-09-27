@@ -13,7 +13,7 @@ namespace StockSharp.Samples.Strategies;
 
 
 
-public enum SlType
+public enum SlTypes
 {
 	Percentage,
 	PreviousLow
@@ -29,7 +29,7 @@ public class LongOnlyOpeningRangeBreakoutWithPivotPointsStrategy : Strategy
 	private readonly StrategyParam<int> _rangeMinutes;
 	private readonly StrategyParam<int> _maxTrades;
 	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<SlType> _initialSlType;
+	private readonly StrategyParam<SlTypes> _initialSlType;
 
 	private DateTimeOffset _sessionStartTime;
 	private DateTimeOffset _sessionEndTime;
@@ -73,7 +73,7 @@ public class LongOnlyOpeningRangeBreakoutWithPivotPointsStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 3m)
 		.SetDisplay("Stop Loss %", "Initial stop loss percent", "Risk");
 
-		_initialSlType = Param(nameof(InitialSlType), SlType.Percentage)
+		_initialSlType = Param(nameof(InitialSlType), SlTypes.Percentage)
 		.SetDisplay("Initial SL Type", "Initial stop loss type", "Risk");
 	}
 
@@ -125,7 +125,7 @@ public class LongOnlyOpeningRangeBreakoutWithPivotPointsStrategy : Strategy
 	/// <summary>
 	/// Initial stop loss type.
 	/// </summary>
-	public SlType InitialSlType
+	public SlTypes InitialSlType
 	{
 		get => _initialSlType.Value;
 		set => _initialSlType.Value = value;
@@ -235,7 +235,7 @@ public class LongOnlyOpeningRangeBreakoutWithPivotPointsStrategy : Strategy
 			{
 				_entryPrice = _openingHigh.Value;
 				var slPercent = StopLossPercent / 100m;
-				_slLong0 = InitialSlType == SlType.Percentage ? _entryPrice * (1m - slPercent) : prevLow;
+				_slLong0 = InitialSlType == SlTypes.Percentage ? _entryPrice * (1m - slPercent) : prevLow;
 				BuyMarket(Volume + Math.Abs(Position));
 				_tradesCounter++;
 				_trailLong = 0m;

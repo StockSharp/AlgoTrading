@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class HybridRsiBreakoutDashboardStrategy : Strategy
 {
-	private enum TradeType
+	private enum TradeTypes
 	{
 		None,
 		Rsi,
@@ -48,7 +48,7 @@ public class HybridRsiBreakoutDashboardStrategy : Strategy
 	private decimal _prevHighest;
 	private decimal _prevLowest;
 	private decimal _breakoutStop;
-	private TradeType _currentTrade;
+	private TradeTypes _currentTrade;
 	private string _lastTradeType = "None";
 	private string _lastDirection = "None";
 	private int _barIndex;
@@ -185,7 +185,7 @@ public class HybridRsiBreakoutDashboardStrategy : Strategy
 		_prevHighest = 0m;
 		_prevLowest = 0m;
 		_breakoutStop = 0m;
-		_currentTrade = TradeType.None;
+		_currentTrade = TradeTypes.None;
 		_lastTradeType = "None";
 		_lastDirection = "None";
 		_barIndex = 0;
@@ -261,21 +261,21 @@ public class HybridRsiBreakoutDashboardStrategy : Strategy
 		if (rsiLong && Position <= 0)
 		{
 			BuyMarket(Volume + Math.Abs(Position));
-			_currentTrade = TradeType.Rsi;
+			_currentTrade = TradeTypes.Rsi;
 			_lastTradeType = "RSI";
 			_lastDirection = "Long";
 		}
 		else if (rsiShort && Position >= 0)
 		{
 			SellMarket(Volume + Math.Abs(Position));
-			_currentTrade = TradeType.Rsi;
+			_currentTrade = TradeTypes.Rsi;
 			_lastTradeType = "RSI";
 			_lastDirection = "Short";
 		}
 		else if (longBreak && Position <= 0)
 		{
 			BuyMarket(Volume + Math.Abs(Position));
-			_currentTrade = TradeType.Breakout;
+			_currentTrade = TradeTypes.Breakout;
 			_lastTradeType = "Breakout";
 			_lastDirection = "Long";
 			_breakoutStop = candle.ClosePrice - atrValue * AtrMultiplier;
@@ -283,26 +283,26 @@ public class HybridRsiBreakoutDashboardStrategy : Strategy
 		else if (shortBreak && Position >= 0)
 		{
 			SellMarket(Volume + Math.Abs(Position));
-			_currentTrade = TradeType.Breakout;
+			_currentTrade = TradeTypes.Breakout;
 			_lastTradeType = "Breakout";
 			_lastDirection = "Short";
 			_breakoutStop = candle.ClosePrice + atrValue * AtrMultiplier;
 		}
 
-		if (_currentTrade == TradeType.Rsi)
+		if (_currentTrade == TradeTypes.Rsi)
 		{
 			if (Position > 0 && rsiLongExit)
 			{
 				SellMarket(Position);
-				_currentTrade = TradeType.None;
+				_currentTrade = TradeTypes.None;
 			}
 			else if (Position < 0 && rsiShortExit)
 			{
 				BuyMarket(-Position);
-				_currentTrade = TradeType.None;
+				_currentTrade = TradeTypes.None;
 			}
 		}
-		else if (_currentTrade == TradeType.Breakout)
+		else if (_currentTrade == TradeTypes.Breakout)
 		{
 			if (Position > 0)
 			{
@@ -313,7 +313,7 @@ public class HybridRsiBreakoutDashboardStrategy : Strategy
 				if (candle.LowPrice <= _breakoutStop)
 				{
 					SellMarket(Position);
-					_currentTrade = TradeType.None;
+					_currentTrade = TradeTypes.None;
 				}
 			}
 			else if (Position < 0)
@@ -325,7 +325,7 @@ public class HybridRsiBreakoutDashboardStrategy : Strategy
 				if (candle.HighPrice >= _breakoutStop)
 				{
 					BuyMarket(-Position);
-					_currentTrade = TradeType.None;
+					_currentTrade = TradeTypes.None;
 				}
 			}
 		}

@@ -215,14 +215,14 @@ public class IchimokuCloudsLongAndShortStrategy : Strategy
 		}
 	}
 
-	private enum SignalStrength
+	private enum SignalStrengths
 	{
 		Strong,
 		Neutral,
 		Weak
 	}
 
-	private static bool IsSignalAllowed(string option, SignalStrength strength, bool bullish)
+	private static bool IsSignalAllowed(string option, SignalStrengths strength, bool bullish)
 	{
 		if (option == "None")
 			return false;
@@ -231,12 +231,12 @@ public class IchimokuCloudsLongAndShortStrategy : Strategy
 		{
 			return option switch
 			{
-				"Bullish Strong" => strength == SignalStrength.Strong,
-				"Bullish Neutral" => strength == SignalStrength.Neutral,
-				"Bullish Weak" => strength == SignalStrength.Weak,
-				"Bullish Strong and Neutral" => strength is SignalStrength.Strong or SignalStrength.Neutral,
-				"Bullish Neutral and Weak" => strength is SignalStrength.Neutral or SignalStrength.Weak,
-				"Bullish Strong and Weak" => strength is SignalStrength.Strong or SignalStrength.Weak,
+				"Bullish Strong" => strength == SignalStrengths.Strong,
+				"Bullish Neutral" => strength == SignalStrengths.Neutral,
+				"Bullish Weak" => strength == SignalStrengths.Weak,
+				"Bullish Strong and Neutral" => strength is SignalStrengths.Strong or SignalStrengths.Neutral,
+				"Bullish Neutral and Weak" => strength is SignalStrengths.Neutral or SignalStrengths.Weak,
+				"Bullish Strong and Weak" => strength is SignalStrengths.Strong or SignalStrengths.Weak,
 				"Bullish All" => true,
 				_ => false
 			};
@@ -244,12 +244,12 @@ public class IchimokuCloudsLongAndShortStrategy : Strategy
 
 		return option switch
 		{
-			"Bearish Strong" => strength == SignalStrength.Strong,
-			"Bearish Neutral" => strength == SignalStrength.Neutral,
-			"Bearish Weak" => strength == SignalStrength.Weak,
-			"Bearish Strong and Neutral" => strength is SignalStrength.Strong or SignalStrength.Neutral,
-			"Bearish Neutral and Weak" => strength is SignalStrength.Neutral or SignalStrength.Weak,
-			"Bearish Strong and Weak" => strength is SignalStrength.Strong or SignalStrength.Weak,
+			"Bearish Strong" => strength == SignalStrengths.Strong,
+			"Bearish Neutral" => strength == SignalStrengths.Neutral,
+			"Bearish Weak" => strength == SignalStrengths.Weak,
+			"Bearish Strong and Neutral" => strength is SignalStrengths.Strong or SignalStrengths.Neutral,
+			"Bearish Neutral and Weak" => strength is SignalStrengths.Neutral or SignalStrengths.Weak,
+			"Bearish Strong and Weak" => strength is SignalStrengths.Strong or SignalStrengths.Weak,
 			"Bearish All" => true,
 			_ => false
 		};
@@ -285,7 +285,7 @@ public class IchimokuCloudsLongAndShortStrategy : Strategy
 
 		if (crossUp)
 		{
-			var strength = tenkan > upperCloud ? SignalStrength.Strong : tenkan < lowerCloud ? SignalStrength.Weak : SignalStrength.Neutral;
+			var strength = tenkan > upperCloud ? SignalStrengths.Strong : tenkan < lowerCloud ? SignalStrengths.Weak : SignalStrengths.Neutral;
 
 			if (TradingMode == "Long" && IsSignalAllowed(EntrySignalOptionsLong, strength, true) && Position <= 0)
 			{
@@ -299,7 +299,7 @@ public class IchimokuCloudsLongAndShortStrategy : Strategy
 		}
 		else if (crossDown)
 		{
-			var strength = tenkan < lowerCloud ? SignalStrength.Strong : tenkan > upperCloud ? SignalStrength.Weak : SignalStrength.Neutral;
+			var strength = tenkan < lowerCloud ? SignalStrengths.Strong : tenkan > upperCloud ? SignalStrengths.Weak : SignalStrengths.Neutral;
 
 			if (TradingMode == "Short" && IsSignalAllowed(EntrySignalOptionsShort, strength, false) && Position >= 0)
 			{

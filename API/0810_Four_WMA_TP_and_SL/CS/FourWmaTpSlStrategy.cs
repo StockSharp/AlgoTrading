@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class FourWmaTpSlStrategy : Strategy
 {
-public enum MaMode
+public enum MaModes
 {
 Sma,
 Ema,
@@ -27,7 +27,7 @@ Vwma,
 Rma
 }
 
-public enum AltExitMa
+public enum AltExitMas
 {
 LongMa1,
 LongMa2,
@@ -39,13 +39,13 @@ private readonly StrategyParam<int> _longMa1Length;
 private readonly StrategyParam<int> _longMa2Length;
 private readonly StrategyParam<int> _shortMa1Length;
 private readonly StrategyParam<int> _shortMa2Length;
-private readonly StrategyParam<MaMode> _maType;
+private readonly StrategyParam<MaModes> _maType;
 private readonly StrategyParam<bool> _enableTpSl;
 private readonly StrategyParam<decimal> _takeProfitPercent;
 private readonly StrategyParam<decimal> _stopLossPercent;
 private readonly StrategyParam<Sides?> _direction;
 private readonly StrategyParam<bool> _enableAltExit;
-private readonly StrategyParam<AltExitMa> _altExitMa;
+private readonly StrategyParam<AltExitMas> _altExitMa;
 private readonly StrategyParam<DataType> _candleType;
 
 private decimal? _prevLongMa1;
@@ -76,7 +76,7 @@ public int ShortMa2Length { get => _shortMa2Length.Value; set => _shortMa2Length
 /// <summary>
 /// Type of moving average.
 /// </summary>
-public MaMode MaType { get => _maType.Value; set => _maType.Value = value; }
+public MaModes MaType { get => _maType.Value; set => _maType.Value = value; }
 
 /// <summary>
 /// Enable take profit and stop loss protection.
@@ -106,7 +106,7 @@ public bool EnableAltExit { get => _enableAltExit.Value; set => _enableAltExit.V
 /// <summary>
 /// Moving average used for alternate exit.
 /// </summary>
-public AltExitMa AltExitMaOption { get => _altExitMa.Value; set => _altExitMa.Value = value; }
+public AltExitMas AltExitMaOption { get => _altExitMa.Value; set => _altExitMa.Value = value; }
 
 /// <summary>
 /// Candle type.
@@ -138,7 +138,7 @@ _shortMa2Length = Param(nameof(ShortMa2Length), 40)
 .SetDisplay("Short MA2", "Length for second short MA", "Indicators")
 .SetCanOptimize(true);
 
-_maType = Param(nameof(MaType), MaMode.Wma)
+_maType = Param(nameof(MaType), MaModes.Wma)
 .SetDisplay("MA Type", "Type of moving average", "Indicators");
 
 _enableTpSl = Param(nameof(EnableTpSl), true)
@@ -158,7 +158,7 @@ _direction = Param(nameof(Direction), (Sides?)null)
 _enableAltExit = Param(nameof(EnableAltExit), false)
 .SetDisplay("Enable Alt Exit", "Enable alternate exit", "Risk");
 
-_altExitMa = Param(nameof(AltExitMaOption), AltExitMa.LongMa1)
+_altExitMa = Param(nameof(AltExitMaOption), AltExitMas.LongMa1)
 .SetDisplay("Alt Exit MA", "MA used for alternate exit", "Risk");
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -212,15 +212,15 @@ stopLoss: new Unit(StopLossPercent, UnitTypes.Percent));
 }
 }
 
-private static LengthIndicator<decimal> CreateMa(MaMode type, int length)
+private static LengthIndicator<decimal> CreateMa(MaModes type, int length)
 {
 return type switch
 {
-MaMode.Sma => new SimpleMovingAverage { Length = length },
-MaMode.Ema => new ExponentialMovingAverage { Length = length },
-MaMode.Wma => new WeightedMovingAverage { Length = length },
-MaMode.Vwma => new VolumeWeightedMovingAverage { Length = length },
-MaMode.Rma => new SmoothedMovingAverage { Length = length },
+MaModes.Sma => new SimpleMovingAverage { Length = length },
+MaModes.Ema => new ExponentialMovingAverage { Length = length },
+MaModes.Wma => new WeightedMovingAverage { Length = length },
+MaModes.Vwma => new VolumeWeightedMovingAverage { Length = length },
+MaModes.Rma => new SmoothedMovingAverage { Length = length },
 _ => throw new ArgumentOutOfRangeException(nameof(type))
 };
 }
@@ -239,16 +239,16 @@ if (EnableAltExit)
 decimal altValue;
 switch (AltExitMaOption)
 {
-case AltExitMa.LongMa1:
+case AltExitMas.LongMa1:
 altValue = longMa1;
 break;
-case AltExitMa.LongMa2:
+case AltExitMas.LongMa2:
 altValue = longMa2;
 break;
-case AltExitMa.ShortMa1:
+case AltExitMas.ShortMa1:
 altValue = shortMa1;
 break;
-case AltExitMa.ShortMa2:
+case AltExitMas.ShortMa2:
 altValue = shortMa2;
 break;
 default:

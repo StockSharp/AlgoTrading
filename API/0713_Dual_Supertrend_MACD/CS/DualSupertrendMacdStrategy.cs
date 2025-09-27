@@ -25,8 +25,8 @@ public class DualSupertrendMacdStrategy : Strategy
 	private readonly StrategyParam<int> _macdFast;
 	private readonly StrategyParam<int> _macdSlow;
 	private readonly StrategyParam<int> _macdSignal;
-	private readonly StrategyParam<MovingAverageTypeEnum> _oscillatorMaType;
-	private readonly StrategyParam<MovingAverageTypeEnum> _signalMaType;
+	private readonly StrategyParam<MovingAverageTypes> _oscillatorMaType;
+	private readonly StrategyParam<MovingAverageTypes> _signalMaType;
 	private readonly StrategyParam<int> _atrPeriod1;
 	private readonly StrategyParam<decimal> _factor1;
 	private readonly StrategyParam<int> _atrPeriod2;
@@ -50,10 +50,10 @@ private readonly StrategyParam<Sides?> _direction;
 		_macdSignal =
 			Param(nameof(MacdSignal), 9).SetCanOptimize(true).SetDisplay("Signal Length", "MACD signal length", "MACD");
 
-		_oscillatorMaType = Param(nameof(OscillatorMaType), MovingAverageTypeEnum.Exponential)
+		_oscillatorMaType = Param(nameof(OscillatorMaType), MovingAverageTypes.Exponential)
 								.SetDisplay("Oscillator MA Type", "Type of MA for MACD fast/slow lines", "MACD");
 
-		_signalMaType = Param(nameof(SignalMaType), MovingAverageTypeEnum.Exponential)
+		_signalMaType = Param(nameof(SignalMaType), MovingAverageTypes.Exponential)
 							.SetDisplay("Signal MA Type", "Type of MA for MACD signal line", "MACD");
 
 		_atrPeriod1 = Param(nameof(AtrPeriod1), 10)
@@ -115,7 +115,7 @@ _direction = Param(nameof(Direction), (Sides?)null)
 	/// <summary>
 	/// Type of MA for MACD fast/slow lines.
 	/// </summary>
-	public MovingAverageTypeEnum OscillatorMaType
+	public MovingAverageTypes OscillatorMaType
 	{
 		get => _oscillatorMaType.Value;
 		set => _oscillatorMaType.Value = value;
@@ -124,7 +124,7 @@ _direction = Param(nameof(Direction), (Sides?)null)
 	/// <summary>
 	/// Type of MA for MACD signal line.
 	/// </summary>
-	public MovingAverageTypeEnum SignalMaType
+	public MovingAverageTypes SignalMaType
 	{
 		get => _signalMaType.Value;
 		set => _signalMaType.Value = value;
@@ -243,16 +243,16 @@ else if (Position < 0 && exitShort)
 BuyMarket(Math.Abs(Position));
 	}
 
-	private MovingAverage CreateMa(MovingAverageTypeEnum type, int length)
+	private MovingAverage CreateMa(MovingAverageTypes type, int length)
 	{
-		return type switch { MovingAverageTypeEnum.Simple => new SimpleMovingAverage { Length = length },
+		return type switch { MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
 							 _ => new ExponentialMovingAverage { Length = length } };
 	}
 
 	/// <summary>
 	/// Moving average type enumeration.
 	/// </summary>
-	public enum MovingAverageTypeEnum
+	public enum MovingAverageTypes
 	{
 		/// <summary>
 		/// Simple Moving Average.
