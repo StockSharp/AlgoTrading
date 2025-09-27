@@ -185,7 +185,7 @@ public class MacdNotSoSampleStrategy : Strategy
 		Volume = TradeVolume; // Align helper order volume with the configured trade size.
 
 		var requiredCode = RequiredSecurityCode;
-		if (!string.IsNullOrEmpty(requiredCode) && Security?.Code is string code && !string.Equals(code, requiredCode, StringComparison.OrdinalIgnoreCase))
+		if (!string.IsNullOrEmpty(requiredCode) && Security?.Code is string code && !code.EqualsIgnoreCase(requiredCode))
 		{
 			LogWarning($"Configured security {code} does not match required code {requiredCode}. Strategy will stop to mimic MetaTrader checks.");
 			Stop();

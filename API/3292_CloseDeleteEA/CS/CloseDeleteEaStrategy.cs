@@ -321,7 +321,7 @@ public class CloseDeleteEaStrategy : Strategy
 			return true;
 
 		var strategyId = TryGetStrategyId(position);
-		return string.Equals(strategyId, filter, StringComparison.Ordinal);
+		return strategyId.EqualsIgnoreCase(filter);
 	}
 
 	private static bool MatchesStrategyFilter(Order order, bool filterEnabled, string filter)
@@ -330,7 +330,7 @@ public class CloseDeleteEaStrategy : Strategy
 			return true;
 
 		var strategyId = TryGetStrategyId(order);
-		return string.Equals(strategyId, filter, StringComparison.Ordinal);
+		return strategyId.EqualsIgnoreCase(filter);
 	}
 
 	private static string TryGetStrategyId(Position position)

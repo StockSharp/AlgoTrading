@@ -165,7 +165,7 @@ public class CloseOrdersStrategy : Strategy
 		var snapshot = new List<Order>(ActiveOrders);
 		foreach (var order in snapshot)
 		{
-			if (filterEnabled && !string.Equals(order.UserOrderId, magic, StringComparison.Ordinal))
+			if (filterEnabled && !order.UserOrderId.EqualsIgnoreCase(magic))
 				continue;
 
 			CancelOrder(order);
@@ -232,6 +232,6 @@ public class CloseOrdersStrategy : Strategy
 			return true;
 
 		var value = position.StrategyId;
-		return value != null && string.Equals(value.ToString(), magicNumber, StringComparison.Ordinal);
+		return value != null && value.ToString().EqualsIgnoreCase(magicNumber);
 	}
 }

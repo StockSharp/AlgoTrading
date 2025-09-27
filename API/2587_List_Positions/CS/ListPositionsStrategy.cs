@@ -132,7 +132,7 @@ public class ListPositionsStrategy : Strategy
 				if (!string.IsNullOrEmpty(filter))
 				{
 					var strategyId = TryGetStrategyId(position);
-					if (!string.IsNullOrEmpty(strategyId) && string.Equals(strategyId, filter, StringComparison.Ordinal))
+					if (!string.IsNullOrEmpty(strategyId) && strategyId.EqualsIgnoreCase(filter))
 						continue;
 				}
 

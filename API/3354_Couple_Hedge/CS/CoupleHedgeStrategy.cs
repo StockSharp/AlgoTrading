@@ -890,7 +890,7 @@ public class CoupleHedgeStrategy : Strategy
 		var provider = SecurityProvider;
 		if (provider == null)
 		{
-			if (Security != null && string.Equals(Security.Id, id, StringComparison.OrdinalIgnoreCase))
+			if (Security != null && Security.Id.EqualsIgnoreCase(id))
 			return Security;
 
 			return null;

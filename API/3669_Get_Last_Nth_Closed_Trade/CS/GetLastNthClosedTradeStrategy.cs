@@ -185,7 +185,7 @@ public class GetLastNthClosedTradeStrategy : Strategy
 		var orderStrategyId = trade.Order.StrategyId;
 		var target = string.IsNullOrEmpty(filter) ? Id.ToString() : filter;
 
-		if (!string.Equals(orderStrategyId, target, StringComparison.Ordinal))
+		if (!orderStrategyId.EqualsIgnoreCase(target))
 		return false;
 		}
 

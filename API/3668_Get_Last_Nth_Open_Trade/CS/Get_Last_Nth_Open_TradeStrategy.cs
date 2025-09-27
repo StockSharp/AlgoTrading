@@ -146,7 +146,7 @@ public class Get_Last_Nth_Open_TradeStrategy : Strategy
 					if (string.IsNullOrEmpty(strategyId))
 						continue;
 
-					if (!string.Equals(strategyId, MagicNumber, StringComparison.Ordinal))
+					if (!strategyId.EqualsIgnoreCase(MagicNumber))
 						continue;
 				}
 

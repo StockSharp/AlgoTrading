@@ -366,7 +366,7 @@ public class SampleDetectEconomicCalendarStrategy : Strategy
 
 	private void TryPlaceEventOrders(NewsEventState evt)
 	{
-		if (!string.Equals(evt.Currency, BaseCurrency, StringComparison.OrdinalIgnoreCase))
+		if (!evt.Currency.EqualsIgnoreCase(BaseCurrency))
 		return;
 
 		if (evt.Importance != NewsImportance.High)
@@ -608,25 +608,25 @@ public class SampleDetectEconomicCalendarStrategy : Strategy
 
 	private static bool TryParseImportance(string value, out NewsImportance importance)
 	{
-		if (string.Equals(value, "high", StringComparison.OrdinalIgnoreCase))
+		if (value.EqualsIgnoreCase("high"))
 		{
 			importance = NewsImportance.High;
 			return true;
 		}
 
-		if (string.Equals(value, "medium", StringComparison.OrdinalIgnoreCase))
+		if (value.EqualsIgnoreCase("medium"))
 		{
 			importance = NewsImportance.Medium;
 			return true;
 		}
 
-		if (string.Equals(value, "low", StringComparison.OrdinalIgnoreCase))
+		if (value.EqualsIgnoreCase("low"))
 		{
 			importance = NewsImportance.Low;
 			return true;
 		}
 
-		if (string.Equals(value, "nfp", StringComparison.OrdinalIgnoreCase) || string.Equals(value, "non-farm", StringComparison.OrdinalIgnoreCase))
+		if (value.EqualsIgnoreCase("nfp") || value.EqualsIgnoreCase("non-farm"))
 		{
 			importance = NewsImportance.Nfp;
 			return true;

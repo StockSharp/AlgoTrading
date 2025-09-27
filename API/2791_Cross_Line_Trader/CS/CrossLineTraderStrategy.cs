@@ -327,11 +327,11 @@ public class CrossLineTraderStrategy : Strategy
 				return TradeDirection.Sell;
 			case LineDirectionMode.FromLabel:
 				if (!string.IsNullOrWhiteSpace(BuyLabel) &&
-					string.Equals(line.Label, BuyLabel, StringComparison.OrdinalIgnoreCase))
+					line.Label.EqualsIgnoreCase(BuyLabel))
 					return TradeDirection.Buy;
 
 				if (!string.IsNullOrWhiteSpace(SellLabel) &&
-					string.Equals(line.Label, SellLabel, StringComparison.OrdinalIgnoreCase))
+					line.Label.EqualsIgnoreCase(SellLabel))
 					return TradeDirection.Sell;
 				break;
 		}
