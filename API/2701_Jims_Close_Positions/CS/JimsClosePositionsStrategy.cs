@@ -1,11 +1,9 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-
 using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -13,11 +11,7 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-using System;
-using System.Collections.Generic;
 
-using StockSharp.Algo.Strategies;
-using StockSharp.Messages;
 
 /// <summary>
 /// Closes existing positions according to user defined rules.

@@ -1,26 +1,18 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-
 using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
-using System;
-using System.Collections.Generic;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
 
 /// <summary>
 /// OzFx strategy converted from MetaTrader 5 to the StockSharp high-level API.
