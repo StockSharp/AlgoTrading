@@ -74,8 +74,6 @@ public enum PlateauMovingAverageMethod
 /// </summary>
 public class PlateauStrategy : Strategy
 {
-	private const int HistoryCapacity = 16;
-
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _trailingStopPips;
@@ -95,6 +93,7 @@ public class PlateauStrategy : Strategy
 	private readonly StrategyParam<bool> _closeOpposite;
 	private readonly StrategyParam<bool> _printLog;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _historyCapacity;
 
 	private IIndicator _fastMa = null!;
 	private IIndicator _slowMa = null!;
@@ -284,6 +283,15 @@ public class PlateauStrategy : Strategy
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum number of historical indicator values retained for signal confirmation.
+	/// </summary>
+	public int HistoryCapacity
+	{
+		get => _historyCapacity.Value;
+		set => _historyCapacity.Value = value;
 	}
 
 	/// <summary>
