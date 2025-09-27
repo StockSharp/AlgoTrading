@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using StockSharp.Algo;
+using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Algo.Candles;
 using StockSharp.Messages;

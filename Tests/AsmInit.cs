@@ -1,10 +1,20 @@
 namespace StockSharp.Tests;
 
+using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 
+using Ecng.Common;
 using Ecng.Configuration;
 using Ecng.Logging;
+using Ecng.Serialization;
+using Ecng.UnitTesting;
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using StockSharp.Algo;
 using StockSharp.Algo.Compilation;

@@ -10,6 +10,7 @@ using System.Linq;
 
 using StockSharp.Algo;
 using StockSharp.Algo.Candles;
+using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 

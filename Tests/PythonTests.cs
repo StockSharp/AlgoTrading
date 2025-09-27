@@ -1,11 +1,18 @@
 namespace StockSharp.Tests;
 
+using System;
 using System.IO;
+using System.Threading.Tasks;
 
+using Ecng.Common;
 using Ecng.Compilation;
 using Ecng.Reflection;
 
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
 using StockSharp.Algo.Compilation;
+using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
 
 [TestClass]
 public class PythonTests

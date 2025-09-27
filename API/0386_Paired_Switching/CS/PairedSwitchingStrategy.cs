@@ -7,11 +7,11 @@
 // -----------------------------------------------------------------------------
 using StockSharp.Algo;
 using StockSharp.Algo.Candles;
+using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 
 namespace StockSharp.Samples.Strategies;
