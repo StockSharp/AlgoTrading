@@ -18,6 +18,26 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class Roc2VgStrategy : Strategy
 {
+	/// <summary>
+	/// Types of rate of change calculation.
+	/// </summary>
+	public enum RocTypes
+	{
+		/// <summary>Price - previous price.</summary>
+		Momentum,
+
+		/// <summary>((price / previous) - 1) * 100.</summary>
+		Roc,
+
+		/// <summary>(price - previous) / previous.</summary>
+		RocP,
+
+		/// <summary>price / previous.</summary>
+		RocR,
+
+		/// <summary>(price / previous) * 100.</summary>
+		RocR100
+	}
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _rocPeriod1;
 	private readonly StrategyParam<RocTypes> _rocType1;
@@ -116,25 +136,4 @@ public class Roc2VgStrategy : Strategy
 		_prevUp = up;
 		_prevDn = dn;
 	}
-}
-
-/// <summary>
-/// Types of rate of change calculation.
-/// </summary>
-public enum RocTypes
-{
-	/// <summary>Price - previous price.</summary>
-	Momentum,
-
-	/// <summary>((price / previous) - 1) * 100.</summary>
-	Roc,
-
-	/// <summary>(price - previous) / previous.</summary>
-	RocP,
-
-	/// <summary>price / previous.</summary>
-	RocR,
-
-	/// <summary>(price / previous) * 100.</summary>
-	RocR100
 }

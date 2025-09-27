@@ -22,6 +22,20 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class FractalWeightOscillatorStrategy : Strategy
 {
+	/// <summary>
+	/// Volume source used for the MFI component.
+	/// </summary>
+	public enum MfiVolumeTypes
+	{
+		/// <summary>
+		/// Tick volume.
+		/// </summary>
+		Tick,
+		/// <summary>
+		/// Real traded volume.
+		/// </summary>
+		Real
+	}
 	private readonly StrategyParam<TrendMode> _trendMode;
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<int> _period;
@@ -704,19 +718,4 @@ public class FractalWeightOscillatorStrategy : Strategy
 			_ => new SmoothedMovingAverage { Length = length }
 		};
 	}
-}
-
-/// <summary>
-/// Volume source used for the MFI component.
-/// </summary>
-public enum MfiVolumeTypes
-{
-	/// <summary>
-	/// Tick volume.
-	/// </summary>
-	Tick,
-	/// <summary>
-	/// Real traded volume.
-	/// </summary>
-	Real
 }

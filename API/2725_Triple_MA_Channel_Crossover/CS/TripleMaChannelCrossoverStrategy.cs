@@ -18,6 +18,31 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TripleMaChannelCrossoverStrategy : Strategy
 {
+	/// <summary>
+	/// Moving average calculation modes supported by <see cref="TripleMaChannelCrossoverStrategy"/>.
+	/// </summary>
+	public enum MovingAverageModes
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Simple,
+
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Exponential,
+
+		/// <summary>
+		/// Smoothed moving average (SMMA).
+		/// </summary>
+		Smoothed,
+
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		Weighted,
+	}
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _trailingStopPips;
@@ -758,30 +783,4 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
-}
-
-/// <summary>
-/// Moving average calculation modes supported by <see cref="TripleMaChannelCrossoverStrategy"/>.
-/// </summary>
-public enum MovingAverageModes
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Exponential,
-
-	/// <summary>
-	/// Smoothed moving average (SMMA).
-	/// </summary>
-	Smoothed,
-
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	Weighted,
 }

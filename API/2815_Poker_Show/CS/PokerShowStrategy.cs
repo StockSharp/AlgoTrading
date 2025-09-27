@@ -20,6 +20,52 @@ namespace StockSharp.Samples.Strategies;
 public class PokerShowStrategy : Strategy
 {
 	/// <summary>
+	/// Poker combination thresholds used to gate random trade execution.
+	/// </summary>
+	public enum PokerCombinations
+	{
+		/// <summary>
+		/// Straight flush probability threshold.
+		/// </summary>
+		Royal0 = 127,
+
+		/// <summary>
+		/// Four of a kind probability threshold.
+		/// </summary>
+		Royal1 = 255,
+
+		/// <summary>
+		/// Full house probability threshold.
+		/// </summary>
+		Royal2 = 511,
+
+		/// <summary>
+		/// Flush probability threshold.
+		/// </summary>
+		Royal3 = 1023,
+
+		/// <summary>
+		/// Straight probability threshold.
+		/// </summary>
+		Royal4 = 2047,
+
+		/// <summary>
+		/// Three of a kind probability threshold.
+		/// </summary>
+		Royal5 = 4095,
+
+		/// <summary>
+		/// Two pairs probability threshold.
+		/// </summary>
+		Royal6 = 8191,
+
+		/// <summary>
+		/// One pair probability threshold.
+		/// </summary>
+		Couple = 16383
+	}
+
+	/// <summary>
 	/// Moving average smoothing methods supported by the strategy.
 	/// </summary>
 	public enum MovingAverageMethods
@@ -476,50 +522,4 @@ public class PokerShowStrategy : Strategy
 			_ => new SimpleMovingAverage { Length = period }
 		};
 	}
-}
-
-/// <summary>
-/// Poker combination thresholds used to gate random trade execution.
-/// </summary>
-public enum PokerCombinations
-{
-	/// <summary>
-	/// Straight flush probability threshold.
-	/// </summary>
-	Royal0 = 127,
-
-	/// <summary>
-	/// Four of a kind probability threshold.
-	/// </summary>
-	Royal1 = 255,
-
-	/// <summary>
-	/// Full house probability threshold.
-	/// </summary>
-	Royal2 = 511,
-
-	/// <summary>
-	/// Flush probability threshold.
-	/// </summary>
-	Royal3 = 1023,
-
-	/// <summary>
-	/// Straight probability threshold.
-	/// </summary>
-	Royal4 = 2047,
-
-	/// <summary>
-	/// Three of a kind probability threshold.
-	/// </summary>
-	Royal5 = 4095,
-
-	/// <summary>
-	/// Two pairs probability threshold.
-	/// </summary>
-	Royal6 = 8191,
-
-	/// <summary>
-	/// One pair probability threshold.
-	/// </summary>
-	Couple = 16383
 }

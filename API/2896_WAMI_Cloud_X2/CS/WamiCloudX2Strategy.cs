@@ -18,6 +18,31 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class WamiCloudX2Strategy : Strategy
 {
+	/// <summary>
+	/// Moving average methods supported by the WAMI implementation.
+	/// </summary>
+	public enum MovingAverageMethods
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Sma,
+
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Ema,
+
+		/// <summary>
+		/// Smoothed moving average.
+		/// </summary>
+		Smma,
+
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		Lwma
+	}
 	private readonly StrategyParam<DataType> _trendCandleType;
 	private readonly StrategyParam<int> _trendPeriod1;
 	private readonly StrategyParam<MovingAverageMethods> _trendMethod1;
@@ -763,30 +788,4 @@ public class WamiIndicator : BaseIndicator<WamiValue>
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
-}
-
-/// <summary>
-/// Moving average methods supported by the WAMI implementation.
-/// </summary>
-public enum MovingAverageMethods
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Sma,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Ema,
-
-	/// <summary>
-	/// Smoothed moving average.
-	/// </summary>
-	Smma,
-
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	Lwma
 }

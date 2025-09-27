@@ -18,6 +18,32 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class PreviousCandleBreakdownStrategy : Strategy
 {
+	/// <summary>
+	/// Available moving average methods.
+	/// </summary>
+	public enum MovingAverageTypes
+	{
+	/// <summary>
+	/// Simple moving average.
+	/// </summary>
+	Simple,
+
+	/// <summary>
+	/// Exponential moving average.
+	/// </summary>
+	Exponential,
+
+	/// <summary>
+	/// Smoothed moving average.
+	/// </summary>
+	Smoothed,
+
+	/// <summary>
+	/// Weighted moving average.
+	/// </summary>
+	Weighted
+	}
+
 private readonly StrategyParam<DataType> _candleType;
 private readonly StrategyParam<decimal> _indentPips;
 private readonly StrategyParam<int> _fastPeriod;
@@ -55,32 +81,6 @@ private decimal? _shortStopPrice;
 private decimal? _shortTakeProfit;
 private decimal? _longTrailingPrice;
 private decimal? _shortTrailingPrice;
-
-/// <summary>
-/// Available moving average methods.
-/// </summary>
-public enum MovingAverageTypes
-{
-/// <summary>
-/// Simple moving average.
-/// </summary>
-Simple,
-
-/// <summary>
-/// Exponential moving average.
-/// </summary>
-Exponential,
-
-/// <summary>
-/// Smoothed moving average.
-/// </summary>
-Smoothed,
-
-/// <summary>
-/// Weighted moving average.
-/// </summary>
-Weighted
-}
 
 /// <summary>
 /// Candle type used for reference levels.

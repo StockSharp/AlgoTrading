@@ -14,47 +14,6 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Smoothing methods available for XPeriod synthetic candles.
-/// </summary>
-public enum XPeriodCandleSmoothingMethods
-{
-	/// <summary>
-	/// Simple moving average smoothing.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Exponential moving average smoothing.
-	/// </summary>
-	Exponential,
-
-	/// <summary>
-	/// Smoothed moving average (RMA) smoothing.
-	/// </summary>
-	Smoothed,
-
-	/// <summary>
-	/// Linear weighted moving average smoothing.
-	/// </summary>
-	Weighted,
-
-	/// <summary>
-	/// Jurik moving average smoothing.
-	/// </summary>
-	Jurik,
-
-	/// <summary>
-	/// Hull moving average smoothing.
-	/// </summary>
-	Hull,
-
-	/// <summary>
-	/// Kaufman adaptive moving average smoothing.
-	/// </summary>
-	KaufmanAdaptive
-}
-
-/// <summary>
 /// Multi-timeframe strategy that recreates the Exp_XPeriodCandle_X2 expert.
 /// The higher timeframe smooth candle color defines the trend bias.
 /// The entry timeframe waits for color flips with configurable exits before opening positions.
@@ -62,6 +21,47 @@ public enum XPeriodCandleSmoothingMethods
 /// </summary>
 public class ExpXPeriodCandleX2Strategy : Strategy
 {
+	/// <summary>
+	/// Smoothing methods available for XPeriod synthetic candles.
+	/// </summary>
+	public enum XPeriodCandleSmoothingMethods
+	{
+		/// <summary>
+		/// Simple moving average smoothing.
+		/// </summary>
+		Simple,
+
+		/// <summary>
+		/// Exponential moving average smoothing.
+		/// </summary>
+		Exponential,
+
+		/// <summary>
+		/// Smoothed moving average (RMA) smoothing.
+		/// </summary>
+		Smoothed,
+
+		/// <summary>
+		/// Linear weighted moving average smoothing.
+		/// </summary>
+		Weighted,
+
+		/// <summary>
+		/// Jurik moving average smoothing.
+		/// </summary>
+		Jurik,
+
+		/// <summary>
+		/// Hull moving average smoothing.
+		/// </summary>
+		Hull,
+
+		/// <summary>
+		/// Kaufman adaptive moving average smoothing.
+		/// </summary>
+		KaufmanAdaptive
+	}
+
 	private readonly StrategyParam<DataType> _trendCandleType;
 	private readonly StrategyParam<DataType> _entryCandleType;
 	private readonly StrategyParam<int> _trendPeriod;

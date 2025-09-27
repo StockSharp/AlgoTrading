@@ -18,6 +18,31 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MomentumM15Strategy : Strategy
 {
+	/// <summary>
+	/// Moving average method options aligned with the original expert advisor inputs.
+	/// </summary>
+	public enum MovingAverageMethods
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Simple,
+
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Exponential,
+
+		/// <summary>
+		/// Smoothed moving average.
+		/// </summary>
+		Smoothed,
+
+		/// <summary>
+		/// Weighted moving average.
+		/// </summary>
+		Weighted
+	}
 	private readonly StrategyParam<decimal> _volumeParam;
 	private readonly StrategyParam<DataType> _candleTypeParam;
 	private readonly StrategyParam<int> _maPeriodParam;
@@ -552,30 +577,4 @@ public class MomentumM15Strategy : Strategy
 			_ => new SimpleMovingAverage { Length = period },
 		};
 	}
-}
-
-/// <summary>
-/// Moving average method options aligned with the original expert advisor inputs.
-/// </summary>
-public enum MovingAverageMethods
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Exponential,
-
-	/// <summary>
-	/// Smoothed moving average.
-	/// </summary>
-	Smoothed,
-
-	/// <summary>
-	/// Weighted moving average.
-	/// </summary>
-	Weighted
 }

@@ -18,26 +18,26 @@ using System.Threading;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Defines how positions should be filtered by symbol.
-/// </summary>
-public enum PositionSelectionModes
-{
-	/// <summary>
-	/// Include positions from all symbols available in the portfolio.
-	/// </summary>
-	AllSymbols,
-
-	/// <summary>
-	/// Include only positions that relate to the strategy security.
-	/// </summary>
-	CurrentSymbol,
-}
-
-/// <summary>
 /// Lists open positions on a periodic timer similar to the original MQL implementation.
 /// </summary>
 public class ListPositionsStrategy : Strategy
 {
+	/// <summary>
+	/// Defines how positions should be filtered by symbol.
+	/// </summary>
+	public enum PositionSelectionModes
+	{
+		/// <summary>
+		/// Include positions from all symbols available in the portfolio.
+		/// </summary>
+		AllSymbols,
+
+		/// <summary>
+		/// Include only positions that relate to the strategy security.
+		/// </summary>
+		CurrentSymbol,
+	}
+
 	private readonly StrategyParam<string> _strategyIdFilter;
 	private readonly StrategyParam<PositionSelectionModes> _selectionMode;
 	private readonly StrategyParam<TimeSpan> _timerInterval;

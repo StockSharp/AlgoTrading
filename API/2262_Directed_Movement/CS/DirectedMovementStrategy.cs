@@ -18,6 +18,18 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class DirectedMovementStrategy : Strategy
 {
+	/// <summary>
+	/// Types of moving averages available for smoothing.
+	/// </summary>
+	public enum MaTypes
+	{
+			SMA,
+			EMA,
+			SMMA,
+			WMA,
+			HMA,
+	}
+
 		private readonly StrategyParam<DataType> _candleType;
 		private readonly StrategyParam<int> _rsiPeriod;
 		private readonly StrategyParam<MaTypes> _firstMaType;
@@ -152,16 +164,4 @@ public class DirectedMovementStrategy : Strategy
 						MaTypes.HMA => new HullMovingAverage { Length = length },
 						_ => new SimpleMovingAverage { Length = length },
 				};
-}
-
-/// <summary>
-/// Types of moving averages available for smoothing.
-/// </summary>
-public enum MaTypes
-{
-		SMA,
-		EMA,
-		SMMA,
-		WMA,
-		HMA,
 }

@@ -14,29 +14,29 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Available price sources for the Stopreversal trailing stop.
-/// </summary>
-public enum StopreversalAppliedPrices
-{
-	Close = 1,
-	Open,
-	High,
-	Low,
-	Median,
-	Typical,
-	Weighted,
-	Simple,
-	Quarter,
-	TrendFollow0,
-	TrendFollow1,
-	Demark
-}
-
-/// <summary>
 /// Stopreversal trailing stop strategy with a configurable trading session filter.
 /// </summary>
 public class StopreversalTmStrategy : Strategy
 {
+	/// <summary>
+	/// Available price sources for the Stopreversal trailing stop.
+	/// </summary>
+	public enum StopreversalAppliedPrices
+	{
+		Close = 1,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted,
+		Simple,
+		Quarter,
+		TrendFollow0,
+		TrendFollow1,
+		Demark
+	}
+
 	private readonly StrategyParam<bool> _allowBuyEntry;
 	private readonly StrategyParam<bool> _allowSellEntry;
 	private readonly StrategyParam<bool> _allowBuyExit;

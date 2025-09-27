@@ -21,6 +21,31 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class CandlesSmoothedStrategy : Strategy
 {
+	/// <summary>
+	/// Moving average types for smoothing.
+	/// </summary>
+	public enum MaMethods
+	{
+		/// <summary>
+		/// Simple Moving Average.
+		/// </summary>
+		Simple,
+
+		/// <summary>
+		/// Exponential Moving Average.
+		/// </summary>
+		Exponential,
+
+		/// <summary>
+		/// Smoothed Moving Average (RMA).
+		/// </summary>
+		Smma,
+
+		/// <summary>
+		/// Weighted Moving Average.
+		/// </summary>
+		Weighted
+	}
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<MaMethods> _maMethod;
@@ -143,30 +168,4 @@ public class CandlesSmoothedStrategy : Strategy
 
 		_prevColor = color;
 	}
-}
-
-/// <summary>
-/// Moving average types for smoothing.
-/// </summary>
-public enum MaMethods
-{
-	/// <summary>
-	/// Simple Moving Average.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Exponential Moving Average.
-	/// </summary>
-	Exponential,
-
-	/// <summary>
-	/// Smoothed Moving Average (RMA).
-	/// </summary>
-	Smma,
-
-	/// <summary>
-	/// Weighted Moving Average.
-	/// </summary>
-	Weighted
 }

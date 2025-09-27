@@ -19,6 +19,72 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BrandyStrategy : Strategy
 {
+	/// <summary>
+	/// Supported moving average smoothing methods.
+	/// </summary>
+	public enum MovingAverageMethods
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Sma,
+
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Ema,
+
+		/// <summary>
+		/// Smoothed moving average.
+		/// </summary>
+		Smma,
+
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		Lwma
+	}
+
+	/// <summary>
+	/// Price sources that can be fed into the moving averages.
+	/// </summary>
+	public enum AppliedPriceTypes
+	{
+		/// <summary>
+		/// Candle close price.
+		/// </summary>
+		Close,
+
+		/// <summary>
+		/// Candle open price.
+		/// </summary>
+		Open,
+
+		/// <summary>
+		/// Candle high price.
+		/// </summary>
+		High,
+
+		/// <summary>
+		/// Candle low price.
+		/// </summary>
+		Low,
+
+		/// <summary>
+		/// Median price of the candle (high + low) / 2.
+		/// </summary>
+		Median,
+
+		/// <summary>
+		/// Typical price (high + low + close) / 3.
+		/// </summary>
+		Typical,
+
+		/// <summary>
+		/// Weighted price (high + low + 2 * close) / 4.
+		/// </summary>
+		Weighted
+	}
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
@@ -584,71 +650,4 @@ public class BrandyStrategy : Strategy
 			_ => candle.ClosePrice
 		};
 	}
-}
-
-/// <summary>
-/// Supported moving average smoothing methods.
-/// </summary>
-public enum MovingAverageMethods
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Sma,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Ema,
-
-	/// <summary>
-	/// Smoothed moving average.
-	/// </summary>
-	Smma,
-
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	Lwma
-}
-
-/// <summary>
-/// Price sources that can be fed into the moving averages.
-/// </summary>
-public enum AppliedPriceTypes
-{
-	/// <summary>
-	/// Candle close price.
-	/// </summary>
-	Close,
-
-	/// <summary>
-	/// Candle open price.
-	/// </summary>
-	Open,
-
-	/// <summary>
-	/// Candle high price.
-	/// </summary>
-	High,
-
-	/// <summary>
-	/// Candle low price.
-	/// </summary>
-	Low,
-
-	/// <summary>
-	/// Median price of the candle (high + low) / 2.
-	/// </summary>
-	Median,
-
-	/// <summary>
-	/// Typical price (high + low + close) / 3.
-	/// </summary>
-	Typical,
-
-	/// <summary>
-	/// Weighted price (high + low + 2 * close) / 4.
-	/// </summary>
-	Weighted
 }

@@ -13,19 +13,19 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum ThreeCandlesVolumeTypes
-{
-	Tick,
-	Real,
-	None,
-}
-
 /// <summary>
 /// Translates the classic Three Candles reversal expert advisor from MQL5.
 /// The strategy searches for two candles in one direction followed by a strong opposite candle and trades the expected reversal.
 /// </summary>
 public class ThreeCandlesReversalStrategy : Strategy
 {
+	public enum ThreeCandlesVolumeTypes
+	{
+		Tick,
+		Real,
+		None,
+	}
+
 	private readonly Queue<ICandleMessage> _candles = new();
 
 	private readonly StrategyParam<DataType> _candleType;

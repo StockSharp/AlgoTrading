@@ -13,23 +13,23 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum PercentageChannelPriceModes
-{
-	Close,
-	Open,
-	High,
-	Low,
-	Median,
-	Typical,
-	Weighted,
-	Average
-}
-
 /// <summary>
 /// Percentage Crossover Channel strategy converted from MetaTrader 5.
 /// </summary>
 public class PercentageCrossoverChannelStrategy : Strategy
 {
+	public enum PercentageChannelPriceModes
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted,
+		Average
+	}
+
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _percent;
 	private readonly StrategyParam<PercentageChannelPriceModes> _priceMode;

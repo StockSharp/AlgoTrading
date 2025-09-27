@@ -14,20 +14,20 @@ namespace StockSharp.Samples.Strategies;
 
 
 /// <summary>
-/// Indicator mode options for the The 20s breakout strategy.
-/// </summary>
-public enum The20sModes
-{
-	Mode1,
-	Mode2,
-}
-
-/// <summary>
 /// Conversion of the "The_20s_v020" expert advisor that waits for volatility squeeze breakouts.
 /// Generates long and short signals based on the original indicator buffers and applies optional stop/target levels.
 /// </summary>
 public class The20sBreakoutStrategy : Strategy
 {
+	/// <summary>
+	/// Indicator mode options for the The 20s breakout strategy.
+	/// </summary>
+	public enum The20sModes
+	{
+		Mode1,
+		Mode2,
+	}
+
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;

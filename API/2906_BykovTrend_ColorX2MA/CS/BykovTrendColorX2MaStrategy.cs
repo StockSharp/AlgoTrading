@@ -20,6 +20,72 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BykovTrendColorX2MaStrategy : Strategy
 {
+	/// <summary>
+	/// Applied price options matching the original indicator.
+	/// </summary>
+	public enum AppliedPriceModes
+	{
+		/// <summary>
+		/// Closing price.
+		/// </summary>
+		Close,
+
+		/// <summary>
+		/// Opening price.
+		/// </summary>
+		Open,
+
+		/// <summary>
+		/// Highest price.
+		/// </summary>
+		High,
+
+		/// <summary>
+		/// Lowest price.
+		/// </summary>
+		Low,
+
+		/// <summary>
+		/// Median price (High + Low) / 2.
+		/// </summary>
+		Median,
+
+		/// <summary>
+		/// Typical price (High + Low + Close) / 3.
+		/// </summary>
+		Typical,
+
+		/// <summary>
+		/// Weighted close price (2 * Close + High + Low) / 4.
+		/// </summary>
+		Weighted,
+
+		/// <summary>
+		/// Simple average of Open and Close.
+		/// </summary>
+		Simple,
+
+		/// <summary>
+		/// Quarted price (Open + Close + High + Low) / 4.
+		/// </summary>
+		Quarted,
+
+		/// <summary>
+		/// Trend-following price that favors extremes.
+		/// </summary>
+		TrendFollow0,
+
+		/// <summary>
+		/// Trend-following price that blends extremes with the close.
+		/// </summary>
+		TrendFollow1,
+
+		/// <summary>
+		/// DeMark price variation.
+		/// </summary>
+		Demark
+	}
+
 	private readonly StrategyParam<DataType> _bykovCandleType;
 	private readonly StrategyParam<int> _bykovWilliamsPeriod;
 	private readonly StrategyParam<int> _bykovRisk;
@@ -82,72 +148,6 @@ public class BykovTrendColorX2MaStrategy : Strategy
 		/// </summary>
 		Jurik
 	}
-
-/// <summary>
-/// Applied price options matching the original indicator.
-/// </summary>
-public enum AppliedPriceModes
-{
-	/// <summary>
-	/// Closing price.
-	/// </summary>
-	Close,
-
-	/// <summary>
-	/// Opening price.
-	/// </summary>
-	Open,
-
-	/// <summary>
-	/// Highest price.
-	/// </summary>
-	High,
-
-	/// <summary>
-	/// Lowest price.
-	/// </summary>
-	Low,
-
-	/// <summary>
-	/// Median price (High + Low) / 2.
-	/// </summary>
-	Median,
-
-	/// <summary>
-	/// Typical price (High + Low + Close) / 3.
-	/// </summary>
-	Typical,
-
-	/// <summary>
-	/// Weighted close price (2 * Close + High + Low) / 4.
-	/// </summary>
-	Weighted,
-
-	/// <summary>
-	/// Simple average of Open and Close.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Quarted price (Open + Close + High + Low) / 4.
-	/// </summary>
-	Quarted,
-
-	/// <summary>
-	/// Trend-following price that favors extremes.
-	/// </summary>
-	TrendFollow0,
-
-	/// <summary>
-	/// Trend-following price that blends extremes with the close.
-	/// </summary>
-	TrendFollow1,
-
-	/// <summary>
-	/// DeMark price variation.
-	/// </summary>
-	Demark
-}
 
 /// <summary>
 /// Candle type used for BykovTrend calculations.

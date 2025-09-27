@@ -19,6 +19,31 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MaRsiEaStrategy : Strategy
 {
+	public enum LotSizingModes
+	{
+		Fixed,
+		Balance,
+		Equity
+	}
+
+	public enum MaMethods
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		LinearWeighted
+	}
+
+	public enum CandlePriceSources
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted
+	}
 	private readonly StrategyParam<LotSizingModes> _lotMode;
 	private readonly StrategyParam<decimal> _lotSize;
 	private readonly StrategyParam<decimal> _balancePercent;
@@ -395,30 +420,4 @@ public class MaRsiEaStrategy : Strategy
 		_maShiftCount = 0;
 		_cachedShift = -1;
 	}
-}
-
-public enum LotSizingModes
-{
-	Fixed,
-	Balance,
-	Equity
-}
-
-public enum MaMethods
-{
-	Simple,
-	Exponential,
-	Smoothed,
-	LinearWeighted
-}
-
-public enum CandlePriceSources
-{
-	Close,
-	Open,
-	High,
-	Low,
-	Median,
-	Typical,
-	Weighted
 }

@@ -20,6 +20,24 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class AbsolutelyNoLagLwmaStrategy : Strategy
 {
+	/// <summary>
+	/// Available price sources matching the original MQL inputs.
+	/// </summary>
+	public enum AppliedPriceTypes
+	{
+		Close = 1,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted,
+		Simpl,
+		Quarter,
+		TrendFollow0,
+		TrendFollow1,
+		Demark
+	}
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<AppliedPriceTypes> _priceType;
 	private readonly StrategyParam<int> _signalBar;
@@ -286,23 +304,4 @@ public class AbsolutelyNoLagLwmaStrategy : Strategy
 
 	return ((res - low) + (res - high)) / 2m;
 	}
-}
-
-/// <summary>
-/// Available price sources matching the original MQL inputs.
-/// </summary>
-public enum AppliedPriceTypes
-{
-	Close = 1,
-	Open,
-	High,
-	Low,
-	Median,
-	Typical,
-	Weighted,
-	Simpl,
-	Quarter,
-	TrendFollow0,
-	TrendFollow1,
-	Demark
 }

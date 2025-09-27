@@ -18,6 +18,21 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class JmaSlopeStrategy : Strategy
 {
+	/// <summary>
+	/// JMA slope entry modes.
+	/// </summary>
+	public enum JmaSlopeModes
+	{
+		/// <summary>
+		/// Signals when slope crosses zero.
+		/// </summary>
+		Breakdown,
+
+		/// <summary>
+		/// Signals when slope changes direction.
+		/// </summary>
+		Twist
+	}
 	private readonly StrategyParam<int> _jmaLength;
 	private readonly StrategyParam<int> _jmaPhase;
 	private readonly StrategyParam<JmaSlopeModes> _mode;
@@ -133,20 +148,4 @@ public class JmaSlopeStrategy : Strategy
 		_prevSlope1 = slope;
 		_prevJma = jmaValue;
 	}
-}
-
-/// <summary>
-/// JMA slope entry modes.
-/// </summary>
-public enum JmaSlopeModes
-{
-	/// <summary>
-	/// Signals when slope crosses zero.
-	/// </summary>
-	Breakdown,
-
-	/// <summary>
-	/// Signals when slope changes direction.
-	/// </summary>
-	Twist
 }

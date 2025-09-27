@@ -14,19 +14,19 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// MACD based strategy that interprets histogram or signal line slope.
-/// </summary>
-public enum MacdSignalModes
-{
-	Histogram,
-	SignalLine
-}
-
-/// <summary>
 /// Strategy that reacts to color changes of the MACD histogram or signal line.
 /// </summary>
 public class ColorXMacdCandleStrategy : Strategy
 {
+	/// <summary>
+	/// MACD based strategy that interprets histogram or signal line slope.
+	/// </summary>
+	public enum MacdSignalModes
+	{
+		Histogram,
+		SignalLine
+	}
+
 	private readonly StrategyParam<MacdSignalModes> _mode;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;

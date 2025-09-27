@@ -13,16 +13,16 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum MaMethods
-{
-	Simple,
-	Exponential,
-	Smoothed,
-	LinearWeighted,
-}
-
 public class BssTripleEmaSeparationStrategy : Strategy
 {
+	public enum MaMethods
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		LinearWeighted,
+	}
+
 	// Small epsilon used to compare decimal volumes without floating point noise.
 	private readonly StrategyParam<decimal> _volumeTolerance;
 

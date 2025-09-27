@@ -19,6 +19,118 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ExpRsiomaV2Strategy : Strategy
 {
+	/// <summary>
+	/// Available smoothing algorithms for RSIOMA calculation.
+	/// </summary>
+	public enum RsiomaSmoothingMethods
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Simple,
+
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Exponential,
+
+		/// <summary>
+		/// Smoothed moving average.
+		/// </summary>
+		Smoothed,
+
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		Weighted
+	}
+
+	/// <summary>
+	/// Signal logic of the RSIOMA expert advisor.
+	/// </summary>
+	public enum RsiomaSignalModes
+	{
+		/// <summary>
+		/// React to oscillator leaving the main trend levels.
+		/// </summary>
+		Breakdown,
+
+		/// <summary>
+		/// React to direction changes of the oscillator slope.
+		/// </summary>
+		Twist,
+
+		/// <summary>
+		/// React to RSIOMA returning from extreme zones.
+		/// </summary>
+		CloudTwist
+	}
+
+	/// <summary>
+	/// Price source used by the RSIOMA computation.
+	/// </summary>
+	public enum RsiomaAppliedPrices
+	{
+		/// <summary>
+		/// Close price.
+		/// </summary>
+		Close = 1,
+
+		/// <summary>
+		/// Open price.
+		/// </summary>
+		Open,
+
+		/// <summary>
+		/// High price.
+		/// </summary>
+		High,
+
+		/// <summary>
+		/// Low price.
+		/// </summary>
+		Low,
+
+		/// <summary>
+		/// Median price (high + low) / 2.
+		/// </summary>
+		Median,
+
+		/// <summary>
+		/// Typical price (high + low + close) / 3.
+		/// </summary>
+		Typical,
+
+		/// <summary>
+		/// Weighted close (2 * close + high + low) / 4.
+		/// </summary>
+		Weighted,
+
+		/// <summary>
+		/// Simple price (open + close) / 2.
+		/// </summary>
+		Simple,
+
+		/// <summary>
+		/// Quarter price (open + high + low + close) / 4.
+		/// </summary>
+		Quarter,
+
+		/// <summary>
+		/// Trend-following price variant 0.
+		/// </summary>
+		TrendFollow0,
+
+		/// <summary>
+		/// Trend-following price variant 1.
+		/// </summary>
+		TrendFollow1,
+
+		/// <summary>
+		/// DeMark price calculation.
+		/// </summary>
+		Demark
+	}
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<bool> _enableLongEntries;
@@ -420,117 +532,4 @@ public class ExpRsiomaV2Strategy : Strategy
 
 		return ((baseValue - candle.LowPrice) + (baseValue - candle.HighPrice)) / 2m;
 	}
-}
-
-/// <summary>
-/// Available smoothing algorithms for RSIOMA calculation.
-/// </summary>
-public enum RsiomaSmoothingMethods
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Exponential,
-
-	/// <summary>
-	/// Smoothed moving average.
-	/// </summary>
-	Smoothed,
-
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	Weighted
-}
-
-/// <summary>
-/// Signal logic of the RSIOMA expert advisor.
-/// </summary>
-public enum RsiomaSignalModes
-{
-	/// <summary>
-	/// React to oscillator leaving the main trend levels.
-	/// </summary>
-	Breakdown,
-
-	/// <summary>
-	/// React to direction changes of the oscillator slope.
-	/// </summary>
-	Twist,
-
-	/// <summary>
-	/// React to RSIOMA returning from extreme zones.
-	/// </summary>
-	CloudTwist
-}
-
-/// <summary>
-/// Price source used by the RSIOMA computation.
-/// </summary>
-public enum RsiomaAppliedPrices
-{
-	/// <summary>
-	/// Close price.
-	/// </summary>
-	Close = 1,
-
-	/// <summary>
-	/// Open price.
-	/// </summary>
-	Open,
-
-	/// <summary>
-	/// High price.
-	/// </summary>
-	High,
-
-	/// <summary>
-	/// Low price.
-	/// </summary>
-	Low,
-
-	/// <summary>
-	/// Median price (high + low) / 2.
-	/// </summary>
-	Median,
-
-	/// <summary>
-	/// Typical price (high + low + close) / 3.
-	/// </summary>
-	Typical,
-
-	/// <summary>
-	/// Weighted close (2 * close + high + low) / 4.
-	/// </summary>
-	Weighted,
-
-	/// <summary>
-	/// Simple price (open + close) / 2.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Quarter price (open + high + low + close) / 4.
-	/// </summary>
-	Quarter,
-
-	/// <summary>
-	/// Trend-following price variant 0.
-	/// </summary>
-	TrendFollow0,
-
-	/// <summary>
-	/// Trend-following price variant 1.
-	/// </summary>
-	TrendFollow1,
-
-	/// <summary>
-	/// DeMark price calculation.
-	/// </summary>
-	Demark
 }

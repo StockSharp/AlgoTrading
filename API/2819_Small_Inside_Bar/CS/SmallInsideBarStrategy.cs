@@ -14,33 +14,33 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Defines how the strategy manages simultaneous entries.
-/// </summary>
-public enum SmallInsideBarOpenModes
-{
-	/// <summary>
-	/// Open a new position on every signal without forcing opposite positions to close.
-	/// </summary>
-	AnySignal,
-
-	/// <summary>
-	/// Close opposite positions first and allow adding to the current swing direction.
-	/// </summary>
-	SwingWithRefill,
-
-	/// <summary>
-	/// Maintain a single position in the market and ignore additional entries while it is active.
-	/// </summary>
-	SingleSwing
-}
-
-/// <summary>
 /// Implements the "Small Inside Bar" pattern strategy converted from MetaTrader 5.
 /// The strategy searches for an inside bar with a small range compared to the mother bar
 /// and opens positions following the direction of the pattern conditions.
 /// </summary>
 public class SmallInsideBarStrategy : Strategy
 {
+	/// <summary>
+	/// Defines how the strategy manages simultaneous entries.
+	/// </summary>
+	public enum SmallInsideBarOpenModes
+	{
+		/// <summary>
+		/// Open a new position on every signal without forcing opposite positions to close.
+		/// </summary>
+		AnySignal,
+
+		/// <summary>
+		/// Close opposite positions first and allow adding to the current swing direction.
+		/// </summary>
+		SwingWithRefill,
+
+		/// <summary>
+		/// Maintain a single position in the market and ignore additional entries while it is active.
+		/// </summary>
+		SingleSwing
+	}
+
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _rangeRatioThreshold;
 	private readonly StrategyParam<bool> _enableLong;

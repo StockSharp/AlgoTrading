@@ -19,6 +19,91 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class XwamiMultiLayerMmrecStrategy : Strategy
 {
+	/// <summary>
+	/// Smoothing methods supported by the XWAMI adaptation.
+	/// </summary>
+	public enum XwamiSmoothMethods
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Sma,
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Ema,
+		/// <summary>
+		/// Smoothed moving average (RMA).
+		/// </summary>
+		Smma,
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		Lwma,
+		/// <summary>
+		/// Jurik moving average.
+		/// </summary>
+		Jurik,
+		/// <summary>
+		/// Tillson T3 filter.
+		/// </summary>
+		T3
+	}
+
+	/// <summary>
+	/// Applied price variations supported by the strategy.
+	/// </summary>
+	public enum XwamiAppliedPrices
+	{
+		/// <summary>
+		/// Close price.
+		/// </summary>
+		Close,
+		/// <summary>
+		/// Open price.
+		/// </summary>
+		Open,
+		/// <summary>
+		/// High price.
+		/// </summary>
+		High,
+		/// <summary>
+		/// Low price.
+		/// </summary>
+		Low,
+		/// <summary>
+		/// Median price (H+L)/2.
+		/// </summary>
+		Median,
+		/// <summary>
+		/// Typical price (H+L+C)/3.
+		/// </summary>
+		Typical,
+		/// <summary>
+		/// Weighted close (2*C+H+L)/4.
+		/// </summary>
+		Weighted,
+		/// <summary>
+		/// Simple average of open and close.
+		/// </summary>
+		Simple,
+		/// <summary>
+		/// Quarter price (H+L+O+C)/4.
+		/// </summary>
+		Quarter,
+		/// <summary>
+		/// Trend following definition #0.
+		/// </summary>
+		TrendFollow0,
+		/// <summary>
+		/// Trend following definition #1.
+		/// </summary>
+		TrendFollow1,
+		/// <summary>
+		/// Demark pivot based price.
+		/// </summary>
+		Demark
+	}
 	private readonly LayerSettings _layerA;
 	private readonly LayerSettings _layerB;
 	private readonly LayerSettings _layerC;
@@ -736,90 +821,4 @@ public class XwamiMultiLayerMmrecStrategy : Strategy
 			return value - previous;
 		}
 	}
-}
-
-/// <summary>
-/// Smoothing methods supported by the XWAMI adaptation.
-/// </summary>
-public enum XwamiSmoothMethods
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Sma,
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Ema,
-	/// <summary>
-	/// Smoothed moving average (RMA).
-	/// </summary>
-	Smma,
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	Lwma,
-	/// <summary>
-	/// Jurik moving average.
-	/// </summary>
-	Jurik,
-	/// <summary>
-	/// Tillson T3 filter.
-	/// </summary>
-	T3
-}
-
-/// <summary>
-/// Applied price variations supported by the strategy.
-/// </summary>
-public enum XwamiAppliedPrices
-{
-	/// <summary>
-	/// Close price.
-	/// </summary>
-	Close,
-	/// <summary>
-	/// Open price.
-	/// </summary>
-	Open,
-	/// <summary>
-	/// High price.
-	/// </summary>
-	High,
-	/// <summary>
-	/// Low price.
-	/// </summary>
-	Low,
-	/// <summary>
-	/// Median price (H+L)/2.
-	/// </summary>
-	Median,
-	/// <summary>
-	/// Typical price (H+L+C)/3.
-	/// </summary>
-	Typical,
-	/// <summary>
-	/// Weighted close (2*C+H+L)/4.
-	/// </summary>
-	Weighted,
-	/// <summary>
-	/// Simple average of open and close.
-	/// </summary>
-	Simple,
-	/// <summary>
-	/// Quarter price (H+L+O+C)/4.
-	/// </summary>
-	Quarter,
-	/// <summary>
-	/// Trend following definition #0.
-	/// </summary>
-	TrendFollow0,
-	/// <summary>
-	/// Trend following definition #1.
-	/// </summary>
-	TrendFollow1,
-	/// <summary>
-	/// Demark pivot based price.
-	/// </summary>
-	Demark
 }

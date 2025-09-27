@@ -18,6 +18,14 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class OpenOscillatorCloudMmrecStrategy : Strategy
 {
+	public enum SmoothingMethods
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		Weighted,
+	}
+
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<SmoothingMethods> _smoothingMethod;
@@ -361,12 +369,4 @@ public class OpenOscillatorCloudMmrecStrategy : Strategy
 			_ => throw new ArgumentOutOfRangeException(nameof(Smoothing), Smoothing, "Unsupported smoothing method."),
 };
 	}
-
-public enum SmoothingMethods
-{
-	Simple,
-	Exponential,
-	Smoothed,
-	Weighted,
-}
 }

@@ -19,6 +19,27 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ColorJFatlStDevStrategy : Strategy
 {
+	/// <summary>
+	/// Modes for signal evaluation.
+	/// </summary>
+	public enum SignalModes
+	{
+	    /// <summary>
+	    /// Use indicator buffer signals.
+	    /// </summary>
+	    Point,
+
+	    /// <summary>
+	    /// Use direct calculation on indicator line.
+	    /// </summary>
+	    Direct,
+
+	    /// <summary>
+	    /// Do not generate signals.
+	    /// </summary>
+	    Without
+	}
+
     private readonly StrategyParam<TimeSpan> _candleTimeFrame;
     private readonly StrategyParam<int> _jmaLength;
     private readonly StrategyParam<int> _jmaPhase;
@@ -255,25 +276,4 @@ public class ColorJFatlStDevStrategy : Strategy
         _prevPrevJma = _prevJma;
         _prevJma = jmaValue;
     }
-}
-
-/// <summary>
-/// Modes for signal evaluation.
-/// </summary>
-public enum SignalModes
-{
-    /// <summary>
-    /// Use indicator buffer signals.
-    /// </summary>
-    Point,
-
-    /// <summary>
-    /// Use direct calculation on indicator line.
-    /// </summary>
-    Direct,
-
-    /// <summary>
-    /// Do not generate signals.
-    /// </summary>
-    Without
 }

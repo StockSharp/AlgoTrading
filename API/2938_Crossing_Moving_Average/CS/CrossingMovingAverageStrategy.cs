@@ -19,6 +19,28 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class CrossingMovingAverageStrategy : Strategy
 {
+	/// <summary>
+	/// Moving average types supported by the strategy.
+	/// </summary>
+	public enum MovingAverageModes
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Simple,
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Exponential,
+		/// <summary>
+		/// Smoothed moving average.
+		/// </summary>
+		Smoothed,
+		/// <summary>
+		/// Weighted moving average.
+		/// </summary>
+		Weighted
+	}
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
@@ -612,27 +634,4 @@ public class CrossingMovingAverageStrategy : Strategy
 			_ => new ExponentialMovingAverage { Length = length },
 		};
 	}
-}
-
-/// <summary>
-/// Moving average types supported by the strategy.
-/// </summary>
-public enum MovingAverageModes
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Simple,
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Exponential,
-	/// <summary>
-	/// Smoothed moving average.
-	/// </summary>
-	Smoothed,
-	/// <summary>
-	/// Weighted moving average.
-	/// </summary>
-	Weighted
 }

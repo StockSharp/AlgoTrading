@@ -18,6 +18,30 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class DeepDrawdownMaStrategy : Strategy
 {
+	/// <summary>
+	/// Price source types matching the original MetaTrader 5 implementation.
+	/// </summary>
+	public enum PriceSources
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted
+	}
+
+	/// <summary>
+	/// Moving average methods supported by the strategy.
+	/// </summary>
+	public enum MovingAverageMethods
+	{
+		Sma,
+		Ema,
+		Smma,
+		Lwma
+	}
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<int> _maxPositions;
 	private readonly StrategyParam<bool> _closeLosses;
@@ -497,29 +521,4 @@ public class DeepDrawdownMaStrategy : Strategy
 		Long,
 		Short
 	}
-}
-
-/// <summary>
-/// Price source types matching the original MetaTrader 5 implementation.
-/// </summary>
-public enum PriceSources
-{
-	Close,
-	Open,
-	High,
-	Low,
-	Median,
-	Typical,
-	Weighted
-}
-
-/// <summary>
-/// Moving average methods supported by the strategy.
-/// </summary>
-public enum MovingAverageMethods
-{
-	Sma,
-	Ema,
-	Smma,
-	Lwma
 }

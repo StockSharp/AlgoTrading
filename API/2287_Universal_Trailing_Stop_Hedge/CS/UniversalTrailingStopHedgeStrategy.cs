@@ -20,6 +20,36 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class UniversalTrailingStopHedgeStrategy : Strategy
 {
+	/// <summary>
+	/// Supported trailing stop modes.
+	/// </summary>
+	public enum TrailingModes
+	{
+		/// <summary>
+		/// Fixed distance in pips.
+		/// </summary>
+		Pips,
+
+		/// <summary>
+		/// ATR-based trailing stop.
+		/// </summary>
+		Atr,
+
+		/// <summary>
+		/// Parabolic SAR based trailing stop.
+		/// </summary>
+		ParabolicSar,
+
+		/// <summary>
+		/// Moving average based trailing stop.
+		/// </summary>
+		MovingAverage,
+
+		/// <summary>
+		/// Percentage of profit trailing stop.
+		/// </summary>
+		Percent
+	}
 	private readonly StrategyParam<TrailingModes> _mode;
 	private readonly StrategyParam<int> _delta;
 	private readonly StrategyParam<int> _atrPeriod;
@@ -329,35 +359,4 @@ public class UniversalTrailingStopHedgeStrategy : Strategy
 			}
 		}
 	}
-}
-
-/// <summary>
-/// Supported trailing stop modes.
-/// </summary>
-public enum TrailingModes
-{
-	/// <summary>
-	/// Fixed distance in pips.
-	/// </summary>
-	Pips,
-
-	/// <summary>
-	/// ATR-based trailing stop.
-	/// </summary>
-	Atr,
-
-	/// <summary>
-	/// Parabolic SAR based trailing stop.
-	/// </summary>
-	ParabolicSar,
-
-	/// <summary>
-	/// Moving average based trailing stop.
-	/// </summary>
-	MovingAverage,
-
-	/// <summary>
-	/// Percentage of profit trailing stop.
-	/// </summary>
-	Percent
 }
