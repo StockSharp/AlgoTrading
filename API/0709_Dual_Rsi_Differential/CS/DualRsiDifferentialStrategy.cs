@@ -27,7 +27,7 @@ public class DualRsiDifferentialStrategy : Strategy
 	private readonly StrategyParam<decimal> _rsiDiffLevel;
 	private readonly StrategyParam<bool> _useHoldDays;
 	private readonly StrategyParam<int> _holdDays;
-	private readonly StrategyParam<TpslCondition> _condition;
+	private readonly StrategyParam<TpslConditions> _condition;
 	private readonly StrategyParam<decimal> _takeProfitPerc;
 	private readonly StrategyParam<decimal> _stopLossPerc;
 private readonly StrategyParam<Sides?> _direction;
@@ -41,7 +41,7 @@ private readonly StrategyParam<Sides?> _direction;
 /// <summary>
 /// Take profit and stop loss mode.
 /// </summary>
-public enum TpslCondition
+public enum TpslConditions
 	{
 		None,
 		TP,
@@ -82,7 +82,7 @@ public enum TpslCondition
 	/// <summary>
 	/// Take profit / stop loss mode.
 	/// </summary>
-	public TpslCondition Condition { get => _condition.Value; set => _condition.Value = value; }
+	public TpslConditions Condition { get => _condition.Value; set => _condition.Value = value; }
 
 	/// <summary>
 	/// Take profit percentage.
@@ -126,7 +126,7 @@ public Sides? Direction { get => _direction.Value; set => _direction.Value = val
 		.SetGreaterThanZero()
 		.SetDisplay("Hold Days", "Number of days to hold", "Risk");
 
-		_condition = Param(nameof(Condition), TpslCondition.None)
+		_condition = Param(nameof(Condition), TpslConditions.None)
 		.SetDisplay("TPSL Condition", "Take profit/stop loss mode", "Risk");
 
 		_takeProfitPerc = Param(nameof(TakeProfitPerc), 15m)
@@ -218,7 +218,7 @@ var allowShort = Direction is null or Sides.Sell;
 		return;
 		}
 
-		if (Condition is TpslCondition.TP or TpslCondition.Both)
+		if (Condition is TpslConditions.TP or TpslConditions.Both)
 		{
 		var takePrice = _entryPrice * (1 + TakeProfitPerc / 100m);
 		if (candle.ClosePrice >= takePrice)
@@ -230,7 +230,7 @@ var allowShort = Direction is null or Sides.Sell;
 		}
 		}
 
-		if (Condition is TpslCondition.SL or TpslCondition.Both)
+		if (Condition is TpslConditions.SL or TpslConditions.Both)
 		{
 		var stopPrice = _entryPrice * (1 - StopLossPerc / 100m);
 		if (candle.ClosePrice <= stopPrice)
@@ -261,7 +261,7 @@ var allowShort = Direction is null or Sides.Sell;
 		return;
 		}
 
-		if (Condition is TpslCondition.TP or TpslCondition.Both)
+		if (Condition is TpslConditions.TP or TpslConditions.Both)
 		{
 		var takePrice = _entryPrice * (1 - TakeProfitPerc / 100m);
 		if (candle.ClosePrice <= takePrice)
@@ -273,7 +273,7 @@ var allowShort = Direction is null or Sides.Sell;
 		}
 		}
 
-		if (Condition is TpslCondition.SL or TpslCondition.Both)
+		if (Condition is TpslConditions.SL or TpslConditions.Both)
 		{
 		var stopPrice = _entryPrice * (1 + StopLossPerc / 100m);
 		if (candle.ClosePrice >= stopPrice)

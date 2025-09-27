@@ -39,8 +39,8 @@ public class EmaCrossoverRsiDistanceStrategy : Strategy
 	private SimpleMovingAverage _distanceAverage;
 	private decimal? _prevDistance4013;
 
-	private SignalType _lastSignal;
-	private enum SignalType
+	private SignalTypes _lastSignal;
+	private enum SignalTypes
 	{
 		None,
 		Long,
@@ -228,28 +228,28 @@ public class EmaCrossoverRsiDistanceStrategy : Strategy
 		if (candle.ClosePrice > ema5)
 		{
 		if (longCond && distanceCondition)
-		_lastSignal = SignalType.Long;
+		_lastSignal = SignalTypes.Long;
 		else if (shortCond && distanceCondition)
-		_lastSignal = SignalType.Short;
+		_lastSignal = SignalTypes.Short;
 		else if (neutralCond)
-		_lastSignal = SignalType.Neutral;
+		_lastSignal = SignalTypes.Neutral;
 		else if (greenCond)
-		_lastSignal = SignalType.Green;
+		_lastSignal = SignalTypes.Green;
 		else if (redCond)
-		_lastSignal = SignalType.Red;
+		_lastSignal = SignalTypes.Red;
 		}
 		else
 		{
 		if (longCond)
-		_lastSignal = SignalType.Long;
+		_lastSignal = SignalTypes.Long;
 		else if (shortCond)
-		_lastSignal = SignalType.Short;
+		_lastSignal = SignalTypes.Short;
 		else if (greenCond)
-		_lastSignal = SignalType.Green;
+		_lastSignal = SignalTypes.Green;
 		else if (redCond)
-		_lastSignal = SignalType.Red;
+		_lastSignal = SignalTypes.Red;
 		else
-		_lastSignal = SignalType.Neutral;
+		_lastSignal = SignalTypes.Neutral;
 		}
 
 		ExecuteSignal();
@@ -261,11 +261,11 @@ public class EmaCrossoverRsiDistanceStrategy : Strategy
 
 		switch (_lastSignal)
 		{
-		case SignalType.Long:
+		case SignalTypes.Long:
 		if (Position <= 0)
 		BuyMarket(volume);
 		break;
-		case SignalType.Short:
+		case SignalTypes.Short:
 		if (Position >= 0)
 		SellMarket(volume);
 		break;

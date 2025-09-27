@@ -23,7 +23,7 @@ public class Lanz20BacktestStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _accountSizeUsd;
 	private readonly StrategyParam<decimal> _riskPercent;
-	private readonly StrategyParam<SlProtectionModeOption> _slProtectionMode;
+	private readonly StrategyParam<SlProtectionModeOptions> _slProtectionMode;
 	private readonly StrategyParam<int> _fullCoveragePips;
 	private readonly StrategyParam<decimal> _minBosBreakPips;
 	private readonly StrategyParam<decimal> _rrMultiplier;
@@ -71,7 +71,7 @@ public class Lanz20BacktestStrategy : Strategy
 	/// <summary>
 	/// Stop-loss protection mode.
 	/// </summary>
-	public SlProtectionModeOption SlProtectionMode
+	public SlProtectionModeOptions SlProtectionMode
 	{
 		get => _slProtectionMode.Value;
 		set => _slProtectionMode.Value = value;
@@ -125,7 +125,7 @@ public class Lanz20BacktestStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Risk %", "Risk percentage", "Risk");
 		
-		_slProtectionMode = Param(nameof(SlProtectionMode), SlProtectionModeOption.FullCoverage)
+		_slProtectionMode = Param(nameof(SlProtectionMode), SlProtectionModeOptions.FullCoverage)
 		.SetDisplay("SL Mode", "Stop-loss protection mode", "Risk");
 		
 		_fullCoveragePips = Param(nameof(FullCoveragePips), 12)
@@ -324,9 +324,9 @@ public class Lanz20BacktestStrategy : Strategy
 			var fallbackSl = entryPrice - 5m * _pipSize;
 			var slBase = SlProtectionMode switch
 			{
-				SlProtectionModeOption.FirstSwing => _lastSwingLow ?? fallbackSl,
-				SlProtectionModeOption.SecondSwing => _prevLow ?? fallbackSl,
-				SlProtectionModeOption.FullCoverage => (_olderSwingLow == null || _prevLow == null || _lastSwingLow == null)
+				SlProtectionModeOptions.FirstSwing => _lastSwingLow ?? fallbackSl,
+				SlProtectionModeOptions.SecondSwing => _prevLow ?? fallbackSl,
+				SlProtectionModeOptions.FullCoverage => (_olderSwingLow == null || _prevLow == null || _lastSwingLow == null)
 				? fallbackSl
 				: Math.Min((decimal)_olderSwingLow, Math.Min((decimal)_prevLow, (decimal)_lastSwingLow)) - FullCoveragePips * _pipSize,
 				_ => fallbackSl
@@ -347,9 +347,9 @@ public class Lanz20BacktestStrategy : Strategy
 			var fallbackSl = entryPrice + 5m * _pipSize;
 			var slBase = SlProtectionMode switch
 			{
-				SlProtectionModeOption.FirstSwing => _lastSwingHigh ?? fallbackSl,
-				SlProtectionModeOption.SecondSwing => _prevHigh ?? fallbackSl,
-				SlProtectionModeOption.FullCoverage => (_olderSwingHigh == null || _prevHigh == null || _lastSwingHigh == null)
+				SlProtectionModeOptions.FirstSwing => _lastSwingHigh ?? fallbackSl,
+				SlProtectionModeOptions.SecondSwing => _prevHigh ?? fallbackSl,
+				SlProtectionModeOptions.FullCoverage => (_olderSwingHigh == null || _prevHigh == null || _lastSwingHigh == null)
 				? fallbackSl
 				: Math.Max((decimal)_olderSwingHigh, Math.Max((decimal)_prevHigh, (decimal)_lastSwingHigh)) + FullCoveragePips * _pipSize,
 				_ => fallbackSl
@@ -371,7 +371,7 @@ public class Lanz20BacktestStrategy : Strategy
 /// <summary>
 /// Modes of stop-loss protection.
 /// </summary>
-public enum SlProtectionModeOption
+public enum SlProtectionModeOptions
 {
 	/// <summary>Use last swing.</summary>
 	FirstSwing,

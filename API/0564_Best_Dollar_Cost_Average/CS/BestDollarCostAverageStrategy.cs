@@ -20,7 +20,7 @@ public class BestDollarCostAverageStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _amountInvested;
-	private readonly StrategyParam<DcaInterval> _interval;
+	private readonly StrategyParam<DcaIntervals> _interval;
 	private readonly StrategyParam<DateTimeOffset> _startDate;
 	private readonly StrategyParam<DateTimeOffset> _endDate;
 
@@ -50,7 +50,7 @@ public class BestDollarCostAverageStrategy : Strategy
 	/// <summary>
 	/// Interval for dollar cost averaging.
 	/// </summary>
-	public DcaInterval Interval
+	public DcaIntervals Interval
 	{
 		get => _interval.Value;
 		set => _interval.Value = value;
@@ -77,7 +77,7 @@ public class BestDollarCostAverageStrategy : Strategy
 	/// <summary>
 	/// Period options for DCA.
 	/// </summary>
-	public enum DcaInterval
+	public enum DcaIntervals
 	{
 		Daily,
 		Weekly,
@@ -96,7 +96,7 @@ public class BestDollarCostAverageStrategy : Strategy
 			.SetRange(0.01m, 1000000m)
 			.SetDisplay("Amount", "Amount invested each period", "DCA");
 
-		_interval = Param(nameof(Interval), DcaInterval.Weekly)
+		_interval = Param(nameof(Interval), DcaIntervals.Weekly)
 			.SetDisplay("Interval", "Investment interval", "DCA");
 
 		_startDate = Param(nameof(StartDate), new DateTimeOffset(new DateTime(2018, 1, 1)))
@@ -163,9 +163,9 @@ public class BestDollarCostAverageStrategy : Strategy
 	{
 		return Interval switch
 		{
-			DcaInterval.Daily => current + TimeSpan.FromDays(1),
-			DcaInterval.Weekly => current + TimeSpan.FromDays(7),
-			DcaInterval.Monthly => current.AddMonths(1),
+			DcaIntervals.Daily => current + TimeSpan.FromDays(1),
+			DcaIntervals.Weekly => current + TimeSpan.FromDays(7),
+			DcaIntervals.Monthly => current.AddMonths(1),
 			_ => current,
 		};
 	}

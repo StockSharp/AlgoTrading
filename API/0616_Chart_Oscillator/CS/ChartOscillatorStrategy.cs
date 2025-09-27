@@ -18,14 +18,14 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ChartOscillatorStrategy : Strategy
 {
-	public enum OscillatorChoice
+	public enum OscillatorChoices
 	{
 		Stochastic,
 		Rsi,
 		Mfi
 	}
 
-	private readonly StrategyParam<OscillatorChoice> _choice;
+	private readonly StrategyParam<OscillatorChoices> _choice;
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<int> _kPeriod;
 	private readonly StrategyParam<int> _dPeriod;
@@ -46,7 +46,7 @@ public class ChartOscillatorStrategy : Strategy
 	/// <summary>
 	/// Selected oscillator type.
 	/// </summary>
-	public OscillatorChoice Choice { get => _choice.Value; set => _choice.Value = value; }
+	public OscillatorChoices Choice { get => _choice.Value; set => _choice.Value = value; }
 
 	/// <summary>
 	/// Period for RSI or MFI.
@@ -93,7 +93,7 @@ public class ChartOscillatorStrategy : Strategy
 	/// </summary>
 	public ChartOscillatorStrategy()
 	{
-		_choice = Param(nameof(Choice), OscillatorChoice.Stochastic)
+		_choice = Param(nameof(Choice), OscillatorChoices.Stochastic)
 			.SetDisplay("Oscillator", "Type of oscillator to use", "General");
 
 		_length = Param(nameof(Length), 14)
@@ -146,7 +146,7 @@ public class ChartOscillatorStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		if (Choice == OscillatorChoice.Stochastic)
+		if (Choice == OscillatorChoices.Stochastic)
 		{
 			_stochastic = new StochasticOscillator
 			{
@@ -155,7 +155,7 @@ public class ChartOscillatorStrategy : Strategy
 				D = { Length = DPeriod }
 			};
 		}
-		else if (Choice == OscillatorChoice.Rsi)
+		else if (Choice == OscillatorChoices.Rsi)
 		{
 			_rsi = new RelativeStrengthIndex { Length = Length };
 		}
@@ -166,9 +166,9 @@ public class ChartOscillatorStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 
-		if (Choice == OscillatorChoice.Stochastic)
+		if (Choice == OscillatorChoices.Stochastic)
 			subscription.BindEx(_stochastic, ProcessStochastic).Start();
-		else if (Choice == OscillatorChoice.Rsi)
+		else if (Choice == OscillatorChoices.Rsi)
 			subscription.Bind(_rsi, ProcessRsi).Start();
 		else
 			subscription.Bind(_mfi, ProcessMfi).Start();
@@ -182,9 +182,9 @@ public class ChartOscillatorStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			if (Choice == OscillatorChoice.Stochastic)
+			if (Choice == OscillatorChoices.Stochastic)
 				DrawIndicator(area, _stochastic);
-			else if (Choice == OscillatorChoice.Rsi)
+			else if (Choice == OscillatorChoices.Rsi)
 				DrawIndicator(area, _rsi);
 			else
 				DrawIndicator(area, _mfi);

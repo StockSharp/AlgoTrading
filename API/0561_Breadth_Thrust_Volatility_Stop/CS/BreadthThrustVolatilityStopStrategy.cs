@@ -180,19 +180,19 @@ public class BreadthThrustVolatilityStopStrategy : Strategy
 		.Start();
 		
 		SubscribeCandles(CandleType, true, AdvancingStocks)
-		.Bind(c => ProcessBreadth(c, BreadthType.AdvancingStocks))
+		.Bind(c => ProcessBreadth(c, BreadthTypes.AdvancingStocks))
 		.Start();
 		
 		SubscribeCandles(CandleType, true, DecliningStocks)
-		.Bind(c => ProcessBreadth(c, BreadthType.DecliningStocks))
+		.Bind(c => ProcessBreadth(c, BreadthTypes.DecliningStocks))
 		.Start();
 		
 		SubscribeCandles(CandleType, true, AdvancingVolume)
-		.Bind(c => ProcessBreadth(c, BreadthType.AdvancingVolume))
+		.Bind(c => ProcessBreadth(c, BreadthTypes.AdvancingVolume))
 		.Start();
 		
 		SubscribeCandles(CandleType, true, DecliningVolume)
-		.Bind(c => ProcessBreadth(c, BreadthType.DecliningVolume))
+		.Bind(c => ProcessBreadth(c, BreadthTypes.DecliningVolume))
 		.Start();
 		
 		var area = CreateChartArea();
@@ -204,7 +204,7 @@ public class BreadthThrustVolatilityStopStrategy : Strategy
 		}
 	}
 	
-	private enum BreadthType
+	private enum BreadthTypes
 	{
 		AdvancingStocks,
 		DecliningStocks,
@@ -212,23 +212,23 @@ public class BreadthThrustVolatilityStopStrategy : Strategy
 		DecliningVolume
 	}
 	
-	private void ProcessBreadth(ICandleMessage candle, BreadthType type)
+	private void ProcessBreadth(ICandleMessage candle, BreadthTypes type)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;
 		
 		switch (type)
 		{
-		case BreadthType.AdvancingStocks:
+		case BreadthTypes.AdvancingStocks:
 		_advancingStocksValue = candle.ClosePrice;
 		break;
-	case BreadthType.DecliningStocks:
+	case BreadthTypes.DecliningStocks:
 	_decliningStocksValue = candle.ClosePrice;
 	break;
-case BreadthType.AdvancingVolume:
+case BreadthTypes.AdvancingVolume:
 _advancingVolumeValue = candle.ClosePrice;
 break;
-case BreadthType.DecliningVolume:
+case BreadthTypes.DecliningVolume:
 _decliningVolumeValue = candle.ClosePrice;
 break;
 }

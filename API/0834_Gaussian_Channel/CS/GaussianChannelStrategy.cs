@@ -14,14 +14,14 @@ namespace StockSharp.Samples.Strategies;
 
 
 
-public enum LineSelection
+public enum LineSelections
 {
 	Filter,
 	Upper,
 	Lower
 }
 
-public enum CrossDirection
+public enum CrossDirections
 {
 	CrossUp,
 	CrossDown
@@ -35,10 +35,10 @@ public class GaussianChannelStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<decimal> _multiplier;
-	private readonly StrategyParam<LineSelection> _longLine;
-	private readonly StrategyParam<LineSelection> _shortLine;
-	private readonly StrategyParam<CrossDirection> _longDirection;
-	private readonly StrategyParam<CrossDirection> _shortDirection;
+	private readonly StrategyParam<LineSelections> _longLine;
+	private readonly StrategyParam<LineSelections> _shortLine;
+	private readonly StrategyParam<CrossDirections> _longDirection;
+	private readonly StrategyParam<CrossDirections> _shortDirection;
 	private readonly StrategyParam<bool> _tradeLong;
 	private readonly StrategyParam<bool> _tradeShort;
 	private readonly StrategyParam<bool> _reverseOnOpp;
@@ -67,14 +67,14 @@ public class GaussianChannelStrategy : Strategy
 		_multiplier = Param(nameof(Multiplier), 1.414m)
 		.SetDisplay("ATR Mult", "ATR multiplier", "Channel");
 
-		_longLine = Param(nameof(LongLine), LineSelection.Filter)
+		_longLine = Param(nameof(LongLine), LineSelections.Filter)
 		.SetDisplay("Long line", "Line used for long entries", "Signals");
-		_shortLine = Param(nameof(ShortLine), LineSelection.Filter)
+		_shortLine = Param(nameof(ShortLine), LineSelections.Filter)
 		.SetDisplay("Short line", "Line used for short entries", "Signals");
 
-		_longDirection = Param(nameof(LongDirection), CrossDirection.CrossUp)
+		_longDirection = Param(nameof(LongDirection), CrossDirections.CrossUp)
 		.SetDisplay("Long direction", "Price cross direction for long entry", "Signals");
-		_shortDirection = Param(nameof(ShortDirection), CrossDirection.CrossDown)
+		_shortDirection = Param(nameof(ShortDirection), CrossDirections.CrossDown)
 		.SetDisplay("Short direction", "Price cross direction for short entry", "Signals");
 
 		_tradeLong = Param(nameof(TradeLong), true)
@@ -107,25 +107,25 @@ public class GaussianChannelStrategy : Strategy
 		set => _multiplier.Value = value;
 	}
 
-	public LineSelection LongLine
+	public LineSelections LongLine
 	{
 		get => _longLine.Value;
 		set => _longLine.Value = value;
 	}
 
-	public LineSelection ShortLine
+	public LineSelections ShortLine
 	{
 		get => _shortLine.Value;
 		set => _shortLine.Value = value;
 	}
 
-	public CrossDirection LongDirection
+	public CrossDirections LongDirection
 	{
 		get => _longDirection.Value;
 		set => _longDirection.Value = value;
 	}
 
-	public CrossDirection ShortDirection
+	public CrossDirections ShortDirection
 	{
 		get => _shortDirection.Value;
 		set => _shortDirection.Value = value;
@@ -175,12 +175,12 @@ public class GaussianChannelStrategy : Strategy
 		StartProtection();
 	}
 
-	private static decimal SelectLine(LineSelection type, decimal mid, decimal upper, decimal lower)
+	private static decimal SelectLine(LineSelections type, decimal mid, decimal upper, decimal lower)
 	{
 		return type switch
 		{
-			LineSelection.Upper => upper,
-			LineSelection.Lower => lower,
+			LineSelections.Upper => upper,
+			LineSelections.Lower => lower,
 			_ => mid,
 		};
 	}
@@ -228,11 +228,11 @@ public class GaussianChannelStrategy : Strategy
 		else if (_barsSinceShortDown != int.MaxValue)
 			_barsSinceShortDown++;
 
-		var longCond = LongDirection == CrossDirection.CrossUp
+		var longCond = LongDirection == CrossDirections.CrossUp
 		? longUp || (price > longLine && _barsSinceLongUp <= Lookback)
 		: longDown || (price < longLine && _barsSinceLongDown <= Lookback);
 
-		var shortCond = ShortDirection == CrossDirection.CrossUp
+		var shortCond = ShortDirection == CrossDirections.CrossUp
 		? shortUp || (price > shortLine && _barsSinceShortUp <= Lookback)
 		: shortDown || (price < shortLine && _barsSinceShortDown <= Lookback);
 

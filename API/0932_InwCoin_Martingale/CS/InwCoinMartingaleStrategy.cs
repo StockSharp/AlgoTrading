@@ -17,9 +17,9 @@ namespace StockSharp.Samples.Strategies;
 /// Martingale strategy for Bitcoin with optional entry signals.
 /// </summary>
 public class InwCoinMartingaleStrategy : Strategy {
-	private enum StartLogic { MacdLine, StochasticRsi, AtrChannel }
+	private enum StartLogics { MacdLine, StochasticRsi, AtrChannel }
 
-	private readonly StrategyParam<StartLogic> _startLogic;
+	private readonly StrategyParam<StartLogics> _startLogic;
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 	private readonly StrategyParam<decimal> _martingalePercent;
 	private readonly StrategyParam<decimal> _martingaleMultiplier;
@@ -34,7 +34,7 @@ public class InwCoinMartingaleStrategy : Strategy {
 	/// <summary>
 	/// Entry logic selector.
 	/// </summary>
-	public StartLogic EntryLogic {
+	public StartLogics EntryLogic {
 	  get => _startLogic.Value;
 	  set => _startLogic.Value = value;
 	}
@@ -76,7 +76,7 @@ public class InwCoinMartingaleStrategy : Strategy {
 	/// </summary>
 	public InwCoinMartingaleStrategy() {
 	  _startLogic =
-	Param(nameof(EntryLogic), StartLogic.MacdLine)
+	Param(nameof(EntryLogic), StartLogics.MacdLine)
 	    .SetDisplay("Start Logic", "Entry signal selector", "Parameters");
 
 	  _takeProfitPercent =
@@ -157,7 +157,7 @@ public class InwCoinMartingaleStrategy : Strategy {
 	  bool buySignal = false;
 
 	  switch (EntryLogic) {
-	  case StartLogic.MacdLine: {
+	  case StartLogics.MacdLine: {
 	    var macd = (MovingAverageConvergenceDivergenceSignalValue)macdVal;
 	    if (macd.Macd is decimal m && macd.Signal is decimal s) {
 	var hist = m - s;
@@ -166,7 +166,7 @@ public class InwCoinMartingaleStrategy : Strategy {
 	    }
 	    break;
 	  }
-	  case StartLogic.StochasticRsi: {
+	  case StartLogics.StochasticRsi: {
 	    var stoch = (StochasticOscillatorValue)stochVal;
 	    if (stoch.D is decimal d && stoch.K is decimal k) {
 	if (_isFirst) {
@@ -178,7 +178,7 @@ public class InwCoinMartingaleStrategy : Strategy {
 	    }
 	    break;
 	  }
-	  case StartLogic.AtrChannel: {
+	  case StartLogics.AtrChannel: {
 	    if (emaVal.GetValue<decimal>() is decimal e && atrVal.GetValue<decimal>()
 							 is decimal a) {
 	var upper = e + a;

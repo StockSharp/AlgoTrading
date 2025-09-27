@@ -21,12 +21,12 @@ public class DoubleMacdStrategy : Strategy
 	private readonly StrategyParam<int> _fastLength1;
 	private readonly StrategyParam<int> _slowLength1;
 	private readonly StrategyParam<int> _signalLength1;
-	private readonly StrategyParam<MaType> _maType1;
+	private readonly StrategyParam<MaTypes> _maType1;
 	
 	private readonly StrategyParam<int> _fastLength2;
 	private readonly StrategyParam<int> _slowLength2;
 	private readonly StrategyParam<int> _signalLength2;
-	private readonly StrategyParam<MaType> _maType2;
+	private readonly StrategyParam<MaTypes> _maType2;
 	
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
@@ -64,7 +64,7 @@ public class DoubleMacdStrategy : Strategy
 	/// <summary>
 	/// Moving average type for first MACD.
 	/// </summary>
-	public MaType MaType1
+	public MaTypes MaType1
 	{
 		get => _maType1.Value;
 		set => _maType1.Value = value;
@@ -100,7 +100,7 @@ public class DoubleMacdStrategy : Strategy
 	/// <summary>
 	/// Moving average type for second MACD.
 	/// </summary>
-	public MaType MaType2
+	public MaTypes MaType2
 	{
 		get => _maType2.Value;
 		set => _maType2.Value = value;
@@ -144,7 +144,7 @@ public class DoubleMacdStrategy : Strategy
 		.SetDisplay("Signal Length 1", "Signal length for first MACD", "MACD 1")
 		.SetCanOptimize(true);
 		
-		_maType1 = Param(nameof(MaType1), MaType.Ema)
+		_maType1 = Param(nameof(MaType1), MaTypes.Ema)
 		.SetDisplay("MA Type 1", "MA type for first MACD", "MACD 1");
 		
 		_fastLength2 = Param(nameof(FastLength2), 24)
@@ -162,7 +162,7 @@ public class DoubleMacdStrategy : Strategy
 		.SetDisplay("Signal Length 2", "Signal length for second MACD", "MACD 2")
 		.SetCanOptimize(true);
 		
-		_maType2 = Param(nameof(MaType2), MaType.Ema)
+		_maType2 = Param(nameof(MaType2), MaTypes.Ema)
 		.SetDisplay("MA Type 2", "MA type for second MACD", "MACD 2");
 		
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
@@ -239,7 +239,7 @@ public class DoubleMacdStrategy : Strategy
 		}
 	}
 	
-	private static MovingAverageConvergenceDivergenceSignal CreateMacd(int fast, int slow, int signal, MaType type)
+	private static MovingAverageConvergenceDivergenceSignal CreateMacd(int fast, int slow, int signal, MaTypes type)
 	{
 		return new()
 		{
@@ -252,11 +252,11 @@ public class DoubleMacdStrategy : Strategy
 		};
 	}
 	
-	private static LengthIndicator<decimal> CreateMa(MaType type, int length)
+	private static LengthIndicator<decimal> CreateMa(MaTypes type, int length)
 	{
 		return type switch
 		{
-			MaType.Sma => new SimpleMovingAverage { Length = length },
+			MaTypes.Sma => new SimpleMovingAverage { Length = length },
 			_ => new ExponentialMovingAverage { Length = length },
 		};
 	}
@@ -264,7 +264,7 @@ public class DoubleMacdStrategy : Strategy
 	/// <summary>
 	/// Supported moving average types.
 	/// </summary>
-	public enum MaType
+	public enum MaTypes
 	{
 		/// <summary>
 		/// Exponential moving average.

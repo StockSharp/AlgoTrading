@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class IuBiggerThanRangeStrategy : Strategy
 {
-	private enum StopLossMethod
+	private enum StopLossMethods
 	{
 		PreviousHighLow,
 		Atr,
@@ -27,7 +27,7 @@ public class IuBiggerThanRangeStrategy : Strategy
 
 	private readonly StrategyParam<int> _lookbackPeriod;
 	private readonly StrategyParam<int> _riskToReward;
-	private readonly StrategyParam<StopLossMethod> _stopLossMethod;
+	private readonly StrategyParam<StopLossMethods> _stopLossMethod;
 	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<decimal> _atrFactor;
 	private readonly StrategyParam<int> _swingLength;
@@ -68,7 +68,7 @@ public class IuBiggerThanRangeStrategy : Strategy
 	/// <summary>
 	/// Stop loss calculation method.
 	/// </summary>
-	public StopLossMethod StopLoss
+	public StopLossMethods StopLoss
 	{
 		get => _stopLossMethod.Value;
 		set => _stopLossMethod.Value = value;
@@ -125,7 +125,7 @@ public class IuBiggerThanRangeStrategy : Strategy
 			.SetDisplay("Risk To Reward", "Risk to reward ratio", "Parameters")
 			.SetCanOptimize(true);
 
-		_stopLossMethod = Param(nameof(StopLoss), StopLossMethod.PreviousHighLow)
+		_stopLossMethod = Param(nameof(StopLoss), StopLossMethods.PreviousHighLow)
 			.SetDisplay("Stop Loss Method", "Stop loss calculation method", "Risk Management");
 
 		_atrLength = Param(nameof(AtrLength), 14)
@@ -276,8 +276,8 @@ public class IuBiggerThanRangeStrategy : Strategy
 	{
 		return StopLoss switch
 		{
-			StopLossMethod.PreviousHighLow => isLong ? _prevCandleLow : _prevCandleHigh,
-			StopLossMethod.Atr => isLong ? _entryPrice - atrValue * AtrFactor : _entryPrice + atrValue * AtrFactor,
+			StopLossMethods.PreviousHighLow => isLong ? _prevCandleLow : _prevCandleHigh,
+			StopLossMethods.Atr => isLong ? _entryPrice - atrValue * AtrFactor : _entryPrice + atrValue * AtrFactor,
 			_ => isLong ? swingLow : swingHigh,
 		};
 	}

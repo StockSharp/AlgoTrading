@@ -18,26 +18,26 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BoilerplateConfigurableStrategy : Strategy
 {
-	public enum StrategyMode
+	public enum StrategyModes
 	{
 		Squeeze,
 		SmaCross
 	}
 
-       public enum RrMode
+       public enum RrModes
        {
                Atr,
                Static
        }
 
-	private readonly StrategyParam<StrategyMode> _mode;
+	private readonly StrategyParam<StrategyModes> _mode;
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<decimal> _wideMultiplier;
 	private readonly StrategyParam<decimal> _narrowMultiplier;
        private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<bool> _tradeInverse;
 	private readonly StrategyParam<decimal> _maxLossPerc;
-	private readonly StrategyParam<RrMode> _rrMode;
+	private readonly StrategyParam<RrModes> _rrMode;
 	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<decimal> _staticRr;
@@ -74,14 +74,14 @@ public class BoilerplateConfigurableStrategy : Strategy
 	private decimal _peakEquity;
 	private bool _drawdownBreached;
 
-	public StrategyMode Mode { get => _mode.Value; set => _mode.Value = value; }
+	public StrategyModes Mode { get => _mode.Value; set => _mode.Value = value; }
 	public int Length { get => _length.Value; set => _length.Value = value; }
 	public decimal WideMultiplier { get => _wideMultiplier.Value; set => _wideMultiplier.Value = value; }
 	public decimal NarrowMultiplier { get => _narrowMultiplier.Value; set => _narrowMultiplier.Value = value; }
 	public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 	public bool TradeInverse { get => _tradeInverse.Value; set => _tradeInverse.Value = value; }
 	public decimal MaxLossPerc { get => _maxLossPerc.Value; set => _maxLossPerc.Value = value; }
-	public RrMode RiskRewardMode { get => _rrMode.Value; set => _rrMode.Value = value; }
+	public RrModes RiskRewardMode { get => _rrMode.Value; set => _rrMode.Value = value; }
 	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
 	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
 	public decimal StaticRr { get => _staticRr.Value; set => _staticRr.Value = value; }
@@ -104,7 +104,7 @@ public class BoilerplateConfigurableStrategy : Strategy
 
 	public BoilerplateConfigurableStrategy()
 	{
-		_mode = Param(nameof(Mode), StrategyMode.Squeeze)
+		_mode = Param(nameof(Mode), StrategyModes.Squeeze)
 			.SetDisplay("Strategy Type", "Entry strategy mode", "General");
 
 		_length = Param(nameof(Length), 20)
@@ -129,7 +129,7 @@ public class BoilerplateConfigurableStrategy : Strategy
 			.SetRange(0.0001m, 1m)
 			.SetDisplay("Max Loss %", "Max loss per trade", "Risk");
 
-		_rrMode = Param(nameof(RiskRewardMode), RrMode.Atr)
+		_rrMode = Param(nameof(RiskRewardMode), RrModes.Atr)
 			.SetDisplay("RR Mode", "Risk reward mode", "Risk");
 
 		_atrLength = Param(nameof(AtrLength), 14)
@@ -276,11 +276,11 @@ public class BoilerplateConfigurableStrategy : Strategy
 
 		switch (Mode)
 		{
-			case StrategyMode.SmaCross:
+			case StrategyModes.SmaCross:
 				longCondition = _prevFast <= _prevSlow && fastVal > slowVal;
 				shortCondition = _prevFast >= _prevSlow && fastVal < slowVal;
 				break;
-			case StrategyMode.Squeeze:
+			case StrategyModes.Squeeze:
 				var squeeze = hlc3 < upper2 && hlc3 > lower2;
 				longCondition = _prevHlc3 <= upper1 && hlc3 > upper1 && squeeze;
 				shortCondition = _prevHlc3 >= lower1 && hlc3 < lower1 && squeeze;
@@ -317,7 +317,7 @@ public class BoilerplateConfigurableStrategy : Strategy
 		_entryPrice = price;
 		_isLong = isLong;
 
-		var stop = RiskRewardMode == RrMode.Atr ? atr * AtrMultiplier : price * MaxLossPerc;
+		var stop = RiskRewardMode == RrModes.Atr ? atr * AtrMultiplier : price * MaxLossPerc;
 		var take = stop * StaticRr;
 
 		if (isLong)

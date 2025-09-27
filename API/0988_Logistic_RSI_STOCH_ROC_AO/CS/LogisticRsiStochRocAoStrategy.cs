@@ -22,7 +22,7 @@ public class LogisticRsiStochRocAoStrategy : Strategy
 	/// <summary>
 	/// Indicator source options.
 	/// </summary>
-	public enum IndicatorSource
+	public enum IndicatorSources
 	{
 		AwesomeOscillator,
 		LogisticDominance,
@@ -31,7 +31,7 @@ public class LogisticRsiStochRocAoStrategy : Strategy
 		Stochastic
 	}
 
-	private readonly StrategyParam<IndicatorSource> _indicator;
+	private readonly StrategyParam<IndicatorSources> _indicator;
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<int> _lenLd;
 	private readonly StrategyParam<int> _lenRoc;
@@ -54,7 +54,7 @@ public class LogisticRsiStochRocAoStrategy : Strategy
 	/// <summary>
 	/// Selected indicator source.
 	/// </summary>
-	public IndicatorSource Indicator
+	public IndicatorSources Indicator
 	{
 		get => _indicator.Value;
 		set => _indicator.Value = value;
@@ -119,7 +119,7 @@ public class LogisticRsiStochRocAoStrategy : Strategy
 	/// </summary>
 	public LogisticRsiStochRocAoStrategy()
 	{
-		_indicator = Param(nameof(Indicator), IndicatorSource.LogisticDominance)
+		_indicator = Param(nameof(Indicator), IndicatorSources.LogisticDominance)
 						 .SetDisplay("Indicator", "Source indicator", "General");
 
 		_length = Param(nameof(Length), 13).SetDisplay("Length", "Logistic map length", "General").SetCanOptimize(true);
@@ -180,12 +180,12 @@ public class LogisticRsiStochRocAoStrategy : Strategy
 		decimal r;
 		switch (Indicator)
 		{
-		case IndicatorSource.AwesomeOscillator:
+		case IndicatorSources.AwesomeOscillator:
 			if (!aoValue.IsFinal)
 				return;
 			r = aoValue.ToDecimal();
 			break;
-		case IndicatorSource.LogisticDominance:
+		case IndicatorSources.LogisticDominance:
 			if (!rocLdValue.IsFinal)
 				return;
 			var ld = rocLdValue.ToDecimal();
@@ -193,17 +193,17 @@ public class LogisticRsiStochRocAoStrategy : Strategy
 			var pos = LogisticMap(candle.ClosePrice, ld, highest);
 			r = -neg - pos;
 			break;
-		case IndicatorSource.RateOfChange:
+		case IndicatorSources.RateOfChange:
 			if (!rocValue.IsFinal)
 				return;
 			r = rocValue.ToDecimal();
 			break;
-		case IndicatorSource.RelativeStrengthIndex:
+		case IndicatorSources.RelativeStrengthIndex:
 			if (!rsiValue.IsFinal)
 				return;
 			r = rsiValue.ToDecimal() / 100m - 0.5m;
 			break;
-		case IndicatorSource.Stochastic:
+		case IndicatorSources.Stochastic:
 			if (!stochValue.IsFinal)
 				return;
 			var st = (StochasticOscillatorValue)stochValue;

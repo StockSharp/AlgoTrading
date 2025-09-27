@@ -20,7 +20,7 @@ public class HullSuiteByMRSStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<HullMode> _mode;
+	private readonly StrategyParam<HullModes> _mode;
 
 	private IIndicator _finalMa;
 	private ExponentialMovingAverage _emaFast;
@@ -49,12 +49,12 @@ public class HullSuiteByMRSStrategy : Strategy
 	/// <summary>
 	/// Hull variation.
 	/// </summary>
-	public HullMode Mode { get => _mode.Value; set => _mode.Value = value; }
+	public HullModes Mode { get => _mode.Value; set => _mode.Value = value; }
 
 	/// <summary>
 	/// Hull variation options.
 	/// </summary>
-	public enum HullMode
+	public enum HullModes
 	{
 		Hma,
 		Ehma,
@@ -73,7 +73,7 @@ public class HullSuiteByMRSStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "MA length", "Parameters");
 
-		_mode = Param(nameof(Mode), HullMode.Hma)
+		_mode = Param(nameof(Mode), HullModes.Hma)
 			.SetDisplay("Mode", "Hull variation", "Parameters");
 	}
 
@@ -102,13 +102,13 @@ public class HullSuiteByMRSStrategy : Strategy
 
 		switch (Mode)
 		{
-			case HullMode.Hma:
+			case HullModes.Hma:
 			{
 				_finalMa = new HullMovingAverage { Length = Length };
 				subscription.Bind(_finalMa, ProcessHma).Start();
 				break;
 			}
-			case HullMode.Ehma:
+			case HullModes.Ehma:
 			{
 				_emaFast = new ExponentialMovingAverage { Length = Math.Max(1, Length / 2) };
 				_emaSlow = new ExponentialMovingAverage { Length = Length };
@@ -117,7 +117,7 @@ public class HullSuiteByMRSStrategy : Strategy
 				subscription.Bind(_emaFast, _emaSlow, ProcessEhma).Start();
 				break;
 			}
-			case HullMode.Thma:
+			case HullModes.Thma:
 			{
 				_wma1 = new WeightedMovingAverage { Length = Math.Max(1, Length / 3) };
 				_wma2 = new WeightedMovingAverage { Length = Math.Max(1, Length / 2) };

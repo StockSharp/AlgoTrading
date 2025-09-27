@@ -13,7 +13,7 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum SpreadBasis
+public enum SpreadBases
 {
 	HighYieldSpread,
 	Vix
@@ -27,7 +27,7 @@ public enum SpreadBasis
 /// </summary>
 public class HighYieldSpreadSmaFilterStrategy : Strategy
 {
-	private readonly StrategyParam<SpreadBasis> _basis;
+	private readonly StrategyParam<SpreadBases> _basis;
 	private readonly StrategyParam<decimal> _threshold;
 	private readonly StrategyParam<bool> _isLong;
 	private readonly StrategyParam<int> _holdingPeriod;
@@ -43,7 +43,7 @@ public class HighYieldSpreadSmaFilterStrategy : Strategy
 	/// <summary>
 	/// Spread source selection.
 	/// </summary>
-	public SpreadBasis Basis
+	public SpreadBases Basis
 	{
 		get => _basis.Value;
 		set => _basis.Value = value;
@@ -108,7 +108,7 @@ public class HighYieldSpreadSmaFilterStrategy : Strategy
 	/// </summary>
 	public HighYieldSpreadSmaFilterStrategy()
 	{
-		_basis = Param(nameof(Basis), SpreadBasis.HighYieldSpread)
+		_basis = Param(nameof(Basis), SpreadBases.HighYieldSpread)
 			.SetDisplay("Basis", "Spread source", "General");
 
 		_threshold = Param(nameof(Threshold), 5m)
@@ -186,7 +186,7 @@ public class HighYieldSpreadSmaFilterStrategy : Strategy
 
 	private Security CreateSpreadSecurity()
 	{
-		var id = Basis == SpreadBasis.HighYieldSpread ? "BAMLH0A0HYM2@FRED" : "VIX@CBOE";
+		var id = Basis == SpreadBases.HighYieldSpread ? "BAMLH0A0HYM2@FRED" : "VIX@CBOE";
 		return new Security { Id = id };
 	}
 

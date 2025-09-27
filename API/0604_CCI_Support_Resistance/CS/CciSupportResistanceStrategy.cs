@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class CciSupportResistanceStrategy : Strategy
 {
-private enum TrendMode
+private enum TrendModes
 {
 Cross,
 Slope
@@ -30,7 +30,7 @@ private readonly StrategyParam<int> _leftPivot;
 private readonly StrategyParam<int> _rightPivot;
 private readonly StrategyParam<decimal> _buffer;
 private readonly StrategyParam<bool> _trendMatter;
-private readonly StrategyParam<TrendMode> _trendType;
+private readonly StrategyParam<TrendModes> _trendType;
 private readonly StrategyParam<int> _slowMaLength;
 private readonly StrategyParam<int> _fastMaLength;
 private readonly StrategyParam<int> _slopeLength;
@@ -105,7 +105,7 @@ set => _trendMatter.Value = value;
 /// <summary>
 /// Trend detection mode.
 /// </summary>
-public TrendMode TrendType
+public TrendModes TrendType
 {
 get => _trendType.Value;
 set => _trendType.Value = value;
@@ -189,7 +189,7 @@ _buffer = Param(nameof(Buffer), 10m)
 _trendMatter = Param(nameof(TrendMatter), true)
 .SetDisplay("Trend Filter", "Use trend filter", "Trend");
 
-_trendType = Param(nameof(TrendType), TrendMode.Cross)
+_trendType = Param(nameof(TrendType), TrendModes.Cross)
 .SetDisplay("Trend Type", "Cross or slope", "Trend");
 
 _slowMaLength = Param(nameof(SlowMaLength), 100)
@@ -311,7 +311,7 @@ if (_slowValues.Count > SlopeLength)
 _slowValues.Dequeue();
 
 var trend = _trendState;
-if (TrendType == TrendMode.Cross)
+if (TrendType == TrendModes.Cross)
 {
 trend = emaFastValue > emaSlowValue ? 1 : emaFastValue < emaSlowValue ? -1 : _trendState;
 }

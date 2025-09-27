@@ -18,8 +18,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class DskyzDafeMatrixAtrPrecisionStrategy : Strategy
 {
-	private readonly StrategyParam<MovingAverageType> _fastMaType;
-	private readonly StrategyParam<MovingAverageType> _slowMaType;
+	private readonly StrategyParam<MovingAverageTypes> _fastMaType;
+	private readonly StrategyParam<MovingAverageTypes> _slowMaType;
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<int> _atrPeriod;
@@ -49,7 +49,7 @@ public class DskyzDafeMatrixAtrPrecisionStrategy : Strategy
 	/// <summary>
 	/// Moving average type selection.
 	/// </summary>
-	public enum MovingAverageType
+	public enum MovingAverageTypes
 	{
 		SMA,
 		EMA,
@@ -69,10 +69,10 @@ public class DskyzDafeMatrixAtrPrecisionStrategy : Strategy
 	/// </summary>
 	public DskyzDafeMatrixAtrPrecisionStrategy()
 	{
-		_fastMaType = Param(nameof(FastMaType), MovingAverageType.SMA)
+		_fastMaType = Param(nameof(FastMaType), MovingAverageTypes.SMA)
 						  .SetDisplay("Fast MA Type", "Type of fast moving average", "Moving Averages");
 
-		_slowMaType = Param(nameof(SlowMaType), MovingAverageType.SMA)
+		_slowMaType = Param(nameof(SlowMaType), MovingAverageTypes.SMA)
 						  .SetDisplay("Slow MA Type", "Type of slow moving average", "Moving Averages");
 
 		_fastLength = Param(nameof(FastLength), 9)
@@ -130,7 +130,7 @@ public class DskyzDafeMatrixAtrPrecisionStrategy : Strategy
 	/// <summary>
 	/// Fast MA type.
 	/// </summary>
-	public MovingAverageType FastMaType
+	public MovingAverageTypes FastMaType
 	{
 		get => _fastMaType.Value;
 		set => _fastMaType.Value = value;
@@ -139,7 +139,7 @@ public class DskyzDafeMatrixAtrPrecisionStrategy : Strategy
 	/// <summary>
 	/// Slow MA type.
 	/// </summary>
-	public MovingAverageType SlowMaType
+	public MovingAverageTypes SlowMaType
 	{
 		get => _slowMaType.Value;
 		set => _slowMaType.Value = value;
@@ -315,19 +315,19 @@ public class DskyzDafeMatrixAtrPrecisionStrategy : Strategy
 		}
 	}
 
-	private static IIndicator CreateMovingAverage(MovingAverageType type, int length)
+	private static IIndicator CreateMovingAverage(MovingAverageTypes type, int length)
 	{
-		return type switch { MovingAverageType.SMA => new SimpleMovingAverage { Length = length },
-							 MovingAverageType.EMA => new ExponentialMovingAverage { Length = length },
-							 MovingAverageType.SMMA => new SmoothedMovingAverage { Length = length },
-							 MovingAverageType.HMA => new HullMovingAverage { Length = length },
-							 MovingAverageType.TEMA => new TripleExponentialMovingAverage { Length = length },
-							 MovingAverageType.WMA => new WeightedMovingAverage { Length = length },
-							 MovingAverageType.VWMA => new VolumeWeightedMovingAverage { Length = length },
-							 MovingAverageType.ZLEMA => new ZeroLagExponentialMovingAverage { Length = length },
-							 MovingAverageType.ALMA => new ArnaudLegouxMovingAverage { Length = length },
-							 MovingAverageType.KAMA => new KaufmanAdaptiveMovingAverage { Length = length },
-							 MovingAverageType.DEMA => new DoubleExponentialMovingAverage { Length = length },
+		return type switch { MovingAverageTypes.SMA => new SimpleMovingAverage { Length = length },
+							 MovingAverageTypes.EMA => new ExponentialMovingAverage { Length = length },
+							 MovingAverageTypes.SMMA => new SmoothedMovingAverage { Length = length },
+							 MovingAverageTypes.HMA => new HullMovingAverage { Length = length },
+							 MovingAverageTypes.TEMA => new TripleExponentialMovingAverage { Length = length },
+							 MovingAverageTypes.WMA => new WeightedMovingAverage { Length = length },
+							 MovingAverageTypes.VWMA => new VolumeWeightedMovingAverage { Length = length },
+							 MovingAverageTypes.ZLEMA => new ZeroLagExponentialMovingAverage { Length = length },
+							 MovingAverageTypes.ALMA => new ArnaudLegouxMovingAverage { Length = length },
+							 MovingAverageTypes.KAMA => new KaufmanAdaptiveMovingAverage { Length = length },
+							 MovingAverageTypes.DEMA => new DoubleExponentialMovingAverage { Length = length },
 							 _ => new SimpleMovingAverage { Length = length } };
 	}
 

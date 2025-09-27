@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class LinearContinuationStrategy : Strategy
 {
-	private readonly StrategyParam<MovingAverageTypeEnum> _maType;
+	private readonly StrategyParam<MovingAverageTypes> _maType;
 	private readonly StrategyParam<int> _ma1Period;
 	private readonly StrategyParam<int> _ma2Period;
 	private readonly StrategyParam<int> _ma3Period;
@@ -29,7 +29,7 @@ public class LinearContinuationStrategy : Strategy
 	/// <summary>
 	/// Moving average type (SMA or EMA).
 	/// </summary>
-	public MovingAverageTypeEnum MaType
+	public MovingAverageTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -85,7 +85,7 @@ public class LinearContinuationStrategy : Strategy
 	/// </summary>
 	public LinearContinuationStrategy()
 	{
-		_maType = Param(nameof(MaType), MovingAverageTypeEnum.Simple)
+		_maType = Param(nameof(MaType), MovingAverageTypes.Simple)
 			.SetDisplay("MA Type", "Moving average type", "General");
 
 		_ma1Period = Param(nameof(Ma1Period), 200)
@@ -161,12 +161,12 @@ public class LinearContinuationStrategy : Strategy
 		return AggressiveMode ? 1 : (int)Math.Round(period / 4.669m) + 1;
 	}
 
-	private static IIndicator CreateMa(MovingAverageTypeEnum type, int length)
+	private static IIndicator CreateMa(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypeEnum.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageTypeEnum.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
 			_ => throw new ArgumentOutOfRangeException(nameof(type), type, null),
 		};
 	}
@@ -174,7 +174,7 @@ public class LinearContinuationStrategy : Strategy
 	/// <summary>
 	/// Moving average types.
 	/// </summary>
-	public enum MovingAverageTypeEnum
+	public enum MovingAverageTypes
 	{
 		/// <summary>Simple moving average.</summary>
 		Simple,

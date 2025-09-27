@@ -22,14 +22,14 @@ public class ColorCodeOverlayStrategy : Strategy
 	/// <summary>
 	/// Trade direction options.
 	/// </summary>
-	public enum TradeType
+	public enum TradeTypes
 	{
 		Both,
 		LongOnly,
 		ShortOnly
 	}
 
-	private readonly StrategyParam<TradeType> _tradeType;
+	private readonly StrategyParam<TradeTypes> _tradeType;
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<TimeSpan> _startTime;
@@ -45,7 +45,7 @@ public class ColorCodeOverlayStrategy : Strategy
 	/// <summary>
 	/// Trade type.
 	/// </summary>
-	public TradeType Mode { get => _tradeType.Value; set => _tradeType.Value = value; }
+	public TradeTypes Mode { get => _tradeType.Value; set => _tradeType.Value = value; }
 
 	/// <summary>
 	/// Stop loss in pips.
@@ -82,7 +82,7 @@ public class ColorCodeOverlayStrategy : Strategy
 	/// </summary>
 	public ColorCodeOverlayStrategy()
 	{
-		_tradeType = Param(nameof(Mode), TradeType.Both)
+		_tradeType = Param(nameof(Mode), TradeTypes.Both)
 			.SetDisplay("Trade Type", "Trading mode", "General");
 
 		_stopLossPips = Param(nameof(StopLossPips), 20)
@@ -168,16 +168,16 @@ public class ColorCodeOverlayStrategy : Strategy
 		{
 			if (changeRedToGreen)
 			{
-				if ((Mode == TradeType.Both || Mode == TradeType.ShortOnly) && Position < 0)
+				if ((Mode == TradeTypes.Both || Mode == TradeTypes.ShortOnly) && Position < 0)
 					BuyMarket(-Position);
-				if ((Mode == TradeType.Both || Mode == TradeType.LongOnly) && Position <= 0)
+				if ((Mode == TradeTypes.Both || Mode == TradeTypes.LongOnly) && Position <= 0)
 					BuyMarket();
 			}
 			else if (changeGreenToRed)
 			{
-				if ((Mode == TradeType.Both || Mode == TradeType.LongOnly) && Position > 0)
+				if ((Mode == TradeTypes.Both || Mode == TradeTypes.LongOnly) && Position > 0)
 					SellMarket(Position);
-				if ((Mode == TradeType.Both || Mode == TradeType.ShortOnly) && Position >= 0)
+				if ((Mode == TradeTypes.Both || Mode == TradeTypes.ShortOnly) && Position >= 0)
 					SellMarket();
 			}
 		}

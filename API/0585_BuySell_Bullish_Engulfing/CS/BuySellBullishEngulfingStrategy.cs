@@ -24,7 +24,7 @@ public class BuySellBullishEngulfingStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<decimal> _orderPercent;
-	private readonly StrategyParam<TrendMode> _trendMode;
+	private readonly StrategyParam<TrendModes> _trendMode;
 
 	private ICandleMessage _previousCandle;
 	private decimal _bodyEma;
@@ -68,7 +68,7 @@ public class BuySellBullishEngulfingStrategy : Strategy
 	/// <summary>
 	/// Trend detection rule.
 	/// </summary>
-	public TrendMode TrendMode
+	public TrendModes TrendMode
 	{
 		get => _trendMode.Value;
 		set => _trendMode.Value = value;
@@ -105,7 +105,7 @@ public class BuySellBullishEngulfingStrategy : Strategy
 			.SetRange(1m, 100m)
 			.SetDisplay("Order Size %", "Percent of equity per trade", "Risk Management");
 
-		_trendMode = Param(nameof(TrendMode), TrendMode.Sma50)
+		_trendMode = Param(nameof(TrendMode), TrendModes.Sma50)
 			.SetDisplay("Trend Rule", "How to detect trend", "Pattern");
 
 		_bodyEmaLength = Param(nameof(BodyEmaLength), 14)
@@ -177,10 +177,10 @@ public class BuySellBullishEngulfingStrategy : Strategy
 			var prevBear = _previousCandle.ClosePrice < _previousCandle.OpenPrice;
 			var currBull = candle.ClosePrice > candle.OpenPrice;
 
-			var downTrend = TrendMode switch
+			var downTrend = TrendModes switch
 			{
-				TrendMode.Sma50 => candle.ClosePrice < sma50,
-				TrendMode.Sma50And200 => candle.ClosePrice < sma50 && sma50 < sma200,
+				TrendModes.Sma50 => candle.ClosePrice < sma50,
+				TrendModes.Sma50And200 => candle.ClosePrice < sma50 && sma50 < sma200,
 				_ => true
 			};
 
@@ -210,7 +210,7 @@ public class BuySellBullishEngulfingStrategy : Strategy
 /// <summary>
 /// Trend detection modes.
 /// </summary>
-public enum TrendMode
+public enum TrendModes
 {
 	/// <summary>
 	/// Price below SMA50.

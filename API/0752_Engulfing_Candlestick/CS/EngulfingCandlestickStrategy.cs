@@ -23,8 +23,8 @@ public class EngulfingCandlestickStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _holdPeriods;
-	private readonly StrategyParam<PatternType> _pattern;
-	private readonly StrategyParam<TradeSide> _side;
+	private readonly StrategyParam<PatternTypes> _pattern;
+	private readonly StrategyParam<TradeSides> _side;
 
 	private ICandleMessage _previousCandle;
 	private int _barsInPosition;
@@ -32,7 +32,7 @@ public class EngulfingCandlestickStrategy : Strategy
 	/// <summary>
 	/// Engulfing pattern type.
 	/// </summary>
-	public enum PatternType
+	public enum PatternTypes
 	{
 		Bullish,
 		Bearish
@@ -41,7 +41,7 @@ public class EngulfingCandlestickStrategy : Strategy
 	/// <summary>
 	/// Trade direction.
 	/// </summary>
-	public enum TradeSide
+	public enum TradeSides
 	{
 		Long,
 		Short
@@ -68,7 +68,7 @@ public class EngulfingCandlestickStrategy : Strategy
 	/// <summary>
 	/// Selected engulfing pattern.
 	/// </summary>
-	public PatternType Pattern
+	public PatternTypes Pattern
 	{
 		get => _pattern.Value;
 		set => _pattern.Value = value;
@@ -77,7 +77,7 @@ public class EngulfingCandlestickStrategy : Strategy
 	/// <summary>
 	/// Trade side when pattern triggers.
 	/// </summary>
-	public TradeSide Side
+	public TradeSides Side
 	{
 		get => _side.Value;
 		set => _side.Value = value;
@@ -96,10 +96,10 @@ public class EngulfingCandlestickStrategy : Strategy
 			.SetDisplay("Hold Periods", "Bars to hold open position", "General")
 			.SetCanOptimize(true);
 
-		_pattern = Param(nameof(Pattern), PatternType.Bullish)
+		_pattern = Param(nameof(Pattern), PatternTypes.Bullish)
 			.SetDisplay("Pattern", "Engulfing pattern type", "General");
 
-		_side = Param(nameof(Side), TradeSide.Long)
+		_side = Param(nameof(Side), TradeSides.Long)
 			.SetDisplay("Trade Side", "Direction of entry", "General");
 	}
 
@@ -166,11 +166,11 @@ public class EngulfingCandlestickStrategy : Strategy
 				candle.OpenPrice > _previousCandle.ClosePrice &&
 				candle.ClosePrice < _previousCandle.OpenPrice;
 
-			var patternDetected = Pattern == PatternType.Bullish ? bullish : bearish;
+			var patternDetected = Pattern == PatternTypes.Bullish ? bullish : bearish;
 
 			if (patternDetected)
 			{
-				if (Side == TradeSide.Long)
+				if (Side == TradeSides.Long)
 					BuyMarket();
 				else
 					SellMarket();

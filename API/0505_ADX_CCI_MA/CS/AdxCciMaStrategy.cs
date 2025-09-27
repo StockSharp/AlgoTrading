@@ -32,7 +32,7 @@ public class AdxCciMaStrategy : Strategy
 	private readonly StrategyParam<decimal> _adxThreshold;
 	private readonly StrategyParam<bool> _useMaTrend;
 	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<MovingAverageTypeEnum> _maType;
+	private readonly StrategyParam<MovingAverageTypes> _maType;
 	private readonly StrategyParam<bool> _useMaRisk;
 	private readonly StrategyParam<int> _maRiskExitCandles;
 	private readonly StrategyParam<DataType> _candleType;
@@ -55,7 +55,7 @@ public class AdxCciMaStrategy : Strategy
 	public decimal AdxThreshold { get => _adxThreshold.Value; set => _adxThreshold.Value = value; }
 	public bool UseMaTrend { get => _useMaTrend.Value; set => _useMaTrend.Value = value; }
 	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
-	public MovingAverageTypeEnum MaType { get => _maType.Value; set => _maType.Value = value; }
+	public MovingAverageTypes MaType { get => _maType.Value; set => _maType.Value = value; }
 	public bool UseMaRiskManagement { get => _useMaRisk.Value; set => _useMaRisk.Value = value; }
 	public int MaRiskExitCandles { get => _maRiskExitCandles.Value; set => _maRiskExitCandles.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
@@ -89,7 +89,7 @@ public class AdxCciMaStrategy : Strategy
 		_maLength = Param(nameof(MaLength), 200)
 			.SetDisplay("MA Length", "Length of moving average", "MA Trend")
 			.SetCanOptimize(true);
-		_maType = Param(nameof(MaType), MovingAverageTypeEnum.Simple)
+		_maType = Param(nameof(MaType), MovingAverageTypes.Simple)
 			.SetDisplay("MA Type", "Type of moving average", "MA Trend");
 		_useMaRisk = Param(nameof(UseMaRiskManagement), false)
 			.SetDisplay("Use MA Risk Management", "Exit after candles against MA", "Risk Management");
@@ -126,11 +126,11 @@ public class AdxCciMaStrategy : Strategy
 		_adx = new() { Length = AdxLength };
 		_ma = MaType switch
 		{
-			MovingAverageTypeEnum.Hull => new HullMovingAverage(),
-			MovingAverageTypeEnum.Exponential => new ExponentialMovingAverage(),
-			MovingAverageTypeEnum.Smoothed => new SmoothedMovingAverage(),
-			MovingAverageTypeEnum.Weighted => new WeightedMovingAverage(),
-			MovingAverageTypeEnum.VolumeWeighted => new VolumeWeightedMovingAverage(),
+			MovingAverageTypes.Hull => new HullMovingAverage(),
+			MovingAverageTypes.Exponential => new ExponentialMovingAverage(),
+			MovingAverageTypes.Smoothed => new SmoothedMovingAverage(),
+			MovingAverageTypes.Weighted => new WeightedMovingAverage(),
+			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage(),
 			_ => new SimpleMovingAverage()
 		};
 		_ma.Length = MaLength;
@@ -233,7 +233,7 @@ public class AdxCciMaStrategy : Strategy
 		_prevMinusDi = minusDi;
 	}
 
-	public enum MovingAverageTypeEnum
+	public enum MovingAverageTypes
 	{
 		Simple,
 		Hull,

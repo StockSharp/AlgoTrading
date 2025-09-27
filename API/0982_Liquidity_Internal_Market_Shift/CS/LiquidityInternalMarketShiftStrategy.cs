@@ -19,14 +19,14 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class LiquidityInternalMarketShiftStrategy : Strategy
 {
-public enum TradeMode
+public enum TradeModes
 {
 Both,
 BullishOnly,
 BearishOnly
 }
 
-private readonly StrategyParam<TradeMode> _mode;
+private readonly StrategyParam<TradeModes> _mode;
 private readonly StrategyParam<DateTimeOffset> _startDate;
 private readonly StrategyParam<DateTimeOffset> _endDate;
 private readonly StrategyParam<bool> _enableTakeProfit;
@@ -57,7 +57,7 @@ private decimal? _entryPrice;
 private DateTimeOffset _entryTime;
 private bool _isLongPosition;
 
-public TradeMode Mode { get => _mode.Value; set => _mode.Value = value; }
+public TradeModes Mode { get => _mode.Value; set => _mode.Value = value; }
 public DateTimeOffset StartDate { get => _startDate.Value; set => _startDate.Value = value; }
 public DateTimeOffset EndDate { get => _endDate.Value; set => _endDate.Value = value; }
 public bool EnableTakeProfit { get => _enableTakeProfit.Value; set => _enableTakeProfit.Value = value; }
@@ -69,7 +69,7 @@ public DataType CandleType { get => _candleType.Value; set => _candleType.Value 
 
 public LiquidityInternalMarketShiftStrategy()
 {
-_mode = Param(nameof(Mode), TradeMode.Both)
+_mode = Param(nameof(Mode), TradeModes.Both)
 .SetDisplay("Mode", "Trading mode", "General");
 
 _startDate = Param(nameof(StartDate), new DateTimeOffset(new DateTime(2024, 1, 1), TimeSpan.Zero))
@@ -244,7 +244,7 @@ _lockedBearish = false;
 
 bool inTimeRange = candle.OpenTime >= StartDate && candle.OpenTime <= EndDate;
 
-if (Mode != TradeMode.BearishOnly && bullishSignal && inTimeRange && _entryPrice is null)
+if (Mode != TradeModes.BearishOnly && bullishSignal && inTimeRange && _entryPrice is null)
 {
 BuyMarket();
 _entryPrice = candle.ClosePrice;
@@ -252,7 +252,7 @@ _entryTime = candle.OpenTime;
 _isLongPosition = true;
 }
 
-if (Mode != TradeMode.BullishOnly && bearishSignal && inTimeRange && _entryPrice is null)
+if (Mode != TradeModes.BullishOnly && bearishSignal && inTimeRange && _entryPrice is null)
 {
 SellMarket();
 _entryPrice = candle.ClosePrice;
