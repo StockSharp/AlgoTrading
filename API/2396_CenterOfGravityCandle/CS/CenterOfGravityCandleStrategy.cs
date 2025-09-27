@@ -23,7 +23,7 @@ namespace StockSharp.Samples.Strategies;
 public class CenterOfGravityCandleStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _moneyManagement;
-	private readonly StrategyParam<CenterOfGravityMarginMode> _marginMode;
+	private readonly StrategyParam<CenterOfGravityMarginModes> _marginMode;
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<bool> _enableBuyOpen;
@@ -33,11 +33,11 @@ public class CenterOfGravityCandleStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<int> _smoothPeriod;
-	private readonly StrategyParam<CenterOfGravityMaMethod> _maMethod;
+	private readonly StrategyParam<CenterOfGravityMaMethods> _maMethod;
 	private readonly StrategyParam<int> _signalBar;
 
 	private CenterOfGravityCandleIndicator _indicator;
-	private readonly List<CenterOfGravityCandleColor> _colorHistory = new();
+	private readonly List<CenterOfGravityCandleColors> _colorHistory = new();
 
 	private decimal _point;
 	private bool _pendingBuyOpen;
@@ -55,7 +55,7 @@ public class CenterOfGravityCandleStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(0.05m, 0.5m, 0.05m);
 
-		_marginMode = Param(nameof(MarginMode), CenterOfGravityMarginMode.Lot)
+		_marginMode = Param(nameof(MarginMode), CenterOfGravityMarginModes.Lot)
 		.SetDisplay("Margin Mode", "Interpretation of the money management value", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 1000)
@@ -93,7 +93,7 @@ public class CenterOfGravityCandleStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(1, 10, 1);
 
-		_maMethod = Param(nameof(MaMethod), CenterOfGravityMaMethod.Simple)
+		_maMethod = Param(nameof(MaMethod), CenterOfGravityMaMethods.Simple)
 		.SetDisplay("Smoothing Method", "Moving average type used for smoothing", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -113,7 +113,7 @@ public class CenterOfGravityCandleStrategy : Strategy
 	/// <summary>
 	/// How the money management factor is interpreted.
 	/// </summary>
-	public CenterOfGravityMarginMode MarginMode
+	public CenterOfGravityMarginModes MarginMode
 	{
 		get => _marginMode.Value;
 		set => _marginMode.Value = value;
@@ -203,7 +203,7 @@ public class CenterOfGravityCandleStrategy : Strategy
 	/// <summary>
 	/// Moving average method used for smoothing.
 	/// </summary>
-	public CenterOfGravityMaMethod MaMethod
+	public CenterOfGravityMaMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -304,7 +304,7 @@ public class CenterOfGravityCandleStrategy : Strategy
 		var currentColor = _colorHistory[currentIndex];
 		var previousColor = currentIndex > 0 ? _colorHistory[currentIndex - 1] : currentColor;
 
-		if (currentColor == CenterOfGravityCandleColor.Bullish && previousColor != CenterOfGravityCandleColor.Bullish)
+		if (currentColor == CenterOfGravityCandleColors.Bullish && previousColor != CenterOfGravityCandleColors.Bullish)
 			{
 			if (EnableBuyOpen)
 				_pendingBuyOpen = true;
@@ -312,7 +312,7 @@ public class CenterOfGravityCandleStrategy : Strategy
 			if (EnableSellClose)
 				_pendingSellClose = true;
 		}
-		else if (currentColor == CenterOfGravityCandleColor.Bearish && previousColor != CenterOfGravityCandleColor.Bearish)
+		else if (currentColor == CenterOfGravityCandleColors.Bearish && previousColor != CenterOfGravityCandleColors.Bearish)
 			{
 			if (EnableSellOpen)
 				_pendingSellOpen = true;
@@ -374,7 +374,7 @@ public class CenterOfGravityCandleStrategy : Strategy
 	{
 		var mm = MoneyManagement;
 
-		if (MarginMode == CenterOfGravityMarginMode.Lot)
+		if (MarginMode == CenterOfGravityMarginModes.Lot)
 			return AlignVolume(mm != 0m ? Math.Abs(mm) : Volume);
 
 		if (Portfolio == null || price <= 0m)
@@ -390,7 +390,7 @@ public class CenterOfGravityCandleStrategy : Strategy
 		var riskCapital = capital * mm;
 		decimal volume;
 
-		if ((MarginMode == CenterOfGravityMarginMode.LossFreeMargin || MarginMode == CenterOfGravityMarginMode.LossBalance) && StopLossPips > 0)
+		if ((MarginMode == CenterOfGravityMarginModes.LossFreeMargin || MarginMode == CenterOfGravityMarginModes.LossBalance) && StopLossPips > 0)
 			{
 			var stopValue = StopLossPips * _point;
 			volume = stopValue > 0m ? riskCapital / stopValue : Volume;
@@ -441,7 +441,7 @@ public class CenterOfGravityCandleIndicator : BaseIndicator<CenterOfGravityCandl
 	private LengthIndicator<decimal> _highSmooth;
 	private LengthIndicator<decimal> _lowSmooth;
 	private LengthIndicator<decimal> _closeSmooth;
-	private CenterOfGravityMaMethod _currentMethod;
+	private CenterOfGravityMaMethods _currentMethod;
 	private int _currentSmoothLength;
 
 	/// <summary>
@@ -457,7 +457,7 @@ public class CenterOfGravityCandleIndicator : BaseIndicator<CenterOfGravityCandl
 	/// <summary>
 	/// Moving average method for smoothing.
 	/// </summary>
-	public CenterOfGravityMaMethod Method { get; set; } = CenterOfGravityMaMethod.Simple;
+	public CenterOfGravityMaMethods Method { get; set; } = CenterOfGravityMaMethods.Simple;
 
 	/// <summary>
 	/// Price step used to normalize the product of the moving averages.
@@ -471,7 +471,7 @@ public class CenterOfGravityCandleIndicator : BaseIndicator<CenterOfGravityCandl
 	protected override IIndicatorValue OnProcess(IIndicatorValue input)
 	{
 		if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
-			return new CenterOfGravityCandleValue(this, input, 0m, 0m, 0m, 0m, CenterOfGravityCandleColor.Neutral, false);
+			return new CenterOfGravityCandleValue(this, input, 0m, 0m, 0m, 0m, CenterOfGravityCandleColors.Neutral, false);
 
 		EnsureInitialized();
 
@@ -488,7 +488,7 @@ public class CenterOfGravityCandleIndicator : BaseIndicator<CenterOfGravityCandl
 		var closeLwmaVal = _closeLwma!.Process(candle.ClosePrice, time, true);
 
 		if (!_openSma.IsFormed || !_openLwma.IsFormed || !_highSma.IsFormed || !_highLwma.IsFormed || !_lowSma.IsFormed || !_lowLwma.IsFormed || !_closeSma.IsFormed || !_closeLwma.IsFormed)
-			return new CenterOfGravityCandleValue(this, input, 0m, 0m, 0m, 0m, CenterOfGravityCandleColor.Neutral, false);
+			return new CenterOfGravityCandleValue(this, input, 0m, 0m, 0m, 0m, CenterOfGravityCandleColors.Neutral, false);
 
 		var openProduct = openSmaVal.GetValue<decimal>() * openLwmaVal.GetValue<decimal>() / point;
 		var highProduct = highSmaVal.GetValue<decimal>() * highLwmaVal.GetValue<decimal>() / point;
@@ -501,7 +501,7 @@ public class CenterOfGravityCandleIndicator : BaseIndicator<CenterOfGravityCandl
 		var closeSmoothVal = _closeSmooth!.Process(closeProduct, time, true);
 
 		if (!_openSmooth.IsFormed || !_highSmooth.IsFormed || !_lowSmooth.IsFormed || !_closeSmooth.IsFormed)
-			return new CenterOfGravityCandleValue(this, input, 0m, 0m, 0m, 0m, CenterOfGravityCandleColor.Neutral, false);
+			return new CenterOfGravityCandleValue(this, input, 0m, 0m, 0m, 0m, CenterOfGravityCandleColors.Neutral, false);
 
 		var openValue = openSmoothVal.GetValue<decimal>();
 		var closeValue = closeSmoothVal.GetValue<decimal>();
@@ -510,11 +510,11 @@ public class CenterOfGravityCandleIndicator : BaseIndicator<CenterOfGravityCandl
 		var highValue = Math.Max(highCandidate, highSmoothVal.GetValue<decimal>());
 		var lowValue = Math.Min(lowCandidate, lowSmoothVal.GetValue<decimal>());
 
-		var color = CenterOfGravityCandleColor.Neutral;
+		var color = CenterOfGravityCandleColors.Neutral;
 		if (openValue < closeValue)
-			color = CenterOfGravityCandleColor.Bullish;
+			color = CenterOfGravityCandleColors.Bullish;
 		else if (openValue > closeValue)
-			color = CenterOfGravityCandleColor.Bearish;
+			color = CenterOfGravityCandleColors.Bearish;
 
 		return new CenterOfGravityCandleValue(this, input, openValue, highValue, lowValue, closeValue, color, true);
 	}
@@ -583,9 +583,9 @@ public class CenterOfGravityCandleIndicator : BaseIndicator<CenterOfGravityCandl
 	{
 		return Method switch
 		{
-			CenterOfGravityMaMethod.Exponential => new ExponentialMovingAverage { Length = SmoothLength },
-			CenterOfGravityMaMethod.Smoothed => new SmoothedMovingAverage { Length = SmoothLength },
-			CenterOfGravityMaMethod.LinearWeighted => new LinearWeightedMovingAverage { Length = SmoothLength },
+			CenterOfGravityMaMethods.Exponential => new ExponentialMovingAverage { Length = SmoothLength },
+			CenterOfGravityMaMethods.Smoothed => new SmoothedMovingAverage { Length = SmoothLength },
+			CenterOfGravityMaMethods.LinearWeighted => new LinearWeightedMovingAverage { Length = SmoothLength },
 			_ => new SimpleMovingAverage { Length = SmoothLength },
 		};
 	}
@@ -596,7 +596,7 @@ public class CenterOfGravityCandleIndicator : BaseIndicator<CenterOfGravityCandl
 /// </summary>
 public class CenterOfGravityCandleValue : ComplexIndicatorValue
 {
-	public CenterOfGravityCandleValue(IIndicator indicator, IIndicatorValue input, decimal open, decimal high, decimal low, decimal close, CenterOfGravityCandleColor color, bool isFormed)
+	public CenterOfGravityCandleValue(IIndicator indicator, IIndicatorValue input, decimal open, decimal high, decimal low, decimal close, CenterOfGravityCandleColors color, bool isFormed)
 	: base(indicator, input, (nameof(Open), open), (nameof(High), high), (nameof(Low), low), (nameof(Close), close), (nameof(Color), color))
 	{
 		IsFormed = isFormed;
@@ -625,7 +625,7 @@ public class CenterOfGravityCandleValue : ComplexIndicatorValue
 	/// <summary>
 	/// Candle color mapped to trading decisions.
 	/// </summary>
-	public CenterOfGravityCandleColor Color => (CenterOfGravityCandleColor)GetValue(nameof(Color));
+	public CenterOfGravityCandleColors Color => (CenterOfGravityCandleColors)GetValue(nameof(Color));
 
 	/// <summary>
 	/// Indicates whether the indicator produced a valid value.
@@ -636,7 +636,7 @@ public class CenterOfGravityCandleValue : ComplexIndicatorValue
 /// <summary>
 /// Synthetic candle color used as trading signal.
 /// </summary>
-public enum CenterOfGravityCandleColor
+public enum CenterOfGravityCandleColors
 {
 	/// <summary>
 	/// Bearish candle (open above close).
@@ -657,7 +657,7 @@ public enum CenterOfGravityCandleColor
 /// <summary>
 /// Moving average methods available for smoothing the synthetic candles.
 /// </summary>
-public enum CenterOfGravityMaMethod
+public enum CenterOfGravityMaMethods
 {
 	/// <summary>
 	/// Simple moving average.
@@ -683,7 +683,7 @@ public enum CenterOfGravityMaMethod
 /// <summary>
 /// Modes that define how the money management value is interpreted.
 /// </summary>
-public enum CenterOfGravityMarginMode
+public enum CenterOfGravityMarginModes
 {
 	/// <summary>
 	/// Portion of account equity is used (approximates free margin).

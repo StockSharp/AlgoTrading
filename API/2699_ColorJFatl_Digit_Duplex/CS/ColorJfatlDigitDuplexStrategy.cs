@@ -25,7 +25,7 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 	private readonly StrategyParam<DataType> _shortCandleType;
 	private readonly StrategyParam<int> _longJmaLength;
 	private readonly StrategyParam<int> _longJmaPhase;
-	private readonly StrategyParam<AppliedPrice> _longAppliedPrice;
+	private readonly StrategyParam<AppliedPrices> _longAppliedPrice;
 	private readonly StrategyParam<int> _longDigit;
 	private readonly StrategyParam<int> _longSignalBar;
 	private readonly StrategyParam<int> _longStopLossPoints;
@@ -35,7 +35,7 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 
 	private readonly StrategyParam<int> _shortJmaLength;
 	private readonly StrategyParam<int> _shortJmaPhase;
-	private readonly StrategyParam<AppliedPrice> _shortAppliedPrice;
+	private readonly StrategyParam<AppliedPrices> _shortAppliedPrice;
 	private readonly StrategyParam<int> _shortDigit;
 	private readonly StrategyParam<int> _shortSignalBar;
 	private readonly StrategyParam<int> _shortStopLossPoints;
@@ -61,7 +61,7 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 		.SetDisplay("Long JMA Length", "Period of the Jurik moving average for longs", "Indicator");
 		_longJmaPhase = Param(nameof(LongJmaPhase), -100)
 		.SetDisplay("Long JMA Phase", "Phase adjustment for the Jurik moving average", "Indicator");
-		_longAppliedPrice = Param(nameof(LongAppliedPrice), AppliedPrice.Close)
+		_longAppliedPrice = Param(nameof(LongAppliedPrice), AppliedPrices.Close)
 		.SetDisplay("Long Applied Price", "Price source for the long indicator", "Indicator");
 		_longDigit = Param(nameof(LongDigit), 2)
 		.SetDisplay("Long Rounding Digits", "Number of digits used to round the indicator", "Indicator");
@@ -81,7 +81,7 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 		.SetDisplay("Short JMA Length", "Period of the Jurik moving average for shorts", "Indicator");
 		_shortJmaPhase = Param(nameof(ShortJmaPhase), -100)
 		.SetDisplay("Short JMA Phase", "Phase adjustment for the Jurik moving average", "Indicator");
-		_shortAppliedPrice = Param(nameof(ShortAppliedPrice), AppliedPrice.Close)
+		_shortAppliedPrice = Param(nameof(ShortAppliedPrice), AppliedPrices.Close)
 		.SetDisplay("Short Applied Price", "Price source for the short indicator", "Indicator");
 		_shortDigit = Param(nameof(ShortDigit), 2)
 		.SetDisplay("Short Rounding Digits", "Number of digits used to round the indicator", "Indicator");
@@ -141,7 +141,7 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 	/// <summary>
 	/// Applied price for the long indicator.
 	/// </summary>
-	public AppliedPrice LongAppliedPrice
+	public AppliedPrices LongAppliedPrice
 	{
 		get => _longAppliedPrice.Value;
 		set => _longAppliedPrice.Value = value;
@@ -222,7 +222,7 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 	/// <summary>
 	/// Applied price for the short indicator.
 	/// </summary>
-	public AppliedPrice ShortAppliedPrice
+	public AppliedPrices ShortAppliedPrice
 	{
 		get => _shortAppliedPrice.Value;
 		set => _shortAppliedPrice.Value = value;
@@ -300,7 +300,7 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 		{
 			Length = LongJmaLength,
 			Phase = LongJmaPhase,
-			AppliedPrice = LongAppliedPrice,
+			AppliedPrices = LongAppliedPrice,
 			Digit = LongDigit,
 			SignalBar = LongSignalBar
 		};
@@ -311,7 +311,7 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 		{
 			Length = ShortJmaLength,
 			Phase = ShortJmaPhase,
-			AppliedPrice = ShortAppliedPrice,
+			AppliedPrices = ShortAppliedPrice,
 			Digit = ShortDigit,
 			SignalBar = ShortSignalBar
 		};
@@ -505,7 +505,7 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 	/// <summary>
 	/// Applied price options supported by the Color JFATL Digit indicator.
 	/// </summary>
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		/// <summary>
 		/// Close price of the candle.
@@ -595,7 +595,7 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 
 		public int Length { get; set; } = 5;
 		public int Phase { get; set; } = -100;
-		public AppliedPrice AppliedPrice { get; set; } = AppliedPrice.Close;
+		public AppliedPrices AppliedPrices { get; set; } = AppliedPrices.Close;
 		public int Digit { get; set; } = 2;
 		public int SignalBar { get; set; } = 1;
 
@@ -683,31 +683,31 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 			var high = candle.HighPrice;
 			var low = candle.LowPrice;
 
-			switch (AppliedPrice)
+			switch (AppliedPrices)
 			{
-				case AppliedPrice.Close:
+				case AppliedPrices.Close:
 				return close;
-				case AppliedPrice.Open:
+				case AppliedPrices.Open:
 				return open;
-				case AppliedPrice.High:
+				case AppliedPrices.High:
 				return high;
-				case AppliedPrice.Low:
+				case AppliedPrices.Low:
 				return low;
-				case AppliedPrice.Median:
+				case AppliedPrices.Median:
 				return (high + low) / 2m;
-				case AppliedPrice.Typical:
+				case AppliedPrices.Typical:
 				return (close + high + low) / 3m;
-				case AppliedPrice.Weighted:
+				case AppliedPrices.Weighted:
 				return (2m * close + high + low) / 4m;
-				case AppliedPrice.Average:
+				case AppliedPrices.Average:
 				return (open + close) / 2m;
-				case AppliedPrice.Quarter:
+				case AppliedPrices.Quarter:
 				return (open + close + high + low) / 4m;
-				case AppliedPrice.TrendFollow0:
+				case AppliedPrices.TrendFollow0:
 				return close > open ? high : close < open ? low : close;
-				case AppliedPrice.TrendFollow1:
+				case AppliedPrices.TrendFollow1:
 				return close > open ? (high + close) / 2m : close < open ? (low + close) / 2m : close;
-				case AppliedPrice.Demark:
+				case AppliedPrices.Demark:
 				var res = high + low + close;
 				if (close < open)
 				res = (res + low) / 2m;

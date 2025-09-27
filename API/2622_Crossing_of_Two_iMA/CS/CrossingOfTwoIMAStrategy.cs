@@ -23,7 +23,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 	/// <summary>
 	/// Moving average calculation methods supported by the strategy.
 	/// </summary>
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		/// <summary>
 		/// Simple moving average.
@@ -48,16 +48,16 @@ public class CrossingOfTwoIMAStrategy : Strategy
 
 	private readonly StrategyParam<int> _firstPeriod;
 	private readonly StrategyParam<int> _firstShift;
-	private readonly StrategyParam<MovingAverageMethod> _firstMethod;
+	private readonly StrategyParam<MovingAverageMethods> _firstMethod;
 
 	private readonly StrategyParam<int> _secondPeriod;
 	private readonly StrategyParam<int> _secondShift;
-	private readonly StrategyParam<MovingAverageMethod> _secondMethod;
+	private readonly StrategyParam<MovingAverageMethods> _secondMethod;
 
 	private readonly StrategyParam<bool> _useThirdAverage;
 	private readonly StrategyParam<int> _thirdPeriod;
 	private readonly StrategyParam<int> _thirdShift;
-	private readonly StrategyParam<MovingAverageMethod> _thirdMethod;
+	private readonly StrategyParam<MovingAverageMethods> _thirdMethod;
 
 	private readonly StrategyParam<bool> _useFixedVolume;
 	private readonly StrategyParam<decimal> _riskPercent;
@@ -86,7 +86,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 	private PendingOrder _pendingOrder;
 	private DateTimeOffset? _lastEntryTime;
 
-	private enum PendingOrderType
+	private enum PendingOrderTypes
 	{
 		None,
 		BuyStop,
@@ -97,7 +97,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 
 	private sealed class PendingOrder
 	{
-		public PendingOrderType Type { get; init; }
+		public PendingOrderTypes Type { get; init; }
 		public decimal EntryPrice { get; init; }
 		public decimal? StopLoss { get; init; }
 		public decimal? TakeProfit { get; init; }
@@ -119,7 +119,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("First MA Shift", "Shift applied to the first moving average", "First Moving Average");
 
-		_firstMethod = Param(nameof(FirstMaMethod), MovingAverageMethod.Smoothed)
+		_firstMethod = Param(nameof(FirstMaMethod), MovingAverageMethods.Smoothed)
 			.SetDisplay("First MA Method", "Calculation method of the first moving average", "First Moving Average");
 
 		_secondPeriod = Param(nameof(SecondMaPeriod), 8)
@@ -132,7 +132,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Second MA Shift", "Shift applied to the second moving average", "Second Moving Average");
 
-		_secondMethod = Param(nameof(SecondMaMethod), MovingAverageMethod.Smoothed)
+		_secondMethod = Param(nameof(SecondMaMethod), MovingAverageMethods.Smoothed)
 			.SetDisplay("Second MA Method", "Calculation method of the second moving average", "Second Moving Average");
 
 		_useThirdAverage = Param(nameof(UseThirdMovingAverage), true)
@@ -146,7 +146,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Third MA Shift", "Shift applied to the third moving average", "Third Moving Average");
 
-		_thirdMethod = Param(nameof(ThirdMaMethod), MovingAverageMethod.Smoothed)
+		_thirdMethod = Param(nameof(ThirdMaMethod), MovingAverageMethods.Smoothed)
 			.SetDisplay("Third MA Method", "Calculation method of the third moving average", "Third Moving Average");
 
 		_useFixedVolume = Param(nameof(UseFixedVolume), true)
@@ -200,7 +200,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 	/// <summary>
 	/// Method used for the first moving average.
 	/// </summary>
-	public MovingAverageMethod FirstMaMethod
+	public MovingAverageMethods FirstMaMethod
 	{
 		get => _firstMethod.Value;
 		set => _firstMethod.Value = value;
@@ -227,7 +227,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 	/// <summary>
 	/// Method used for the second moving average.
 	/// </summary>
-	public MovingAverageMethod SecondMaMethod
+	public MovingAverageMethods SecondMaMethod
 	{
 		get => _secondMethod.Value;
 		set => _secondMethod.Value = value;
@@ -263,7 +263,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 	/// <summary>
 	/// Method used for the third moving average.
 	/// </summary>
-	public MovingAverageMethod ThirdMaMethod
+	public MovingAverageMethods ThirdMaMethod
 	{
 		get => _thirdMethod.Value;
 		set => _thirdMethod.Value = value;
@@ -532,7 +532,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 			var take = takePrice.HasValue ? takePrice.Value + priceLevelOffset : (decimal?)null;
 			_pendingOrder = new PendingOrder
 			{
-				Type = PendingOrderType.BuyStop,
+				Type = PendingOrderTypes.BuyStop,
 				EntryPrice = targetPrice,
 				StopLoss = stop,
 				TakeProfit = take,
@@ -546,7 +546,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 			var take = takePrice.HasValue ? takePrice.Value - priceLevelOffset : (decimal?)null;
 			_pendingOrder = new PendingOrder
 			{
-				Type = PendingOrderType.BuyLimit,
+				Type = PendingOrderTypes.BuyLimit,
 				EntryPrice = targetPrice,
 				StopLoss = stop,
 				TakeProfit = take,
@@ -590,7 +590,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 			var take = takePrice.HasValue ? takePrice.Value - priceLevelOffset : (decimal?)null;
 			_pendingOrder = new PendingOrder
 			{
-				Type = PendingOrderType.SellStop,
+				Type = PendingOrderTypes.SellStop,
 				EntryPrice = targetPrice,
 				StopLoss = stop,
 				TakeProfit = take,
@@ -604,7 +604,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 			var take = takePrice.HasValue ? takePrice.Value + priceLevelOffset : (decimal?)null;
 			_pendingOrder = new PendingOrder
 			{
-				Type = PendingOrderType.SellLimit,
+				Type = PendingOrderTypes.SellLimit,
 				EntryPrice = targetPrice,
 				StopLoss = stop,
 				TakeProfit = take,
@@ -620,10 +620,10 @@ public class CrossingOfTwoIMAStrategy : Strategy
 
 		var triggered = _pendingOrder.Type switch
 		{
-			PendingOrderType.BuyStop => candle.HighPrice >= _pendingOrder.EntryPrice,
-			PendingOrderType.BuyLimit => candle.LowPrice <= _pendingOrder.EntryPrice,
-			PendingOrderType.SellStop => candle.LowPrice <= _pendingOrder.EntryPrice,
-			PendingOrderType.SellLimit => candle.HighPrice >= _pendingOrder.EntryPrice,
+			PendingOrderTypes.BuyStop => candle.HighPrice >= _pendingOrder.EntryPrice,
+			PendingOrderTypes.BuyLimit => candle.LowPrice <= _pendingOrder.EntryPrice,
+			PendingOrderTypes.SellStop => candle.LowPrice <= _pendingOrder.EntryPrice,
+			PendingOrderTypes.SellLimit => candle.HighPrice >= _pendingOrder.EntryPrice,
 			_ => false,
 		};
 
@@ -637,7 +637,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 			return;
 		}
 
-		if (_pendingOrder.Type == PendingOrderType.BuyStop || _pendingOrder.Type == PendingOrderType.BuyLimit)
+		if (_pendingOrder.Type == PendingOrderTypes.BuyStop || _pendingOrder.Type == PendingOrderTypes.BuyLimit)
 		{
 			var totalVolume = volume + (Position < 0 ? Math.Abs(Position) : 0m);
 			if (totalVolume > 0m)
@@ -810,14 +810,14 @@ public class CrossingOfTwoIMAStrategy : Strategy
 		return _openTimes[targetIndex];
 	}
 
-	private static MovingAverage CreateMovingAverage(MovingAverageMethod method, int length)
+	private static MovingAverage CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		MovingAverage ma = method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage(),
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage(),
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage(),
-			MovingAverageMethod.Weighted => new WeightedMovingAverage(),
+			MovingAverageMethods.Simple => new SimpleMovingAverage(),
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage(),
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage(),
+			MovingAverageMethods.Weighted => new WeightedMovingAverage(),
 			_ => new SimpleMovingAverage(),
 		};
 

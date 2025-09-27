@@ -6,8 +6,8 @@ Strategy based on the custom I4 DRF indicator. It compares the direction of rece
 ## Details
 
 - **Entry Criteria**:
-  - Mode `Direct`: open long when the indicator changes from positive to negative, open short when it changes from negative to positive.
-  - Mode `NotDirect`: open long on a change from negative to positive, open short on a change from positive to negative.
+  - Modes `Direct`: open long when the indicator changes from positive to negative, open short when it changes from negative to positive.
+  - Modes `NotDirect`: open long on a change from negative to positive, open short on a change from positive to negative.
 - **Long/Short**: Both
 - **Exit Criteria**:
   - Positions are closed when the opposite signal appears.

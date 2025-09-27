@@ -20,17 +20,17 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 {
 	private readonly StrategyParam<int> _firstPeriod;
 	private readonly StrategyParam<int> _firstShift;
-	private readonly StrategyParam<MaMethod> _firstMethod;
-	private readonly StrategyParam<AppliedPriceType> _firstPrice;
+	private readonly StrategyParam<MaMethods> _firstMethod;
+	private readonly StrategyParam<AppliedPriceTypes> _firstPrice;
 	private readonly StrategyParam<int> _secondPeriod;
 	private readonly StrategyParam<int> _secondShift;
-	private readonly StrategyParam<MaMethod> _secondMethod;
-	private readonly StrategyParam<AppliedPriceType> _secondPrice;
+	private readonly StrategyParam<MaMethods> _secondMethod;
+	private readonly StrategyParam<AppliedPriceTypes> _secondPrice;
 	private readonly StrategyParam<bool> _useFilter;
 	private readonly StrategyParam<int> _thirdPeriod;
 	private readonly StrategyParam<int> _thirdShift;
-	private readonly StrategyParam<MaMethod> _thirdMethod;
-	private readonly StrategyParam<AppliedPriceType> _thirdPrice;
+	private readonly StrategyParam<MaMethods> _thirdMethod;
+	private readonly StrategyParam<AppliedPriceTypes> _thirdPrice;
 	private readonly StrategyParam<bool> _useRiskPercent;
 	private readonly StrategyParam<decimal> _fixedVolume;
 	private readonly StrategyParam<decimal> _riskPercent;
@@ -80,7 +80,7 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 	/// <summary>
 	/// Smoothing method for the first moving average.
 	/// </summary>
-	public MaMethod FirstMethod
+	public MaMethods FirstMethod
 	{
 		get => _firstMethod.Value;
 		set => _firstMethod.Value = value;
@@ -89,7 +89,7 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 	/// <summary>
 	/// Price source for the first moving average.
 	/// </summary>
-	public AppliedPriceType FirstAppliedPrice
+	public AppliedPriceTypes FirstAppliedPrice
 	{
 		get => _firstPrice.Value;
 		set => _firstPrice.Value = value;
@@ -116,7 +116,7 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 	/// <summary>
 	/// Smoothing method for the second moving average.
 	/// </summary>
-	public MaMethod SecondMethod
+	public MaMethods SecondMethod
 	{
 		get => _secondMethod.Value;
 		set => _secondMethod.Value = value;
@@ -125,7 +125,7 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 	/// <summary>
 	/// Price source for the second moving average.
 	/// </summary>
-	public AppliedPriceType SecondAppliedPrice
+	public AppliedPriceTypes SecondAppliedPrice
 	{
 		get => _secondPrice.Value;
 		set => _secondPrice.Value = value;
@@ -161,7 +161,7 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 	/// <summary>
 	/// Smoothing method for the third moving average filter.
 	/// </summary>
-	public MaMethod ThirdMethod
+	public MaMethods ThirdMethod
 	{
 		get => _thirdMethod.Value;
 		set => _thirdMethod.Value = value;
@@ -170,7 +170,7 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 	/// <summary>
 	/// Price source for the third moving average filter.
 	/// </summary>
-	public AppliedPriceType ThirdAppliedPrice
+	public AppliedPriceTypes ThirdAppliedPrice
 	{
 		get => _thirdPrice.Value;
 		set => _thirdPrice.Value = value;
@@ -272,11 +272,11 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 		.SetDisplay("First MA Shift", "Shift (in bars) applied to the first moving average", "First Moving Average")
 		.SetCanOptimize(true);
 
-		_firstMethod = Param(nameof(FirstMethod), MaMethod.Smoothed)
+		_firstMethod = Param(nameof(FirstMethod), MaMethods.Smoothed)
 		.SetDisplay("First MA Method", "Smoothing method for the first moving average", "First Moving Average")
 		.SetCanOptimize(true);
 
-		_firstPrice = Param(nameof(FirstAppliedPrice), AppliedPriceType.Close)
+		_firstPrice = Param(nameof(FirstAppliedPrice), AppliedPriceTypes.Close)
 		.SetDisplay("First MA Price", "Price source for the first moving average", "First Moving Average");
 
 		_secondPeriod = Param(nameof(SecondPeriod), 8)
@@ -289,11 +289,11 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 		.SetDisplay("Second MA Shift", "Shift (in bars) applied to the second moving average", "Second Moving Average")
 		.SetCanOptimize(true);
 
-		_secondMethod = Param(nameof(SecondMethod), MaMethod.Smoothed)
+		_secondMethod = Param(nameof(SecondMethod), MaMethods.Smoothed)
 		.SetDisplay("Second MA Method", "Smoothing method for the second moving average", "Second Moving Average")
 		.SetCanOptimize(true);
 
-		_secondPrice = Param(nameof(SecondAppliedPrice), AppliedPriceType.Close)
+		_secondPrice = Param(nameof(SecondAppliedPrice), AppliedPriceTypes.Close)
 		.SetDisplay("Second MA Price", "Price source for the second moving average", "Second Moving Average");
 
 		_useFilter = Param(nameof(UseFilter), true)
@@ -309,11 +309,11 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 		.SetDisplay("Third MA Shift", "Shift (in bars) applied to the third moving average filter", "Filter")
 		.SetCanOptimize(true);
 
-		_thirdMethod = Param(nameof(ThirdMethod), MaMethod.Smoothed)
+		_thirdMethod = Param(nameof(ThirdMethod), MaMethods.Smoothed)
 		.SetDisplay("Third MA Method", "Smoothing method for the third moving average filter", "Filter")
 		.SetCanOptimize(true);
 
-		_thirdPrice = Param(nameof(ThirdAppliedPrice), AppliedPriceType.Close)
+		_thirdPrice = Param(nameof(ThirdAppliedPrice), AppliedPriceTypes.Close)
 		.SetDisplay("Third MA Price", "Price source for the third moving average filter", "Filter");
 
 		_useRiskPercent = Param(nameof(UseRiskPercent), true)
@@ -704,28 +704,28 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 		return stopLoss ?? trailing;
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceType priceType)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceTypes priceType)
 	{
 		return priceType switch
 		{
-			AppliedPriceType.Open => candle.OpenPrice,
-			AppliedPriceType.High => candle.HighPrice,
-			AppliedPriceType.Low => candle.LowPrice,
-			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
+			AppliedPriceTypes.Open => candle.OpenPrice,
+			AppliedPriceTypes.High => candle.HighPrice,
+			AppliedPriceTypes.Low => candle.LowPrice,
+			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}
 
-	private static IIndicator CreateMovingAverage(MaMethod method, int period)
+	private static IIndicator CreateMovingAverage(MaMethods method, int period)
 	{
 		return method switch
 		{
-			MaMethod.Simple => new SimpleMovingAverage { Length = period },
-			MaMethod.Exponential => new ExponentialMovingAverage { Length = period },
-			MaMethod.Smoothed => new SmoothedMovingAverage { Length = period },
-			MaMethod.Weighted => new WeightedMovingAverage { Length = period },
+			MaMethods.Simple => new SimpleMovingAverage { Length = period },
+			MaMethods.Exponential => new ExponentialMovingAverage { Length = period },
+			MaMethods.Smoothed => new SmoothedMovingAverage { Length = period },
+			MaMethods.Weighted => new WeightedMovingAverage { Length = period },
 			_ => new SimpleMovingAverage { Length = period }
 		};
 	}
@@ -733,7 +733,7 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 	/// <summary>
 	/// Moving average smoothing methods supported by the strategy.
 	/// </summary>
-	public enum MaMethod
+	public enum MaMethods
 	{
 		Simple,
 		Exponential,
@@ -744,7 +744,7 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 	/// <summary>
 	/// Price sources supported for indicator calculations.
 	/// </summary>
-	public enum AppliedPriceType
+	public enum AppliedPriceTypes
 	{
 		Close,
 		Open,

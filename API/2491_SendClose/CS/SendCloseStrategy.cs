@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SendCloseStrategy : Strategy
 {
-	private enum FractalType
+	private enum FractalTypes
 	{
 		Up,
 		Down
@@ -27,14 +27,14 @@ public class SendCloseStrategy : Strategy
 
 	private readonly struct FractalPoint
 	{
-		public FractalPoint(FractalType type, DateTimeOffset time, decimal price)
+		public FractalPoint(FractalTypes type, DateTimeOffset time, decimal price)
 		{
 			Type = type;
 			Time = time;
 			Price = price;
 		}
 
-		public FractalType Type { get; }
+		public FractalTypes Type { get; }
 		public DateTimeOffset Time { get; }
 		public decimal Price { get; }
 	}
@@ -352,20 +352,20 @@ public class SendCloseStrategy : Strategy
 
 		// Identify new fractal points once enough candles are available.
 		if (IsUpFractal())
-			RegisterFractal(new FractalPoint(FractalType.Up, _t2, _h2));
+			RegisterFractal(new FractalPoint(FractalTypes.Up, _t2, _h2));
 
 		if (IsDownFractal())
-			RegisterFractal(new FractalPoint(FractalType.Down, _t2, _l2));
+			RegisterFractal(new FractalPoint(FractalTypes.Down, _t2, _l2));
 	}
 
 	private void UpdateFractalLines()
 	{
 		// Build the sell line using the most recent up-down-up pattern.
-		if (TryBuildLine(FractalType.Up, out var sellLine))
+		if (TryBuildLine(FractalTypes.Up, out var sellLine))
 			_sellLine = sellLine;
 
 		// Build the buy line using the most recent down-up-down pattern.
-		if (TryBuildLine(FractalType.Down, out var buyLine))
+		if (TryBuildLine(FractalTypes.Down, out var buyLine))
 			_buyLine = buyLine;
 	}
 
@@ -393,7 +393,7 @@ public class SendCloseStrategy : Strategy
 		_fractal0 = point;
 	}
 
-	private bool TryBuildLine(FractalType target, out FractalLine line)
+	private bool TryBuildLine(FractalTypes target, out FractalLine line)
 	{
 		line = default;
 		FractalPoint? latest = null;

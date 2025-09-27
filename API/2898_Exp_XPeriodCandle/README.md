@@ -22,7 +22,7 @@ This strategy is a StockSharp port of the MQL5 expert advisor `Exp_XPeriodCandle
 |-----------|-------------|
 | `CandleType` | Time frame of the processed candles. |
 | `Period` | Depth of the smoothing window (same as the indicator period). |
-| `SmoothingMethod` | Moving-average approximation used for all OHLC series. Unsupported methods fall back to EMA. |
+| `SmoothingMethods` | Moving-average approximation used for all OHLC series. Unsupported methods fall back to EMA. |
 | `SmoothingLength` | Length parameter for the smoother. |
 | `SmoothingPhase` | Additional phase input (kept for completeness; only active in original MQL JJMA family). |
 | `SignalBar` | Which completed candle to evaluate (1 = previous candle, replicating the MQL expert default). |

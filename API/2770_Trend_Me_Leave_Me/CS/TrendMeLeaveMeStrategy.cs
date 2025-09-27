@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TrendMeLeaveMeStrategy : Strategy
 {
-	private enum TradeDirection
+	private enum TradeDirections
 	{
 		None,
 		Buy,
@@ -38,7 +38,7 @@ public class TrendMeLeaveMeStrategy : Strategy
 	private AverageDirectionalIndex _adx = null!;
 	private ParabolicSar _sar = null!;
 
-	private TradeDirection _nextDirection = TradeDirection.Buy;
+	private TradeDirections _nextDirection = TradeDirections.Buy;
 	private bool _breakevenActivated;
 	private decimal _pipSize;
 	private int _positionDirection;
@@ -176,7 +176,7 @@ public class TrendMeLeaveMeStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_nextDirection = TradeDirection.Buy;
+		_nextDirection = TradeDirections.Buy;
 		_breakevenActivated = false;
 		_pipSize = 0m;
 		_positionDirection = 0;
@@ -280,13 +280,13 @@ public class TrendMeLeaveMeStrategy : Strategy
 		var quietMarket = adx < AdxQuietLevel;
 
 		// Follow original cmd logic: buy after losses or initialization, sell after profits.
-		if ((_nextDirection == TradeDirection.Buy || _nextDirection == TradeDirection.None) && quietMarket && close > sar)
+		if ((_nextDirection == TradeDirections.Buy || _nextDirection == TradeDirections.None) && quietMarket && close > sar)
 		{
 			_breakevenActivated = false;
 			BuyMarket(Volume + Math.Abs(Position));
 			_positionDirection = 1;
 		}
-		else if (_nextDirection == TradeDirection.Sell && quietMarket && close < sar)
+		else if (_nextDirection == TradeDirections.Sell && quietMarket && close < sar)
 		{
 			_breakevenActivated = false;
 			SellMarket(Volume + Math.Abs(Position));
@@ -356,9 +356,9 @@ public class TrendMeLeaveMeStrategy : Strategy
 	private void UpdateNextDirection(bool wasProfit, int direction)
 	{
 		if (direction > 0)
-			_nextDirection = wasProfit ? TradeDirection.Sell : TradeDirection.Buy;
+			_nextDirection = wasProfit ? TradeDirections.Sell : TradeDirections.Buy;
 		else if (direction < 0)
-			_nextDirection = wasProfit ? TradeDirection.Buy : TradeDirection.Sell;
+			_nextDirection = wasProfit ? TradeDirections.Buy : TradeDirections.Sell;
 	}
 
 	private decimal CalculatePipSize()

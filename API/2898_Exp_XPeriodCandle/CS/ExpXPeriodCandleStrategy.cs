@@ -15,7 +15,7 @@ using StockSharp.Messages;
 
 	public class ExpXPeriodCandleStrategy : Strategy
 	{
-		public enum SmoothingMethod
+		public enum SmoothingMethods
 		{
 			Simple,
 			Exponential,
@@ -31,7 +31,7 @@ using StockSharp.Messages;
 
 		private readonly StrategyParam<DataType> _candleType;
 		private readonly StrategyParam<int> _period;
-		private readonly StrategyParam<SmoothingMethod> _smoothingMethod;
+		private readonly StrategyParam<SmoothingMethods> _smoothingMethod;
 		private readonly StrategyParam<int> _smoothingLength;
 		private readonly StrategyParam<int> _smoothingPhase;
 		private readonly StrategyParam<int> _signalBar;
@@ -62,7 +62,7 @@ using StockSharp.Messages;
 				.SetDisplay("Smoothing Window", "Depth of the price smoothing window", "Indicator")
 				.SetCanOptimize(true);
 
-			_smoothingMethod = Param(nameof(SmoothingMethod), SmoothingMethod.JurikLike)
+			_smoothingMethod = Param(nameof(SmoothingMethods), SmoothingMethods.JurikLike)
 				.SetDisplay("Smoothing Method", "Type of moving average approximation", "Indicator");
 
 			_smoothingLength = Param(nameof(SmoothingLength), 3)
@@ -114,7 +114,7 @@ using StockSharp.Messages;
 			set => _period.Value = value;
 		}
 
-		public SmoothingMethod Smoothing
+		public SmoothingMethods Smoothing
 		{
 			get => _smoothingMethod.Value;
 			set => _smoothingMethod.Value = value;
@@ -353,17 +353,17 @@ using StockSharp.Messages;
 			return min;
 		}
 
-		private static Smoother CreateSmoother(SmoothingMethod method, int length, int phase)
+		private static Smoother CreateSmoother(SmoothingMethods method, int length, int phase)
 		{
 			switch (method)
 			{
-				case SmoothingMethod.Simple:
+				case SmoothingMethods.Simple:
 					return new SmaSmoother(length);
-				case SmoothingMethod.Exponential:
+				case SmoothingMethods.Exponential:
 					return new EmaSmoother(length);
-				case SmoothingMethod.Smoothed:
+				case SmoothingMethods.Smoothed:
 					return new SmmaSmoother(length);
-				case SmoothingMethod.LinearWeighted:
+				case SmoothingMethods.LinearWeighted:
 					return new LwmaSmoother(length);
 				default:
 					// Approximate advanced smoothing modes (JJMA, JurX, Parabolic, T3, VIDYA, AMA) with EMA.

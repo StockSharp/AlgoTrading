@@ -25,7 +25,7 @@ public class MartingaleBoneCrusherStrategy : Strategy
 	private readonly StrategyParam<bool> _enableTrailing;
 	private readonly StrategyParam<decimal> _trailingTakeProfitMoney;
 	private readonly StrategyParam<decimal> _trailingStopMoney;
-	private readonly StrategyParam<MartingaleMode> _martingaleMode;
+	private readonly StrategyParam<MartingaleModes> _martingaleMode;
 	private readonly StrategyParam<bool> _useMoveToBreakeven;
 	private readonly StrategyParam<decimal> _moveToBreakevenTrigger;
 	private readonly StrategyParam<decimal> _breakevenOffset;
@@ -85,7 +85,7 @@ public class MartingaleBoneCrusherStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Step", "Allowed profit pullback", "Risk Management");
 
-		_martingaleMode = Param(nameof(MartingaleMode), MartingaleMode.Martingale2)
+		_martingaleMode = Param(nameof(MartingaleModes), MartingaleModes.Martingale2)
 			.SetDisplay("Mode", "Martingale logic variant", "General");
 
 		_useMoveToBreakeven = Param(nameof(UseMoveToBreakeven), true)
@@ -204,7 +204,7 @@ public class MartingaleBoneCrusherStrategy : Strategy
 	/// <summary>
 	/// Selected martingale mode.
 	/// </summary>
-	public MartingaleMode MartingaleMode
+	public MartingaleModes MartingaleModes
 	{
 		get => _martingaleMode.Value;
 		set => _martingaleMode.Value = value;
@@ -427,7 +427,7 @@ public class MartingaleBoneCrusherStrategy : Strategy
 
 		if (_lastTradeResult < 0m)
 		{
-		if (MartingaleMode == MartingaleMode.Martingale2 && _lastLosingSide.HasValue)
+		if (MartingaleModes == MartingaleModes.Martingale2 && _lastLosingSide.HasValue)
 		return _lastLosingSide == Sides.Buy ? Sides.Sell : Sides.Buy;
 
 		return signal;
@@ -701,7 +701,7 @@ public class MartingaleBoneCrusherStrategy : Strategy
 	/// <summary>
 	/// Supported martingale variants.
 	/// </summary>
-	public enum MartingaleMode
+	public enum MartingaleModes
 	{
 		/// <summary>
 		/// Follow moving average direction after every loss.

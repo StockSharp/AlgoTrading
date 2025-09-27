@@ -26,10 +26,10 @@ public class OneHourEurUsdStrategy : Strategy
 	private readonly StrategyParam<int> _lookbackPeriod;
 	private readonly StrategyParam<int> _fastMaLength;
 	private readonly StrategyParam<int> _fastMaShift;
-	private readonly StrategyParam<MovingAverageKind> _fastMaType;
+	private readonly StrategyParam<MovingAverageKinds> _fastMaType;
 	private readonly StrategyParam<int> _slowMaLength;
 	private readonly StrategyParam<int> _slowMaShift;
-	private readonly StrategyParam<MovingAverageKind> _slowMaType;
+	private readonly StrategyParam<MovingAverageKinds> _slowMaType;
 	private readonly StrategyParam<int> _macdFastLength;
 	private readonly StrategyParam<int> _macdSlowLength;
 	private readonly StrategyParam<int> _macdSignalLength;
@@ -93,7 +93,7 @@ public class OneHourEurUsdStrategy : Strategy
 			.SetDisplay("Fast MA Shift", "Shift for fast MA", "Indicators")
 			.SetNotNegative();
 
-		_fastMaType = Param(nameof(FastMaType), MovingAverageKind.Simple)
+		_fastMaType = Param(nameof(FastMaType), MovingAverageKinds.Simple)
 			.SetDisplay("Fast MA Type", "Type of fast MA", "Indicators");
 
 		_slowMaLength = Param(nameof(SlowMaLength), 100)
@@ -104,7 +104,7 @@ public class OneHourEurUsdStrategy : Strategy
 			.SetDisplay("Slow MA Shift", "Shift for slow MA", "Indicators")
 			.SetNotNegative();
 
-		_slowMaType = Param(nameof(SlowMaType), MovingAverageKind.Simple)
+		_slowMaType = Param(nameof(SlowMaType), MovingAverageKinds.Simple)
 			.SetDisplay("Slow MA Type", "Type of slow MA", "Indicators");
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
@@ -198,7 +198,7 @@ public class OneHourEurUsdStrategy : Strategy
 	/// <summary>
 	/// Type of moving average used for the fast curve.
 	/// </summary>
-	public MovingAverageKind FastMaType
+	public MovingAverageKinds FastMaType
 	{
 		get => _fastMaType.Value;
 		set => _fastMaType.Value = value;
@@ -225,7 +225,7 @@ public class OneHourEurUsdStrategy : Strategy
 	/// <summary>
 	/// Type of moving average used for the slow curve.
 	/// </summary>
-	public MovingAverageKind SlowMaType
+	public MovingAverageKinds SlowMaType
 	{
 		get => _slowMaType.Value;
 		set => _slowMaType.Value = value;
@@ -532,14 +532,14 @@ public class OneHourEurUsdStrategy : Strategy
 	return digits == 3 || digits == 5 ? step * 10m : step;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageKind type, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageKinds type, int length)
 	{
 	return type switch
 	{
-		MovingAverageKind.Simple => new SimpleMovingAverage { Length = length },
-		MovingAverageKind.Exponential => new ExponentialMovingAverage { Length = length },
-		MovingAverageKind.Smoothed => new SmoothedMovingAverage { Length = length },
-		MovingAverageKind.LinearWeighted => new WeightedMovingAverage { Length = length },
+		MovingAverageKinds.Simple => new SimpleMovingAverage { Length = length },
+		MovingAverageKinds.Exponential => new ExponentialMovingAverage { Length = length },
+		MovingAverageKinds.Smoothed => new SmoothedMovingAverage { Length = length },
+		MovingAverageKinds.LinearWeighted => new WeightedMovingAverage { Length = length },
 		_ => new SimpleMovingAverage { Length = length }
 	};
 	}
@@ -547,7 +547,7 @@ public class OneHourEurUsdStrategy : Strategy
 	/// <summary>
 	/// Moving average options matching the original MQL enumeration.
 	/// </summary>
-	public enum MovingAverageKind
+	public enum MovingAverageKinds
 	{
 	Simple,
 	Exponential,

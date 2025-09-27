@@ -21,7 +21,7 @@ public class XrsiHistogramVolDirectStrategy : Strategy
 	/// <summary>
 	/// Supported smoothing types for the RSI*volume series.
 	/// </summary>
-	public enum XrsiSmoothMethod
+	public enum XrsiSmoothMethods
 	{
 		Sma,
 		Ema,
@@ -32,7 +32,7 @@ public class XrsiHistogramVolDirectStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<int> _smoothLength;
-	private readonly StrategyParam<XrsiSmoothMethod> _smoothMethod;
+	private readonly StrategyParam<XrsiSmoothMethods> _smoothMethod;
 	private readonly StrategyParam<bool> _useTickVolume;
 	private readonly StrategyParam<bool> _allowBuyOpen;
 	private readonly StrategyParam<bool> _allowSellOpen;
@@ -64,7 +64,7 @@ public class XrsiHistogramVolDirectStrategy : Strategy
 		set => _smoothLength.Value = value;
 	}
 
-	public XrsiSmoothMethod SmoothMethod
+	public XrsiSmoothMethods SmoothMethod
 	{
 		get => _smoothMethod.Value;
 		set => _smoothMethod.Value = value;
@@ -113,7 +113,7 @@ public class XrsiHistogramVolDirectStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Smoothing Length", "Length of the moving average applied to RSI*volume", "Indicator");
 
-		_smoothMethod = Param(nameof(SmoothMethod), XrsiSmoothMethod.Sma)
+		_smoothMethod = Param(nameof(SmoothMethod), XrsiSmoothMethods.Sma)
 			.SetDisplay("Smoothing Method", "Type of moving average used for smoothing", "Indicator")
 			.SetCanOptimize(false);
 
@@ -163,10 +163,10 @@ public class XrsiHistogramVolDirectStrategy : Strategy
 	{
 		return SmoothMethod switch
 		{
-			XrsiSmoothMethod.Sma => new SMA { Length = SmoothLength },
-			XrsiSmoothMethod.Ema => new EMA { Length = SmoothLength },
-			XrsiSmoothMethod.Smma => new SMMA { Length = SmoothLength },
-			XrsiSmoothMethod.Wma => new WMA { Length = SmoothLength },
+			XrsiSmoothMethods.Sma => new SMA { Length = SmoothLength },
+			XrsiSmoothMethods.Ema => new EMA { Length = SmoothLength },
+			XrsiSmoothMethods.Smma => new SMMA { Length = SmoothLength },
+			XrsiSmoothMethods.Wma => new WMA { Length = SmoothLength },
 			_ => new SMA { Length = SmoothLength },
 		};
 	}

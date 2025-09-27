@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ExpDigitalMacdStrategy : Strategy
 {
-	private readonly StrategyParam<ExpDigitalMacdMode> _mode;
+	private readonly StrategyParam<ExpDigitalMacdModes> _mode;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _signalPeriod;
@@ -48,7 +48,7 @@ public class ExpDigitalMacdStrategy : Strategy
 	/// </summary>
 	public ExpDigitalMacdStrategy()
 	{
-		_mode = Param(nameof(Mode), ExpDigitalMacdMode.MacdTwist)
+		_mode = Param(nameof(Mode), ExpDigitalMacdModes.MacdTwist)
 		.SetDisplay("Mode", "Algorithm used to analyse MACD", "General");
 
 		_fastPeriod = Param(nameof(FastPeriod), 12)
@@ -100,7 +100,7 @@ public class ExpDigitalMacdStrategy : Strategy
 	/// <summary>
 	/// Selected trading mode.
 	/// </summary>
-	public ExpDigitalMacdMode Mode
+	public ExpDigitalMacdModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -292,19 +292,19 @@ public class ExpDigitalMacdStrategy : Strategy
 			return;
 		}
 
-		if (Mode == ExpDigitalMacdMode.MacdTwist && _macdPrev3 is null)
+		if (Mode == ExpDigitalMacdModes.MacdTwist && _macdPrev3 is null)
 		{
 			UpdateState(macdCurrent, signalCurrent);
 			return;
 		}
 
-		if (Mode == ExpDigitalMacdMode.SignalTwist && (_signalPrev is null || _signalPrev2 is null || _signalPrev3 is null))
+		if (Mode == ExpDigitalMacdModes.SignalTwist && (_signalPrev is null || _signalPrev2 is null || _signalPrev3 is null))
 		{
 			UpdateState(macdCurrent, signalCurrent);
 			return;
 		}
 
-		if (Mode == ExpDigitalMacdMode.MacdDisposition && (_signalPrev is null || _signalPrev2 is null))
+		if (Mode == ExpDigitalMacdModes.MacdDisposition && (_signalPrev is null || _signalPrev2 is null))
 		{
 			UpdateState(macdCurrent, signalCurrent);
 			return;
@@ -323,7 +323,7 @@ public class ExpDigitalMacdStrategy : Strategy
 
 		switch (Mode)
 		{
-			case ExpDigitalMacdMode.Breakdown:
+			case ExpDigitalMacdModes.Breakdown:
 			{
 				var prev = _macdPrev.Value;
 				var prev2 = _macdPrev2.Value;
@@ -350,7 +350,7 @@ public class ExpDigitalMacdStrategy : Strategy
 
 				break;
 			}
-			case ExpDigitalMacdMode.MacdTwist:
+			case ExpDigitalMacdModes.MacdTwist:
 			{
 				var prev = _macdPrev.Value;
 				var prev2 = _macdPrev2.Value;
@@ -378,7 +378,7 @@ public class ExpDigitalMacdStrategy : Strategy
 
 				break;
 			}
-			case ExpDigitalMacdMode.SignalTwist:
+			case ExpDigitalMacdModes.SignalTwist:
 			{
 				var prev = _signalPrev!.Value;
 				var prev2 = _signalPrev2!.Value;
@@ -406,7 +406,7 @@ public class ExpDigitalMacdStrategy : Strategy
 
 				break;
 			}
-			case ExpDigitalMacdMode.MacdDisposition:
+			case ExpDigitalMacdModes.MacdDisposition:
 			{
 				var macdPrev = _macdPrev.Value;
 				var macdPrev2 = _macdPrev2.Value;
@@ -494,7 +494,7 @@ public class ExpDigitalMacdStrategy : Strategy
 /// <summary>
 /// Modes that replicate the original Exp_Digital_MACD decision rules.
 /// </summary>
-public enum ExpDigitalMacdMode
+public enum ExpDigitalMacdModes
 {
 	/// <summary>
 	/// Use zero line breakdown logic.

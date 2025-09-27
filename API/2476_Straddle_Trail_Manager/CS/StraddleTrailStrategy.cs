@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies;
 public class StraddleTrailStrategy : Strategy
 {
 	private readonly StrategyParam<bool> _shutdownNow;
-	private readonly StrategyParam<ShutdownOption> _shutdownMode;
+	private readonly StrategyParam<ShutdownOptions> _shutdownMode;
 	private readonly StrategyParam<decimal> _distanceFromPrice;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
@@ -54,7 +54,7 @@ public class StraddleTrailStrategy : Strategy
 	private bool? _isLongPosition;
 
 	public bool ShutdownNow { get => _shutdownNow.Value; set => _shutdownNow.Value = value; }
-	public ShutdownOption ShutdownMode { get => _shutdownMode.Value; set => _shutdownMode.Value = value; }
+	public ShutdownOptions ShutdownMode { get => _shutdownMode.Value; set => _shutdownMode.Value = value; }
 	public decimal DistanceFromPrice { get => _distanceFromPrice.Value; set => _distanceFromPrice.Value = value; }
 	public decimal StopLossPips { get => _stopLossPips.Value; set => _stopLossPips.Value = value; }
 	public decimal TakeProfitPips { get => _takeProfitPips.Value; set => _takeProfitPips.Value = value; }
@@ -78,7 +78,7 @@ public class StraddleTrailStrategy : Strategy
 		_shutdownNow = Param(nameof(ShutdownNow), false)
 		.SetDisplay("Shutdown", "Force close/cancel", "Risk");
 
-		_shutdownMode = Param(nameof(ShutdownMode), ShutdownOption.All)
+		_shutdownMode = Param(nameof(ShutdownMode), ShutdownOptions.All)
 		.SetDisplay("Shutdown Mode", "What to cancel", "Risk");
 
 		_distanceFromPrice = Param(nameof(DistanceFromPrice), 30m)
@@ -472,19 +472,19 @@ public class StraddleTrailStrategy : Strategy
 	{
 		var hasActivity = false;
 
-		if ((ShutdownMode == ShutdownOption.All || ShutdownMode == ShutdownOption.LongPositions) && Position > 0)
+		if ((ShutdownMode == ShutdownOptions.All || ShutdownMode == ShutdownOptions.LongPositions) && Position > 0)
 		{
 			ClosePosition();
 			hasActivity = true;
 		}
 
-		if ((ShutdownMode == ShutdownOption.All || ShutdownMode == ShutdownOption.ShortPositions) && Position < 0)
+		if ((ShutdownMode == ShutdownOptions.All || ShutdownMode == ShutdownOptions.ShortPositions) && Position < 0)
 		{
 			ClosePosition();
 			hasActivity = true;
 		}
 
-		if (ShutdownMode == ShutdownOption.All || ShutdownMode == ShutdownOption.PendingLong)
+		if (ShutdownMode == ShutdownOptions.All || ShutdownMode == ShutdownOptions.PendingLong)
 		{
 			if (_buyStopOrder != null && _buyStopOrder.State == OrderStates.Active)
 			{
@@ -493,7 +493,7 @@ public class StraddleTrailStrategy : Strategy
 			}
 		}
 
-		if (ShutdownMode == ShutdownOption.All || ShutdownMode == ShutdownOption.PendingShort)
+		if (ShutdownMode == ShutdownOptions.All || ShutdownMode == ShutdownOptions.PendingShort)
 		{
 			if (_sellStopOrder != null && _sellStopOrder.State == OrderStates.Active)
 			{
@@ -595,7 +595,7 @@ public class StraddleTrailStrategy : Strategy
 		return rounded * step;
 	}
 
-	public enum ShutdownOption
+	public enum ShutdownOptions
 	{
 		All,
 		LongPositions,

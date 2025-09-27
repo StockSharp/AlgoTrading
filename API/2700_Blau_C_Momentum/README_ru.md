@@ -17,16 +17,16 @@
 4. Сформировать сигналы:
    - **Breakdown** — если предыдущий бар был выше нуля, а сигнальный бар ≤0 — открываем/переворачиваемся в лонг; если предыдущий бар был ниже нуля, а сигнальный ≥0 — открываем/переворачиваемся в шорт. Флаги закрытия (`EnableLongExit`, `EnableShortExit`) закрывают противоположные позиции при тех же условиях.
    - **Twist** — сравниваем два предыдущих бара. Ускорение вверх и подтверждение сигнального бара инициирует покупку, ускорение вниз — продажу.
-5. Объём сделки определяется параметрами `MoneyManagement` и `MarginMode`. Отрицательное значение — фиксированный объём. Введена временная блокировка повторных входов до следующей свечи.
+5. Объём сделки определяется параметрами `MoneyManagement` и `MarginModes`. Отрицательное значение — фиксированный объём. Введена временная блокировка повторных входов до следующей свечи.
 
 ## Параметры
 - `MoneyManagement` — доля капитала (или фиксированный лот при отрицательном значении).
-- `MarginMode` — режим интерпретации money management (`FreeMarginShare`, `BalanceShare`, `FreeMarginRisk`, `BalanceRisk`). Режимы риска используют `StopLossPoints` и `Security.StepPrice`.
+- `MarginModes` — режим интерпретации money management (`FreeMarginShare`, `BalanceShare`, `FreeMarginRisk`, `BalanceRisk`). Режимы риска используют `StopLossPoints` и `Security.StepPrice`.
 - `StopLossPoints`, `TakeProfitPoints` — расстояние до стоп-лосса/тейк-профита в шагах цены.
 - `SlippagePoints` — допустимое проскальзывание (для совместимости, реальные заявки — рыночные).
 - `EnableLongEntry`, `EnableShortEntry` — разрешение на открытие длинных/коротких позиций.
 - `EnableLongExit`, `EnableShortExit` — разрешение на закрытие позиций по сигналам.
-- `EntryMode` — режим работы (`Breakdown` или `Twist`).
+- `EntryModes` — режим работы (`Breakdown` или `Twist`).
 - `CandleType` — таймфрейм для расчёта индикатора.
 - `SmoothingMethod` — метод сглаживания (Simple, Exponential, Smoothed, LinearWeighted, Jurik, TripleExponential, Adaptive).
 - `MomentumLength`, `FirstSmoothLength`, `SecondSmoothLength`, `ThirdSmoothLength`, `Phase` — параметры расчёта момента и сглаживания.

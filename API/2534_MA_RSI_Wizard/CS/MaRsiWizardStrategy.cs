@@ -28,11 +28,11 @@ public class MaRsiWizardStrategy : Strategy
 	private readonly StrategyParam<int> _expirationBars;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MaMethod> _maMethod;
-	private readonly StrategyParam<AppliedPrice> _maAppliedPrice;
+	private readonly StrategyParam<MaMethods> _maMethod;
+	private readonly StrategyParam<AppliedPrices> _maAppliedPrice;
 	private readonly StrategyParam<decimal> _maWeight;
 	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<AppliedPrice> _rsiAppliedPrice;
+	private readonly StrategyParam<AppliedPrices> _rsiAppliedPrice;
 	private readonly StrategyParam<decimal> _rsiWeight;
 
 	private LengthIndicator<decimal> _ma = null!;
@@ -87,10 +87,10 @@ public class MaRsiWizardStrategy : Strategy
 			.SetDisplay("MA Shift", "Lag applied to the moving average output", "Moving Average")
 			.SetCanOptimize(true);
 
-		_maMethod = Param(nameof(MaMethod), MaMethod.Simple)
+		_maMethod = Param(nameof(MaMethods), MaMethods.Simple)
 			.SetDisplay("MA Method", "Moving average calculation method", "Moving Average");
 
-		_maAppliedPrice = Param(nameof(MaAppliedPrice), AppliedPrice.Close)
+		_maAppliedPrice = Param(nameof(MaAppliedPrice), AppliedPrices.Close)
 			.SetDisplay("MA Source", "Price type used for the moving average", "Moving Average");
 
 		_maWeight = Param(nameof(MaWeight), 0.8m)
@@ -103,7 +103,7 @@ public class MaRsiWizardStrategy : Strategy
 			.SetDisplay("RSI Period", "RSI calculation length", "RSI")
 			.SetCanOptimize(true);
 
-		_rsiAppliedPrice = Param(nameof(RsiAppliedPrice), AppliedPrice.Close)
+		_rsiAppliedPrice = Param(nameof(RsiAppliedPrice), AppliedPrices.Close)
 			.SetDisplay("RSI Source", "Price type used for RSI", "RSI");
 
 		_rsiWeight = Param(nameof(RsiWeight), 0.5m)
@@ -196,7 +196,7 @@ public class MaRsiWizardStrategy : Strategy
 	/// <summary>
 	/// Moving average calculation method.
 	/// </summary>
-	public MaMethod MaMethod
+	public MaMethods MaMethods
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -205,7 +205,7 @@ public class MaRsiWizardStrategy : Strategy
 	/// <summary>
 	/// Price source used for the moving average.
 	/// </summary>
-	public AppliedPrice MaAppliedPrice
+	public AppliedPrices MaAppliedPrice
 	{
 		get => _maAppliedPrice.Value;
 		set => _maAppliedPrice.Value = value;
@@ -232,7 +232,7 @@ public class MaRsiWizardStrategy : Strategy
 	/// <summary>
 	/// Price source used for the RSI indicator.
 	/// </summary>
-	public AppliedPrice RsiAppliedPrice
+	public AppliedPrices RsiAppliedPrice
 	{
 		get => _rsiAppliedPrice.Value;
 		set => _rsiAppliedPrice.Value = value;
@@ -274,7 +274,7 @@ public class MaRsiWizardStrategy : Strategy
 		_lastLongEntryBar = null;
 		_lastShortEntryBar = null;
 
-		_ma = CreateMovingAverage(MaMethod, MaPeriod);
+		_ma = CreateMovingAverage(MaMethods, MaPeriod);
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -410,28 +410,28 @@ public class MaRsiWizardStrategy : Strategy
 		return _maShiftBuffer.Count == shift + 1 ? _maShiftBuffer.Peek() : (decimal?)null;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MaMethod method, int period)
+	private static LengthIndicator<decimal> CreateMovingAverage(MaMethods method, int period)
 	{
 		return method switch
 		{
-			MaMethod.Simple => new SimpleMovingAverage { Length = period },
-			MaMethod.Exponential => new ExponentialMovingAverage { Length = period },
-			MaMethod.Smoothed => new SmoothedMovingAverage { Length = period },
-			MaMethod.LinearWeighted => new LinearWeightedMovingAverage { Length = period },
+			MaMethods.Simple => new SimpleMovingAverage { Length = period },
+			MaMethods.Exponential => new ExponentialMovingAverage { Length = period },
+			MaMethods.Smoothed => new SmoothedMovingAverage { Length = period },
+			MaMethods.LinearWeighted => new LinearWeightedMovingAverage { Length = period },
 			_ => new SimpleMovingAverage { Length = period }
 		};
 	}
 
-	private static decimal SelectAppliedPrice(ICandleMessage candle, AppliedPrice price)
+	private static decimal SelectAppliedPrice(ICandleMessage candle, AppliedPrices price)
 	{
 		return price switch
 		{
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}
@@ -440,7 +440,7 @@ public class MaRsiWizardStrategy : Strategy
 /// <summary>
 /// Moving average calculation methods supported by the strategy.
 /// </summary>
-public enum MaMethod
+public enum MaMethods
 {
 	Simple,
 	Exponential,
@@ -451,7 +451,7 @@ public enum MaMethod
 /// <summary>
 /// Price sources compatible with the indicators used in the strategy.
 /// </summary>
-public enum AppliedPrice
+public enum AppliedPrices
 {
 	Close,
 	Open,

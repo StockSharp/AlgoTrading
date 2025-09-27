@@ -30,7 +30,7 @@ public class SlowStochasticModeStrategy : Strategy
 	private readonly StrategyParam<bool> _enableShortEntries;
 	private readonly StrategyParam<bool> _enableLongExits;
 	private readonly StrategyParam<bool> _enableShortExits;
-	private readonly StrategyParam<SlowStochasticSignalMode> _mode;
+	private readonly StrategyParam<SlowStochasticSignalModes> _mode;
 
 	private readonly List<decimal> _kHistory = new();
 	private readonly List<decimal?> _dHistory = new();
@@ -40,7 +40,7 @@ public class SlowStochasticModeStrategy : Strategy
 	/// <summary>
 	/// Available signal calculation modes.
 	/// </summary>
-	public enum SlowStochasticSignalMode
+	public enum SlowStochasticSignalModes
 	{
 		/// <summary>
 		/// Trigger on the %K line breaking through the 50 level.
@@ -108,7 +108,7 @@ public class SlowStochasticModeStrategy : Strategy
 		_enableShortExits = Param(nameof(EnableShortExits), true)
 		.SetDisplay("Enable Short Exits", "Allow closing short positions", "Trading Rules");
 
-		_mode = Param(nameof(Mode), SlowStochasticSignalMode.Twist)
+		_mode = Param(nameof(Mode), SlowStochasticSignalModes.Twist)
 		.SetDisplay("Signal Mode", "Algorithm used to generate orders", "Trading Rules");
 	}
 
@@ -214,7 +214,7 @@ public class SlowStochasticModeStrategy : Strategy
 	/// <summary>
 	/// Selected signal calculation mode.
 	/// </summary>
-	public SlowStochasticSignalMode Mode
+	public SlowStochasticSignalModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -338,7 +338,7 @@ public class SlowStochasticModeStrategy : Strategy
 		if (_kHistory.Count < required)
 		return false;
 
-		if (Mode == SlowStochasticSignalMode.CloudTwist)
+		if (Mode == SlowStochasticSignalModes.CloudTwist)
 		{
 			return _dHistory.Count >= required &&
 			TryGetD(SignalBar, out _) &&
@@ -350,7 +350,7 @@ public class SlowStochasticModeStrategy : Strategy
 
 	private int GetRequiredHistoryCount()
 	{
-		return Mode == SlowStochasticSignalMode.Twist ? SignalBar + 3 : SignalBar + 2;
+		return Mode == SlowStochasticSignalModes.Twist ? SignalBar + 3 : SignalBar + 2;
 	}
 
 	private (bool openLong, bool openShort, bool closeLong, bool closeShort) EvaluateSignals()
@@ -362,7 +362,7 @@ public class SlowStochasticModeStrategy : Strategy
 
 		switch (Mode)
 		{
-		case SlowStochasticSignalMode.Breakdown:
+		case SlowStochasticSignalModes.Breakdown:
 				{
 					if (TryGetK(SignalBar, out var currentK) && TryGetK(SignalBar + 1, out var previousK))
 					{
@@ -381,7 +381,7 @@ public class SlowStochasticModeStrategy : Strategy
 					break;
 			}
 
-		case SlowStochasticSignalMode.Twist:
+		case SlowStochasticSignalModes.Twist:
 				{
 					if (TryGetK(SignalBar, out var latestK) &&
 					TryGetK(SignalBar + 1, out var prevK) &&
@@ -402,7 +402,7 @@ public class SlowStochasticModeStrategy : Strategy
 					break;
 			}
 
-		case SlowStochasticSignalMode.CloudTwist:
+		case SlowStochasticSignalModes.CloudTwist:
 				{
 					if (TryGetK(SignalBar, out var kCurrent) &&
 					TryGetK(SignalBar + 1, out var kPrev) &&

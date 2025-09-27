@@ -22,8 +22,8 @@ public class SeparateTradeStrategy : Strategy
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<int> _slowMaPeriod;
 	private readonly StrategyParam<int> _fastMaPeriod;
-	private readonly StrategyParam<MovingAverageMethod> _maMethod;
-	private readonly StrategyParam<AppliedPrice> _priceType;
+	private readonly StrategyParam<MovingAverageMethods> _maMethod;
+	private readonly StrategyParam<AppliedPrices> _priceType;
 	private readonly StrategyParam<decimal> _stopLossBuyPips;
 	private readonly StrategyParam<decimal> _stopLossSellPips;
 	private readonly StrategyParam<decimal> _takeProfitBuyPips;
@@ -77,10 +77,10 @@ public class SeparateTradeStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Fast MA Period", "Period for the faster moving average", "Indicators");
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.Exponential)
+		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Exponential)
 		.SetDisplay("MA Method", "Smoothing algorithm applied to both averages", "Indicators");
 
-		_priceType = Param(nameof(PriceType), AppliedPrice.Close)
+		_priceType = Param(nameof(PriceType), AppliedPrices.Close)
 		.SetDisplay("Applied Price", "Price input for moving averages and deviation", "Indicators");
 
 		_stopLossBuyPips = Param(nameof(StopLossBuyPips), 50m)
@@ -185,7 +185,7 @@ public class SeparateTradeStrategy : Strategy
 	/// <summary>
 	/// Smoothing method applied to both moving averages.
 	/// </summary>
-	public MovingAverageMethod MaMethod
+	public MovingAverageMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -194,7 +194,7 @@ public class SeparateTradeStrategy : Strategy
 	/// <summary>
 	/// Price input used for the moving averages and standard deviation.
 	/// </summary>
-	public AppliedPrice PriceType
+	public AppliedPrices PriceType
 	{
 		get => _priceType.Value;
 		set => _priceType.Value = value;
@@ -605,12 +605,12 @@ public class SeparateTradeStrategy : Strategy
 	{
 		return PriceType switch
 		{
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
@@ -643,13 +643,13 @@ public class SeparateTradeStrategy : Strategy
 		return decimals;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethod method, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.LinearWeighted => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new ExponentialMovingAverage { Length = length },
 		};
 	}
@@ -657,7 +657,7 @@ public class SeparateTradeStrategy : Strategy
 	/// <summary>
 	/// Moving average types supported by the strategy.
 	/// </summary>
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		/// <summary>Simple moving average.</summary>
 		Simple,
@@ -672,7 +672,7 @@ public class SeparateTradeStrategy : Strategy
 	/// <summary>
 	/// Price sources available for indicator calculations.
 	/// </summary>
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		/// <summary>Close price.</summary>
 		Close,

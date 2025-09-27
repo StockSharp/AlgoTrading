@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class OsHmaStrategy : Strategy
 {
-	public enum OsHmaMode
+	public enum OsHmaModes
 	{
 		Breakdown,
 		Twist
@@ -27,7 +27,7 @@ public class OsHmaStrategy : Strategy
 
 	private readonly StrategyParam<int> _fastHma;
 	private readonly StrategyParam<int> _slowHma;
-	private readonly StrategyParam<OsHmaMode> _mode;
+	private readonly StrategyParam<OsHmaModes> _mode;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
@@ -56,7 +56,7 @@ public class OsHmaStrategy : Strategy
 	/// <summary>
 	/// Trading mode.
 	/// </summary>
-	public OsHmaMode Mode
+	public OsHmaModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -104,7 +104,7 @@ public class OsHmaStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(20, 40, 2);
 
-		_mode = Param(nameof(Mode), OsHmaMode.Twist)
+		_mode = Param(nameof(Mode), OsHmaModes.Twist)
 		.SetDisplay("Mode", "Breakdown – zero crossing, Twist – direction change", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -187,12 +187,12 @@ public class OsHmaStrategy : Strategy
 
 	switch (Mode)
 	{
-	case OsHmaMode.Breakdown:
+	case OsHmaModes.Breakdown:
 	buySignal = _prevValue > 0m && current <= 0m;
 	sellSignal = _prevValue < 0m && current >= 0m;
 	break;
 
-	case OsHmaMode.Twist:
+	case OsHmaModes.Twist:
 	buySignal = _prevPrevValue < _prevValue && current > _prevValue;
 	sellSignal = _prevPrevValue > _prevValue && current < _prevValue;
 	break;

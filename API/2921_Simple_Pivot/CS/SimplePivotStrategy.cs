@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SimplePivotStrategy : Strategy
 {
-	private enum TradeDirection
+	private enum TradeDirections
 	{
 		None,
 		Long,
@@ -27,7 +27,7 @@ public class SimplePivotStrategy : Strategy
 
 	private readonly StrategyParam<DataType> _candleType;
 
-	private TradeDirection _lastDirection = TradeDirection.None;
+	private TradeDirections _lastDirection = TradeDirections.None;
 	private decimal _previousHigh;
 	private decimal _previousLow;
 	private bool _hasPreviousCandle;
@@ -50,7 +50,7 @@ public class SimplePivotStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_lastDirection = TradeDirection.None;
+		_lastDirection = TradeDirections.None;
 		_previousHigh = 0m;
 		_previousLow = 0m;
 		_hasPreviousCandle = false;
@@ -79,13 +79,13 @@ public class SimplePivotStrategy : Strategy
 		}
 
 		var pivot = (_previousHigh + _previousLow) / 2m;
-		var desiredDirection = TradeDirection.Long;
+		var desiredDirection = TradeDirections.Long;
 
 		// When the new open sits between the previous high and pivot we switch to a short bias.
 		if (candle.OpenPrice < _previousHigh && candle.OpenPrice > pivot)
-			desiredDirection = TradeDirection.Short;
+			desiredDirection = TradeDirections.Short;
 
-		if (desiredDirection == _lastDirection && _lastDirection != TradeDirection.None)
+		if (desiredDirection == _lastDirection && _lastDirection != TradeDirections.None)
 		{
 			// Keep the existing position when direction has not changed.
 			_previousHigh = candle.HighPrice;
@@ -102,7 +102,7 @@ public class SimplePivotStrategy : Strategy
 
 		CloseExistingPosition();
 
-		if (desiredDirection == TradeDirection.Long)
+		if (desiredDirection == TradeDirections.Long)
 		{
 			// Enter a long position when the open is below the pivot.
 			BuyMarket(Volume);
@@ -124,13 +124,13 @@ public class SimplePivotStrategy : Strategy
 		{
 			// Flip from long to flat before opening the opposite direction.
 			SellMarket(Math.Abs(Position));
-			_lastDirection = TradeDirection.None;
+			_lastDirection = TradeDirections.None;
 		}
 		else if (Position < 0)
 		{
 			// Flip from short to flat before opening the opposite direction.
 			BuyMarket(Math.Abs(Position));
-			_lastDirection = TradeDirection.None;
+			_lastDirection = TradeDirections.None;
 		}
 	}
 }

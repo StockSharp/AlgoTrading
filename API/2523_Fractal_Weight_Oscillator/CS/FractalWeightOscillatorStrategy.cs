@@ -29,7 +29,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 	private readonly StrategyParam<SmoothingMethod> _smoothingMethod;
 	private readonly StrategyParam<AppliedPrice> _rsiPrice;
 	private readonly StrategyParam<AppliedPrice> _mfiPrice;
-	private readonly StrategyParam<MfiVolumeType> _mfiVolumeType;
+	private readonly StrategyParam<MfiVolumeTypes> _mfiVolumeType;
 	private readonly StrategyParam<decimal> _rsiWeight;
 	private readonly StrategyParam<decimal> _mfiWeight;
 	private readonly StrategyParam<decimal> _wprWeight;
@@ -130,7 +130,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 	/// <summary>
 	/// Volume type used by the MFI component.
 	/// </summary>
-	public MfiVolumeType MfiVolume
+	public MfiVolumeTypes MfiVolume
 	{
 		get => _mfiVolumeType.Value;
 		set => _mfiVolumeType.Value = value;
@@ -282,7 +282,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 		_mfiPrice = Param(nameof(MfiPrice), AppliedPrice.Typical)
 		.SetDisplay("MFI Price", "Applied price for MFI", "Indicators");
 
-		_mfiVolumeType = Param(nameof(MfiVolume), MfiVolumeType.Tick)
+		_mfiVolumeType = Param(nameof(MfiVolume), MfiVolumeTypes.Tick)
 		.SetDisplay("MFI Volume", "Volume source for MFI", "Indicators");
 
 		_rsiWeight = Param(nameof(RsiWeight), 1m)
@@ -709,7 +709,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 /// <summary>
 /// Volume source used for the MFI component.
 /// </summary>
-public enum MfiVolumeType
+public enum MfiVolumeTypes
 {
 	/// <summary>
 	/// Tick volume.

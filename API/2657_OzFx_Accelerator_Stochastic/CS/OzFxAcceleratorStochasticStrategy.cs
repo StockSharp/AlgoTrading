@@ -49,7 +49,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 	/// <summary>
 	/// Defines exit origin to replicate modok flag logic.
 	/// </summary>
-	private enum ExitReason
+	private enum ExitReasons
 	{
 		Manual,
 		TakeProfit,
@@ -433,7 +433,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 		{
 			if (exitSignal)
 			{
-				CloseAllLong(ExitReason.Manual);
+				CloseAllLong(ExitReasons.Manual);
 				return;
 			}
 
@@ -456,7 +456,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 		{
 			if (exitSignal)
 			{
-				CloseAllLong(ExitReason.Manual);
+				CloseAllLong(ExitReasons.Manual);
 				return;
 			}
 
@@ -473,7 +473,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 			var entry = _longEntries[i];
 			if (entry.StopPrice is decimal stopPrice && lowPrice <= stopPrice)
 			{
-				CloseAllLong(ExitReason.StopLoss);
+				CloseAllLong(ExitReasons.StopLoss);
 				return;
 			}
 		}
@@ -518,7 +518,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 		{
 			if (exitSignal)
 			{
-				CloseAllShort(ExitReason.Manual);
+				CloseAllShort(ExitReasons.Manual);
 				return;
 			}
 
@@ -541,7 +541,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 		{
 			if (exitSignal)
 			{
-				CloseAllShort(ExitReason.Manual);
+				CloseAllShort(ExitReasons.Manual);
 				return;
 			}
 
@@ -558,7 +558,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 			var entry = _shortEntries[i];
 			if (entry.StopPrice is decimal stopPrice && highPrice >= stopPrice)
 			{
-				CloseAllShort(ExitReason.StopLoss);
+				CloseAllShort(ExitReasons.StopLoss);
 				return;
 			}
 		}
@@ -582,7 +582,7 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 	/// <summary>
 	/// Closes all long layers and updates the modok-like flag.
 	/// </summary>
-	private void CloseAllLong(ExitReason reason)
+	private void CloseAllLong(ExitReasons reason)
 	{
 		var volume = 0m;
 		for (var i = 0; i < _longEntries.Count; i++)
@@ -593,16 +593,16 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 
 		_longEntries.Clear();
 
-		if (reason == ExitReason.TakeProfit)
+		if (reason == ExitReasons.TakeProfit)
 			_lastExitWasTakeProfit = true;
-		else if (reason == ExitReason.StopLoss)
+		else if (reason == ExitReasons.StopLoss)
 			_lastExitWasTakeProfit = false;
 	}
 
 	/// <summary>
 	/// Closes all short layers and updates the modok-like flag.
 	/// </summary>
-	private void CloseAllShort(ExitReason reason)
+	private void CloseAllShort(ExitReasons reason)
 	{
 		var volume = 0m;
 		for (var i = 0; i < _shortEntries.Count; i++)
@@ -613,9 +613,9 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 
 		_shortEntries.Clear();
 
-		if (reason == ExitReason.TakeProfit)
+		if (reason == ExitReasons.TakeProfit)
 			_lastExitWasTakeProfit = true;
-		else if (reason == ExitReason.StopLoss)
+		else if (reason == ExitReasons.StopLoss)
 			_lastExitWasTakeProfit = false;
 	}
 

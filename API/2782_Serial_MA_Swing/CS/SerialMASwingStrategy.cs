@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SerialMASwingStrategy : Strategy
 {
-	private readonly StrategyParam<SerialMaOpenedMode> _openedMode;
+	private readonly StrategyParam<SerialMaOpenedModes> _openedMode;
 	private readonly StrategyParam<bool> _enableBuy;
 	private readonly StrategyParam<bool> _enableSell;
 	private readonly StrategyParam<bool> _reverseSignals;
@@ -37,7 +37,7 @@ public class SerialMASwingStrategy : Strategy
 	/// <summary>
 	/// Defines how many concurrent swing trades are allowed.
 	/// </summary>
-	public SerialMaOpenedMode OpenedMode
+	public SerialMaOpenedModes OpenedMode
 	{
 		get => _openedMode.Value;
 		set => _openedMode.Value = value;
@@ -111,7 +111,7 @@ public class SerialMASwingStrategy : Strategy
 	/// </summary>
 	public SerialMASwingStrategy()
 	{
-		_openedMode = Param(nameof(OpenedMode), SerialMaOpenedMode.AllSwing)
+		_openedMode = Param(nameof(OpenedMode), SerialMaOpenedModes.AllSwing)
 			.SetDisplay("Opened Mode", "How many swing positions may coexist", "Trading");
 
 		_enableBuy = Param(nameof(EnableBuy), true)
@@ -239,7 +239,7 @@ public class SerialMASwingStrategy : Strategy
 		}
 
 		// Add a new long swing if allowed by the opening mode.
-		if (OpenedMode == SerialMaOpenedMode.AllSwing || Position <= 0m)
+		if (OpenedMode == SerialMaOpenedModes.AllSwing || Position <= 0m)
 		{
 			BuyMarket(TradeVolume);
 		}
@@ -257,7 +257,7 @@ public class SerialMASwingStrategy : Strategy
 		}
 
 		// Add a new short swing if allowed by the opening mode.
-		if (OpenedMode == SerialMaOpenedMode.AllSwing || Position >= 0m)
+		if (OpenedMode == SerialMaOpenedModes.AllSwing || Position >= 0m)
 		{
 			SellMarket(TradeVolume);
 		}
@@ -344,7 +344,7 @@ public class SerialMASwingStrategy : Strategy
 /// <summary>
 /// Mode describing how the strategy manages swing positions.
 /// </summary>
-public enum SerialMaOpenedMode
+public enum SerialMaOpenedModes
 {
 	/// <summary>
 	/// Open a new position on every signal, even if a same-direction position exists.

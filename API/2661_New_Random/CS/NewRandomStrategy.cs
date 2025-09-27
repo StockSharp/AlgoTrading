@@ -21,7 +21,7 @@ public class NewRandomStrategy : Strategy
 	/// <summary>
 	/// Available direction selection modes.
 	/// </summary>
-	public enum RandomMode
+	public enum RandomModes
 	{
 		/// <summary>
 		/// Use a pseudo random generator for every entry decision.
@@ -39,7 +39,7 @@ public class NewRandomStrategy : Strategy
 		SellBuySell
 	}
 
-	private readonly StrategyParam<RandomMode> _mode;
+	private readonly StrategyParam<RandomModes> _mode;
 	private readonly StrategyParam<int> _minimalLotCount;
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _takeProfitPips;
@@ -61,7 +61,7 @@ public class NewRandomStrategy : Strategy
 	/// <summary>
 	/// Gets or sets the direction selection mode.
 	/// </summary>
-	public RandomMode Mode
+	public RandomModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -99,7 +99,7 @@ public class NewRandomStrategy : Strategy
 	/// </summary>
 	public NewRandomStrategy()
 	{
-		_mode = Param(nameof(Mode), RandomMode.Generator)
+		_mode = Param(nameof(Mode), RandomModes.Generator)
 		.SetDisplay("Random Mode", "Direction selection mode", "General");
 		_minimalLotCount = Param(nameof(MinimalLotCount), 1)
 		.SetGreaterThanZero()
@@ -142,13 +142,13 @@ public class NewRandomStrategy : Strategy
 		base.OnStarted(time);
 
 		// Initialize random generator only when needed.
-		_random = Mode == RandomMode.Generator ? new Random(Environment.TickCount) : null;
+		_random = Mode == RandomModes.Generator ? new Random(Environment.TickCount) : null;
 
 		// Prepare alternation state for sequence modes.
 		_sequenceLastSide = Mode switch
 		{
-			RandomMode.BuySellBuy => Sides.Sell,
-			RandomMode.SellBuySell => Sides.Buy,
+			RandomModes.BuySellBuy => Sides.Sell,
+			RandomModes.SellBuySell => Sides.Buy,
 			_ => null
 		};
 
@@ -264,7 +264,7 @@ public class NewRandomStrategy : Strategy
 
 		_pendingEntry = true;
 
-		if (Mode != RandomMode.Generator)
+		if (Mode != RandomModes.Generator)
 			_sequenceLastSide = side;
 	}
 
@@ -341,9 +341,9 @@ public class NewRandomStrategy : Strategy
 	{
 		return Mode switch
 		{
-			RandomMode.Generator => (_random?.Next(2) ?? 0) == 0 ? Sides.Buy : Sides.Sell,
-			RandomMode.BuySellBuy => _sequenceLastSide == Sides.Buy ? Sides.Sell : Sides.Buy,
-			RandomMode.SellBuySell => _sequenceLastSide == Sides.Sell ? Sides.Buy : Sides.Sell,
+			RandomModes.Generator => (_random?.Next(2) ?? 0) == 0 ? Sides.Buy : Sides.Sell,
+			RandomModes.BuySellBuy => _sequenceLastSide == Sides.Buy ? Sides.Sell : Sides.Buy,
+			RandomModes.SellBuySell => _sequenceLastSide == Sides.Sell ? Sides.Buy : Sides.Sell,
 			_ => Sides.Buy
 		};
 	}

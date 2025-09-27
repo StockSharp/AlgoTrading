@@ -19,16 +19,16 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MaRsiEaStrategy : Strategy
 {
-	private readonly StrategyParam<LotSizingMode> _lotMode;
+	private readonly StrategyParam<LotSizingModes> _lotMode;
 	private readonly StrategyParam<decimal> _lotSize;
 	private readonly StrategyParam<decimal> _balancePercent;
 	private readonly StrategyParam<decimal> _equityPercent;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MaMethod> _maMethod;
-	private readonly StrategyParam<CandlePriceSource> _maPrice;
+	private readonly StrategyParam<MaMethods> _maMethod;
+	private readonly StrategyParam<CandlePriceSources> _maPrice;
 	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<CandlePriceSource> _rsiPrice;
+	private readonly StrategyParam<CandlePriceSources> _rsiPrice;
 	private readonly StrategyParam<decimal> _rsiOverbought;
 	private readonly StrategyParam<decimal> _rsiOversold;
 	private readonly StrategyParam<DataType> _candleType;
@@ -40,7 +40,7 @@ public class MaRsiEaStrategy : Strategy
 	private int _maShiftCount;
 	private int _cachedShift = -1;
 
-	public LotSizingMode LotOption
+	public LotSizingModes LotOption
 	{
 		get => _lotMode.Value;
 		set => _lotMode.Value = value;
@@ -76,13 +76,13 @@ public class MaRsiEaStrategy : Strategy
 		set => _maShift.Value = value;
 	}
 
-	public MaMethod FastMaMethod
+	public MaMethods FastMaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
 	}
 
-	public CandlePriceSource FastMaPrice
+	public CandlePriceSources FastMaPrice
 	{
 		get => _maPrice.Value;
 		set => _maPrice.Value = value;
@@ -94,7 +94,7 @@ public class MaRsiEaStrategy : Strategy
 		set => _rsiPeriod.Value = value;
 	}
 
-	public CandlePriceSource RsiPrice
+	public CandlePriceSources RsiPrice
 	{
 		get => _rsiPrice.Value;
 		set => _rsiPrice.Value = value;
@@ -120,7 +120,7 @@ public class MaRsiEaStrategy : Strategy
 
 	public MaRsiEaStrategy()
 	{
-		_lotMode = Param(nameof(LotOption), LotSizingMode.Balance)
+		_lotMode = Param(nameof(LotOption), LotSizingModes.Balance)
 			.SetDisplay("Lot Option", "How the order volume is calculated", "Position Sizing");
 
 		_lotSize = Param(nameof(LotSize), 0.01m)
@@ -144,10 +144,10 @@ public class MaRsiEaStrategy : Strategy
 		_maShift = Param(nameof(FastMaShift), 0)
 			.SetDisplay("MA Shift", "Number of candles to shift the moving average", "Indicators");
 
-		_maMethod = Param(nameof(FastMaMethod), MaMethod.LinearWeighted)
+		_maMethod = Param(nameof(FastMaMethod), MaMethods.LinearWeighted)
 			.SetDisplay("MA Method", "Moving average calculation method", "Indicators");
 
-		_maPrice = Param(nameof(FastMaPrice), CandlePriceSource.Open)
+		_maPrice = Param(nameof(FastMaPrice), CandlePriceSources.Open)
 			.SetDisplay("MA Price", "Price source for the moving average", "Indicators");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 4)
@@ -156,7 +156,7 @@ public class MaRsiEaStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(2, 20, 1);
 
-		_rsiPrice = Param(nameof(RsiPrice), CandlePriceSource.Open)
+		_rsiPrice = Param(nameof(RsiPrice), CandlePriceSources.Open)
 			.SetDisplay("RSI Price", "Price source fed into the RSI", "Indicators");
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 80m)
@@ -337,13 +337,13 @@ public class MaRsiEaStrategy : Strategy
 
 		switch (LotOption)
 		{
-			case LotSizingMode.Balance:
+			case LotSizingModes.Balance:
 				volume = equity > 0m ? equity * PercentOfBalance / 100m / normalizedPrice : volume;
 				break;
-			case LotSizingMode.Equity:
+			case LotSizingModes.Equity:
 				volume = equity > 0m ? equity * PercentOfEquity / 100m / normalizedPrice : volume;
 				break;
-			case LotSizingMode.Fixed:
+			case LotSizingModes.Fixed:
 			default:
 				break;
 		}
@@ -361,29 +361,29 @@ public class MaRsiEaStrategy : Strategy
 		return volume;
 	}
 
-	private static IIndicator CreateMovingAverage(MaMethod method, int length)
+	private static IIndicator CreateMovingAverage(MaMethods method, int length)
 	{
 		return method switch
 		{
-			MaMethod.Simple => new SimpleMovingAverage { Length = length },
-			MaMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			MaMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MaMethod.LinearWeighted => new WeightedMovingAverage { Length = length },
+			MaMethods.Simple => new SimpleMovingAverage { Length = length },
+			MaMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MaMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
 
-	private static decimal GetPrice(ICandleMessage candle, CandlePriceSource source)
+	private static decimal GetPrice(ICandleMessage candle, CandlePriceSources source)
 	{
 		return source switch
 		{
-			CandlePriceSource.Open => candle.OpenPrice,
-			CandlePriceSource.High => candle.HighPrice,
-			CandlePriceSource.Low => candle.LowPrice,
-			CandlePriceSource.Close => candle.ClosePrice,
-			CandlePriceSource.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			CandlePriceSource.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			CandlePriceSource.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
+			CandlePriceSources.Open => candle.OpenPrice,
+			CandlePriceSources.High => candle.HighPrice,
+			CandlePriceSources.Low => candle.LowPrice,
+			CandlePriceSources.Close => candle.ClosePrice,
+			CandlePriceSources.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			CandlePriceSources.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			CandlePriceSources.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}
@@ -397,14 +397,14 @@ public class MaRsiEaStrategy : Strategy
 	}
 }
 
-public enum LotSizingMode
+public enum LotSizingModes
 {
 	Fixed,
 	Balance,
 	Equity
 }
 
-public enum MaMethod
+public enum MaMethods
 {
 	Simple,
 	Exponential,
@@ -412,7 +412,7 @@ public enum MaMethod
 	LinearWeighted
 }
 
-public enum CandlePriceSource
+public enum CandlePriceSources
 {
 	Close,
 	Open,

@@ -30,8 +30,8 @@ public class FiftyFiveMaBarComparisonStrategy : Strategy
 	private readonly StrategyParam<bool> _closeOpposite;
 	private readonly StrategyParam<int> _maShift;
 	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<MovingAverageMethod> _maMethod;
-	private readonly StrategyParam<AppliedPriceType> _appliedPrice;
+	private readonly StrategyParam<MovingAverageMethods> _maMethod;
+	private readonly StrategyParam<AppliedPriceTypes> _appliedPrice;
 
 	private LengthIndicator<decimal> _movingAverage;
 	private decimal[] _maBuffer = Array.Empty<decimal>();
@@ -79,10 +79,10 @@ public class FiftyFiveMaBarComparisonStrategy : Strategy
 		_maLength = Param(nameof(MaLength), 55)
 			.SetDisplay("MA Length", "Number of periods for the moving average.", "Indicator");
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.Exponential)
+		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Exponential)
 			.SetDisplay("MA Method", "Smoothing method for the moving average.", "Indicator");
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceType.Median)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Median)
 			.SetDisplay("Applied Price", "Price type used as MA input.", "Indicator");
 	}
 
@@ -158,13 +158,13 @@ public class FiftyFiveMaBarComparisonStrategy : Strategy
 		set => _maLength.Value = value;
 	}
 
-	public MovingAverageMethod MaMethod
+	public MovingAverageMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
 	}
 
-	public AppliedPriceType AppliedPrice
+	public AppliedPriceTypes AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -330,30 +330,30 @@ public class FiftyFiveMaBarComparisonStrategy : Strategy
 	{
 		return AppliedPrice switch
 		{
-			AppliedPriceType.Close => candle.ClosePrice,
-			AppliedPriceType.Open => candle.OpenPrice,
-			AppliedPriceType.High => candle.HighPrice,
-			AppliedPriceType.Low => candle.LowPrice,
-			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			AppliedPriceTypes.Close => candle.ClosePrice,
+			AppliedPriceTypes.Open => candle.OpenPrice,
+			AppliedPriceTypes.High => candle.HighPrice,
+			AppliedPriceTypes.Low => candle.LowPrice,
+			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethod method, int length)
+	private LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new ExponentialMovingAverage { Length = length },
 		};
 	}
 
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		Simple,
 		Exponential,
@@ -361,7 +361,7 @@ public class FiftyFiveMaBarComparisonStrategy : Strategy
 		Weighted,
 	}
 
-	public enum AppliedPriceType
+	public enum AppliedPriceTypes
 	{
 		Close,
 		Open,

@@ -16,7 +16,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Available Morse code style patterns where '1' is bullish and '0' is bearish.
 /// </summary>
-public enum MorsePatternMask
+public enum MorsePatternMasks
 {
 	_0 = 0,
 	_1 = 1,
@@ -154,7 +154,7 @@ public class MorseCodeStrategy : Strategy
 	};
 
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<MorsePatternMask> _patternMask;
+	private readonly StrategyParam<MorsePatternMasks> _patternMask;
 	private readonly StrategyParam<Sides> _direction;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _stopLossPips;
@@ -177,7 +177,7 @@ public class MorseCodeStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for candle analysis", "General");
 
-		_patternMask = Param(nameof(Pattern), MorsePatternMask._0)
+		_patternMask = Param(nameof(Pattern), MorsePatternMasks._0)
 			.SetDisplay("Pattern", "Morse code pattern where 1= bullish and 0 = bearish", "Pattern");
 
 		_direction = Param(nameof(Direction), Sides.Buy)
@@ -204,7 +204,7 @@ public class MorseCodeStrategy : Strategy
 	/// <summary>
 	/// Selected Morse code pattern.
 	/// </summary>
-	public MorsePatternMask Pattern
+	public MorsePatternMasks Pattern
 	{
 		get => _patternMask.Value;
 		set => _patternMask.Value = value;
@@ -333,7 +333,7 @@ public class MorseCodeStrategy : Strategy
 		}
 	}
 
-	private static string GetPatternText(MorsePatternMask mask)
+	private static string GetPatternText(MorsePatternMasks mask)
 	{
 		var index = (int)mask;
 		if (index < 0 || index >= PatternValues.Length)

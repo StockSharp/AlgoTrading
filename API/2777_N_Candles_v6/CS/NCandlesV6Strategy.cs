@@ -21,7 +21,7 @@ public class NCandlesV6Strategy : Strategy
 	/// <summary>
 	/// Defines how positions are closed when a candle breaks the streak.
 	/// </summary>
-	public enum BlackSheepCloseMode
+	public enum BlackSheepCloseModes
 	{
 		/// <summary>
 		/// Close every open position regardless of direction.
@@ -49,7 +49,7 @@ public class NCandlesV6Strategy : Strategy
 	private readonly StrategyParam<bool> _useTradingHours;
 	private readonly StrategyParam<int> _startHour;
 	private readonly StrategyParam<int> _endHour;
-	private readonly StrategyParam<BlackSheepCloseMode> _blackSheepMode;
+	private readonly StrategyParam<BlackSheepCloseModes> _blackSheepMode;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _pipSize;
@@ -73,7 +73,7 @@ public class NCandlesV6Strategy : Strategy
 	public bool UseTradingHours { get => _useTradingHours.Value; set => _useTradingHours.Value = value; }
 	public int StartHour { get => _startHour.Value; set => _startHour.Value = value; }
 	public int EndHour { get => _endHour.Value; set => _endHour.Value = value; }
-	public BlackSheepCloseMode ClosingMode { get => _blackSheepMode.Value; set => _blackSheepMode.Value = value; }
+	public BlackSheepCloseModes ClosingMode { get => _blackSheepMode.Value; set => _blackSheepMode.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public NCandlesV6Strategy()
@@ -111,7 +111,7 @@ public class NCandlesV6Strategy : Strategy
 		_endHour = Param(nameof(EndHour), 18)
 		.SetDisplay("End Hour", "Hour when trading stops", "Timing");
 
-		_blackSheepMode = Param(nameof(ClosingMode), BlackSheepCloseMode.All)
+		_blackSheepMode = Param(nameof(ClosingMode), BlackSheepCloseModes.All)
 		.SetDisplay("Closing Mode", "Reaction to a black sheep candle", "Pattern");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -260,13 +260,13 @@ public class NCandlesV6Strategy : Strategy
 
 		switch (ClosingMode)
 		{
-			case BlackSheepCloseMode.All:
+			case BlackSheepCloseModes.All:
 			{
 				ClosePosition();
 				break;
 			}
 
-			case BlackSheepCloseMode.Opposite:
+			case BlackSheepCloseModes.Opposite:
 			{
 				if (direction == 1 && Position < 0m)
 				{
@@ -282,7 +282,7 @@ public class NCandlesV6Strategy : Strategy
 				break;
 			}
 
-			case BlackSheepCloseMode.Unidirectional:
+			case BlackSheepCloseModes.Unidirectional:
 			{
 				if (direction == 1 && Position > 0m)
 				{

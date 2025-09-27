@@ -30,7 +30,7 @@ public class CrossingMovingAverageStrategy : Strategy
 	private readonly StrategyParam<int> _fastShift;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _slowShift;
-	private readonly StrategyParam<MovingAverageMode> _maMethod;
+	private readonly StrategyParam<MovingAverageModes> _maMethod;
 	private readonly StrategyParam<CandlePrice> _appliedPrice;
 	private readonly StrategyParam<int> _momentumPeriod;
 	private readonly StrategyParam<DataType> _candleType;
@@ -156,7 +156,7 @@ public class CrossingMovingAverageStrategy : Strategy
 	/// <summary>
 	/// Selected moving average smoothing method.
 	/// </summary>
-	public MovingAverageMode MaMethod
+	public MovingAverageModes MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -244,7 +244,7 @@ public class CrossingMovingAverageStrategy : Strategy
 		.SetRange(0, 50)
 		.SetDisplay("Slow MA Shift", "Forward shift in bars for the slow MA", "Indicators");
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageMode.Exponential)
+		_maMethod = Param(nameof(MaMethod), MovingAverageModes.Exponential)
 		.SetDisplay("MA Method", "Moving average smoothing method", "Indicators")
 		.SetCanOptimize(true);
 
@@ -601,14 +601,14 @@ public class CrossingMovingAverageStrategy : Strategy
 		};
 	}
 
-	private static MovingAverage CreateMovingAverage(MovingAverageMode mode, int length)
+	private static MovingAverage CreateMovingAverage(MovingAverageModes mode, int length)
 	{
 		return mode switch
 		{
-			MovingAverageMode.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMode.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMode.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMode.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageModes.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageModes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageModes.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageModes.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new ExponentialMovingAverage { Length = length },
 		};
 	}
@@ -617,7 +617,7 @@ public class CrossingMovingAverageStrategy : Strategy
 /// <summary>
 /// Moving average types supported by the strategy.
 /// </summary>
-public enum MovingAverageMode
+public enum MovingAverageModes
 {
 	/// <summary>
 	/// Simple moving average.

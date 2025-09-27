@@ -16,7 +16,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Operating modes supported by <see cref="ExpT3TrixStrategy"/>.
 /// </summary>
-public enum ExpT3TrixMode
+public enum ExpT3TrixModes
 {
 	/// <summary>
 	/// Uses histogram zero cross detection.
@@ -42,7 +42,7 @@ public class ExpT3TrixStrategy : Strategy
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<decimal> _volumeFactor;
-	private readonly StrategyParam<ExpT3TrixMode> _mode;
+	private readonly StrategyParam<ExpT3TrixModes> _mode;
 	private readonly StrategyParam<bool> _allowLongEntry;
 	private readonly StrategyParam<bool> _allowShortEntry;
 	private readonly StrategyParam<bool> _allowLongExit;
@@ -99,7 +99,7 @@ public class ExpT3TrixStrategy : Strategy
 	/// <summary>
 	/// Signal detection mode that mimics the original expert advisor behavior.
 	/// </summary>
-	public ExpT3TrixMode Mode
+	public ExpT3TrixModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -173,7 +173,7 @@ public class ExpT3TrixStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(0.4m, 0.9m, 0.05m);
 
-		_mode = Param(nameof(Mode), ExpT3TrixMode.Twist)
+		_mode = Param(nameof(Mode), ExpT3TrixModes.Twist)
 			.SetDisplay("Mode", "Signal evaluation algorithm", "Trading");
 
 		_allowLongEntry = Param(nameof(AllowLongEntry), true)
@@ -294,7 +294,7 @@ public class ExpT3TrixStrategy : Strategy
 
 		switch (Mode)
 		{
-			case ExpT3TrixMode.Breakdown:
+			case ExpT3TrixModes.Breakdown:
 			{
 				if (fastTrix > 0m && prevFastTrix.Value <= 0m)
 				{
@@ -308,7 +308,7 @@ public class ExpT3TrixStrategy : Strategy
 				}
 				break;
 			}
-			case ExpT3TrixMode.Twist:
+			case ExpT3TrixModes.Twist:
 			{
 				if (prevPrevFastTrix.HasValue)
 				{
@@ -328,7 +328,7 @@ public class ExpT3TrixStrategy : Strategy
 				}
 				break;
 			}
-			case ExpT3TrixMode.CloudTwist:
+			case ExpT3TrixModes.CloudTwist:
 			{
 				if (prevSlowTrix.HasValue)
 				{

@@ -34,7 +34,7 @@ public class SilverTrendColorJfatlDigitMmrecStrategy : Strategy
 	private readonly StrategyParam<DataType> _colorCandleType;
 	private readonly StrategyParam<int> _colorLength;
 	private readonly StrategyParam<int> _colorPhase;
-	private readonly StrategyParam<AppliedPrice> _colorPriceType;
+	private readonly StrategyParam<AppliedPrices> _colorPriceType;
 	private readonly StrategyParam<int> _colorDigit;
 	private readonly StrategyParam<int> _colorSignalBar;
 	private readonly StrategyParam<bool> _colorAllowLong;
@@ -59,7 +59,7 @@ public class SilverTrendColorJfatlDigitMmrecStrategy : Strategy
 	/// <summary>
 	/// Applied price modes supported by the ColorJFatl module.
 	/// </summary>
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		PriceClose = 1,
 		PriceOpen,
@@ -131,7 +131,7 @@ public class SilverTrendColorJfatlDigitMmrecStrategy : Strategy
 		_colorPhase = Param(nameof(ColorPhase), -100)
 		.SetDisplay("JMA Phase", "Phase shift parameter for the FATL smoother", "ColorJFatl");
 
-		_colorPriceType = Param(nameof(ColorPriceType), AppliedPrice.PriceClose)
+		_colorPriceType = Param(nameof(ColorPriceType), AppliedPrices.PriceClose)
 		.SetDisplay("Applied Price", "Source price used for FATL", "ColorJFatl");
 
 		_colorDigit = Param(nameof(ColorDigit), 2)
@@ -296,7 +296,7 @@ public class SilverTrendColorJfatlDigitMmrecStrategy : Strategy
 	/// <summary>
 	/// Price source used when constructing the FATL series.
 	/// </summary>
-	public AppliedPrice ColorPriceType
+	public AppliedPrices ColorPriceType
 	{
 		get => _colorPriceType.Value;
 		set => _colorPriceType.Value = value;
@@ -747,14 +747,14 @@ public class SilverTrendColorJfatlDigitMmrecStrategy : Strategy
 		};
 
 		private readonly int _length;
-		private readonly AppliedPrice _priceMode;
+		private readonly AppliedPrices _priceMode;
 		private readonly int _digit;
 		private readonly List<decimal> _prices = new();
 		private readonly ExponentialMovingAverage _smoother;
 		private decimal? _prevValue;
 		private int _prevColor = 1;
 
-		public ColorJfatlCalculator(int length, int phase, AppliedPrice priceMode, int digit)
+		public ColorJfatlCalculator(int length, int phase, AppliedPrices priceMode, int digit)
 		{
 			_length = Math.Max(1, length);
 			_priceMode = priceMode;
@@ -811,7 +811,7 @@ public class SilverTrendColorJfatlDigitMmrecStrategy : Strategy
 			_prevColor = 1;
 		}
 
-		private static decimal GetPrice(ICandleMessage candle, AppliedPrice mode)
+		private static decimal GetPrice(ICandleMessage candle, AppliedPrices mode)
 		{
 			var open = candle.OpenPrice;
 			var close = candle.ClosePrice;
@@ -820,18 +820,18 @@ public class SilverTrendColorJfatlDigitMmrecStrategy : Strategy
 
 			return mode switch
 			{
-				AppliedPrice.PriceClose => close,
-				AppliedPrice.PriceOpen => open,
-				AppliedPrice.PriceHigh => high,
-				AppliedPrice.PriceLow => low,
-				AppliedPrice.PriceMedian => (high + low) / 2m,
-				AppliedPrice.PriceTypical => (close + high + low) / 3m,
-				AppliedPrice.PriceWeighted => (2m * close + high + low) / 4m,
-				AppliedPrice.PriceSimple => (open + close) / 2m,
-				AppliedPrice.PriceQuarter => (open + close + high + low) / 4m,
-				AppliedPrice.PriceTrendFollow0 => close > open ? high : close < open ? low : close,
-				AppliedPrice.PriceTrendFollow1 => close > open ? (high + close) / 2m : close < open ? (low + close) / 2m : close,
-				AppliedPrice.PriceDeMark =>
+				AppliedPrices.PriceClose => close,
+				AppliedPrices.PriceOpen => open,
+				AppliedPrices.PriceHigh => high,
+				AppliedPrices.PriceLow => low,
+				AppliedPrices.PriceMedian => (high + low) / 2m,
+				AppliedPrices.PriceTypical => (close + high + low) / 3m,
+				AppliedPrices.PriceWeighted => (2m * close + high + low) / 4m,
+				AppliedPrices.PriceSimple => (open + close) / 2m,
+				AppliedPrices.PriceQuarter => (open + close + high + low) / 4m,
+				AppliedPrices.PriceTrendFollow0 => close > open ? high : close < open ? low : close,
+				AppliedPrices.PriceTrendFollow1 => close > open ? (high + close) / 2m : close < open ? (low + close) / 2m : close,
+				AppliedPrices.PriceDeMark =>
 				CalculateDeMarkPrice(open, high, low, close),
 				_ => close
 			};

@@ -23,7 +23,7 @@ public class ExpBlauCmiStrategy : Strategy
 	/// <summary>
 	/// Price sources supported by the strategy.
 	/// </summary>
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		Close = 1,
 		Open,
@@ -42,7 +42,7 @@ public class ExpBlauCmiStrategy : Strategy
 	/// <summary>
 	/// Smoothing modes used in the multi-stage averages.
 	/// </summary>
-	public enum SmoothingMethod
+	public enum SmoothingMethods
 	{
 		Simple,
 		Exponential,
@@ -51,14 +51,14 @@ public class ExpBlauCmiStrategy : Strategy
 	}
 
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<SmoothingMethod> _smoothingMethod;
+	private readonly StrategyParam<SmoothingMethods> _smoothingMethod;
 	private readonly StrategyParam<int> _momentumLength;
 	private readonly StrategyParam<int> _firstSmoothingLength;
 	private readonly StrategyParam<int> _secondSmoothingLength;
 	private readonly StrategyParam<int> _thirdSmoothingLength;
 	private readonly StrategyParam<int> _signalBar;
-	private readonly StrategyParam<AppliedPrice> _priceForClose;
-	private readonly StrategyParam<AppliedPrice> _priceForOpen;
+	private readonly StrategyParam<AppliedPrices> _priceForClose;
+	private readonly StrategyParam<AppliedPrices> _priceForOpen;
 	private readonly StrategyParam<bool> _allowLongEntry;
 	private readonly StrategyParam<bool> _allowShortEntry;
 	private readonly StrategyParam<bool> _allowLongExit;
@@ -89,7 +89,7 @@ public class ExpBlauCmiStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for BlauCMI calculations", "General");
 
-		_smoothingMethod = Param(nameof(MomentumSmoothing), SmoothingMethod.Exponential)
+		_smoothingMethod = Param(nameof(MomentumSmoothing), SmoothingMethods.Exponential)
 			.SetDisplay("Smoothing Method", "Averaging mode for the BlauCMI stages", "Indicator");
 
 		_momentumLength = Param(nameof(MomentumLength), 1)
@@ -112,10 +112,10 @@ public class ExpBlauCmiStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Shift", "Number of closed bars used for signals", "Trading");
 
-		_priceForClose = Param(nameof(PriceForClose), AppliedPrice.Close)
+		_priceForClose = Param(nameof(PriceForClose), AppliedPrices.Close)
 			.SetDisplay("Momentum Price", "Price type for the leading leg", "Indicator");
 
-		_priceForOpen = Param(nameof(PriceForOpen), AppliedPrice.Open)
+		_priceForOpen = Param(nameof(PriceForOpen), AppliedPrices.Open)
 			.SetDisplay("Reference Price", "Price type compared against the delayed bar", "Indicator");
 
 		_allowLongEntry = Param(nameof(AllowLongEntry), true)
@@ -155,7 +155,7 @@ public class ExpBlauCmiStrategy : Strategy
 	/// <summary>
 	/// Averaging method for momentum smoothing stages.
 	/// </summary>
-	public SmoothingMethod MomentumSmoothing
+	public SmoothingMethods MomentumSmoothing
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -209,7 +209,7 @@ public class ExpBlauCmiStrategy : Strategy
 	/// <summary>
 	/// Applied price for the front leg of momentum.
 	/// </summary>
-	public AppliedPrice PriceForClose
+	public AppliedPrices PriceForClose
 	{
 		get => _priceForClose.Value;
 		set => _priceForClose.Value = value;
@@ -218,7 +218,7 @@ public class ExpBlauCmiStrategy : Strategy
 	/// <summary>
 	/// Applied price for the delayed leg of momentum.
 	/// </summary>
-	public AppliedPrice PriceForOpen
+	public AppliedPrices PriceForOpen
 	{
 		get => _priceForOpen.Value;
 		set => _priceForOpen.Value = value;
@@ -336,15 +336,15 @@ public class ExpBlauCmiStrategy : Strategy
 		}
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverage(SmoothingMethod method, int length)
+	private LengthIndicator<decimal> CreateMovingAverage(SmoothingMethods method, int length)
 	{
 		var normalized = Math.Max(1, length);
 
 		return method switch
 		{
-			SmoothingMethod.Simple => new SimpleMovingAverage { Length = normalized },
-			SmoothingMethod.Smoothed => new SmoothedMovingAverage { Length = normalized },
-			SmoothingMethod.LinearWeighted => new WeightedMovingAverage { Length = normalized },
+			SmoothingMethods.Simple => new SimpleMovingAverage { Length = normalized },
+			SmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = normalized },
+			SmoothingMethods.LinearWeighted => new WeightedMovingAverage { Length = normalized },
 			_ => new ExponentialMovingAverage { Length = normalized }
 		};
 	}
@@ -430,30 +430,30 @@ public class ExpBlauCmiStrategy : Strategy
 		}
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrice price)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrices price)
 	{
 		return price switch
 		{
-			AppliedPrice.Close => candle.ClosePrice,
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-			AppliedPrice.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			AppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
+			AppliedPrices.Close => candle.ClosePrice,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+			AppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			AppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
 				? candle.HighPrice
 				: candle.ClosePrice < candle.OpenPrice
 					? candle.LowPrice
 					: candle.ClosePrice,
-			AppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
+			AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
 				? (candle.HighPrice + candle.ClosePrice) / 2m
 				: candle.ClosePrice < candle.OpenPrice
 					? (candle.LowPrice + candle.ClosePrice) / 2m
 					: candle.ClosePrice,
-			AppliedPrice.Demark =>
+			AppliedPrices.Demark =>
 				GetDemarkPrice(candle),
 			_ => candle.ClosePrice
 		};

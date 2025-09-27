@@ -32,7 +32,7 @@ public class DlmvFxFishGridStrategy : Strategy
 	private readonly StrategyParam<bool> _closeOpposite;
 	private readonly StrategyParam<int> _calculatePeriod;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<AppliedPriceMode> _appliedPrice;
+	private readonly StrategyParam<AppliedPriceModes> _appliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private Highest _highest = null!;
@@ -177,7 +177,7 @@ public class DlmvFxFishGridStrategy : Strategy
 	/// <summary>
 	/// Price source used in the Fisher transform.
 	/// </summary>
-	public AppliedPriceMode AppliedPrice
+	public AppliedPriceModes AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -242,7 +242,7 @@ public class DlmvFxFishGridStrategy : Strategy
 		.SetDisplay("Fisher MA", "Moving average period for Fisher", "Indicator")
 		.SetGreaterThanZero();
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceMode.Median)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceModes.Median)
 		.SetDisplay("Applied Price", "Price source for Fisher", "Indicator");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -574,13 +574,13 @@ public class DlmvFxFishGridStrategy : Strategy
 	{
 		return AppliedPrice switch
 		{
-			AppliedPriceMode.Close => candle.ClosePrice,
-			AppliedPriceMode.Open => candle.OpenPrice,
-			AppliedPriceMode.High => candle.HighPrice,
-			AppliedPriceMode.Low => candle.LowPrice,
-			AppliedPriceMode.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceMode.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceMode.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.OpenPrice) / 4m,
+			AppliedPriceModes.Close => candle.ClosePrice,
+			AppliedPriceModes.Open => candle.OpenPrice,
+			AppliedPriceModes.High => candle.HighPrice,
+			AppliedPriceModes.Low => candle.LowPrice,
+			AppliedPriceModes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceModes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceModes.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.OpenPrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}
@@ -588,7 +588,7 @@ public class DlmvFxFishGridStrategy : Strategy
 	/// <summary>
 	/// Price source options for the Fisher transform.
 	/// </summary>
-	public enum AppliedPriceMode
+	public enum AppliedPriceModes
 	{
 		/// <summary>
 		/// Close price.

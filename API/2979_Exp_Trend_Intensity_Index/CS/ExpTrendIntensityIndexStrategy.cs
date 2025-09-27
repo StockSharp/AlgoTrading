@@ -24,9 +24,9 @@ public class ExpTrendIntensityIndexStrategy : Strategy
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<int> _priceMaLength;
 	private readonly StrategyParam<int> _smoothingLength;
-	private readonly StrategyParam<AppliedPriceOption> _appliedPrice;
-	private readonly StrategyParam<MovingAverageMethod> _priceMaMethod;
-	private readonly StrategyParam<MovingAverageMethod> _smoothingMethod;
+	private readonly StrategyParam<AppliedPriceOptions> _appliedPrice;
+	private readonly StrategyParam<MovingAverageMethods> _priceMaMethod;
+	private readonly StrategyParam<MovingAverageMethods> _smoothingMethod;
 	private readonly StrategyParam<decimal> _highLevel;
 	private readonly StrategyParam<decimal> _lowLevel;
 	private readonly StrategyParam<bool> _enableBuyEntries;
@@ -52,7 +52,7 @@ public class ExpTrendIntensityIndexStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Indicator Timeframe", "Timeframe used to evaluate Trend Intensity Index", "General");
 
-		_priceMaMethod = Param(nameof(PriceMaMethod), MovingAverageMethod.Simple)
+		_priceMaMethod = Param(nameof(PriceMaMethod), MovingAverageMethods.Simple)
 		.SetDisplay("Price MA Method", "Smoothing method applied to the base price", "Indicators");
 
 		_priceMaLength = Param(nameof(PriceMaLength), 60)
@@ -60,7 +60,7 @@ public class ExpTrendIntensityIndexStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(20, 120, 10);
 
-		_smoothingMethod = Param(nameof(SmoothingMethod), MovingAverageMethod.Simple)
+		_smoothingMethod = Param(nameof(SmoothingMethod), MovingAverageMethods.Simple)
 		.SetDisplay("Signal MA Method", "Smoothing method for positive and negative flows", "Indicators");
 
 		_smoothingLength = Param(nameof(SmoothingLength), 30)
@@ -68,7 +68,7 @@ public class ExpTrendIntensityIndexStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(10, 90, 10);
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceOption.Close)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceOptions.Close)
 		.SetDisplay("Applied Price", "Price source used in calculations", "Indicators");
 
 		_highLevel = Param(nameof(HighLevel), 80m)
@@ -115,7 +115,7 @@ public class ExpTrendIntensityIndexStrategy : Strategy
 	/// <summary>
 	/// Moving average method applied to the base price stream.
 	/// </summary>
-	public MovingAverageMethod PriceMaMethod
+	public MovingAverageMethods PriceMaMethod
 	{
 		get => _priceMaMethod.Value;
 		set => _priceMaMethod.Value = value;
@@ -133,7 +133,7 @@ public class ExpTrendIntensityIndexStrategy : Strategy
 	/// <summary>
 	/// Moving average method applied to positive and negative flows.
 	/// </summary>
-	public MovingAverageMethod SmoothingMethod
+	public MovingAverageMethods SmoothingMethod
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -151,7 +151,7 @@ public class ExpTrendIntensityIndexStrategy : Strategy
 	/// <summary>
 	/// Price source used in Trend Intensity Index calculation.
 	/// </summary>
-	public AppliedPriceOption AppliedPrice
+	public AppliedPriceOptions AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -370,7 +370,7 @@ public class ExpTrendIntensityIndexStrategy : Strategy
 		_colorHistory.RemoveAt(_colorHistory.Count - 1);
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceOption priceType)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceOptions priceType)
 	{
 		var open = candle.OpenPrice;
 		var high = candle.HighPrice;
@@ -379,17 +379,17 @@ public class ExpTrendIntensityIndexStrategy : Strategy
 
 		return priceType switch
 		{
-			AppliedPriceOption.Open => open,
-			AppliedPriceOption.High => high,
-			AppliedPriceOption.Low => low,
-			AppliedPriceOption.Median => (high + low) / 2m,
-			AppliedPriceOption.Typical => (close + high + low) / 3m,
-			AppliedPriceOption.Weighted => (2m * close + high + low) / 4m,
-			AppliedPriceOption.Simple => (open + close) / 2m,
-			AppliedPriceOption.Quarted => (open + close + high + low) / 4m,
-			AppliedPriceOption.TrendFollow0 => close > open ? high : close < open ? low : close,
-			AppliedPriceOption.TrendFollow1 => close > open ? (high + close) / 2m : close < open ? (low + close) / 2m : close,
-			AppliedPriceOption.Demark => GetDemarkPrice(open, high, low, close),
+			AppliedPriceOptions.Open => open,
+			AppliedPriceOptions.High => high,
+			AppliedPriceOptions.Low => low,
+			AppliedPriceOptions.Median => (high + low) / 2m,
+			AppliedPriceOptions.Typical => (close + high + low) / 3m,
+			AppliedPriceOptions.Weighted => (2m * close + high + low) / 4m,
+			AppliedPriceOptions.Simple => (open + close) / 2m,
+			AppliedPriceOptions.Quarted => (open + close + high + low) / 4m,
+			AppliedPriceOptions.TrendFollow0 => close > open ? high : close < open ? low : close,
+			AppliedPriceOptions.TrendFollow1 => close > open ? (high + close) / 2m : close < open ? (low + close) / 2m : close,
+			AppliedPriceOptions.Demark => GetDemarkPrice(open, high, low, close),
 			_ => close,
 		};
 	}
@@ -408,14 +408,14 @@ public class ExpTrendIntensityIndexStrategy : Strategy
 		return ((res - low) + (res - high)) / 2m;
 	}
 
-	private static IIndicator CreateMovingAverage(MovingAverageMethod method, int length)
+	private static IIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -423,7 +423,7 @@ public class ExpTrendIntensityIndexStrategy : Strategy
 	/// <summary>
 	/// Price sources available for Trend Intensity Index.
 	/// </summary>
-	public enum AppliedPriceOption
+	public enum AppliedPriceOptions
 	{
 		/// <summary>
 		/// Close price.
@@ -489,7 +489,7 @@ public class ExpTrendIntensityIndexStrategy : Strategy
 	/// <summary>
 	/// Moving average methods used by the strategy.
 	/// </summary>
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		/// <summary>
 		/// Simple moving average.

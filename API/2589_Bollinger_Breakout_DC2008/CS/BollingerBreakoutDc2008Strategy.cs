@@ -13,7 +13,7 @@ namespace StockSharp.Samples.Strategies;
 
 
 
-public enum AppliedPriceType
+public enum AppliedPriceTypes
 {
 	Close,
 	Open,
@@ -32,7 +32,7 @@ public class BollingerBreakoutDc2008Strategy : Strategy
 {
 	private readonly StrategyParam<int> _bandsPeriod;
 	private readonly StrategyParam<decimal> _bandsDeviation;
-	private readonly StrategyParam<AppliedPriceType> _appliedPrice;
+	private readonly StrategyParam<AppliedPriceTypes> _appliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private BollingerBands _bollinger;
@@ -49,7 +49,7 @@ public class BollingerBreakoutDc2008Strategy : Strategy
 		set => _bandsDeviation.Value = value;
 	}
 
-	public AppliedPriceType AppliedPrice
+	public AppliedPriceTypes AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -75,7 +75,7 @@ public class BollingerBreakoutDc2008Strategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(1m, 5m, 0.5m);
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceType.Close)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Close)
 			.SetDisplay("Applied Price", "Candle price source for Bollinger Bands", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -202,14 +202,14 @@ public class BollingerBreakoutDc2008Strategy : Strategy
 	{
 		return AppliedPrice switch
 		{
-			AppliedPriceType.Close => candle.ClosePrice,
-			AppliedPriceType.Open => candle.OpenPrice,
-			AppliedPriceType.High => candle.HighPrice,
-			AppliedPriceType.Low => candle.LowPrice,
-			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + (2m * candle.ClosePrice)) / 4m,
-			AppliedPriceType.Average => (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
+			AppliedPriceTypes.Close => candle.ClosePrice,
+			AppliedPriceTypes.Open => candle.OpenPrice,
+			AppliedPriceTypes.High => candle.HighPrice,
+			AppliedPriceTypes.Low => candle.LowPrice,
+			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + (2m * candle.ClosePrice)) / 4m,
+			AppliedPriceTypes.Average => (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}

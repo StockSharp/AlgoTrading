@@ -330,13 +330,13 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 		LogInfo(message);
 	}
 
-	private bool IsImportanceEnabled(NewsImportance importance)
+	private bool IsImportanceEnabled(NewsImportances importance)
 	=> importance switch
 	{
-		NewsImportance.Low => UseLowNews,
-		NewsImportance.Medium => UseMediumNews,
-		NewsImportance.High => UseHighNews,
-		NewsImportance.Nfp => UseNfpNews,
+		NewsImportances.Low => UseLowNews,
+		NewsImportances.Medium => UseMediumNews,
+		NewsImportances.High => UseHighNews,
+		NewsImportances.Nfp => UseNfpNews,
 		_ => false
 	};
 
@@ -349,23 +349,23 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 		return currentTime >= start && currentTime <= end;
 	}
 
-	private int GetMinutesBefore(NewsImportance importance)
+	private int GetMinutesBefore(NewsImportances importance)
 	=> importance switch
 	{
-		NewsImportance.Low => Math.Max(0, LowMinutesBefore),
-		NewsImportance.Medium => Math.Max(0, MediumMinutesBefore),
-		NewsImportance.High => Math.Max(0, HighMinutesBefore),
-		NewsImportance.Nfp => Math.Max(0, NfpMinutesBefore),
+		NewsImportances.Low => Math.Max(0, LowMinutesBefore),
+		NewsImportances.Medium => Math.Max(0, MediumMinutesBefore),
+		NewsImportances.High => Math.Max(0, HighMinutesBefore),
+		NewsImportances.Nfp => Math.Max(0, NfpMinutesBefore),
 		_ => 0
 	};
 
-	private int GetMinutesAfter(NewsImportance importance)
+	private int GetMinutesAfter(NewsImportances importance)
 	=> importance switch
 	{
-		NewsImportance.Low => Math.Max(0, LowMinutesAfter),
-		NewsImportance.Medium => Math.Max(0, MediumMinutesAfter),
-		NewsImportance.High => Math.Max(0, HighMinutesAfter),
-		NewsImportance.Nfp => Math.Max(0, NfpMinutesAfter),
+		NewsImportances.Low => Math.Max(0, LowMinutesAfter),
+		NewsImportances.Medium => Math.Max(0, MediumMinutesAfter),
+		NewsImportances.High => Math.Max(0, HighMinutesAfter),
+		NewsImportances.Nfp => Math.Max(0, NfpMinutesAfter),
 		_ => 0
 	};
 
@@ -392,13 +392,13 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 		return "No upcoming news events.";
 	}
 
-	private static string GetImportanceLabel(NewsImportance importance)
+	private static string GetImportanceLabel(NewsImportances importance)
 	=> importance switch
 	{
-		NewsImportance.Low => "low",
-		NewsImportance.Medium => "medium",
-		NewsImportance.High => "high",
-		NewsImportance.Nfp => "non-farm payroll",
+		NewsImportances.Low => "low",
+		NewsImportances.Medium => "medium",
+		NewsImportances.High => "high",
+		NewsImportances.Nfp => "non-farm payroll",
 		_ => "unknown"
 	};
 
@@ -472,7 +472,7 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 			LogInfo("No valid news events parsed. The filter will remain inactive.");
 	}
 
-	private static bool TryParseImportance(string value, out NewsImportance importance)
+	private static bool TryParseImportance(string value, out NewsImportances importance)
 	{
 		if (value.IsEmptyOrWhiteSpace())
 		{
@@ -484,7 +484,7 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 
 		if (normalized.Equals("LOW", StringComparison.OrdinalIgnoreCase))
 		{
-			importance = NewsImportance.Low;
+			importance = NewsImportances.Low;
 			return true;
 		}
 
@@ -493,13 +493,13 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 				normalized.Equals("MIDLE", StringComparison.OrdinalIgnoreCase) ||
 				normalized.Equals("MODERATE", StringComparison.OrdinalIgnoreCase))
 		{
-			importance = NewsImportance.Medium;
+			importance = NewsImportances.Medium;
 			return true;
 		}
 
 		if (normalized.Equals("HIGH", StringComparison.OrdinalIgnoreCase))
 		{
-			importance = NewsImportance.High;
+			importance = NewsImportances.High;
 			return true;
 		}
 
@@ -507,7 +507,7 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 				normalized.Contains("NONFARM", StringComparison.OrdinalIgnoreCase) ||
 				normalized.Contains("NON-FARM", StringComparison.OrdinalIgnoreCase))
 		{
-			importance = NewsImportance.Nfp;
+			importance = NewsImportances.Nfp;
 			return true;
 		}
 
@@ -567,9 +567,9 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 		}
 	}
 
-	private sealed record class NewsEvent(DateTimeOffset Time, string Currency, NewsImportance Importance, string Title);
+	private sealed record class NewsEvent(DateTimeOffset Time, string Currency, NewsImportances Importance, string Title);
 
-	private enum NewsImportance
+	private enum NewsImportances
 	{
 		Low = 1,
 		Medium = 2,

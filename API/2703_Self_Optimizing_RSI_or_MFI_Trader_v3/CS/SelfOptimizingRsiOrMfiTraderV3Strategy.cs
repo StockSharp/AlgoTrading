@@ -28,7 +28,7 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 	private readonly StrategyParam<decimal> _baseVolume;
 	private readonly StrategyParam<bool> _useDynamicVolume;
 	private readonly StrategyParam<decimal> _riskPercent;
-	private readonly StrategyParam<IndicatorSource> _indicatorChoice;
+	private readonly StrategyParam<IndicatorSources> _indicatorChoice;
 	private readonly StrategyParam<int> _indicatorTopValue;
 	private readonly StrategyParam<int> _indicatorBottomValue;
 	private readonly StrategyParam<int> _indicatorPeriod;
@@ -54,7 +54,7 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 	/// <summary>
 	/// Indicator source used for optimization.
 	/// </summary>
-	public enum IndicatorSource
+	public enum IndicatorSources
 	{
 		/// <summary>
 		/// Use Relative Strength Index values.
@@ -133,7 +133,7 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 	/// <summary>
 	/// Oscillator used for optimization.
 	/// </summary>
-	public IndicatorSource IndicatorChoice
+	public IndicatorSources IndicatorChoice
 	{
 		get => _indicatorChoice.Value;
 		set => _indicatorChoice.Value = value;
@@ -278,7 +278,7 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 			.SetRange(0.1m, 10m)
 			.SetDisplay("Risk %", "Percent of capital risked per trade", "Risk");
 
-		_indicatorChoice = Param(nameof(IndicatorChoice), IndicatorSource.RelativeStrengthIndex)
+		_indicatorChoice = Param(nameof(IndicatorChoice), IndicatorSources.RelativeStrengthIndex)
 			.SetDisplay("Indicator", "Oscillator optimized by the strategy", "Indicator");
 
 		_indicatorTopValue = Param(nameof(IndicatorTopValue), 100)
@@ -353,7 +353,7 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 
 		_indicator = IndicatorChoice switch
 		{
-			IndicatorSource.MoneyFlowIndex => new MoneyFlowIndex { Length = IndicatorPeriod },
+			IndicatorSources.MoneyFlowIndex => new MoneyFlowIndex { Length = IndicatorPeriod },
 			_ => new RelativeStrengthIndex { Length = IndicatorPeriod }
 		};
 

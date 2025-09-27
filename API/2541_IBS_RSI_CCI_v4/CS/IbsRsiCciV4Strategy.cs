@@ -23,12 +23,12 @@ public class IbsRsiCciV4Strategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _ibsPeriod;
-	private readonly StrategyParam<MovingAverageKind> _ibsAverageType;
+	private readonly StrategyParam<MovingAverageKinds> _ibsAverageType;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<int> _rangePeriod;
 	private readonly StrategyParam<int> _smoothPeriod;
-	private readonly StrategyParam<MovingAverageKind> _rangeAverageType;
+	private readonly StrategyParam<MovingAverageKinds> _rangeAverageType;
 	private readonly StrategyParam<decimal> _stepThreshold;
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<bool> _enableLongOpen;
@@ -67,7 +67,7 @@ public class IbsRsiCciV4Strategy : Strategy
 		.SetDisplay("IBS Period", "Smoothing period for the internal bar strength component", "Indicator")
 		.SetCanOptimize(true);
 
-		_ibsAverageType = Param(nameof(IbsAverageType), MovingAverageKind.Simple)
+		_ibsAverageType = Param(nameof(IbsAverageType), MovingAverageKinds.Simple)
 		.SetDisplay("IBS MA Type", "Moving average type applied to the IBS series", "Indicator")
 		.SetCanOptimize(true);
 
@@ -87,7 +87,7 @@ public class IbsRsiCciV4Strategy : Strategy
 		.SetDisplay("Range Smooth", "Smoothing period for the range bands", "Indicator")
 		.SetCanOptimize(true);
 
-		_rangeAverageType = Param(nameof(RangeAverageType), MovingAverageKind.Simple)
+		_rangeAverageType = Param(nameof(RangeAverageType), MovingAverageKinds.Simple)
 		.SetDisplay("Range MA Type", "Moving average type applied to the range envelopes", "Indicator")
 		.SetCanOptimize(true);
 
@@ -146,7 +146,7 @@ public class IbsRsiCciV4Strategy : Strategy
 	/// <summary>
 	/// Moving average type applied to the IBS series.
 	/// </summary>
-	public MovingAverageKind IbsAverageType
+	public MovingAverageKinds IbsAverageType
 	{
 		get => _ibsAverageType.Value;
 		set => _ibsAverageType.Value = value;
@@ -191,7 +191,7 @@ public class IbsRsiCciV4Strategy : Strategy
 	/// <summary>
 	/// Moving average type used for the envelope smoothing.
 	/// </summary>
-	public MovingAverageKind RangeAverageType
+	public MovingAverageKinds RangeAverageType
 	{
 		get => _rangeAverageType.Value;
 		set => _rangeAverageType.Value = value;
@@ -447,13 +447,13 @@ public class IbsRsiCciV4Strategy : Strategy
 		_baselineHistory.RemoveAt(0);
 	}
 
-	private static IIndicator CreateMovingAverage(MovingAverageKind kind, int length)
+	private static IIndicator CreateMovingAverage(MovingAverageKinds kind, int length)
 	{
 		return kind switch
 		{
-			MovingAverageKind.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageKind.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageKind.LinearWeighted => new LinearWeightedMovingAverage { Length = length },
+			MovingAverageKinds.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageKinds.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageKinds.LinearWeighted => new LinearWeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -461,7 +461,7 @@ public class IbsRsiCciV4Strategy : Strategy
 	/// <summary>
 	/// Supported moving average families.
 	/// </summary>
-	public enum MovingAverageKind
+	public enum MovingAverageKinds
 	{
 		/// <summary>
 		/// Simple moving average.

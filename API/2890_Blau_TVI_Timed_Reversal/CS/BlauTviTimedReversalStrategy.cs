@@ -20,7 +20,7 @@ namespace StockSharp.Samples.Strategies;
 public class BlauTviTimedReversalStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<BlauTviMaType> _maType;
+	private readonly StrategyParam<BlauTviMaTypes> _maType;
 	private readonly StrategyParam<int> _length1;
 	private readonly StrategyParam<int> _length2;
 	private readonly StrategyParam<int> _length3;
@@ -57,7 +57,7 @@ public class BlauTviTimedReversalStrategy : Strategy
 	/// <summary>
 	/// Smoothing method used in Blau TVI moving averages.
 	/// </summary>
-	public BlauTviMaType MaType
+	public BlauTviMaTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -206,7 +206,7 @@ public class BlauTviTimedReversalStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for Blau TVI", "General");
 
-		_maType = Param(nameof(MaType), BlauTviMaType.Exponential)
+		_maType = Param(nameof(MaType), BlauTviMaTypes.Exponential)
 		.SetDisplay("MA Type", "Smoothing method for Blau TVI", "Indicators");
 
 		_length1 = Param(nameof(Length1), 12)
@@ -461,14 +461,14 @@ public class BlauTviTimedReversalStrategy : Strategy
 		BuyMarket(Math.Abs(Position));
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(BlauTviMaType type, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(BlauTviMaTypes type, int length)
 	{
 		return type switch
 		{
-			BlauTviMaType.Simple => new SimpleMovingAverage { Length = length },
-			BlauTviMaType.Smoothed => new SmoothedMovingAverage { Length = length },
-			BlauTviMaType.Weighted => new WeightedMovingAverage { Length = length },
-			BlauTviMaType.Jurik => new JurikMovingAverage { Length = length },
+			BlauTviMaTypes.Simple => new SimpleMovingAverage { Length = length },
+			BlauTviMaTypes.Smoothed => new SmoothedMovingAverage { Length = length },
+			BlauTviMaTypes.Weighted => new WeightedMovingAverage { Length = length },
+			BlauTviMaTypes.Jurik => new JurikMovingAverage { Length = length },
 			_ => new ExponentialMovingAverage { Length = length },
 		};
 	}
@@ -476,7 +476,7 @@ public class BlauTviTimedReversalStrategy : Strategy
 	/// <summary>
 	/// Supported moving average types for Blau TVI smoothing.
 	/// </summary>
-	public enum BlauTviMaType
+	public enum BlauTviMaTypes
 	{
 		/// <summary>
 		/// Exponential moving average (EMA).

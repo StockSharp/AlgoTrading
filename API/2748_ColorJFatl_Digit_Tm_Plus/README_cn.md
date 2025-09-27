@@ -48,13 +48,13 @@ ColorJFatl Digit TM Plus 策略来源于 MetaTrader 5 的
 | `HoldingMinutes` | 启用时间退出时的持仓分钟数。 |
 | `CandleType` | 计算所用的 K 线类型（默认 4 小时）。 |
 | `JmaLength` | Jurik 移动平均线的平滑长度。 |
-| `AppliedPrice` | 指标使用的价格源（收盘价、开盘价、Demark 等）。 |
+| `AppliedPrices` | 指标使用的价格源（收盘价、开盘价、Demark 等）。 |
 | `RoundingDigits` | 平滑线的四舍五入精度。 |
 | `SignalBar` | 用于判断信号的已完成 K 线偏移量。 |
 
 ## 注意事项
 
 - 策略仅处理已完成的 K 线，适合进行历史回测。
-- `AppliedPrice.Demark` 完全复制了原指标中的 Demark 价格公式。
+- `AppliedPrices.Demark` 完全复制了原指标中的 Demark 价格公式。
 - StockSharp 中订单执行是异步的，因此策略在开仓时记录入场价，在
   发送平仓单时清除记录，以保证止损/止盈逻辑正确运行。

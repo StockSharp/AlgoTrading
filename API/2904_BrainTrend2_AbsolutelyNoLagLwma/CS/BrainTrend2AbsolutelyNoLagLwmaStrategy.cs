@@ -29,7 +29,7 @@ public class BrainTrend2AbsolutelyNoLagLwmaStrategy : Strategy
 
 	private readonly StrategyParam<int> _lwmaLength;
 	private readonly StrategyParam<int> _lwmaSignalBar;
-	private readonly StrategyParam<AppliedPriceMode> _lwmaAppliedPrice;
+	private readonly StrategyParam<AppliedPriceModes> _lwmaAppliedPrice;
 	private readonly StrategyParam<bool> _lwmaBuyAllowed;
 	private readonly StrategyParam<bool> _lwmaSellAllowed;
 	private readonly StrategyParam<bool> _lwmaCloseLongAllowed;
@@ -130,7 +130,7 @@ public class BrainTrend2AbsolutelyNoLagLwmaStrategy : Strategy
 	/// <summary>
 	/// Applied price type for AbsolutelyNoLagLWMA.
 	/// </summary>
-	public AppliedPriceMode LwmaAppliedPrice
+	public AppliedPriceModes LwmaAppliedPrice
 	{
 		get => _lwmaAppliedPrice.Value;
 		set => _lwmaAppliedPrice.Value = value;
@@ -228,7 +228,7 @@ public class BrainTrend2AbsolutelyNoLagLwmaStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("LWMA Signal Bar", "Shift for LWMA signals", "LWMA");
 
-		_lwmaAppliedPrice = Param(nameof(LwmaAppliedPrice), AppliedPriceMode.Close)
+		_lwmaAppliedPrice = Param(nameof(LwmaAppliedPrice), AppliedPriceModes.Close)
 		.SetDisplay("LWMA Price", "Applied price for LWMA", "LWMA");
 
 		_lwmaBuyAllowed = Param(nameof(LwmaBuyAllowed), true)
@@ -475,7 +475,7 @@ public class BrainTrend2AbsolutelyNoLagLwmaStrategy : Strategy
 	/// <summary>
 	/// Applied price options for AbsolutelyNoLagLWMA.
 	/// </summary>
-	public enum AppliedPriceMode
+	public enum AppliedPriceModes
 	{
 		Close = 1,
 		Open,
@@ -666,7 +666,7 @@ public class BrainTrend2AbsolutelyNoLagLwmaStrategy : Strategy
 		private decimal? _prevLine;
 
 		public int Length { get; set; } = 7;
-		public AppliedPriceMode AppliedPrice { get; set; } = AppliedPriceMode.Close;
+		public AppliedPriceModes AppliedPrice { get; set; } = AppliedPriceModes.Close;
 
 		protected override IIndicatorValue OnProcess(IIndicatorValue input)
 		{
@@ -763,18 +763,18 @@ public class BrainTrend2AbsolutelyNoLagLwmaStrategy : Strategy
 		{
 			return AppliedPrice switch
 			{
-				AppliedPriceMode.Close => candle.ClosePrice,
-				AppliedPriceMode.Open => candle.OpenPrice,
-				AppliedPriceMode.High => candle.HighPrice,
-				AppliedPriceMode.Low => candle.LowPrice,
-				AppliedPriceMode.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-				AppliedPriceMode.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-				AppliedPriceMode.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-				AppliedPriceMode.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-				AppliedPriceMode.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-				AppliedPriceMode.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
-				AppliedPriceMode.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
-				AppliedPriceMode.Demark => CalculateDemarkPrice(candle),
+				AppliedPriceModes.Close => candle.ClosePrice,
+				AppliedPriceModes.Open => candle.OpenPrice,
+				AppliedPriceModes.High => candle.HighPrice,
+				AppliedPriceModes.Low => candle.LowPrice,
+				AppliedPriceModes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+				AppliedPriceModes.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+				AppliedPriceModes.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+				AppliedPriceModes.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+				AppliedPriceModes.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+				AppliedPriceModes.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
+				AppliedPriceModes.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
+				AppliedPriceModes.Demark => CalculateDemarkPrice(candle),
 				_ => candle.ClosePrice,
 			};
 		}

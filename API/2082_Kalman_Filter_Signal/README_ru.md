@@ -15,7 +15,7 @@
   - `ProcessNoise` = 1.0
   - `MeasurementNoise` = 1.0
   - `CandleType` = TimeSpan.FromHours(3).TimeFrame()
-  - `Mode` = SignalMode.Kalman
+  - `Mode` = SignalModes.Kalman
   - `StopLoss` = 1000m
   - `TakeProfit` = 2000m
 - **Фильтры**:

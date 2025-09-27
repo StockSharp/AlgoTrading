@@ -27,7 +27,7 @@ The parameters are grouped per module (A, B, C) to mirror the MT5 template. Each
 - **JmaLength** – period of the Jurik Moving Average.
 - **JmaPhase** – stored for documentation; StockSharp's JMA does not expose phase adjustment.
 - **SignalBar** – number of finished bars to wait before acting on a signal (0 = immediate).
-- **AppliedPrice** – price transformation used as input for JMA (close, open, median, typical, weighted, simple, quarter, trend-follow, DeMark).
+- **AppliedPrices** – price transformation used as input for JMA (close, open, median, typical, weighted, simple, quarter, trend-follow, DeMark).
 - **AllowBuyOpen / AllowSellOpen** – permission to open positions in the corresponding direction.
 - **AllowBuyClose / AllowSellClose** – permission to close existing positions when the module issues an opposite signal.
 - **Volume** – order size the module uses when opening a new trade.
@@ -38,7 +38,7 @@ Because modules share a single account position, only one net long or net short 
 
 - The strategy subscribes to all configured timeframes through `GetWorkingSecurities()`, ensuring the simulation or live environment loads the required candle series.
 - Signals operate strictly on finished candles to prevent intrabar repainting.
-- The *AppliedPrice* enum reproduces the options from the original indicator, including two trend-follow price variants and the DeMark price.
+- The *AppliedPrices* enum reproduces the options from the original indicator, including two trend-follow price variants and the DeMark price.
 - Money-management recovery logic from the MQL version is not reproduced. Instead, risk can be managed via StockSharp protections or by adjusting module volumes.
 - English comments inside the code explain each step of the conversion for easier maintenance and future Python porting.
 

@@ -22,7 +22,7 @@
 - `CandleType` – используемый таймфрейм.
 - `TradeVolume` – объём рыночных ордеров.
 - `EmaLength` – дробная длина каждого уровня EMA в PEMA.
-- `AppliedPrice` – источник цены (close, open, median, weighted, trend-follow, DeMark и т.д.).
+- `AppliedPrices` – источник цены (close, open, median, weighted, trend-follow, DeMark и т.д.).
 - `DeviationPercent` – процентное отклонение для построения оболочек.
 - `Shift` – количество свечей для смещения сравнения с каналом.
 - `PriceShift` – дополнительное абсолютное смещение PEMA.
@@ -37,7 +37,7 @@
 - `CandleType = TimeSpan.FromHours(4).TimeFrame()`
 - `TradeVolume = 1m`
 - `EmaLength = 50.01m`
-- `AppliedPrice = AppliedPrice.Close`
+- `AppliedPrices = AppliedPrices.Close`
 - `DeviationPercent = 0.1m`
 - `Shift = 1`
 - `PriceShift = 0m`

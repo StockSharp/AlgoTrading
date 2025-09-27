@@ -22,7 +22,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ShowPipsStrategy : Strategy
 {
-	private readonly StrategyParam<DisplayMode> _displayMode;
+	private readonly StrategyParam<DisplayModes> _displayMode;
 	private readonly StrategyParam<bool> _showProfit;
 	private readonly StrategyParam<bool> _showPercent;
 	private readonly StrategyParam<bool> _showSpread;
@@ -41,7 +41,7 @@ public class ShowPipsStrategy : Strategy
 	/// <summary>
 	/// Available output modes for the status text.
 	/// </summary>
-	public enum DisplayMode
+	public enum DisplayModes
 	{
 		/// <summary>
 		/// Draw text near the current price on the chart.
@@ -62,7 +62,7 @@ public class ShowPipsStrategy : Strategy
 	/// <summary>
 	/// Chooses how the status information is displayed.
 	/// </summary>
-	public DisplayMode ShowType
+	public DisplayModes ShowType
 	{
 		get => _displayMode.Value;
 		set => _displayMode.Value = value;
@@ -136,7 +136,7 @@ public class ShowPipsStrategy : Strategy
 	/// </summary>
 	public ShowPipsStrategy()
 	{
-		_displayMode = Param(nameof(ShowType), DisplayMode.FollowPrice)
+		_displayMode = Param(nameof(ShowType), DisplayModes.FollowPrice)
 			.SetDisplay("Display Mode", "How to present status information", "Visualization");
 
 		_showProfit = Param(nameof(ShowProfit), false)
@@ -262,7 +262,7 @@ public class ShowPipsStrategy : Strategy
 
 		switch (ShowType)
 		{
-			case DisplayMode.AsComment:
+			case DisplayModes.AsComment:
 			{
 				if (text != _lastLoggedText)
 				{
@@ -272,7 +272,7 @@ public class ShowPipsStrategy : Strategy
 
 				break;
 			}
-			case DisplayMode.FollowPrice:
+			case DisplayModes.FollowPrice:
 			{
 				if (_chartArea == null)
 					return;
@@ -281,7 +281,7 @@ public class ShowPipsStrategy : Strategy
 				DrawText(_chartArea, CurrentTime, price, text);
 				break;
 			}
-			case DisplayMode.CornerLabel:
+			case DisplayModes.CornerLabel:
 			{
 				if (_chartArea == null)
 					return;

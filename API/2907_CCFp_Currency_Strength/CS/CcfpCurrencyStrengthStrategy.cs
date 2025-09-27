@@ -14,7 +14,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Currency strength strategy inspired by the classic CCFp expert advisor.
+/// Currencies strength strategy inspired by the classic CCFp expert advisor.
 /// It compares relative currency strength values to find bullish and bearish combinations.
 /// </summary>
 public class CcfpCurrencyStrengthStrategy : Strategy
@@ -32,7 +32,7 @@ public class CcfpCurrencyStrengthStrategy : Strategy
 	private readonly StrategyParam<Security> _usdChf;
 	private readonly StrategyParam<Security> _usdJpy;
 
-	private readonly Dictionary<Currency, PairState> _pairStates = new();
+	private readonly Dictionary<Currencies, PairState> _pairStates = new();
 	private readonly decimal[] _currentStrengths = new decimal[8];
 	private readonly decimal[] _previousStrengths = new decimal[8];
 	private bool _hasPreviousStrengths;
@@ -40,7 +40,7 @@ public class CcfpCurrencyStrengthStrategy : Strategy
 
 	private static readonly string[] CurrencyNames = { "USD", "EUR", "GBP", "CHF", "JPY", "AUD", "CAD", "NZD" };
 
-	private enum Currency
+	private enum Currencies
 	{
 		USD = 0,
 		EUR = 1,
@@ -58,8 +58,8 @@ public class CcfpCurrencyStrengthStrategy : Strategy
 		public SimpleMovingAverage Fast { get; init; }
 		public SimpleMovingAverage Slow { get; init; }
 		public bool InvertRatio { get; init; }
-		public Currency BaseCurrency { get; init; }
-		public Currency QuoteCurrency { get; init; }
+		public Currencies BaseCurrency { get; init; }
+		public Currencies QuoteCurrency { get; init; }
 		public decimal Ratio { get; set; }
 		public DateTimeOffset LastTime { get; set; }
 		public bool IsReady { get; set; }
@@ -269,13 +269,13 @@ public class CcfpCurrencyStrengthStrategy : Strategy
 		ResetState();
 		EnsurePairsConfigured();
 
-		CreatePairState(Currency.EUR, EurUsd, false, Currency.EUR, Currency.USD);
-		CreatePairState(Currency.GBP, GbpUsd, false, Currency.GBP, Currency.USD);
-		CreatePairState(Currency.AUD, AudUsd, false, Currency.AUD, Currency.USD);
-		CreatePairState(Currency.NZD, NzdUsd, false, Currency.NZD, Currency.USD);
-		CreatePairState(Currency.CAD, UsdCad, true, Currency.USD, Currency.CAD);
-		CreatePairState(Currency.CHF, UsdChf, true, Currency.USD, Currency.CHF);
-		CreatePairState(Currency.JPY, UsdJpy, true, Currency.USD, Currency.JPY);
+		CreatePairState(Currencies.EUR, EurUsd, false, Currencies.EUR, Currencies.USD);
+		CreatePairState(Currencies.GBP, GbpUsd, false, Currencies.GBP, Currencies.USD);
+		CreatePairState(Currencies.AUD, AudUsd, false, Currencies.AUD, Currencies.USD);
+		CreatePairState(Currencies.NZD, NzdUsd, false, Currencies.NZD, Currencies.USD);
+		CreatePairState(Currencies.CAD, UsdCad, true, Currencies.USD, Currencies.CAD);
+		CreatePairState(Currencies.CHF, UsdChf, true, Currencies.USD, Currencies.CHF);
+		CreatePairState(Currencies.JPY, UsdJpy, true, Currencies.USD, Currencies.JPY);
 	}
 
 	private void ResetState()
@@ -309,7 +309,7 @@ public class CcfpCurrencyStrengthStrategy : Strategy
 			throw new InvalidOperationException("USD/JPY security is required.");
 	}
 
-	private void CreatePairState(Currency key, Security security, bool invert, Currency baseCurrency, Currency quoteCurrency)
+	private void CreatePairState(Currencies key, Security security, bool invert, Currencies baseCurrency, Currencies quoteCurrency)
 	{
 		var state = new PairState
 		{
@@ -332,7 +332,7 @@ public class CcfpCurrencyStrengthStrategy : Strategy
 			.Start();
 	}
 
-	private void ProcessPairCandle(Currency key, ICandleMessage candle, decimal fastValue, decimal slowValue)
+	private void ProcessPairCandle(Currencies key, ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -403,7 +403,7 @@ public class CcfpCurrencyStrengthStrategy : Strategy
 					_currentStrengths[topIndex] > _previousStrengths[topIndex] &&
 					_currentStrengths[downIndex] < _previousStrengths[downIndex])
 				{
-					GenerateTrades((Currency)topIndex, (Currency)downIndex);
+					GenerateTrades((Currencies)topIndex, (Currencies)downIndex);
 				}
 			}
 		}
@@ -423,27 +423,27 @@ public class CcfpCurrencyStrengthStrategy : Strategy
 				return false;
 		}
 
-		var eur = _pairStates[Currency.EUR].Ratio;
-		var gbp = _pairStates[Currency.GBP].Ratio;
-		var aud = _pairStates[Currency.AUD].Ratio;
-		var nzd = _pairStates[Currency.NZD].Ratio;
-		var cad = _pairStates[Currency.CAD].Ratio;
-		var chf = _pairStates[Currency.CHF].Ratio;
-		var jpy = _pairStates[Currency.JPY].Ratio;
+		var eur = _pairStates[Currencies.EUR].Ratio;
+		var gbp = _pairStates[Currencies.GBP].Ratio;
+		var aud = _pairStates[Currencies.AUD].Ratio;
+		var nzd = _pairStates[Currencies.NZD].Ratio;
+		var cad = _pairStates[Currencies.CAD].Ratio;
+		var chf = _pairStates[Currencies.CHF].Ratio;
+		var jpy = _pairStates[Currencies.JPY].Ratio;
 
 		if (eur == 0m || gbp == 0m || aud == 0m || nzd == 0m || cad == 0m || chf == 0m || jpy == 0m)
 			return false;
 
 		var sum = eur + gbp + aud + nzd + cad + chf + jpy;
 		// Apply the same aggregation formula used by the MQL CCFp indicator.
-		_currentStrengths[(int)Currency.USD] = sum - 7m;
-		_currentStrengths[(int)Currency.EUR] = (sum - eur + 1m) / eur - 7m;
-		_currentStrengths[(int)Currency.GBP] = (sum - gbp + 1m) / gbp - 7m;
-		_currentStrengths[(int)Currency.CHF] = (sum - chf + 1m) / chf - 7m;
-		_currentStrengths[(int)Currency.JPY] = (sum - jpy + 1m) / jpy - 7m;
-		_currentStrengths[(int)Currency.AUD] = (sum - aud + 1m) / aud - 7m;
-		_currentStrengths[(int)Currency.CAD] = (sum - cad + 1m) / cad - 7m;
-		_currentStrengths[(int)Currency.NZD] = (sum - nzd + 1m) / nzd - 7m;
+		_currentStrengths[(int)Currencies.USD] = sum - 7m;
+		_currentStrengths[(int)Currencies.EUR] = (sum - eur + 1m) / eur - 7m;
+		_currentStrengths[(int)Currencies.GBP] = (sum - gbp + 1m) / gbp - 7m;
+		_currentStrengths[(int)Currencies.CHF] = (sum - chf + 1m) / chf - 7m;
+		_currentStrengths[(int)Currencies.JPY] = (sum - jpy + 1m) / jpy - 7m;
+		_currentStrengths[(int)Currencies.AUD] = (sum - aud + 1m) / aud - 7m;
+		_currentStrengths[(int)Currencies.CAD] = (sum - cad + 1m) / cad - 7m;
+		_currentStrengths[(int)Currencies.NZD] = (sum - nzd + 1m) / nzd - 7m;
 
 		return true;
 	}
@@ -467,7 +467,7 @@ public class CcfpCurrencyStrengthStrategy : Strategy
 			_previousStrengths[i] = _currentStrengths[i];
 	}
 
-	private void GenerateTrades(Currency top, Currency down)
+	private void GenerateTrades(Currencies top, Currencies down)
 	{
 		var comment = $"({CurrencyNames[(int)top]}{CurrencyNames[(int)down]})";
 		// Keep the comment format to match historical MQL trade annotations.
@@ -477,18 +477,18 @@ public class CcfpCurrencyStrengthStrategy : Strategy
 			ExecuteAction(actions[i], comment);
 	}
 
-	private List<TradeAction> BuildActions(Currency top, Currency down)
+	private List<TradeAction> BuildActions(Currencies top, Currencies down)
 	{
 		var actions = new List<TradeAction>();
 
-		if (top == Currency.USD)
+		if (top == Currencies.USD)
 		{
 			if (TryGetCurrencyAction(down, false, out var action))
 				actions.Add(action);
 			return actions;
 		}
 
-		if (down == Currency.USD)
+		if (down == Currencies.USD)
 		{
 			if (TryGetCurrencyAction(top, true, out var action))
 				actions.Add(action);
@@ -504,11 +504,11 @@ public class CcfpCurrencyStrengthStrategy : Strategy
 		return actions;
 	}
 
-	private bool TryGetCurrencyAction(Currency currency, bool longCurrency, out TradeAction action)
+	private bool TryGetCurrencyAction(Currencies currency, bool longCurrency, out TradeAction action)
 	{
 		action = default;
 
-		if (currency == Currency.USD)
+		if (currency == Currencies.USD)
 			return false;
 
 		if (!_pairStates.TryGetValue(currency, out var state))
@@ -522,7 +522,7 @@ public class CcfpCurrencyStrengthStrategy : Strategy
 		return true;
 	}
 
-	private static Sides DetermineSide(PairState state, Currency currency, bool longCurrency)
+	private static Sides DetermineSide(PairState state, Currencies currency, bool longCurrency)
 	{
 		return state.BaseCurrency == currency
 			? (longCurrency ? Sides.Buy : Sides.Sell)

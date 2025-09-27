@@ -46,6 +46,6 @@ The money-management queues are reset when the corresponding trigger is set to z
 
 - Each module manages its own internal position volume; therefore, different modules can be long or short simultaneously. The main strategy position is the sum of all module slices.
 - Stop-loss and take-profit levels are checked on every finished candle using the candle's high/low to detect breaches.
-- The `AppliedPrice` enumeration matches the original indicator options, including both TrendFollow formulas and the DeMark variant.
+- The `AppliedPrices` enumeration matches the original indicator options, including both TrendFollow formulas and the DeMark variant.
 - The strategy does not add indicators to the chart; it relies on the high-level `Bind` API and keeps indicator instances private to each module as required by the guidelines.
 - The logic closes and opens trades only when the slope changes direction, which prevents duplicated orders on consecutive bars with the same trend state.

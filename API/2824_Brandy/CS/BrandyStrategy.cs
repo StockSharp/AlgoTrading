@@ -26,13 +26,13 @@ public class BrandyStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStepPips;
 	private readonly StrategyParam<int> _maClosePeriod;
 	private readonly StrategyParam<int> _maCloseShift;
-	private readonly StrategyParam<MovingAverageMethod> _maCloseMethod;
-	private readonly StrategyParam<AppliedPriceType> _maCloseAppliedPrice;
+	private readonly StrategyParam<MovingAverageMethods> _maCloseMethod;
+	private readonly StrategyParam<AppliedPriceTypes> _maCloseAppliedPrice;
 	private readonly StrategyParam<int> _maCloseSignalBar;
 	private readonly StrategyParam<int> _maOpenPeriod;
 	private readonly StrategyParam<int> _maOpenShift;
-	private readonly StrategyParam<MovingAverageMethod> _maOpenMethod;
-	private readonly StrategyParam<AppliedPriceType> _maOpenAppliedPrice;
+	private readonly StrategyParam<MovingAverageMethods> _maOpenMethod;
+	private readonly StrategyParam<AppliedPriceTypes> _maOpenAppliedPrice;
 	private readonly StrategyParam<int> _maOpenSignalBar;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -117,7 +117,7 @@ public class BrandyStrategy : Strategy
 	/// <summary>
 	/// Moving average smoothing method for the close series.
 	/// </summary>
-	public MovingAverageMethod MaCloseMethod
+	public MovingAverageMethods MaCloseMethod
 	{
 		get => _maCloseMethod.Value;
 		set => _maCloseMethod.Value = value;
@@ -126,7 +126,7 @@ public class BrandyStrategy : Strategy
 	/// <summary>
 	/// Price source used by the close moving average.
 	/// </summary>
-	public AppliedPriceType MaCloseAppliedPrice
+	public AppliedPriceTypes MaCloseAppliedPrice
 	{
 		get => _maCloseAppliedPrice.Value;
 		set => _maCloseAppliedPrice.Value = value;
@@ -162,7 +162,7 @@ public class BrandyStrategy : Strategy
 	/// <summary>
 	/// Moving average smoothing method for the open series.
 	/// </summary>
-	public MovingAverageMethod MaOpenMethod
+	public MovingAverageMethods MaOpenMethod
 	{
 		get => _maOpenMethod.Value;
 		set => _maOpenMethod.Value = value;
@@ -171,7 +171,7 @@ public class BrandyStrategy : Strategy
 	/// <summary>
 	/// Price source used by the open moving average.
 	/// </summary>
-	public AppliedPriceType MaOpenAppliedPrice
+	public AppliedPriceTypes MaOpenAppliedPrice
 	{
 		get => _maOpenAppliedPrice.Value;
 		set => _maOpenAppliedPrice.Value = value;
@@ -228,10 +228,10 @@ public class BrandyStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("MA Close Shift", "Forward shift applied to close MA", "Indicators");
 
-		_maCloseMethod = Param(nameof(MaCloseMethod), MovingAverageMethod.Ema)
+		_maCloseMethod = Param(nameof(MaCloseMethod), MovingAverageMethods.Ema)
 		.SetDisplay("MA Close Method", "Smoothing method for close MA", "Indicators");
 
-		_maCloseAppliedPrice = Param(nameof(MaCloseAppliedPrice), AppliedPriceType.Close)
+		_maCloseAppliedPrice = Param(nameof(MaCloseAppliedPrice), AppliedPriceTypes.Close)
 		.SetDisplay("MA Close Price", "Price source for close MA", "Indicators");
 
 		_maCloseSignalBar = Param(nameof(MaCloseSignalBar), 0)
@@ -246,10 +246,10 @@ public class BrandyStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("MA Open Shift", "Forward shift applied to open MA", "Indicators");
 
-		_maOpenMethod = Param(nameof(MaOpenMethod), MovingAverageMethod.Ema)
+		_maOpenMethod = Param(nameof(MaOpenMethod), MovingAverageMethods.Ema)
 		.SetDisplay("MA Open Method", "Smoothing method for open MA", "Indicators");
 
-		_maOpenAppliedPrice = Param(nameof(MaOpenAppliedPrice), AppliedPriceType.Close)
+		_maOpenAppliedPrice = Param(nameof(MaOpenAppliedPrice), AppliedPriceTypes.Close)
 		.SetDisplay("MA Open Price", "Price source for open MA", "Indicators");
 
 		_maOpenSignalBar = Param(nameof(MaOpenSignalBar), 0)
@@ -558,29 +558,29 @@ public class BrandyStrategy : Strategy
 		return null;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethod method, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-		MovingAverageMethod.Sma => new SimpleMovingAverage { Length = length },
-		MovingAverageMethod.Ema => new ExponentialMovingAverage { Length = length },
-		MovingAverageMethod.Smma => new SmoothedMovingAverage { Length = length },
-		MovingAverageMethod.Lwma => new WeightedMovingAverage { Length = length },
+		MovingAverageMethods.Sma => new SimpleMovingAverage { Length = length },
+		MovingAverageMethods.Ema => new ExponentialMovingAverage { Length = length },
+		MovingAverageMethods.Smma => new SmoothedMovingAverage { Length = length },
+		MovingAverageMethods.Lwma => new WeightedMovingAverage { Length = length },
 		_ => new ExponentialMovingAverage { Length = length }
 		};
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceType priceType)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceTypes priceType)
 	{
 		return priceType switch
 		{
-			AppliedPriceType.Close => candle.ClosePrice,
-			AppliedPriceType.Open => candle.OpenPrice,
-			AppliedPriceType.High => candle.HighPrice,
-			AppliedPriceType.Low => candle.LowPrice,
-			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
+			AppliedPriceTypes.Close => candle.ClosePrice,
+			AppliedPriceTypes.Open => candle.OpenPrice,
+			AppliedPriceTypes.High => candle.HighPrice,
+			AppliedPriceTypes.Low => candle.LowPrice,
+			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}
@@ -589,7 +589,7 @@ public class BrandyStrategy : Strategy
 /// <summary>
 /// Supported moving average smoothing methods.
 /// </summary>
-public enum MovingAverageMethod
+public enum MovingAverageMethods
 {
 	/// <summary>
 	/// Simple moving average.
@@ -615,7 +615,7 @@ public enum MovingAverageMethod
 /// <summary>
 /// Price sources that can be fed into the moving averages.
 /// </summary>
-public enum AppliedPriceType
+public enum AppliedPriceTypes
 {
 	/// <summary>
 	/// Candle close price.

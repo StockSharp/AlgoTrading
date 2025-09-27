@@ -21,7 +21,7 @@ public class TrailingStopManagerStrategy : Strategy
 	/// <summary>
 	/// Direction of the optional market order placed when the strategy starts.
 	/// </summary>
-	public enum InitialDirection
+	public enum InitialDirections
 	{
 		None,
 		Long,
@@ -30,12 +30,12 @@ public class TrailingStopManagerStrategy : Strategy
 
 	private readonly StrategyParam<decimal> _trailingStopPips;
 	private readonly StrategyParam<decimal> _trailingStepPips;
-	private readonly StrategyParam<InitialDirection> _startDirection;
+	private readonly StrategyParam<InitialDirections> _startDirection;
 
 	private decimal _entryPrice;
 	private decimal _trailingStopPrice;
 	private bool _trailingActive;
-	private InitialDirection _currentDirection = InitialDirection.None;
+	private InitialDirections _currentDirection = InitialDirections.None;
 	private decimal _priceStep = 1m;
 
 	/// <summary>
@@ -59,7 +59,7 @@ public class TrailingStopManagerStrategy : Strategy
 	/// <summary>
 	/// Optional market order direction executed on start to quickly demonstrate trailing behaviour.
 	/// </summary>
-	public InitialDirection StartDirection
+	public InitialDirections StartDirection
 	{
 		get => _startDirection.Value;
 		set => _startDirection.Value = value;
@@ -80,7 +80,7 @@ public class TrailingStopManagerStrategy : Strategy
 			.SetDisplay("Trailing Step (pips)", "Minimal move before adjusting stop", "Risk Management")
 			.SetCanOptimize(true);
 
-		_startDirection = Param(nameof(StartDirection), InitialDirection.None)
+		_startDirection = Param(nameof(StartDirection), InitialDirections.None)
 			.SetDisplay("Initial Direction", "Optional market order on start", "Trading");
 	}
 
@@ -108,11 +108,11 @@ public class TrailingStopManagerStrategy : Strategy
 		// Optionally open an immediate position to showcase the trailing stop logic.
 		switch (StartDirection)
 		{
-			case InitialDirection.Long:
+			case InitialDirections.Long:
 				BuyMarket();
 				break;
 
-			case InitialDirection.Short:
+			case InitialDirections.Short:
 				SellMarket();
 				break;
 		}
@@ -134,14 +134,14 @@ public class TrailingStopManagerStrategy : Strategy
 			_entryPrice = tradePrice;
 			_trailingActive = false;
 			_trailingStopPrice = 0m;
-			_currentDirection = InitialDirection.Long;
+			_currentDirection = InitialDirections.Long;
 		}
 		else if (Position < 0 && trade.Order.Side == Sides.Sell)
 		{
 			_entryPrice = tradePrice;
 			_trailingActive = false;
 			_trailingStopPrice = 0m;
-			_currentDirection = InitialDirection.Short;
+			_currentDirection = InitialDirections.Short;
 		}
 		else if (Position == 0)
 		{
@@ -170,11 +170,11 @@ public class TrailingStopManagerStrategy : Strategy
 
 		var currentPrice = price;
 
-		if (Position > 0 && _currentDirection == InitialDirection.Long)
+		if (Position > 0 && _currentDirection == InitialDirections.Long)
 		{
 			UpdateLongTrailing(currentPrice);
 		}
-		else if (Position < 0 && _currentDirection == InitialDirection.Short)
+		else if (Position < 0 && _currentDirection == InitialDirections.Short)
 		{
 			UpdateShortTrailing(currentPrice);
 		}
@@ -277,6 +277,6 @@ public class TrailingStopManagerStrategy : Strategy
 		_entryPrice = 0m;
 		_trailingStopPrice = 0m;
 		_trailingActive = false;
-		_currentDirection = InitialDirection.None;
+		_currentDirection = InitialDirections.None;
 	}
 }

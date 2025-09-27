@@ -19,11 +19,11 @@ public class IbsRsiCciV4X2Strategy : Strategy
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<DataType> _trendCandleType;
 	private readonly StrategyParam<int> _trendIbsPeriod;
-	private readonly StrategyParam<IbsMovingAverageType> _trendIbsMaType;
+	private readonly StrategyParam<IbsMovingAverageTypes> _trendIbsMaType;
 	private readonly StrategyParam<int> _trendRsiPeriod;
-	private readonly StrategyParam<AppliedPriceType> _trendRsiPrice;
+	private readonly StrategyParam<AppliedPriceTypes> _trendRsiPrice;
 	private readonly StrategyParam<int> _trendCciPeriod;
-	private readonly StrategyParam<AppliedPriceType> _trendCciPrice;
+	private readonly StrategyParam<AppliedPriceTypes> _trendCciPrice;
 	private readonly StrategyParam<decimal> _trendThreshold;
 	private readonly StrategyParam<int> _trendRangePeriod;
 	private readonly StrategyParam<int> _trendSmoothPeriod;
@@ -43,11 +43,11 @@ public class IbsRsiCciV4X2Strategy : Strategy
 
 	private readonly StrategyParam<DataType> _signalCandleType;
 	private readonly StrategyParam<int> _signalIbsPeriod;
-	private readonly StrategyParam<IbsMovingAverageType> _signalIbsMaType;
+	private readonly StrategyParam<IbsMovingAverageTypes> _signalIbsMaType;
 	private readonly StrategyParam<int> _signalRsiPeriod;
-	private readonly StrategyParam<AppliedPriceType> _signalRsiPrice;
+	private readonly StrategyParam<AppliedPriceTypes> _signalRsiPrice;
 	private readonly StrategyParam<int> _signalCciPeriod;
-	private readonly StrategyParam<AppliedPriceType> _signalCciPrice;
+	private readonly StrategyParam<AppliedPriceTypes> _signalCciPrice;
 	private readonly StrategyParam<decimal> _signalThreshold;
 	private readonly StrategyParam<int> _signalRangePeriod;
 	private readonly StrategyParam<int> _signalSmoothPeriod;
@@ -79,21 +79,21 @@ public class IbsRsiCciV4X2Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Trend IBS", "IBS smoothing period", "Trend");
 
-		_trendIbsMaType = Param(nameof(TrendIbsMaType), IbsMovingAverageType.Simple)
+		_trendIbsMaType = Param(nameof(TrendIbsMaType), IbsMovingAverageTypes.Simple)
 			.SetDisplay("Trend IBS MA", "IBS smoothing type", "Trend");
 
 		_trendRsiPeriod = Param(nameof(TrendRsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend RSI", "RSI period", "Trend");
 
-		_trendRsiPrice = Param(nameof(TrendRsiPrice), AppliedPriceType.Close)
+		_trendRsiPrice = Param(nameof(TrendRsiPrice), AppliedPriceTypes.Close)
 			.SetDisplay("Trend RSI Price", "RSI price type", "Trend");
 
 		_trendCciPeriod = Param(nameof(TrendCciPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend CCI", "CCI period", "Trend");
 
-		_trendCciPrice = Param(nameof(TrendCciPrice), AppliedPriceType.Median)
+		_trendCciPrice = Param(nameof(TrendCciPrice), AppliedPriceTypes.Median)
 			.SetDisplay("Trend CCI Price", "CCI price type", "Trend");
 
 		_trendThreshold = Param(nameof(TrendThreshold), 50m)
@@ -159,21 +159,21 @@ public class IbsRsiCciV4X2Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Signal IBS", "IBS smoothing period", "Signal");
 
-		_signalIbsMaType = Param(nameof(SignalIbsMaType), IbsMovingAverageType.Simple)
+		_signalIbsMaType = Param(nameof(SignalIbsMaType), IbsMovingAverageTypes.Simple)
 			.SetDisplay("Signal IBS MA", "IBS smoothing type", "Signal");
 
 		_signalRsiPeriod = Param(nameof(SignalRsiPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal RSI", "RSI period", "Signal");
 
-		_signalRsiPrice = Param(nameof(SignalRsiPrice), AppliedPriceType.Close)
+		_signalRsiPrice = Param(nameof(SignalRsiPrice), AppliedPriceTypes.Close)
 			.SetDisplay("Signal RSI Price", "RSI price type", "Signal");
 
 		_signalCciPeriod = Param(nameof(SignalCciPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal CCI", "CCI period", "Signal");
 
-		_signalCciPrice = Param(nameof(SignalCciPrice), AppliedPriceType.Median)
+		_signalCciPrice = Param(nameof(SignalCciPrice), AppliedPriceTypes.Median)
 			.SetDisplay("Signal CCI Price", "CCI price type", "Signal");
 
 		_signalThreshold = Param(nameof(SignalThreshold), 50m)
@@ -226,7 +226,7 @@ public class IbsRsiCciV4X2Strategy : Strategy
 		set => _trendIbsPeriod.Value = value;
 	}
 
-	public IbsMovingAverageType TrendIbsMaType
+	public IbsMovingAverageTypes TrendIbsMaType
 	{
 		get => _trendIbsMaType.Value;
 		set => _trendIbsMaType.Value = value;
@@ -238,7 +238,7 @@ public class IbsRsiCciV4X2Strategy : Strategy
 		set => _trendRsiPeriod.Value = value;
 	}
 
-	public AppliedPriceType TrendRsiPrice
+	public AppliedPriceTypes TrendRsiPrice
 	{
 		get => _trendRsiPrice.Value;
 		set => _trendRsiPrice.Value = value;
@@ -250,7 +250,7 @@ public class IbsRsiCciV4X2Strategy : Strategy
 		set => _trendCciPeriod.Value = value;
 	}
 
-	public AppliedPriceType TrendCciPrice
+	public AppliedPriceTypes TrendCciPrice
 	{
 		get => _trendCciPrice.Value;
 		set => _trendCciPrice.Value = value;
@@ -316,7 +316,7 @@ public class IbsRsiCciV4X2Strategy : Strategy
 		set => _signalIbsPeriod.Value = value;
 	}
 
-	public IbsMovingAverageType SignalIbsMaType
+	public IbsMovingAverageTypes SignalIbsMaType
 	{
 		get => _signalIbsMaType.Value;
 		set => _signalIbsMaType.Value = value;
@@ -328,7 +328,7 @@ public class IbsRsiCciV4X2Strategy : Strategy
 		set => _signalRsiPeriod.Value = value;
 	}
 
-	public AppliedPriceType SignalRsiPrice
+	public AppliedPriceTypes SignalRsiPrice
 	{
 		get => _signalRsiPrice.Value;
 		set => _signalRsiPrice.Value = value;
@@ -340,7 +340,7 @@ public class IbsRsiCciV4X2Strategy : Strategy
 		set => _signalCciPeriod.Value = value;
 	}
 
-	public AppliedPriceType SignalCciPrice
+	public AppliedPriceTypes SignalCciPrice
 	{
 		get => _signalCciPrice.Value;
 		set => _signalCciPrice.Value = value;
@@ -673,8 +673,8 @@ public class IbsRsiCciV4X2Strategy : Strategy
 		private readonly decimal _posit;
 
 		private readonly int _ibsPeriod;
-		private readonly AppliedPriceType _rsiPrice;
-		private readonly AppliedPriceType _cciPrice;
+		private readonly AppliedPriceTypes _rsiPrice;
+		private readonly AppliedPriceTypes _cciPrice;
 		private readonly decimal _threshold;
 		private readonly decimal _priceStep;
 		private readonly LengthIndicator<decimal> _ibsMa;
@@ -689,11 +689,11 @@ public class IbsRsiCciV4X2Strategy : Strategy
 
 		public IbsRsiCciCalculator(
 			int ibsPeriod,
-			IbsMovingAverageType ibsType,
+			IbsMovingAverageTypes ibsType,
 			int rsiPeriod,
-			AppliedPriceType rsiPrice,
+			AppliedPriceTypes rsiPrice,
 			int cciPeriod,
-			AppliedPriceType cciPrice,
+			AppliedPriceTypes cciPrice,
 			decimal threshold,
 			int rangePeriod,
 			int smoothPeriod,
@@ -725,8 +725,8 @@ public class IbsRsiCciV4X2Strategy : Strategy
 			_cci = new CommodityChannelIndexCalculator(cciPeriod);
 			_highest = new Highest { Length = rangePeriod };
 			_lowest = new Lowest { Length = rangePeriod };
-			_rangeHighMa = CreateMovingAverage(IbsMovingAverageType.Smoothed, smoothPeriod);
-			_rangeLowMa = CreateMovingAverage(IbsMovingAverageType.Smoothed, smoothPeriod);
+			_rangeHighMa = CreateMovingAverage(IbsMovingAverageTypes.Smoothed, smoothPeriod);
+			_rangeLowMa = CreateMovingAverage(IbsMovingAverageTypes.Smoothed, smoothPeriod);
 		}
 
 		public IbsRsiCciValue? Process(ICandleMessage candle)
@@ -813,35 +813,35 @@ public class IbsRsiCciV4X2Strategy : Strategy
 			_rangeLowMa.Reset();
 		}
 
-		private static LengthIndicator<decimal> CreateMovingAverage(IbsMovingAverageType type, int length)
+		private static LengthIndicator<decimal> CreateMovingAverage(IbsMovingAverageTypes type, int length)
 		{
 			return type switch
 			{
-				IbsMovingAverageType.Simple => new SimpleMovingAverage { Length = length },
-				IbsMovingAverageType.Exponential => new ExponentialMovingAverage { Length = length },
-				IbsMovingAverageType.Weighted => new WeightedMovingAverage { Length = length },
-				IbsMovingAverageType.Smoothed => new SmoothedMovingAverage { Length = length },
+				IbsMovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
+				IbsMovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+				IbsMovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
+				IbsMovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
 				_ => new SimpleMovingAverage { Length = length }
 			};
 		}
 
-		private static decimal GetPrice(ICandleMessage candle, AppliedPriceType type)
+		private static decimal GetPrice(ICandleMessage candle, AppliedPriceTypes type)
 		{
 			return type switch
 			{
-				AppliedPriceType.Close => candle.ClosePrice,
-				AppliedPriceType.Open => candle.OpenPrice,
-				AppliedPriceType.High => candle.HighPrice,
-				AppliedPriceType.Low => candle.LowPrice,
-				AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-				AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-				AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
+				AppliedPriceTypes.Close => candle.ClosePrice,
+				AppliedPriceTypes.Open => candle.OpenPrice,
+				AppliedPriceTypes.High => candle.HighPrice,
+				AppliedPriceTypes.Low => candle.LowPrice,
+				AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+				AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+				AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
 				_ => candle.ClosePrice
 			};
 		}
 	}
 
-	public enum IbsMovingAverageType
+	public enum IbsMovingAverageTypes
 	{
 		Simple,
 		Exponential,
@@ -849,7 +849,7 @@ public class IbsRsiCciV4X2Strategy : Strategy
 		Weighted
 	}
 
-	public enum AppliedPriceType
+	public enum AppliedPriceTypes
 	{
 		Close,
 		Open,

@@ -18,13 +18,13 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class EveningStarReversalStrategy : Strategy
 {
-	public enum PatternDirection
+	public enum PatternDirections
 	{
 		Long,
 		Short
 	}
 
-	private readonly StrategyParam<PatternDirection> _direction;
+	private readonly StrategyParam<PatternDirections> _direction;
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<decimal> _riskPercent;
@@ -42,7 +42,7 @@ public class EveningStarReversalStrategy : Strategy
 	private decimal _stopPrice;
 	private decimal _takeProfitPrice;
 
-	public PatternDirection Direction
+	public PatternDirections Direction
 	{
 		get => _direction.Value;
 		set => _direction.Value = value;
@@ -104,7 +104,7 @@ public class EveningStarReversalStrategy : Strategy
 
 	public EveningStarReversalStrategy()
 	{
-		_direction = Param(nameof(Direction), PatternDirection.Short)
+		_direction = Param(nameof(Direction), PatternDirections.Short)
 			.SetDisplay("Signal Direction", "Side to trade when the pattern appears", "General");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 150)
@@ -201,7 +201,7 @@ public class EveningStarReversalStrategy : Strategy
 		if (!IsPatternValid(first, middle, recent))
 		return;
 
-		var isLong = Direction == PatternDirection.Long;
+		var isLong = Direction == PatternDirections.Long;
 		var entryPrice = recent.Close;
 		var stopPrice = CalculateStop(entryPrice, isLong);
 		var takeProfitPrice = CalculateTake(entryPrice, isLong);

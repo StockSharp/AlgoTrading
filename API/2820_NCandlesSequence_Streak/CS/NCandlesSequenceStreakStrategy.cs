@@ -31,7 +31,7 @@ public class NCandlesSequenceStreakStrategy : Strategy
 	private readonly StrategyParam<int> _startHour;
 	private readonly StrategyParam<int> _endHour;
 	private readonly StrategyParam<decimal> _minProfit;
-	private readonly StrategyParam<ClosingMode> _closingBehavior;
+	private readonly StrategyParam<ClosingModes> _closingBehavior;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private int _streakCount;
@@ -50,7 +50,7 @@ public class NCandlesSequenceStreakStrategy : Strategy
 	/// <summary>
 	/// Defines how positions are closed when a "black sheep" candle appears.
 	/// </summary>
-	private enum ClosingMode
+	private enum ClosingModes
 	{
 		/// <summary>Close every open position.</summary>
 		All,
@@ -117,7 +117,7 @@ public class NCandlesSequenceStreakStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(1m, 20m, 1m);
 
-		_closingBehavior = Param(nameof(ClosingBehavior), ClosingMode.All)
+		_closingBehavior = Param(nameof(ClosingBehavior), ClosingModes.All)
 		.SetDisplay("Black Sheep Closing", "Reaction when the streak is broken", "Pattern");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -235,7 +235,7 @@ public class NCandlesSequenceStreakStrategy : Strategy
 	/// <summary>
 	/// How to handle positions when the streak is broken.
 	/// </summary>
-	public ClosingMode ClosingBehavior
+	public ClosingModes ClosingBehavior
 	{
 		get => _closingBehavior.Value;
 		set => _closingBehavior.Value = value;
@@ -507,18 +507,18 @@ public class NCandlesSequenceStreakStrategy : Strategy
 
 		switch (ClosingBehavior)
 		{
-			case ClosingMode.All:
+			case ClosingModes.All:
 			ClosePosition();
 			break;
 
-			case ClosingMode.Opposite:
+			case ClosingModes.Opposite:
 			if (_patternDirection > 0 && Position < 0m)
 			ClosePosition();
 			else if (_patternDirection < 0 && Position > 0m)
 			ClosePosition();
 			break;
 
-			case ClosingMode.SameDirection:
+			case ClosingModes.SameDirection:
 			if (_patternDirection > 0 && Position > 0m)
 			ClosePosition();
 			else if (_patternDirection < 0 && Position < 0m)

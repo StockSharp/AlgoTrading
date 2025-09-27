@@ -22,7 +22,7 @@ namespace StockSharp.Samples.Strategies;
 public class XcciHistogramVolDirectStrategy : Strategy
 {
 private readonly StrategyParam<int> _cciPeriod;
-private readonly StrategyParam<SmoothingMethod> _smoothingMethod;
+private readonly StrategyParam<SmoothingMethods> _smoothingMethod;
 private readonly StrategyParam<int> _smoothingLength;
 private readonly StrategyParam<int> _smoothingPhase;
 private readonly StrategyParam<decimal> _highLevel2;
@@ -36,7 +36,7 @@ private readonly StrategyParam<bool> _allowLongExits;
 private readonly StrategyParam<bool> _allowShortExits;
 private readonly StrategyParam<decimal> _stopLossPoints;
 private readonly StrategyParam<decimal> _takeProfitPoints;
-private readonly StrategyParam<VolumeMode> _volumeSource;
+private readonly StrategyParam<VolumeModes> _volumeSource;
 private readonly StrategyParam<DataType> _candleType;
 
 private CommodityChannelIndex _cci = null!;
@@ -48,7 +48,7 @@ private decimal? _prevSmoothedValue;
 /// <summary>
 /// Available smoothing methods inspired by the original indicator.
 /// </summary>
-public enum SmoothingMethod
+public enum SmoothingMethods
 {
 Sma,
 Ema,
@@ -65,7 +65,7 @@ Ama
 /// <summary>
 /// Volume source used to weight the CCI values.
 /// </summary>
-public enum VolumeMode
+public enum VolumeModes
 {
 Tick,
 Real
@@ -83,7 +83,7 @@ set => _cciPeriod.Value = value;
 /// <summary>
 /// Selected smoothing method for both CCI*volume and pure volume streams.
 /// </summary>
-public SmoothingMethod Smoothing
+public SmoothingMethods Smoothing
 {
 get => _smoothingMethod.Value;
 set => _smoothingMethod.Value = value;
@@ -210,7 +210,7 @@ set => _takeProfitPoints.Value = value;
 /// <summary>
 /// Volume mode used for weighting.
 /// </summary>
-public VolumeMode VolumeSource
+public VolumeModes VolumeSource
 {
 get => _volumeSource.Value;
 set => _volumeSource.Value = value;
@@ -236,7 +236,7 @@ _cciPeriod = Param(nameof(CciPeriod), 14)
 .SetCanOptimize(true)
 .SetOptimize(10, 40, 2);
 
-_smoothingMethod = Param(nameof(Smoothing), SmoothingMethod.T3)
+_smoothingMethod = Param(nameof(Smoothing), SmoothingMethods.T3)
 .SetDisplay("Smoothing Method", "Type of smoothing applied to CCI*volume", "Indicators");
 
 _smoothingLength = Param(nameof(SmoothingLength), 12)
@@ -284,7 +284,7 @@ _takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
 .SetGreaterThanOrEqualToZero()
 .SetDisplay("Take Profit Points", "Profit target distance in price points", "Risk Management");
 
-_volumeSource = Param(nameof(VolumeSource), VolumeMode.Tick)
+_volumeSource = Param(nameof(VolumeSource), VolumeModes.Tick)
 .SetDisplay("Volume Source", "Volume stream used for weighting", "Indicators");
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
@@ -434,8 +434,8 @@ private decimal GetVolume(ICandleMessage candle)
 // Tick volume is approximated by total volume when tick counts are unavailable.
 return VolumeSource switch
 {
-VolumeMode.Tick => candle.TotalVolume,
-VolumeMode.Real => candle.TotalVolume,
+VolumeModes.Tick => candle.TotalVolume,
+VolumeModes.Real => candle.TotalVolume,
 _ => candle.TotalVolume
 };
 }
@@ -465,23 +465,23 @@ _prevSmoothedValue = currentValue;
 return color;
 }
 
-private static IIndicator CreateSmoother(SmoothingMethod method, int length, int phase)
+private static IIndicator CreateSmoother(SmoothingMethods method, int length, int phase)
 {
 var offset = 0.5m + phase / 200m;
 offset = Math.Max(0m, Math.Min(1m, offset));
 
 return method switch
 {
-SmoothingMethod.Sma => new SimpleMovingAverage { Length = length },
-SmoothingMethod.Ema => new ExponentialMovingAverage { Length = length },
-SmoothingMethod.Smma => new SmoothedMovingAverage { Length = length },
-SmoothingMethod.Lwma => new WeightedMovingAverage { Length = length },
-SmoothingMethod.Jjma => new JurikMovingAverage { Length = length },
-SmoothingMethod.Jurx => new ZeroLagExponentialMovingAverage { Length = length },
-SmoothingMethod.Parabolic => new ArnaudLegouxMovingAverage { Length = length, Offset = offset, Sigma = 6m },
-SmoothingMethod.T3 => new TripleExponentialMovingAverage { Length = length },
-SmoothingMethod.Vidya => new ExponentialMovingAverage { Length = length },
-SmoothingMethod.Ama => new KaufmanAdaptiveMovingAverage { Length = length },
+SmoothingMethods.Sma => new SimpleMovingAverage { Length = length },
+SmoothingMethods.Ema => new ExponentialMovingAverage { Length = length },
+SmoothingMethods.Smma => new SmoothedMovingAverage { Length = length },
+SmoothingMethods.Lwma => new WeightedMovingAverage { Length = length },
+SmoothingMethods.Jjma => new JurikMovingAverage { Length = length },
+SmoothingMethods.Jurx => new ZeroLagExponentialMovingAverage { Length = length },
+SmoothingMethods.Parabolic => new ArnaudLegouxMovingAverage { Length = length, Offset = offset, Sigma = 6m },
+SmoothingMethods.T3 => new TripleExponentialMovingAverage { Length = length },
+SmoothingMethods.Vidya => new ExponentialMovingAverage { Length = length },
+SmoothingMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = length },
 _ => new TripleExponentialMovingAverage { Length = length }
 };
 }

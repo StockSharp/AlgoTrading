@@ -29,12 +29,12 @@ Blau Ergodic Market Directional Indicator（MDI）策略完整复刻了 MetaTrad
 | `AllowLongExits` / `AllowShortExits` | 是否允许在反向信号出现时平仓。 |
 | `Mode` | 入场模式（Breakdown / Twist / CloudTwist）。 |
 | `CandleType` | 计算所用蜡烛图的时间框架（默认 4 小时）。 |
-| `SmoothingMethod` | 各个平滑步骤使用的移动平均类型。 |
+| `SmoothingMethods` | 各个平滑步骤使用的移动平均类型。 |
 | `PrimaryLength` | 基准价格的平滑周期。 |
 | `FirstSmoothingLength` | 动量第一次平滑的周期。 |
 | `SecondSmoothingLength` | 构建直方图的第二次平滑周期。 |
 | `SignalLength` | 生成信号线的平滑周期。 |
-| `AppliedPrice` | 指标计算所使用的价格类型。 |
+| `AppliedPrices` | 指标计算所使用的价格类型。 |
 | `SignalBarShift` | 回溯确认信号的已收盘蜡烛数量。 |
 | `Phase` | 为兼容原始脚本保留的参数，当前实现未使用。 |
 

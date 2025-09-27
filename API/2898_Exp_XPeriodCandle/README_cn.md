@@ -22,7 +22,7 @@
 |------|------|
 | `CandleType` | 参与计算的蜡烛周期。 |
 | `Period` | 平滑窗口深度（对应指标周期）。 |
-| `SmoothingMethod` | 用于所有 OHLC 序列的平滑类型，未实现的选项自动回退到 EMA。 |
+| `SmoothingMethods` | 用于所有 OHLC 序列的平滑类型，未实现的选项自动回退到 EMA。 |
 | `SmoothingLength` | 平滑算法长度参数。 |
 | `SmoothingPhase` | 相位参数（保留与原指标一致，在本实现中仅作兼容）。 |
 | `SignalBar` | 进行判断的已完成蜡烛编号（1 表示上一根蜡烛，与原策略默认一致）。 |

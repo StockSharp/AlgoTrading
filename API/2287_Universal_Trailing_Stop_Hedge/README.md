@@ -12,7 +12,7 @@ A simple entry based on candle direction is used purely for educational purposes
 - **Exit Criteria**: Trailing stop hit
 - **Stops**: ATR, Parabolic SAR, Moving Average, Percent Profit or fixed pips depending on selected mode
 - **Default Values**:
-  - `Mode` = `TrailingMode.Atr`
+  - `Mode` = `TrailingModes.Atr`
   - `Delta` = 10
   - `AtrPeriod` = 14
   - `AtrMultiplier` = 1m

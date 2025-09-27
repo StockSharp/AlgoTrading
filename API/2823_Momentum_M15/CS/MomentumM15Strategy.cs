@@ -22,7 +22,7 @@ public class MomentumM15Strategy : Strategy
 	private readonly StrategyParam<DataType> _candleTypeParam;
 	private readonly StrategyParam<int> _maPeriodParam;
 	private readonly StrategyParam<int> _maShiftParam;
-	private readonly StrategyParam<MovingAverageMethod> _maMethodParam;
+	private readonly StrategyParam<MovingAverageMethods> _maMethodParam;
 	private readonly StrategyParam<CandlePrice> _maPriceParam;
 	private readonly StrategyParam<int> _momentumPeriodParam;
 	private readonly StrategyParam<CandlePrice> _momentumPriceParam;
@@ -67,7 +67,7 @@ public class MomentumM15Strategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("MA Shift", "Horizontal shift applied to moving average", "Indicators");
 
-		_maMethodParam = Param(nameof(MaMethod), MovingAverageMethod.Smoothed)
+		_maMethodParam = Param(nameof(MaMethod), MovingAverageMethods.Smoothed)
 			.SetDisplay("MA Method", "Type of moving average", "Indicators");
 
 		_maPriceParam = Param(nameof(MaPrice), CandlePrice.Low)
@@ -148,7 +148,7 @@ public class MomentumM15Strategy : Strategy
 	/// <summary>
 	/// Moving average calculation method.
 	/// </summary>
-	public MovingAverageMethod MaMethod
+	public MovingAverageMethods MaMethod
 	{
 		get => _maMethodParam.Value;
 		set => _maMethodParam.Value = value;
@@ -541,14 +541,14 @@ public class MomentumM15Strategy : Strategy
 		};
 	}
 
-	private static IIndicator CreateMovingAverage(MovingAverageMethod method, int period)
+	private static IIndicator CreateMovingAverage(MovingAverageMethods method, int period)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = period },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = period },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = period },
-			MovingAverageMethod.Weighted => new WeightedMovingAverage { Length = period },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = period },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = period },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = period },
+			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = period },
 			_ => new SimpleMovingAverage { Length = period },
 		};
 	}
@@ -557,7 +557,7 @@ public class MomentumM15Strategy : Strategy
 /// <summary>
 /// Moving average method options aligned with the original expert advisor inputs.
 /// </summary>
-public enum MovingAverageMethod
+public enum MovingAverageMethods
 {
 	/// <summary>
 	/// Simple moving average.

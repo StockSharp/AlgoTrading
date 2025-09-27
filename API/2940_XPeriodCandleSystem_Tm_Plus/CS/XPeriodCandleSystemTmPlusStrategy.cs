@@ -41,7 +41,7 @@ public class XPeriodCandleSystemTmPlusStrategy : Strategy
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<int> _bollingerLength;
 	private readonly StrategyParam<decimal> _bandsDeviation;
-	private readonly StrategyParam<AppliedPrice> _appliedPrice;
+	private readonly StrategyParam<AppliedPrices> _appliedPrice;
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<int> _maxColorHistory;
 	private readonly StrategyParam<decimal> _stopLoss;
@@ -114,7 +114,7 @@ public class XPeriodCandleSystemTmPlusStrategy : Strategy
 		set => _bandsDeviation.Value = value;
 	}
 
-	public AppliedPrice AppliedPriceMode
+	public AppliedPrices AppliedPriceMode
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -196,7 +196,7 @@ public class XPeriodCandleSystemTmPlusStrategy : Strategy
 		.SetDisplay("Bands Deviation", "Multiplier for Bollinger Bands width", "Indicators")
 		.SetCanOptimize(true);
 
-		_appliedPrice = Param(nameof(AppliedPriceMode), AppliedPrice.Close)
+		_appliedPrice = Param(nameof(AppliedPriceMode), AppliedPrices.Close)
 		.SetDisplay("Applied Price", "Price source for the band calculation", "Indicators");
 
 		_maxColorHistory = Param(nameof(MaxColorHistory), 16)
@@ -420,22 +420,22 @@ public class XPeriodCandleSystemTmPlusStrategy : Strategy
 		_historyCount++;
 	}
 
-	private static decimal GetAppliedPrice(AppliedPrice mode, decimal open, decimal high, decimal low, decimal close)
+	private static decimal GetAppliedPrice(AppliedPrices mode, decimal open, decimal high, decimal low, decimal close)
 	{
 		return mode switch
 		{
-			AppliedPrice.Close => close,
-			AppliedPrice.Open => open,
-			AppliedPrice.High => high,
-			AppliedPrice.Low => low,
-			AppliedPrice.Median => (high + low) / 2m,
-			AppliedPrice.Typical => (close + high + low) / 3m,
-			AppliedPrice.Weighted => (2m * close + high + low) / 4m,
-			AppliedPrice.Simpl => (open + close) / 2m,
-			AppliedPrice.Quarter => (open + close + high + low) / 4m,
-			AppliedPrice.TrendFollow0 => close > open ? high : close < open ? low : close,
-			AppliedPrice.TrendFollow1 => close > open ? (high + close) / 2m : close < open ? (low + close) / 2m : close,
-			AppliedPrice.Demark => CalculateDemark(open, high, low, close),
+			AppliedPrices.Close => close,
+			AppliedPrices.Open => open,
+			AppliedPrices.High => high,
+			AppliedPrices.Low => low,
+			AppliedPrices.Median => (high + low) / 2m,
+			AppliedPrices.Typical => (close + high + low) / 3m,
+			AppliedPrices.Weighted => (2m * close + high + low) / 4m,
+			AppliedPrices.Simpl => (open + close) / 2m,
+			AppliedPrices.Quarter => (open + close + high + low) / 4m,
+			AppliedPrices.TrendFollow0 => close > open ? high : close < open ? low : close,
+			AppliedPrices.TrendFollow1 => close > open ? (high + close) / 2m : close < open ? (low + close) / 2m : close,
+			AppliedPrices.Demark => CalculateDemark(open, high, low, close),
 			_ => close,
 		};
 	}
@@ -454,7 +454,7 @@ public class XPeriodCandleSystemTmPlusStrategy : Strategy
 		return ((res - low) + (res - high)) / 2m;
 	}
 
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		Close = 1,
 		Open,

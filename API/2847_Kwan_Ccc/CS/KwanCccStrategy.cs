@@ -23,10 +23,10 @@ public class KwanCccStrategy : Strategy
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
-	private readonly StrategyParam<ChaikinMovingAverageMethod> _chaikinMethod;
+	private readonly StrategyParam<ChaikinMovingAverageMethods> _chaikinMethod;
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<int> _momentumPeriod;
-	private readonly StrategyParam<KwanCccSmoothingMethod> _smoothingMethod;
+	private readonly StrategyParam<KwanCccSmoothingMethods> _smoothingMethod;
 	private readonly StrategyParam<int> _smoothingLength;
 	private readonly StrategyParam<int> _smoothingPhase;
 	private readonly StrategyParam<int> _signalBar;
@@ -72,7 +72,7 @@ public class KwanCccStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(5, 40, 1);
 
-		_chaikinMethod = Param(nameof(ChaikinMethod), ChaikinMovingAverageMethod.LinearWeighted)
+		_chaikinMethod = Param(nameof(ChaikinMethod), ChaikinMovingAverageMethods.LinearWeighted)
 		.SetDisplay("Chaikin MA Method", "Moving average type used inside the Chaikin oscillator", "Chaikin");
 
 		_cciPeriod = Param(nameof(CciPeriod), 14)
@@ -87,7 +87,7 @@ public class KwanCccStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(5, 20, 1);
 
-		_smoothingMethod = Param(nameof(SmoothingMethod), KwanCccSmoothingMethod.Jurik)
+		_smoothingMethod = Param(nameof(SmoothingMethod), KwanCccSmoothingMethods.Jurik)
 		.SetDisplay("Smoothing Method", "Type of smoothing applied to the raw oscillator", "Smoothing");
 
 		_smoothingLength = Param(nameof(SmoothingLength), 7)
@@ -159,7 +159,7 @@ public class KwanCccStrategy : Strategy
 	/// <summary>
 	/// Moving average type used inside the Chaikin oscillator.
 	/// </summary>
-	public ChaikinMovingAverageMethod ChaikinMethod
+	public ChaikinMovingAverageMethods ChaikinMethod
 	{
 		get => _chaikinMethod.Value;
 		set => _chaikinMethod.Value = value;
@@ -186,7 +186,7 @@ public class KwanCccStrategy : Strategy
 	/// <summary>
 	/// Smoothing algorithm used for the raw oscillator.
 	/// </summary>
-	public KwanCccSmoothingMethod SmoothingMethod
+	public KwanCccSmoothingMethods SmoothingMethod
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -432,25 +432,25 @@ public class KwanCccStrategy : Strategy
 	{
 		switch (SmoothingMethod)
 		{
-			case KwanCccSmoothingMethod.Simple:
+			case KwanCccSmoothingMethods.Simple:
 			return (new SimpleMovingAverage { Length = SmoothingLength }, null, null);
-			case KwanCccSmoothingMethod.Exponential:
+			case KwanCccSmoothingMethods.Exponential:
 			return (new ExponentialMovingAverage { Length = SmoothingLength }, null, null);
-			case KwanCccSmoothingMethod.Smoothed:
+			case KwanCccSmoothingMethods.Smoothed:
 			return (new SmoothedMovingAverage { Length = SmoothingLength }, null, null);
-			case KwanCccSmoothingMethod.LinearWeighted:
+			case KwanCccSmoothingMethods.LinearWeighted:
 			return (new WeightedMovingAverage { Length = SmoothingLength }, null, null);
-			case KwanCccSmoothingMethod.Jurik:
-			case KwanCccSmoothingMethod.JurX:
-			case KwanCccSmoothingMethod.Parabolic:
-			case KwanCccSmoothingMethod.T3:
+			case KwanCccSmoothingMethods.Jurik:
+			case KwanCccSmoothingMethods.JurX:
+			case KwanCccSmoothingMethods.Parabolic:
+			case KwanCccSmoothingMethods.T3:
 			return (new JurikMovingAverage { Length = SmoothingLength }, null, null);
-			case KwanCccSmoothingMethod.Vidya:
+			case KwanCccSmoothingMethods.Vidya:
 			{
 				var cmoLength = Math.Max(1, SmoothingPhase);
 				return (null, new ChandeMomentumOscillator { Length = cmoLength }, null);
 			}
-			case KwanCccSmoothingMethod.Adaptive:
+			case KwanCccSmoothingMethods.Adaptive:
 			{
 				var slow = Math.Max(2, SmoothingPhase);
 				return (new KaufmanAdaptiveMovingAverage { Length = SmoothingLength, FastSCPeriod = 2, SlowSCPeriod = slow }, null, null);
@@ -509,10 +509,10 @@ public class KwanCccStrategy : Strategy
 	{
 		return ChaikinMethod switch
 		{
-			ChaikinMovingAverageMethod.Simple => new SimpleMovingAverage { Length = length },
-			ChaikinMovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			ChaikinMovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			ChaikinMovingAverageMethod.LinearWeighted => new WeightedMovingAverage { Length = length },
+			ChaikinMovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			ChaikinMovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			ChaikinMovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			ChaikinMovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new ExponentialMovingAverage { Length = length },
 		};
 	}
@@ -520,7 +520,7 @@ public class KwanCccStrategy : Strategy
 	/// <summary>
 	/// Smoothing method options inherited from the original expert advisor.
 	/// </summary>
-	public enum KwanCccSmoothingMethod
+	public enum KwanCccSmoothingMethods
 	{
 		Simple,
 		Exponential,
@@ -537,7 +537,7 @@ public class KwanCccStrategy : Strategy
 	/// <summary>
 	/// Moving average options for the Chaikin oscillator.
 	/// </summary>
-	public enum ChaikinMovingAverageMethod
+	public enum ChaikinMovingAverageMethods
 	{
 		Simple,
 		Exponential,

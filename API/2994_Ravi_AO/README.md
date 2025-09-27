@@ -19,7 +19,7 @@
 | `TrailingStepPips` | Minimal additional profit (in pips) required before the trailing stop is tightened. Must be > 0 when trailing is enabled. |
 | `FastMethod` / `FastLength` | Smoothing method and length of the fast RAVI moving average. |
 | `SlowMethod` / `SlowLength` | Smoothing method and length of the slow RAVI moving average. |
-| `AppliedPrice` | Price formula used by both RAVI averages (close, open, high, low, median, typical, weighted, simple, quarter, trend-follow #1/#2, Demark). |
+| `AppliedPrices` | Price formula used by both RAVI averages (close, open, high, low, median, typical, weighted, simple, quarter, trend-follow #1/#2, Demark). |
 | `AoShortPeriod` / `AoLongPeriod` | Fast and slow periods of the Awesome Oscillator. |
 
 ## Trading Rules
@@ -42,7 +42,7 @@
 - Signals are evaluated on bar close; actual entries occur on the same candle close, whereas the MT5 version enters on the next bar open. Adjust settings if you need to compensate for this difference.
 - Only StockSharp-provided moving averages are used; exotic smoothing modes from the MT5 library (JJMA, Jurik, T3, etc.) are not available.
 - The MT5 indicator's visual `Shift` parameter affects only plotting; it has no trading impact and is therefore omitted.
-- `AppliedPrice` formulas follow the MetaTrader definitions, including TrendFollow and Demark options.
+- `AppliedPrices` formulas follow the MetaTrader definitions, including TrendFollow and Demark options.
 
 ## Usage Tips
 - The strategy is trend-following; combine it with higher-timeframe filters or volatility filters to reduce whipsaws.

@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 public class PatternsEaStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<OpenedMode> _openedMode;
+	private readonly StrategyParam<OpenedModes> _openedMode;
 	private readonly StrategyParam<decimal> _equalityPips;
 	private readonly StrategyParam<bool> _enableGroup1;
 	private readonly StrategyParam<bool> _enableGroup2;
@@ -39,7 +39,7 @@ public class PatternsEaStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for pattern search", "General");
 
-		_openedMode = Param(nameof(Mode), OpenedMode.Any)
+		_openedMode = Param(nameof(Mode), OpenedModes.Any)
 			.SetDisplay("Opened Mode", "Position handling mode", "Trading");
 
 		_equalityPips = Param(nameof(EqualityPips), 1m)
@@ -57,36 +57,36 @@ public class PatternsEaStrategy : Strategy
 
 		_patternDefinitions = new[]
 		{
-			new PatternDefinition(PatternType.DoubleInside, "Double Inside", PatternGroup.ThreeBars),
-			new PatternDefinition(PatternType.Inside, "Inside Bar", PatternGroup.TwoBars),
-			new PatternDefinition(PatternType.Outside, "Outside Bar", PatternGroup.TwoBars),
-			new PatternDefinition(PatternType.PinUp, "Pin Up", PatternGroup.ThreeBars),
-			new PatternDefinition(PatternType.PinDown, "Pin Down", PatternGroup.ThreeBars),
-			new PatternDefinition(PatternType.PivotPointReversalUp, "Pivot Point Reversal Up", PatternGroup.ThreeBars),
-			new PatternDefinition(PatternType.PivotPointReversalDown, "Pivot Point Reversal Down", PatternGroup.ThreeBars),
-			new PatternDefinition(PatternType.DoubleBarLowHigherClose, "Double Bar Low With A Higher Close", PatternGroup.TwoBars),
-			new PatternDefinition(PatternType.DoubleBarHighLowerClose, "Double Bar High With A Lower Close", PatternGroup.TwoBars),
-			new PatternDefinition(PatternType.ClosePriceReversalUp, "Close Price Reversal Up", PatternGroup.ThreeBars),
-			new PatternDefinition(PatternType.ClosePriceReversalDown, "Close Price Reversal Down", PatternGroup.ThreeBars),
-			new PatternDefinition(PatternType.NeutralBar, "Neutral Bar", PatternGroup.OneBar),
-			new PatternDefinition(PatternType.ForceBarUp, "Force Bar Up", PatternGroup.OneBar),
-			new PatternDefinition(PatternType.ForceBarDown, "Force Bar Down", PatternGroup.OneBar),
-			new PatternDefinition(PatternType.MirrorBar, "Mirror Bar", PatternGroup.TwoBars),
-			new PatternDefinition(PatternType.Hammer, "Hammer", PatternGroup.OneBar),
-			new PatternDefinition(PatternType.ShootingStar, "Shooting Star", PatternGroup.OneBar),
-			new PatternDefinition(PatternType.EveningStar, "Evening Star", PatternGroup.ThreeBars),
-			new PatternDefinition(PatternType.MorningStar, "Morning Star", PatternGroup.ThreeBars),
-			new PatternDefinition(PatternType.BearishHarami, "Bearish Harami", PatternGroup.TwoBars),
-			new PatternDefinition(PatternType.BearishHaramiCross, "Bearish Harami Cross", PatternGroup.TwoBars),
-			new PatternDefinition(PatternType.BullishHarami, "Bullish Harami", PatternGroup.TwoBars),
-			new PatternDefinition(PatternType.BullishHaramiCross, "Bullish Harami Cross", PatternGroup.TwoBars),
-			new PatternDefinition(PatternType.DarkCloudCover, "Dark Cloud Cover", PatternGroup.TwoBars),
-			new PatternDefinition(PatternType.DojiStar, "Doji Star", PatternGroup.TwoBars),
-			new PatternDefinition(PatternType.EngulfingBearishLine, "Engulfing Bearish Line", PatternGroup.TwoBars),
-			new PatternDefinition(PatternType.EngulfingBullishLine, "Engulfing Bullish Line", PatternGroup.TwoBars),
-			new PatternDefinition(PatternType.EveningDojiStar, "Evening Doji Star", PatternGroup.ThreeBars),
-			new PatternDefinition(PatternType.MorningDojiStar, "Morning Doji Star", PatternGroup.ThreeBars),
-			new PatternDefinition(PatternType.TwoNeutralBars, "Two Neutral Bars", PatternGroup.TwoBars),
+			new PatternDefinition(PatternTypes.DoubleInside, "Double Inside", PatternGroups.ThreeBars),
+			new PatternDefinition(PatternTypes.Inside, "Inside Bar", PatternGroups.TwoBars),
+			new PatternDefinition(PatternTypes.Outside, "Outside Bar", PatternGroups.TwoBars),
+			new PatternDefinition(PatternTypes.PinUp, "Pin Up", PatternGroups.ThreeBars),
+			new PatternDefinition(PatternTypes.PinDown, "Pin Down", PatternGroups.ThreeBars),
+			new PatternDefinition(PatternTypes.PivotPointReversalUp, "Pivot Point Reversal Up", PatternGroups.ThreeBars),
+			new PatternDefinition(PatternTypes.PivotPointReversalDown, "Pivot Point Reversal Down", PatternGroups.ThreeBars),
+			new PatternDefinition(PatternTypes.DoubleBarLowHigherClose, "Double Bar Low With A Higher Close", PatternGroups.TwoBars),
+			new PatternDefinition(PatternTypes.DoubleBarHighLowerClose, "Double Bar High With A Lower Close", PatternGroups.TwoBars),
+			new PatternDefinition(PatternTypes.ClosePriceReversalUp, "Close Price Reversal Up", PatternGroups.ThreeBars),
+			new PatternDefinition(PatternTypes.ClosePriceReversalDown, "Close Price Reversal Down", PatternGroups.ThreeBars),
+			new PatternDefinition(PatternTypes.NeutralBar, "Neutral Bar", PatternGroups.OneBar),
+			new PatternDefinition(PatternTypes.ForceBarUp, "Force Bar Up", PatternGroups.OneBar),
+			new PatternDefinition(PatternTypes.ForceBarDown, "Force Bar Down", PatternGroups.OneBar),
+			new PatternDefinition(PatternTypes.MirrorBar, "Mirror Bar", PatternGroups.TwoBars),
+			new PatternDefinition(PatternTypes.Hammer, "Hammer", PatternGroups.OneBar),
+			new PatternDefinition(PatternTypes.ShootingStar, "Shooting Star", PatternGroups.OneBar),
+			new PatternDefinition(PatternTypes.EveningStar, "Evening Star", PatternGroups.ThreeBars),
+			new PatternDefinition(PatternTypes.MorningStar, "Morning Star", PatternGroups.ThreeBars),
+			new PatternDefinition(PatternTypes.BearishHarami, "Bearish Harami", PatternGroups.TwoBars),
+			new PatternDefinition(PatternTypes.BearishHaramiCross, "Bearish Harami Cross", PatternGroups.TwoBars),
+			new PatternDefinition(PatternTypes.BullishHarami, "Bullish Harami", PatternGroups.TwoBars),
+			new PatternDefinition(PatternTypes.BullishHaramiCross, "Bullish Harami Cross", PatternGroups.TwoBars),
+			new PatternDefinition(PatternTypes.DarkCloudCover, "Dark Cloud Cover", PatternGroups.TwoBars),
+			new PatternDefinition(PatternTypes.DojiStar, "Doji Star", PatternGroups.TwoBars),
+			new PatternDefinition(PatternTypes.EngulfingBearishLine, "Engulfing Bearish Line", PatternGroups.TwoBars),
+			new PatternDefinition(PatternTypes.EngulfingBullishLine, "Engulfing Bullish Line", PatternGroups.TwoBars),
+			new PatternDefinition(PatternTypes.EveningDojiStar, "Evening Doji Star", PatternGroups.ThreeBars),
+			new PatternDefinition(PatternTypes.MorningDojiStar, "Morning Doji Star", PatternGroups.ThreeBars),
+			new PatternDefinition(PatternTypes.TwoNeutralBars, "Two Neutral Bars", PatternGroups.TwoBars),
 		};
 
 		_patternEnabled = new StrategyParam<bool>[_patternDefinitions.Length];
@@ -97,9 +97,9 @@ public class PatternsEaStrategy : Strategy
 			var definition = _patternDefinitions[i];
 			var groupName = definition.Group switch
 			{
-				PatternGroup.OneBar => "Group 1 - One Bar",
-				PatternGroup.TwoBars => "Group 2 - Two Bars",
-				PatternGroup.ThreeBars => "Group 3 - Three Bars",
+				PatternGroups.OneBar => "Group 1 - One Bar",
+				PatternGroups.TwoBars => "Group 2 - Two Bars",
+				PatternGroups.ThreeBars => "Group 3 - Three Bars",
 				_ => "Patterns",
 			};
 
@@ -117,7 +117,7 @@ public class PatternsEaStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	public OpenedMode Mode
+	public OpenedModes Mode
 	{
 		get => _openedMode.Value;
 		set => _openedMode.Value = value;
@@ -201,19 +201,19 @@ public class PatternsEaStrategy : Strategy
 		if (EnableOneBarPatterns)
 		{
 			if (Compare(candle0.Open, candle0.Close, equality) == 0 && candle0.UpperShadow > minDeviation4 && candle0.LowerShadow > minDeviation4)
-				TriggerPattern(PatternType.NeutralBar);
+				TriggerPattern(PatternTypes.NeutralBar);
 
 			if (Compare(candle0.Close, candle0.High, equality) == 0)
-				TriggerPattern(PatternType.ForceBarUp);
+				TriggerPattern(PatternTypes.ForceBarUp);
 
 			if (Compare(candle0.Close, candle0.Low, equality) == 0)
-				TriggerPattern(PatternType.ForceBarDown);
+				TriggerPattern(PatternTypes.ForceBarDown);
 
 			if (candle0.UpperShadow <= minDeviation && candle0.LowerShadow > 2m * candle0.BodySize)
-				TriggerPattern(PatternType.Hammer);
+				TriggerPattern(PatternTypes.Hammer);
 
 			if (candle0.LowerShadow <= minDeviation && candle0.UpperShadow > 2m * candle0.BodySize)
-				TriggerPattern(PatternType.ShootingStar);
+				TriggerPattern(PatternTypes.ShootingStar);
 		}
 
 		if (!hasPrevious)
@@ -223,46 +223,46 @@ public class PatternsEaStrategy : Strategy
 		if (EnableTwoBarPatterns)
 		{
 			if (Compare(candle0.High, candle1.High, equality) < 0 && Compare(candle0.Low, candle1.Low, equality) > 0)
-				TriggerPattern(PatternType.Inside);
+				TriggerPattern(PatternTypes.Inside);
 
 			if (Compare(candle0.High, candle1.High, equality) > 0 && Compare(candle0.Low, candle1.Low, equality) < 0)
-				TriggerPattern(PatternType.Outside);
+				TriggerPattern(PatternTypes.Outside);
 
 			if (Compare(candle0.High, candle1.High, equality) == 0 && Compare(candle0.Close, candle1.Close, equality) < 0 && Compare(candle0.Low, candle1.Low, equality) <= 0)
-				TriggerPattern(PatternType.DoubleBarHighLowerClose);
+				TriggerPattern(PatternTypes.DoubleBarHighLowerClose);
 
 			if (Compare(candle0.Low, candle1.Low, equality) == 0 && Compare(candle0.Close, candle1.Close, equality) > 0 && Compare(candle0.High, candle1.High, equality) >= 0)
-				TriggerPattern(PatternType.DoubleBarLowHigherClose);
+				TriggerPattern(PatternTypes.DoubleBarLowHigherClose);
 
 			if (Compare(candle1.BodySize, candle0.BodySize, equality) == 0 && Compare(candle1.Open, candle0.Close, equality) == 0)
-				TriggerPattern(PatternType.MirrorBar);
+				TriggerPattern(PatternTypes.MirrorBar);
 
 			if (Compare(candle0.High, candle1.High, equality) < 0 && Compare(candle0.Low, candle1.Low, equality) > 0 && Compare(candle1.Close, candle1.Open, equality) > 0 && Compare(candle0.Close, candle0.Open, equality) < 0 && Compare(candle1.BodySize, candle0.BodySize, equality) > 0 && Compare(candle1.Close, candle0.Open, equality) > 0 && Compare(candle1.Open, candle0.Close, equality) < 0)
-				TriggerPattern(PatternType.BearishHarami);
+				TriggerPattern(PatternTypes.BearishHarami);
 
 			if (Compare(candle0.High, candle1.High, equality) < 0 && Compare(candle0.Low, candle1.Low, equality) > 0 && Compare(candle1.Close, candle1.Open, equality) > 0 && Compare(candle0.Open, candle0.Close, equality) == 0 && Compare(candle1.BodySize, candle0.BodySize, equality) > 0 && Compare(candle1.Close, candle0.Open, equality) > 0 && Compare(candle1.Open, candle0.Close, equality) < 0)
-				TriggerPattern(PatternType.BearishHaramiCross);
+				TriggerPattern(PatternTypes.BearishHaramiCross);
 
 			if (Compare(candle0.High, candle1.High, equality) < 0 && Compare(candle0.Low, candle1.Low, equality) > 0 && Compare(candle1.Close, candle1.Open, equality) < 0 && Compare(candle0.Close, candle0.Open, equality) > 0 && Compare(candle1.BodySize, candle0.BodySize, equality) > 0 && Compare(candle1.Close, candle0.Open, equality) < 0 && Compare(candle1.Open, candle0.Close, equality) > 0)
-				TriggerPattern(PatternType.BullishHarami);
+				TriggerPattern(PatternTypes.BullishHarami);
 
 			if (Compare(candle0.High, candle1.High, equality) < 0 && Compare(candle0.Low, candle1.Low, equality) > 0 && Compare(candle1.Close, candle1.Open, equality) < 0 && Compare(candle0.Open, candle0.Close, equality) == 0 && Compare(candle1.BodySize, candle0.BodySize, equality) > 0 && Compare(candle1.Close, candle0.Open, equality) < 0 && Compare(candle1.Open, candle0.Close, equality) > 0)
-				TriggerPattern(PatternType.BullishHaramiCross);
+				TriggerPattern(PatternTypes.BullishHaramiCross);
 
 			if (Compare(candle1.Close, candle1.Open, equality) > 0 && Compare(candle0.Close, candle0.Open, equality) < 0 && Compare(candle1.High, candle0.Open, equality) < 0 && Compare(candle0.Close, candle1.Close, equality) < 0 && Compare(candle0.Close, candle1.Open, equality) > 0)
-				TriggerPattern(PatternType.DarkCloudCover);
+				TriggerPattern(PatternTypes.DarkCloudCover);
 
 			if (Compare(candle0.Open, candle0.Close, equality) == 0 && Compare(candle1.Close, candle1.Open, equality) > 0 && Compare(candle0.Open, candle1.High, equality) > 0 && Compare(candle1.Close, candle1.Open, equality) < 0 && Compare(candle0.Open, candle1.Low, equality) < 0)
-				TriggerPattern(PatternType.DojiStar);
+				TriggerPattern(PatternTypes.DojiStar);
 
 			if (Compare(candle1.Close, candle1.Open, equality) > 0 && Compare(candle0.Close, candle0.Open, equality) < 0 && Compare(candle0.Open, candle1.Close, equality) > 0 && Compare(candle0.Close, candle1.Open, equality) < 0)
-				TriggerPattern(PatternType.EngulfingBearishLine);
+				TriggerPattern(PatternTypes.EngulfingBearishLine);
 
 			if (Compare(candle1.Close, candle1.Open, equality) < 0 && Compare(candle0.Close, candle0.Open, equality) > 0 && Compare(candle0.Open, candle1.Close, equality) < 0 && Compare(candle0.Close, candle1.Open, equality) > 0)
-				TriggerPattern(PatternType.EngulfingBullishLine);
+				TriggerPattern(PatternTypes.EngulfingBullishLine);
 
 			if (Compare(candle0.Open, candle0.Close, equality) == 0 && candle0.UpperShadow > minDeviation4 && candle0.LowerShadow > minDeviation4 && Compare(candle1.Open, candle1.Close, equality) == 0 && candle1.UpperShadow > minDeviation4 && candle1.LowerShadow > minDeviation4)
-				TriggerPattern(PatternType.TwoNeutralBars);
+				TriggerPattern(PatternTypes.TwoNeutralBars);
 		}
 
 		if (!hasPrevious2)
@@ -272,37 +272,37 @@ public class PatternsEaStrategy : Strategy
 		if (EnableThreeBarPatterns)
 		{
 			if (Compare(candle0.High, candle1.High, equality) < 0 && Compare(candle0.Low, candle1.Low, equality) > 0 && Compare(candle1.High, candle2.High, equality) < 0 && Compare(candle1.Low, candle2.Low, equality) > 0)
-				TriggerPattern(PatternType.DoubleInside);
+				TriggerPattern(PatternTypes.DoubleInside);
 
 			if (Compare(candle1.High, candle2.High, equality) > 0 && Compare(candle1.High, candle0.High, equality) > 0 && Compare(candle1.Low, candle2.Low, equality) > 0 && Compare(candle1.Low, candle0.Low, equality) > 0 && candle1.BodySize * 2m < candle1.UpperShadow)
-				TriggerPattern(PatternType.PinUp);
+				TriggerPattern(PatternTypes.PinUp);
 
 			if (Compare(candle1.High, candle2.High, equality) < 0 && Compare(candle1.High, candle0.High, equality) < 0 && Compare(candle1.Low, candle2.Low, equality) < 0 && Compare(candle1.Low, candle0.Low, equality) < 0 && candle1.BodySize * 2m < candle1.LowerShadow)
-				TriggerPattern(PatternType.PinDown);
+				TriggerPattern(PatternTypes.PinDown);
 
 			if (Compare(candle1.High, candle2.High, equality) > 0 && Compare(candle1.High, candle0.High, equality) > 0 && Compare(candle1.Low, candle2.Low, equality) > 0 && Compare(candle1.Low, candle0.Low, equality) > 0 && Compare(candle0.Close, candle1.Low, equality) < 0)
-				TriggerPattern(PatternType.PivotPointReversalDown);
+				TriggerPattern(PatternTypes.PivotPointReversalDown);
 
 			if (Compare(candle1.High, candle2.High, equality) < 0 && Compare(candle1.High, candle0.High, equality) < 0 && Compare(candle1.Low, candle2.Low, equality) < 0 && Compare(candle1.Low, candle0.Low, equality) < 0 && Compare(candle0.Close, candle1.High, equality) > 0)
-				TriggerPattern(PatternType.PivotPointReversalUp);
+				TriggerPattern(PatternTypes.PivotPointReversalUp);
 
 			if (Compare(candle1.High, candle2.High, equality) < 0 && Compare(candle1.Low, candle2.Low, equality) < 0 && Compare(candle0.High, candle1.High, equality) < 0 && Compare(candle0.Low, candle1.Low, equality) < 0 && Compare(candle0.Close, candle1.Close, equality) > 0 && Compare(candle0.Open, candle0.Close, equality) < 0)
-				TriggerPattern(PatternType.ClosePriceReversalUp);
+				TriggerPattern(PatternTypes.ClosePriceReversalUp);
 
 			if (Compare(candle1.High, candle2.High, equality) > 0 && Compare(candle1.Low, candle2.Low, equality) > 0 && Compare(candle0.High, candle1.High, equality) > 0 && Compare(candle0.Low, candle1.Low, equality) > 0 && Compare(candle0.Close, candle1.Close, equality) < 0 && Compare(candle0.Open, candle0.Close, equality) > 0)
-				TriggerPattern(PatternType.ClosePriceReversalDown);
+				TriggerPattern(PatternTypes.ClosePriceReversalDown);
 
 			if (Compare(candle2.Close, candle2.Open, equality) > 0 && Compare(candle1.Close, candle1.Open, equality) > 0 && Compare(candle0.Close, candle0.Open, equality) < 0 && Compare(candle2.Close, candle1.Open, equality) < 0 && Compare(candle2.BodySize, candle1.BodySize, equality) > 0 && Compare(candle1.BodySize, candle0.BodySize, equality) < 0 && Compare(candle0.Close, candle2.Open, equality) > 0 && Compare(candle0.Close, candle2.Close, equality) < 0)
-				TriggerPattern(PatternType.EveningStar);
+				TriggerPattern(PatternTypes.EveningStar);
 
 			if (Compare(candle2.Close, candle2.Open, equality) < 0 && Compare(candle1.Close, candle1.Open, equality) > 0 && Compare(candle0.Close, candle0.Open, equality) > 0 && Compare(candle2.Close, candle1.Open, equality) > 0 && Compare(candle2.BodySize, candle1.BodySize, equality) > 0 && Compare(candle1.BodySize, candle0.BodySize, equality) < 0 && Compare(candle0.Close, candle2.Close, equality) > 0 && Compare(candle0.Close, candle2.Open, equality) < 0)
-				TriggerPattern(PatternType.MorningStar);
+				TriggerPattern(PatternTypes.MorningStar);
 
 			if (Compare(candle2.Close, candle2.Open, equality) > 0 && Compare(candle1.Close, candle1.Open, equality) == 0 && Compare(candle0.Close, candle0.Open, equality) < 0 && Compare(candle2.Close, candle1.Open, equality) < 0 && Compare(candle2.BodySize, candle1.BodySize, equality) > 0 && Compare(candle1.BodySize, candle0.BodySize, equality) < 0 && Compare(candle0.Close, candle2.Open, equality) > 0 && Compare(candle0.Close, candle2.Close, equality) < 0)
-				TriggerPattern(PatternType.EveningDojiStar);
+				TriggerPattern(PatternTypes.EveningDojiStar);
 
 			if (Compare(candle2.Close, candle2.Open, equality) < 0 && Compare(candle1.Close, candle1.Open, equality) == 0 && Compare(candle0.Close, candle0.Open, equality) > 0 && Compare(candle2.Close, candle1.Open, equality) > 0 && Compare(candle2.BodySize, candle1.BodySize, equality) > 0 && Compare(candle1.BodySize, candle0.BodySize, equality) < 0 && Compare(candle0.Close, candle2.Close, equality) > 0 && Compare(candle0.Close, candle2.Open, equality) < 0)
-				TriggerPattern(PatternType.MorningDojiStar);
+				TriggerPattern(PatternTypes.MorningDojiStar);
 		}
 	}
 
@@ -316,18 +316,18 @@ public class PatternsEaStrategy : Strategy
 		return diff > 0 ? 1 : -1;
 	}
 
-	private bool IsGroupEnabled(PatternGroup group)
+	private bool IsGroupEnabled(PatternGroups group)
 	{
 		return group switch
 		{
-			PatternGroup.OneBar => EnableOneBarPatterns,
-			PatternGroup.TwoBars => EnableTwoBarPatterns,
-			PatternGroup.ThreeBars => EnableThreeBarPatterns,
+			PatternGroups.OneBar => EnableOneBarPatterns,
+			PatternGroups.TwoBars => EnableTwoBarPatterns,
+			PatternGroups.ThreeBars => EnableThreeBarPatterns,
 			_ => true,
 		};
 	}
 
-	private void TriggerPattern(PatternType type)
+	private void TriggerPattern(PatternTypes type)
 	{
 		var index = (int)type;
 		var definition = _patternDefinitions[index];
@@ -346,7 +346,7 @@ public class PatternsEaStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (Mode == OpenedMode.Swing)
+		if (Mode == OpenedModes.Swing)
 		{
 			if (side == Sides.Buy && Position < 0)
 				BuyMarket(Math.Abs(Position));
@@ -364,24 +364,24 @@ public class PatternsEaStrategy : Strategy
 	{
 		return Mode switch
 		{
-			OpenedMode.Any => true,
-			OpenedMode.Swing => true,
-			OpenedMode.BuyOne => side == Sides.Buy && Position <= 0,
-			OpenedMode.BuyMany => side == Sides.Buy,
-			OpenedMode.SellOne => side == Sides.Sell && Position >= 0,
-			OpenedMode.SellMany => side == Sides.Sell,
+			OpenedModes.Any => true,
+			OpenedModes.Swing => true,
+			OpenedModes.BuyOne => side == Sides.Buy && Position <= 0,
+			OpenedModes.BuyMany => side == Sides.Buy,
+			OpenedModes.SellOne => side == Sides.Sell && Position >= 0,
+			OpenedModes.SellMany => side == Sides.Sell,
 			_ => false,
 		};
 	}
 
-	private enum PatternGroup
+	private enum PatternGroups
 	{
 		OneBar = 1,
 		TwoBars = 2,
 		ThreeBars = 3,
 	}
 
-	private enum PatternType
+	private enum PatternTypes
 	{
 		DoubleInside,
 		Inside,
@@ -415,7 +415,7 @@ public class PatternsEaStrategy : Strategy
 		TwoNeutralBars,
 	}
 
-	public enum OpenedMode
+	public enum OpenedModes
 	{
 		Any,
 		Swing,
@@ -427,18 +427,18 @@ public class PatternsEaStrategy : Strategy
 
 	private readonly struct PatternDefinition
 	{
-		public PatternDefinition(PatternType type, string displayName, PatternGroup group)
+		public PatternDefinition(PatternTypes type, string displayName, PatternGroups group)
 		{
 			Type = type;
 			DisplayName = displayName;
 			Group = group;
 		}
 
-		public PatternType Type { get; }
+		public PatternTypes Type { get; }
 
 		public string DisplayName { get; }
 
-		public PatternGroup Group { get; }
+		public PatternGroups Group { get; }
 	}
 
 	private readonly struct CandleInfo

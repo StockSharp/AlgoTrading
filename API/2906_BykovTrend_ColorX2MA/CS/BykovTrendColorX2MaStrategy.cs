@@ -30,13 +30,13 @@ public class BykovTrendColorX2MaStrategy : Strategy
 	private readonly StrategyParam<bool> _bykovAllowShortExits;
 
 	private readonly StrategyParam<DataType> _colorCandleType;
-	private readonly StrategyParam<SmoothingMethod> _colorFirstMethod;
+	private readonly StrategyParam<SmoothingMethods> _colorFirstMethod;
 	private readonly StrategyParam<int> _colorFirstLength;
 	private readonly StrategyParam<int> _colorFirstPhase;
-	private readonly StrategyParam<SmoothingMethod> _colorSecondMethod;
+	private readonly StrategyParam<SmoothingMethods> _colorSecondMethod;
 	private readonly StrategyParam<int> _colorSecondLength;
 	private readonly StrategyParam<int> _colorSecondPhase;
-	private readonly StrategyParam<AppliedPriceMode> _colorAppliedPrice;
+	private readonly StrategyParam<AppliedPriceModes> _colorAppliedPrice;
 	private readonly StrategyParam<int> _colorSignalBar;
 	private readonly StrategyParam<bool> _colorAllowLongEntries;
 	private readonly StrategyParam<bool> _colorAllowShortEntries;
@@ -55,7 +55,7 @@ public class BykovTrendColorX2MaStrategy : Strategy
 	/// <summary>
 	/// Supported smoothing methods for ColorX2MA.
 	/// </summary>
-	public enum SmoothingMethod
+	public enum SmoothingMethods
 	{
 		/// <summary>
 		/// Simple Moving Average.
@@ -86,7 +86,7 @@ public class BykovTrendColorX2MaStrategy : Strategy
 /// <summary>
 /// Applied price options matching the original indicator.
 /// </summary>
-public enum AppliedPriceMode
+public enum AppliedPriceModes
 {
 	/// <summary>
 	/// Closing price.
@@ -233,7 +233,7 @@ public DataType ColorCandleType
 /// <summary>
 /// Smoothing method for the first moving average.
 /// </summary>
-public SmoothingMethod ColorFirstMethod
+public SmoothingMethods ColorFirstMethod
 {
 	get => _colorFirstMethod.Value;
 	set => _colorFirstMethod.Value = value;
@@ -260,7 +260,7 @@ public int ColorFirstPhase
 /// <summary>
 /// Smoothing method for the second moving average.
 /// </summary>
-public SmoothingMethod ColorSecondMethod
+public SmoothingMethods ColorSecondMethod
 {
 	get => _colorSecondMethod.Value;
 	set => _colorSecondMethod.Value = value;
@@ -287,7 +287,7 @@ public int ColorSecondPhase
 /// <summary>
 /// Applied price used by ColorX2MA.
 /// </summary>
-public AppliedPriceMode ColorAppliedPrice
+public AppliedPriceModes ColorAppliedPrice
 {
 	get => _colorAppliedPrice.Value;
 	set => _colorAppliedPrice.Value = value;
@@ -376,7 +376,7 @@ public BykovTrendColorX2MaStrategy()
 	_colorCandleType = Param(nameof(ColorCandleType), TimeSpan.FromHours(4).TimeFrame())
 	.SetDisplay("ColorX2MA Candle", "Timeframe for ColorX2MA analysis", "ColorX2MA");
 
-	_colorFirstMethod = Param(nameof(ColorFirstMethod), SmoothingMethod.Sma)
+	_colorFirstMethod = Param(nameof(ColorFirstMethod), SmoothingMethods.Sma)
 	.SetDisplay("First MA Method", "Smoothing method for the first stage", "ColorX2MA");
 
 	_colorFirstLength = Param(nameof(ColorFirstLength), 12)
@@ -388,7 +388,7 @@ public BykovTrendColorX2MaStrategy()
 	_colorFirstPhase = Param(nameof(ColorFirstPhase), 15)
 	.SetDisplay("First MA Phase", "Compatibility parameter for JJMA phase", "ColorX2MA");
 
-	_colorSecondMethod = Param(nameof(ColorSecondMethod), SmoothingMethod.Jurik)
+	_colorSecondMethod = Param(nameof(ColorSecondMethod), SmoothingMethods.Jurik)
 	.SetDisplay("Second MA Method", "Smoothing method for the second stage", "ColorX2MA");
 
 	_colorSecondLength = Param(nameof(ColorSecondLength), 5)
@@ -400,7 +400,7 @@ public BykovTrendColorX2MaStrategy()
 	_colorSecondPhase = Param(nameof(ColorSecondPhase), 15)
 	.SetDisplay("Second MA Phase", "Compatibility parameter for JJMA phase", "ColorX2MA");
 
-	_colorAppliedPrice = Param(nameof(ColorAppliedPrice), AppliedPriceMode.Close)
+	_colorAppliedPrice = Param(nameof(ColorAppliedPrice), AppliedPriceModes.Close)
 	.SetDisplay("Applied Price", "Price source for ColorX2MA", "ColorX2MA");
 
 	_colorSignalBar = Param(nameof(ColorSignalBar), 1)
@@ -665,35 +665,35 @@ private static (bool hasValues, int currentColor, int previousColor) GetColorsFo
 	return (true, history[currentIndex], history[previousIndex]);
 }
 
-private static IIndicator CreateMovingAverage(SmoothingMethod method, int length)
+private static IIndicator CreateMovingAverage(SmoothingMethods method, int length)
 {
 	return method switch
 	{
-		SmoothingMethod.Sma => new SMA { Length = length },
-		SmoothingMethod.Ema => new EMA { Length = length },
-		SmoothingMethod.Smma => new SMMA { Length = length },
-		SmoothingMethod.Lwma => new WMA { Length = length },
-		SmoothingMethod.Jurik => new JurikMovingAverage { Length = length },
+		SmoothingMethods.Sma => new SMA { Length = length },
+		SmoothingMethods.Ema => new EMA { Length = length },
+		SmoothingMethods.Smma => new SMMA { Length = length },
+		SmoothingMethods.Lwma => new WMA { Length = length },
+		SmoothingMethods.Jurik => new JurikMovingAverage { Length = length },
 		_ => new SMA { Length = length }
 	};
 }
 
-private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceMode mode)
+private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceModes mode)
 {
 	return mode switch
 	{
-		AppliedPriceMode.Close => candle.ClosePrice,
-		AppliedPriceMode.Open => candle.OpenPrice,
-		AppliedPriceMode.High => candle.HighPrice,
-		AppliedPriceMode.Low => candle.LowPrice,
-		AppliedPriceMode.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-		AppliedPriceMode.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-		AppliedPriceMode.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-		AppliedPriceMode.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-		AppliedPriceMode.Quarted => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-		AppliedPriceMode.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : (candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice),
-		AppliedPriceMode.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : (candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice),
-		AppliedPriceMode.Demark => CalculateDemarkPrice(candle),
+		AppliedPriceModes.Close => candle.ClosePrice,
+		AppliedPriceModes.Open => candle.OpenPrice,
+		AppliedPriceModes.High => candle.HighPrice,
+		AppliedPriceModes.Low => candle.LowPrice,
+		AppliedPriceModes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+		AppliedPriceModes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+		AppliedPriceModes.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+		AppliedPriceModes.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+		AppliedPriceModes.Quarted => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+		AppliedPriceModes.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : (candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice),
+		AppliedPriceModes.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : (candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice),
+		AppliedPriceModes.Demark => CalculateDemarkPrice(candle),
 		_ => candle.ClosePrice
 	};
 }

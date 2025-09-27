@@ -19,7 +19,7 @@ A configurable risk model allows position sizing by fixed volume or as a percent
 | `StartTrade` | Session start time. |
 | `EndTrade` | Session end time. |
 | `SwitchDst` | Daylight-saving handling: Europe (no shift), USA (relative shift between London and New York), or disabled. |
-| `RiskMode` | Position sizing mode (percentage of equity or fixed volume). |
+| `RiskModes` | Position sizing mode (percentage of equity or fixed volume). |
 | `PositionRisk` | Risk percentage or fixed volume, depending on the mode. |
 | `TradeRange` | Number of candles used to build the opening range. |
 | `MinRangePoints` / `MaxRangePoints` | Minimum and maximum size of the opening range, in price points. |
@@ -39,7 +39,7 @@ A configurable risk model allows position sizing by fixed volume or as a percent
 - The strategy is designed for instruments quoted with a fixed price step. Point-based inputs are multiplied by the instrument's `PriceStep` to obtain price distances.
 - Order book data is used to estimate the current spread. If best bid/ask quotes are unavailable, spread filtering is skipped.
 - Trailing and timeout exits are evaluated on closed candles, matching the original MQL logic.
-- Position sizing requires portfolio valuation (`Portfolio.CurrentValue`) when `RiskMode` is set to percentage. If the value is unavailable the strategy falls back to the configured lot size.
+- Position sizing requires portfolio valuation (`Portfolio.CurrentValue`) when `RiskModes` is set to percentage. If the value is unavailable the strategy falls back to the configured lot size.
 
 ## Files
 - `CS/V1n1LonnyBreakoutStrategy.cs` – Strategy implementation in C# for StockSharp.

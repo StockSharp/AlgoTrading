@@ -17,7 +17,7 @@ namespace StockSharp.Samples.Strategies;
 /// Strategy that emulates the BigBarSound MetaTrader expert advisor.
 /// It monitors candle sizes and raises a log notification when a bar grows beyond the configured threshold.
 /// </summary>
-public enum BigBarDifferenceMode
+public enum BigBarDifferenceModes
 {
 	/// <summary>
 	/// Measure the difference between close and open prices.
@@ -36,7 +36,7 @@ public enum BigBarDifferenceMode
 public class BigBarSoundStrategy : Strategy
 {
 	private readonly StrategyParam<int> _barPoint;
-	private readonly StrategyParam<BigBarDifferenceMode> _differenceMode;
+	private readonly StrategyParam<BigBarDifferenceModes> _differenceMode;
 	private readonly StrategyParam<string> _soundFile;
 	private readonly StrategyParam<bool> _showAlert;
 	private readonly StrategyParam<DataType> _candleType;
@@ -55,7 +55,7 @@ public class BigBarSoundStrategy : Strategy
 	/// <summary>
 	/// Defines how the candle size is calculated.
 	/// </summary>
-	public BigBarDifferenceMode DifferenceMode
+	public BigBarDifferenceModes DifferenceMode
 	{
 		get => _differenceMode.Value;
 		set => _differenceMode.Value = value;
@@ -99,7 +99,7 @@ public class BigBarSoundStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(50, 500, 50);
 
-		_differenceMode = Param(nameof(DifferenceMode), BigBarDifferenceMode.HighLow)
+		_differenceMode = Param(nameof(DifferenceMode), BigBarDifferenceModes.HighLow)
 			.SetDisplay("Difference Mode", "How the candle size is calculated", "General");
 
 		_soundFile = Param(nameof(SoundFile), "alert.wav")
@@ -152,7 +152,7 @@ public class BigBarSoundStrategy : Strategy
 		_lastProcessedTime = candle.CloseTime;
 
 		// Calculate the candle size according to the selected measurement mode.
-		var difference = DifferenceMode == BigBarDifferenceMode.OpenClose
+		var difference = DifferenceMode == BigBarDifferenceModes.OpenClose
 			? Math.Abs(candle.ClosePrice - candle.OpenPrice)
 			: Math.Abs(candle.HighPrice - candle.LowPrice);
 
