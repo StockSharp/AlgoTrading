@@ -10,8 +10,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SchnickDemoStrategy : Strategy
 {
-	private const int InputCount = 7;
-	
+	private readonly StrategyParam<int> _inputCount;
 	private readonly StrategyParam<int> _trainingPoints;
 	private readonly StrategyParam<int> _testPoints;
 	
@@ -34,7 +33,16 @@ public class SchnickDemoStrategy : Strategy
 		get => _testPoints.Value;
 		set => _testPoints.Value = value;
 	}
-	
+
+	/// <summary>
+	/// Number of features per sample.
+	/// </summary>
+	public int InputCount
+	{
+		get => _inputCount.Value;
+		set => _inputCount.Value = value;
+	}
+
 	/// <summary>
 	/// Initializes parameters.
 	/// </summary>
