@@ -13,7 +13,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class RtbMomentumBreakoutStrategy : Strategy
 {
-	private const int MaxLookback = 100;
+        private readonly StrategyParam<int> _maxLookback;
 
 	private readonly StrategyParam<int> _emaFastLen;
 	private readonly StrategyParam<int> _emaSlowLen;
@@ -32,6 +32,7 @@ public class RtbMomentumBreakoutStrategy : Strategy
 	private decimal? _prevResistance;
 	private decimal? _prevSupport;
 
+public int MaxLookback { get => _maxLookback.Value; set => _maxLookback.Value = value; }
 public int EmaFastLength { get => _emaFastLen.Value; set => _emaFastLen.Value = value; }
 public int EmaSlowLength { get => _emaSlowLen.Value; set => _emaSlowLen.Value = value; }
 public int RsiLength { get => _rsiLen.Value; set => _rsiLen.Value = value; }
@@ -45,8 +46,12 @@ public DataType CandleType { get => _candleType.Value; set => _candleType.Value 
 
 public RtbMomentumBreakoutStrategy()
 {
-	_emaFastLen = Param(nameof(EmaFastLength), 20);
-	_emaSlowLen = Param(nameof(EmaSlowLength), 50);
+		_maxLookback = Param(nameof(MaxLookback), 100)
+			.SetGreaterThanZero()
+			.SetDisplay("Max Lookback", "Bars used for trailing highs and lows", "Breakout");
+
+        _emaFastLen = Param(nameof(EmaFastLength), 20);
+        _emaSlowLen = Param(nameof(EmaSlowLength), 50);
 	_rsiLen = Param(nameof(RsiLength), 14);
 	_rsiOb = Param(nameof(RsiOverbought), 70);
 	_rsiOs = Param(nameof(RsiOversold), 30);

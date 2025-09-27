@@ -25,6 +25,10 @@ public class InputResizerStrategy : Strategy
 	private readonly StrategyParam<int> _initHeight;
 	private readonly StrategyParam<int> _sleepTime;
 	private readonly StrategyParam<bool> _weekendMode;
+	private readonly StrategyParam<int> _gwlStyle;
+	private readonly StrategyParam<int> _wsSizeBox;
+	private readonly StrategyParam<int> _wsMinimizeBox;
+	private readonly StrategyParam<int> _wsMaximizeBox;
 	private readonly StrategyParam<int> _showWindowMaximizeCommand;
 	private readonly StrategyParam<uint> _setWindowPosNoZOrderFlag;
 	private readonly StrategyParam<uint> _setWindowPosNoActivateFlag;
@@ -81,6 +85,25 @@ public class InputResizerStrategy : Strategy
 	/// Run without market data.
 	/// </summary>
 	public bool WeekendMode { get => _weekendMode.Value; set => _weekendMode.Value = value; }
+	/// <summary>
+	/// Index used to retrieve window styles.
+	/// </summary>
+	public int GwlStyle { get => _gwlStyle.Value; set => _gwlStyle.Value = value; }
+
+	/// <summary>
+	/// Flag enabling resizable borders.
+	/// </summary>
+	public int WsSizeBox { get => _wsSizeBox.Value; set => _wsSizeBox.Value = value; }
+
+	/// <summary>
+	/// Flag enabling minimize button.
+	/// </summary>
+	public int WsMinimizeBox { get => _wsMinimizeBox.Value; set => _wsMinimizeBox.Value = value; }
+
+	/// <summary>
+	/// Flag enabling maximize button.
+	/// </summary>
+	public int WsMaximizeBox { get => _wsMaximizeBox.Value; set => _wsMaximizeBox.Value = value; }
 
 	/// <summary>
 	/// WinAPI command for maximizing window.
@@ -121,7 +144,20 @@ public class InputResizerStrategy : Strategy
 		_sleepTime = Param(nameof(SleepTime), 300)
 		.SetDisplay("Sleep Time", "Delay in ms between checks", "General");
 		_weekendMode = Param(nameof(WeekendMode), false)
-		.SetDisplay("Weekend Mode", "Run even without market data", "General");
+			.SetDisplay("Weekend Mode", "Run even without market data", "General");
+
+		_gwlStyle = Param(nameof(GwlStyle), -16)
+			.SetDisplay("GWL Style", "Index used in GetWindowLong", "WinAPI");
+
+		_wsSizeBox = Param(nameof(WsSizeBox), 0x00040000)
+			.SetDisplay("WS SIZEBOX", "Resizable border flag", "WinAPI");
+
+		_wsMinimizeBox = Param(nameof(WsMinimizeBox), 0x00020000)
+			.SetDisplay("WS MINIMIZEBOX", "Minimize button flag", "WinAPI");
+
+		_wsMaximizeBox = Param(nameof(WsMaximizeBox), 0x00010000)
+			.SetDisplay("WS MAXIMIZEBOX", "Maximize button flag", "WinAPI");
+
 		_showWindowMaximizeCommand = Param(nameof(ShowWindowMaximizeCommand), 3)
 		.SetDisplay("ShowWindow Maximize", "Command value for window maximization", "WinAPI");
 		_setWindowPosNoZOrderFlag = Param(nameof(SetWindowPosNoZOrderFlag), 0x0004u)
@@ -175,9 +211,9 @@ public class InputResizerStrategy : Strategy
 
 	private void ProcessWindow(IntPtr wnd)
 	{
-		var style = GetWindowLong(wnd, GWL_STYLE);
-		style |= WS_SIZEBOX | WS_MAXIMIZEBOX | WS_MINIMIZEBOX;
-		SetWindowLong(wnd, GWL_STYLE, style);
+		var style = GetWindowLong(wnd, GwlStyle);
+		style |= WsSizeBox | WsMaximizeBox | WsMinimizeBox;
+		SetWindowLong(wnd, GwlStyle, style);
 
 		var sb = new StringBuilder(256);
 		GetWindowText(wnd, sb, sb.Capacity);
@@ -203,11 +239,6 @@ public class InputResizerStrategy : Strategy
 	}
 
 	#region WinAPI
-
-	private const int GWL_STYLE = -16;
-	private const int WS_SIZEBOX = 0x00040000;
-	private const int WS_MINIMIZEBOX = 0x00020000;
-	private const int WS_MAXIMIZEBOX = 0x00010000;
 
 	[DllImport("user32.dll")]
 	private static extern IntPtr GetForegroundWindow();

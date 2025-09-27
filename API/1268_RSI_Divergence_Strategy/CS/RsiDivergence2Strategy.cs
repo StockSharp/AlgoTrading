@@ -13,10 +13,10 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class RsiDivergence2Strategy : Strategy
 {
-	private const int _lookbackLeft = 5;
-	private const int _lookbackRight = 5;
-	private const int _rangeLower = 5;
-	private const int _rangeUpper = 60;
+	private readonly StrategyParam<int> _lookbackLeft;
+	private readonly StrategyParam<int> _lookbackRight;
+	private readonly StrategyParam<int> _rangeLower;
+	private readonly StrategyParam<int> _rangeUpper;
 
 	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<decimal> _longEntryRsi;
@@ -37,6 +37,10 @@ public class RsiDivergence2Strategy : Strategy
 	private BarInfo _lastPivotHigh;
 	private int _index;
 
+	public int LookbackLeft { get => _lookbackLeft.Value; set => _lookbackLeft.Value = value; }
+	public int LookbackRight { get => _lookbackRight.Value; set => _lookbackRight.Value = value; }
+	public int RangeLower { get => _rangeLower.Value; set => _rangeLower.Value = value; }
+	public int RangeUpper { get => _rangeUpper.Value; set => _rangeUpper.Value = value; }
 	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
 	public decimal LongEntryRsi { get => _longEntryRsi.Value; set => _longEntryRsi.Value = value; }
 	public decimal ShortEntryRsi { get => _shortEntryRsi.Value; set => _shortEntryRsi.Value = value; }
@@ -46,6 +50,22 @@ public class RsiDivergence2Strategy : Strategy
 
 	public RsiDivergence2Strategy()
 	{
+		_lookbackLeft = Param(nameof(LookbackLeft), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Lookback Left", "Left bars to confirm pivots", "Pivot");
+
+		_lookbackRight = Param(nameof(LookbackRight), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Lookback Right", "Right bars to confirm pivots", "Pivot");
+
+		_rangeLower = Param(nameof(RangeLower), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Range Lower", "Minimum bars between pivots", "Pivot");
+
+		_rangeUpper = Param(nameof(RangeUpper), 60)
+			.SetGreaterThanZero()
+			.SetDisplay("Range Upper", "Maximum bars between pivots", "Pivot");
+
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI calculation period", "Indicators");
@@ -107,17 +127,17 @@ public class RsiDivergence2Strategy : Strategy
 		var info = new BarInfo { Candle = candle, Rsi = rsiValue, Index = _index };
 		_history.Add(info);
 
-		var max = _rangeUpper + _lookbackLeft + _lookbackRight + 5;
+		var max = RangeUpper + LookbackLeft + LookbackRight + 5;
 		_history.RemoveAll(b => b.Index < _index - max);
 
-		var pivotPos = _history.Count - 1 - _lookbackRight;
-		if (pivotPos < _lookbackLeft)
+		var pivotPos = _history.Count - 1 - LookbackRight;
+		if (pivotPos < LookbackLeft)
 			return;
 
 		var pivot = _history[pivotPos];
 
 		var isPivotLow = true;
-		for (var i = 1; i <= _lookbackLeft; i++)
+		for (var i = 1; i <= LookbackLeft; i++)
 		{
 			if (pivot.Rsi >= _history[pivotPos - i].Rsi)
 			{
@@ -125,7 +145,7 @@ public class RsiDivergence2Strategy : Strategy
 				break;
 			}
 		}
-		for (var i = 1; i <= _lookbackRight && isPivotLow; i++)
+		for (var i = 1; i <= LookbackRight && isPivotLow; i++)
 		{
 			if (pivot.Rsi > _history[pivotPos + i].Rsi)
 				isPivotLow = false;
@@ -136,7 +156,7 @@ public class RsiDivergence2Strategy : Strategy
 			if (_lastPivotLow != null)
 			{
 				var bars = pivot.Index - _lastPivotLow.Index;
-				if (bars >= _rangeLower && bars <= _rangeUpper)
+				if (bars >= RangeLower && bars <= RangeUpper)
 				{
 					var rsiHigher = pivot.Rsi > _lastPivotLow.Rsi;
 					var priceLower = pivot.Candle.LowPrice < _lastPivotLow.Candle.LowPrice;
@@ -149,7 +169,7 @@ public class RsiDivergence2Strategy : Strategy
 		}
 
 		var isPivotHigh = true;
-		for (var i = 1; i <= _lookbackLeft; i++)
+		for (var i = 1; i <= LookbackLeft; i++)
 		{
 			if (pivot.Rsi <= _history[pivotPos - i].Rsi)
 			{
@@ -157,7 +177,7 @@ public class RsiDivergence2Strategy : Strategy
 				break;
 			}
 		}
-		for (var i = 1; i <= _lookbackRight && isPivotHigh; i++)
+		for (var i = 1; i <= LookbackRight && isPivotHigh; i++)
 		{
 			if (pivot.Rsi < _history[pivotPos + i].Rsi)
 				isPivotHigh = false;
@@ -168,7 +188,7 @@ public class RsiDivergence2Strategy : Strategy
 			if (_lastPivotHigh != null)
 			{
 				var bars = pivot.Index - _lastPivotHigh.Index;
-				if (bars >= _rangeLower && bars <= _rangeUpper)
+				if (bars >= RangeLower && bars <= RangeUpper)
 				{
 					var rsiLower = pivot.Rsi < _lastPivotHigh.Rsi;
 					var priceHigher = pivot.Candle.HighPrice > _lastPivotHigh.Candle.HighPrice;
@@ -185,4 +205,5 @@ public class RsiDivergence2Strategy : Strategy
 		else if (Position < 0 && rsiValue <= ShortExitRsi)
 			BuyMarket();
 	}
+
 }
