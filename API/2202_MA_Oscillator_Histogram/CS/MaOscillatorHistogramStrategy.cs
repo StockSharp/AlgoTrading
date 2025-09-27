@@ -1,3 +1,16 @@
+using System;
+using System.Linq;
+using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
+using StockSharp.Messages;
+
 // MaOscillatorHistogramStrategy.cs
 // -----------------------------------------------------------------------------
 // Strategy based on a moving average oscillator with histogram-like turning points.
