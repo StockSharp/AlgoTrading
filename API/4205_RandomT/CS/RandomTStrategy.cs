@@ -14,20 +14,19 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class RandomTStrategy : Strategy
 {
-	private const int FractalWing = 2;
-
-	private readonly StrategyParam<decimal> _tradeVolume;
-	private readonly StrategyParam<int> _barWatch;
-	private readonly StrategyParam<int> _shift;
-	private readonly StrategyParam<bool> _useTrailing;
-	private readonly StrategyParam<bool> _autoStopLevel;
-	private readonly StrategyParam<decimal> _startStopLevelPoints;
-	private readonly StrategyParam<decimal> _stopLevelPoints;
-	private readonly StrategyParam<decimal> _minProfit;
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _macdFastLength;
-	private readonly StrategyParam<int> _macdSlowLength;
-	private readonly StrategyParam<int> _macdSignalLength;
+private readonly StrategyParam<decimal> _tradeVolume;
+private readonly StrategyParam<int> _barWatch;
+private readonly StrategyParam<int> _shift;
+private readonly StrategyParam<bool> _useTrailing;
+private readonly StrategyParam<bool> _autoStopLevel;
+private readonly StrategyParam<decimal> _startStopLevelPoints;
+private readonly StrategyParam<decimal> _stopLevelPoints;
+private readonly StrategyParam<decimal> _minProfit;
+private readonly StrategyParam<DataType> _candleType;
+private readonly StrategyParam<int> _macdFastLength;
+private readonly StrategyParam<int> _macdSlowLength;
+private readonly StrategyParam<int> _macdSignalLength;
+private readonly StrategyParam<int> _fractalWing;
 
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 
@@ -40,11 +39,11 @@ public class RandomTStrategy : Strategy
 	/// <summary>
 	/// Initializes a new instance of <see cref="RandomTStrategy"/>.
 	/// </summary>
-	public RandomTStrategy()
-	{
-		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Trade Volume", "Base order size in lots", "Trading");
+public RandomTStrategy()
+{
+_tradeVolume = Param(nameof(TradeVolume), 0.1m)
+.SetGreaterThanZero()
+.SetDisplay("Trade Volume", "Base order size in lots", "Trading");
 
 		_barWatch = Param(nameof(BarWatch), 12)
 			.SetGreaterThanZero()
@@ -83,10 +82,15 @@ public class RandomTStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Slow", "Slow EMA period", "Indicators");
 
-		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
-			.SetGreaterThanZero()
-			.SetDisplay("MACD Signal", "Signal EMA period", "Indicators");
-	}
+_macdSignalLength = Param(nameof(MacdSignalLength), 9)
+.SetGreaterThanZero()
+.SetDisplay("MACD Signal", "Signal EMA period", "Indicators");
+
+_fractalWing = Param(nameof(FractalWing), 2)
+.SetGreaterOrEqual(1)
+.SetDisplay("Fractal Wing", "Number of candles on each side for fractal confirmation", "Signals")
+.SetCanOptimize(true);
+}
 
 	/// <summary>
 	/// Base order size in lots.
@@ -190,11 +194,17 @@ public class RandomTStrategy : Strategy
 	/// <summary>
 	/// Signal EMA period of the MACD filter.
 	/// </summary>
-	public int MacdSignalLength
-	{
-		get => _macdSignalLength.Value;
-		set => _macdSignalLength.Value = value;
-	}
+public int MacdSignalLength
+{
+get => _macdSignalLength.Value;
+set => _macdSignalLength.Value = value;
+}
+
+public int FractalWing
+{
+get => _fractalWing.Value;
+set => _fractalWing.Value = value;
+}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -268,7 +278,7 @@ public class RandomTStrategy : Strategy
 		var index = _candles.Count - 1 - shift;
 
 		// Evaluate the bar that matches the requested shift.
-		if (index >= FractalWing && index <= _candles.Count - FractalWing - 1)
+if (index >= FractalWing && index <= _candles.Count - FractalWing - 1)
 		{
 			var macdAtShift = _macdHistory[index];
 
@@ -322,7 +332,7 @@ public class RandomTStrategy : Strategy
 		_candles.Add(candle);
 		_macdHistory.Add(macd);
 
-		var maxSize = Math.Max(BarWatch * 2 + Shift + 6, Shift + 6 + FractalWing);
+var maxSize = Math.Max(BarWatch * 2 + Shift + 6, Shift + 6 + FractalWing);
 
 		if (_candles.Count > maxSize)
 		{
@@ -348,7 +358,7 @@ public class RandomTStrategy : Strategy
 	{
 		var candidate = _candles[index].High;
 
-		for (var offset = -FractalWing; offset <= FractalWing; offset++)
+for (var offset = -FractalWing; offset <= FractalWing; offset++)
 		{
 			if (offset == 0)
 				continue;
@@ -368,7 +378,7 @@ public class RandomTStrategy : Strategy
 	{
 		var candidate = _candles[index].Low;
 
-		for (var offset = -FractalWing; offset <= FractalWing; offset++)
+for (var offset = -FractalWing; offset <= FractalWing; offset++)
 		{
 			if (offset == 0)
 				continue;

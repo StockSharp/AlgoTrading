@@ -12,8 +12,6 @@ using StockSharp.Messages;
 /// </summary>
 public class EasiestRsiStrategy : Strategy
 {
-	private const int TrailingBufferPoints = 5;
-
 	private readonly StrategyParam<decimal> _lotSize;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _trailingStopPips;
@@ -23,6 +21,7 @@ public class EasiestRsiStrategy : Strategy
 	private readonly StrategyParam<decimal> _overboughtLevel;
 	private readonly StrategyParam<int> _maxEntries;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _trailingBufferPoints;
 
 	private RelativeStrengthIndex _rsi;
 	private decimal? _previousRsi;
@@ -43,11 +42,11 @@ public class EasiestRsiStrategy : Strategy
 	/// <summary>
 	/// Initializes a new instance of <see cref="EasiestRsiStrategy"/>.
 	/// </summary>
-	public EasiestRsiStrategy()
-	{
-		_lotSize = Param(nameof(LotSize), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Order Volume", "Trade volume used for each market order", "Trading")
+public EasiestRsiStrategy()
+{
+_lotSize = Param(nameof(LotSize), 1m)
+.SetGreaterThanZero()
+.SetDisplay("Order Volume", "Trade volume used for each market order", "Trading")
 			.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
@@ -80,9 +79,14 @@ public class EasiestRsiStrategy : Strategy
 			.SetDisplay("Maximum Entries", "Maximum number of sequential entries allowed in the same direction", "Strategy")
 			.SetCanOptimize(true);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Time frame used for signal evaluation", "General");
-	}
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+.SetDisplay("Candle Type", "Time frame used for signal evaluation", "General");
+
+_trailingBufferPoints = Param(nameof(TrailingBufferPoints), 5)
+.SetNotNegative()
+.SetDisplay("Trailing Buffer", "Minimum improvement in stop level before updating (price steps)", "Risk")
+.SetCanOptimize(true);
+}
 
 	/// <summary>
 	/// Trade volume used for each market order.
@@ -159,11 +163,17 @@ public class EasiestRsiStrategy : Strategy
 	/// <summary>
 	/// Time frame used for signal evaluation.
 	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+public DataType CandleType
+{
+get => _candleType.Value;
+set => _candleType.Value = value;
+}
+
+public int TrailingBufferPoints
+{
+get => _trailingBufferPoints.Value;
+set => _trailingBufferPoints.Value = value;
+}
 
 	/// <inheritdoc />
 	public override System.Collections.Generic.IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -534,10 +544,10 @@ public class EasiestRsiStrategy : Strategy
 
 	private decimal GetStepDistance() => StepPips * _pipSize;
 
-	private decimal GetTrailingBuffer()
-	{
-		return _pointSize > 0m ? TrailingBufferPoints * _pointSize : 0m;
-	}
+private decimal GetTrailingBuffer()
+{
+return _pointSize > 0m ? TrailingBufferPoints * _pointSize : 0m;
+}
 
 	private decimal CalculatePipSize()
 	{
