@@ -19,6 +19,7 @@ public class JMasterRsxStrategy : Strategy
 	private readonly StrategyParam<decimal> _overboughtLevel;
 	private readonly StrategyParam<decimal> _oversoldLevel;
 	private readonly StrategyParam<decimal> _midlineLevel;
+	private readonly StrategyParam<decimal> _epsilon;
 
 	private RsxIndicator _fastRsx = null!;
 	private RsxIndicator _slowRsx = null!;
@@ -56,6 +57,10 @@ public class JMasterRsxStrategy : Strategy
 		_midlineLevel = Param(nameof(MidlineLevel), 50m)
 			.SetRange(0m, 100m)
 			.SetDisplay("Midline", "RSX midline separating bullish and bearish regimes", "Signals");
+
+		_epsilon = Param(nameof(Epsilon), 1e-10m)
+			.SetGreaterThanZero()
+			.SetDisplay("RSX Epsilon", "Numerical stability epsilon used inside the RSX filter", "Indicators");
 
 	}
 
@@ -113,14 +118,22 @@ public class JMasterRsxStrategy : Strategy
 		set => _midlineLevel.Value = value;
 	}
 
+	/// <summary>
+	/// Numerical stability epsilon passed to the Jurik RSX calculation.
+	/// </summary>
+	public decimal Epsilon
+	{
+		get => _epsilon.Value;
+		set => _epsilon.Value = value;
+	}
 
 	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);
 
-		_fastRsx = new RsxIndicator { Length = RsxLength };
-		_slowRsx = new RsxIndicator { Length = RsxLength };
+		_fastRsx = new RsxIndicator { Length = RsxLength, Epsilon = Epsilon };
+		_slowRsx = new RsxIndicator { Length = RsxLength, Epsilon = Epsilon };
 
 		var fastSubscription = SubscribeCandles(FastCandleType);
 		fastSubscription
@@ -200,7 +213,7 @@ public class JMasterRsxStrategy : Strategy
 
 	private sealed class RsxIndicator : Indicator<ICandleMessage>
 	{
-		private const decimal Epsilon = 1e-10m;
+		public decimal Epsilon { get; set; } = 1e-10m;
 
 		private decimal _f88;
 		private decimal _f90;

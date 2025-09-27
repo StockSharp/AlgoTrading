@@ -14,10 +14,10 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SendCloseOrderStrategy : Strategy
 {
-	private const decimal CloseOffsetPoints = 15m;
-	private const decimal VolumeTolerance = 0.0000001m;
-	private const int MaxStoredFractals = 64;
-	private const decimal DefaultPriceStep = 0.0001m;
+	private readonly StrategyParam<decimal> _closeOffsetPoints;
+	private readonly StrategyParam<decimal> _volumeTolerance;
+	private readonly StrategyParam<int> _maxStoredFractals;
+	private readonly StrategyParam<decimal> _defaultPriceStep;
 
 	private readonly StrategyParam<bool> _enableSellLine;
 	private readonly StrategyParam<bool> _enableBuyLine;
@@ -129,6 +129,22 @@ public class SendCloseOrderStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Volume per individual entry.", "Trading");
 
+		_closeOffsetPoints = Param(nameof(CloseOffsetPoints), 15m)
+			.SetNotNegative()
+			.SetDisplay("Close Offset", "Offset in points added when projecting close lines.", "Lines");
+
+		_volumeTolerance = Param(nameof(VolumeTolerance), 0.0000001m)
+			.SetNotNegative()
+			.SetDisplay("Volume Tolerance", "Tolerance when comparing calculated volume against broker limits.", "Trading");
+
+		_maxStoredFractals = Param(nameof(MaxStoredFractals), 64)
+			.SetGreaterThanZero()
+			.SetDisplay("Fractal Cache", "Maximum number of historical fractal points kept for trendline construction.", "Lines");
+
+		_defaultPriceStep = Param(nameof(DefaultPriceStep), 0.0001m)
+			.SetGreaterThanZero()
+			.SetDisplay("Price Step Fallback", "Fallback price step used when the security does not provide one.", "Trading");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series used for fractal detection.", "Data");
 	}
@@ -185,6 +201,42 @@ public class SendCloseOrderStrategy : Strategy
 	{
 		get => _tradeVolume.Value;
 		set => _tradeVolume.Value = value;
+	}
+
+	/// <summary>
+	/// Offset in points applied when drawing the close lines.
+	/// </summary>
+	public decimal CloseOffsetPoints
+	{
+		get => _closeOffsetPoints.Value;
+		set => _closeOffsetPoints.Value = value;
+	}
+
+	/// <summary>
+	/// Tolerance when comparing calculated volume with broker limits.
+	/// </summary>
+	public decimal VolumeTolerance
+	{
+		get => _volumeTolerance.Value;
+		set => _volumeTolerance.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum number of stored fractals used to build trendlines.
+	/// </summary>
+	public int MaxStoredFractals
+	{
+		get => _maxStoredFractals.Value;
+		set => _maxStoredFractals.Value = value;
+	}
+
+	/// <summary>
+	/// Fallback price step used when the security does not define one.
+	/// </summary>
+	public decimal DefaultPriceStep
+	{
+		get => _defaultPriceStep.Value;
+		set => _defaultPriceStep.Value = value;
 	}
 
 	/// <summary>

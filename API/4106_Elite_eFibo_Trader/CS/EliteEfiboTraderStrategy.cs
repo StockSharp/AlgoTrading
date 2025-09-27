@@ -14,7 +14,7 @@ using StockSharp.Messages;
 /// </summary>
 public class EliteEfiboTraderStrategy : Strategy
 {
-	private const int LevelCount = 14;
+	private readonly StrategyParam<int> _levelCount;
 
 	private readonly StrategyParam<bool> _useMaLogic;
 	private readonly StrategyParam<int> _maSlowPeriod;
@@ -31,7 +31,7 @@ public class EliteEfiboTraderStrategy : Strategy
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<decimal> _moneyTakeProfit;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal>[] _levelVolumeParams;
+	private StrategyParam<decimal>[] _levelVolumeParams;
 
 	private SimpleMovingAverage _slowMa;
 	private SimpleMovingAverage _fastMa;
@@ -101,6 +101,10 @@ public class EliteEfiboTraderStrategy : Strategy
 		_tradeAgainAfterProfit = Param(nameof(TradeAgainAfterProfit), true)
 		.SetDisplay("Trade After Profit", "Resume trading after the money take-profit is reached.", "Risk");
 
+		_levelCount = Param(nameof(LevelCount), 14)
+		.SetGreaterThanZero()
+		.SetDisplay("Level Count", "Number of Fibonacci ladder levels managed by the strategy.", "Position Sizing");
+
 		_levelDistancePips = Param(nameof(LevelDistancePips), 20)
 		.SetNotNegative()
 		.SetDisplay("Level Distance", "Distance between consecutive pending levels in pips.", "Execution")
@@ -122,15 +126,48 @@ public class EliteEfiboTraderStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Trading timeframe used for indicator calculations.", "General");
 
-		var defaults = new decimal[] { 1m, 1m, 2m, 3m, 5m, 8m, 13m, 21m, 34m, 55m, 89m, 144m, 233m, 377m };
-		_levelVolumeParams = new StrategyParam<decimal>[LevelCount];
-		for (var i = 0; i < LevelCount; i++)
+		ConfigureLevelVolumeParams(LevelCount);
+	}
+
+	private void ConfigureLevelVolumeParams(int count)
+	{
+		count = Math.Max(1, count);
+
+		var defaults = BuildLevelVolumeDefaults(count);
+		var newParams = new StrategyParam<decimal>[count];
+
+		for (var i = 0; i < count; i++)
 		{
 			var index = i + 1;
-			_levelVolumeParams[i] = Param($"Level{index}Volume", defaults[i])
-			.SetNotNegative()
-			.SetDisplay($"Level {index} Volume", $"Volume used for ladder level {index}.", "Position Sizing");
+			var defaultVolume = defaults[i];
+
+			if (_levelVolumeParams != null && i < _levelVolumeParams.Length)
+				defaultVolume = _levelVolumeParams[i].Value;
+
+			newParams[i] = Param($"Level{index}Volume", defaultVolume)
+				.SetNotNegative()
+				.SetDisplay($"Level {index} Volume", $"Volume used for ladder level {index}.", "Position Sizing");
 		}
+
+		_levelVolumeParams = newParams;
+	}
+
+	private static decimal[] BuildLevelVolumeDefaults(int count)
+	{
+		if (count <= 0)
+			return Array.Empty<decimal>();
+
+		if (count == 1)
+			return new[] { 1m };
+
+		var values = new decimal[count];
+		values[0] = 1m;
+		values[1] = 1m;
+
+		for (var i = 2; i < count; i++)
+			values[i] = values[i - 1] + values[i - 2];
+
+		return values;
 	}
 
 	/// <summary>
@@ -248,6 +285,19 @@ public class EliteEfiboTraderStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Number of Fibonacci ladder levels managed by the strategy.
+	/// </summary>
+	public int LevelCount
+	{
+		get => _levelCount.Value;
+		set
+		{
+			_levelCount.Value = value;
+			ConfigureLevelVolumeParams(value);
+		}
+	}
+
+	/// <summary>
 	/// Distance between ladder levels measured in pips.
 	/// </summary>
 	public int LevelDistancePips
@@ -309,6 +359,8 @@ public class EliteEfiboTraderStrategy : Strategy
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);
+
+		ConfigureLevelVolumeParams(_levelCount.Value);
 
 		_pipSize = CalculatePipSize();
 		_priceStep = Security?.PriceStep ?? 0m;
@@ -547,7 +599,7 @@ public class EliteEfiboTraderStrategy : Strategy
 		var levelDistance = LevelDistancePips * _pipSize;
 		var stopOffset = StopLossPips * _pipSize;
 
-		for (var i = 0; i < LevelCount; i++)
+		for (var i = 0; i < _levelVolumeParams.Length; i++)
 		{
 			var volume = _levelVolumeParams[i].Value;
 			if (volume <= 0m)
