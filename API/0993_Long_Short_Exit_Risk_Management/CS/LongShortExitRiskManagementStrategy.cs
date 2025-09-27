@@ -12,21 +12,19 @@ using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
-public enum TradingDirections
-{
-	LongOnly,
-	ShortOnly,
-	All,
-}
-
 /// <summary>
 /// Basic strategy demonstrating long and short entries with
 /// percentage based risk management.
 /// </summary>
 public class LongShortExitRiskManagementStrategy : Strategy
 {
+	public enum TradingDirections
+	{
+		LongOnly,
+		ShortOnly,
+		All,
+	}
+
 	private readonly StrategyParam<TradingDirections> _tradingDirection;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<decimal> _takeProfitPercent;

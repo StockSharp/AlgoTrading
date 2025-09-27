@@ -12,26 +12,24 @@ using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
-public enum LineSelections
-{
-	Filter,
-	Upper,
-	Lower
-}
-
-public enum CrossDirections
-{
-	CrossUp,
-	CrossDown
-}
-
 /// <summary>
 /// Gaussian Channel Strategy
 /// </summary>
 public class GaussianChannelStrategy : Strategy
 {
+	public enum LineSelections
+	{
+		Filter,
+		Upper,
+		Lower
+	}
+
+	public enum CrossDirections
+	{
+		CrossUp,
+		CrossDown
+	}
+
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<decimal> _multiplier;

@@ -13,17 +13,17 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum CloseTriggers
-{
-Price,
-Signal,
-Trade,
-Trend,
-None
-}
-
 public class HurstFutureLinesOfDemarcationStrategy : Strategy
 {
+	public enum CloseTriggers
+	{
+	Price,
+	Signal,
+	Trade,
+	Trend,
+	None
+	}
+
 private SimpleMovingAverage _sma;
 private readonly Queue<decimal> _signalQueue = new();
 private readonly Queue<decimal> _tradeQueue = new();

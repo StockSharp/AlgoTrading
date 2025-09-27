@@ -13,12 +13,6 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum SpreadBases
-{
-	HighYieldSpread,
-	Vix
-}
-
 /// <summary>
 /// Strategy that trades based on high yield spread or VIX with optional SMA filter.
 /// Goes long when spread rises above threshold and price passes SMA filter.
@@ -27,6 +21,12 @@ public enum SpreadBases
 /// </summary>
 public class HighYieldSpreadSmaFilterStrategy : Strategy
 {
+	public enum SpreadBases
+	{
+		HighYieldSpread,
+		Vix
+	}
+
 	private readonly StrategyParam<SpreadBases> _basis;
 	private readonly StrategyParam<decimal> _threshold;
 	private readonly StrategyParam<bool> _isLong;

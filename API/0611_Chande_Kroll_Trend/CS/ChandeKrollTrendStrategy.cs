@@ -23,6 +23,21 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ChandeKrollTrendStrategy : Strategy
 {
+	/// <summary>
+	/// Position size calculation modes.
+	/// </summary>
+	public enum CalcModes
+	{
+		/// <summary>
+		/// Use fixed multiplier.
+		/// </summary>
+		Linear,
+		/// <summary>
+		/// Scale by current equity.
+		/// </summary>
+		Exponential
+	}
+
 	private readonly StrategyParam<CalcModes> _calcMode;
 	private readonly StrategyParam<decimal> _riskMultiplier;
 	private readonly StrategyParam<int> _atrPeriod;
@@ -210,19 +225,4 @@ public class ChandeKrollTrendStrategy : Strategy
 		_prevClose = candle.ClosePrice;
 		_prevLowStop = lowStop;
 	}
-}
-
-/// <summary>
-/// Position size calculation modes.
-/// </summary>
-public enum CalcModes
-{
-	/// <summary>
-	/// Use fixed multiplier.
-	/// </summary>
-	Linear,
-	/// <summary>
-	/// Scale by current equity.
-	/// </summary>
-	Exponential
 }

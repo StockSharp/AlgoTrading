@@ -21,6 +21,19 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class Lanz20BacktestStrategy : Strategy
 {
+	/// <summary>
+	/// Modes of stop-loss protection.
+	/// </summary>
+	public enum SlProtectionModeOptions
+	{
+		/// <summary>Use last swing.</summary>
+		FirstSwing,
+		/// <summary>Use second swing.</summary>
+		SecondSwing,
+		/// <summary>Use full coverage of swings.</summary>
+		FullCoverage
+	}
+
 	private readonly StrategyParam<decimal> _accountSizeUsd;
 	private readonly StrategyParam<decimal> _riskPercent;
 	private readonly StrategyParam<SlProtectionModeOptions> _slProtectionMode;
@@ -366,18 +379,5 @@ public class Lanz20BacktestStrategy : Strategy
 			}
 		}
 	}
-}
-
-/// <summary>
-/// Modes of stop-loss protection.
-/// </summary>
-public enum SlProtectionModeOptions
-{
-	/// <summary>Use last swing.</summary>
-	FirstSwing,
-	/// <summary>Use second swing.</summary>
-	SecondSwing,
-	/// <summary>Use full coverage of swings.</summary>
-	FullCoverage
 }
 

@@ -11,19 +11,17 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
-public enum SlTypes
-{
-	Percentage,
-	PreviousLow
-}
-
 /// <summary>
 /// Long-only opening range breakout with pivot point trailing stop.
 /// </summary>
 public class LongOnlyOpeningRangeBreakoutWithPivotPointsStrategy : Strategy
 {
+	public enum SlTypes
+	{
+		Percentage,
+		PreviousLow
+	}
+
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<TimeSpan> _sessionStart;
 	private readonly StrategyParam<int> _rangeMinutes;
