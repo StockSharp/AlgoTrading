@@ -19,6 +19,16 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class JBrainUltraRsiStrategy : Strategy
 {
+        /// <summary>
+        /// Combination modes for indicators.
+        /// </summary>
+        public enum AlgorithmModes
+        {
+                JBrainSig1Filter,
+                UltraRsiFilter,
+                Composition
+        }
+
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<int> _stochLength;
 	private readonly StrategyParam<int> _signalLength;
@@ -287,14 +297,4 @@ public class JBrainUltraRsiStrategy : Strategy
 		_prevK = k;
 		_prevD = d;
 	}
-}
-
-/// <summary>
-/// Combination modes for indicators.
-/// </summary>
-public enum AlgorithmModes
-{
-	JBrainSig1Filter,
-	UltraRsiFilter,
-	Composition
 }

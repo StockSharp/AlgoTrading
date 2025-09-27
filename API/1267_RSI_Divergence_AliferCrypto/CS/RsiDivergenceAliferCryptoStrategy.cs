@@ -17,7 +17,46 @@ namespace StockSharp.Samples.Strategies;
 /// RSI divergence strategy with optional trend and RSI zone filters.
 /// </summary>
 public class RsiDivergenceAliferCryptoStrategy : Strategy {
-	private readonly StrategyParam<int> _rsiLength;
+        /// <summary>
+        /// Moving average types.
+        /// </summary>
+        public enum MaTypes
+        {
+                /// <summary> Simple moving average. </summary>
+                Sma,
+                /// <summary> Exponential moving average. </summary>
+                Ema,
+                /// <summary> Smoothed moving average. </summary>
+                Smma,
+                /// <summary> Weighted moving average. </summary>
+                Wma,
+                /// <summary> Volume weighted moving average. </summary>
+                Vwma
+        }
+
+        /// <summary>
+        /// Stop loss and take profit calculation method.
+        /// </summary>
+        public enum SlTpMethods
+        {
+                /// <summary> Use recent swing high/low. </summary>
+                Swing,
+                /// <summary> Use ATR based calculation. </summary>
+                Atr
+        }
+
+        /// <summary>
+        /// Exit levels mode.
+        /// </summary>
+        public enum ExitModes
+        {
+                /// <summary> Recalculate SL/TP each bar. </summary>
+                Dynamic,
+                /// <summary> Lock SL/TP at entry. </summary>
+                Static
+        }
+
+        private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<int> _lookLeft;
 	private readonly StrategyParam<int> _lookRight;
 	private readonly StrategyParam<int> _rangeLower;
@@ -422,40 +461,4 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy {
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
-}
-
-/// <summary>
-/// Moving average types.
-/// </summary>
-public enum MaTypes {
-	/// <summary> Simple moving average. </summary>
-	Sma,
-	/// <summary> Exponential moving average. </summary>
-	Ema,
-	/// <summary> Smoothed moving average. </summary>
-	Smma,
-	/// <summary> Weighted moving average. </summary>
-	Wma,
-	/// <summary> Volume weighted moving average. </summary>
-	Vwma
-}
-
-/// <summary>
-/// Stop loss and take profit calculation method.
-/// </summary>
-public enum SlTpMethods {
-	/// <summary> Use recent swing high/low. </summary>
-	Swing,
-	/// <summary> Use ATR based calculation. </summary>
-	Atr
-}
-
-/// <summary>
-/// Exit levels mode.
-/// </summary>
-public enum ExitModes {
-	/// <summary> Recalculate SL/TP each bar. </summary>
-	Dynamic,
-	/// <summary> Lock SL/TP at entry. </summary>
-	Static
 }

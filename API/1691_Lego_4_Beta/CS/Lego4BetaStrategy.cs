@@ -19,7 +19,28 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class Lego4BetaStrategy : Strategy
 {
-	private readonly StrategyParam<bool> _useMaOpen;
+        /// <summary>
+        /// Moving average type.
+        /// </summary>
+        public enum MaTypes
+        {
+                /// <summary>
+                /// Simple moving average.
+                /// </summary>
+                SMA,
+
+                /// <summary>
+                /// Exponential moving average.
+                /// </summary>
+                EMA,
+
+                /// <summary>
+                /// Weighted moving average.
+                /// </summary>
+                WMA,
+        }
+
+        private readonly StrategyParam<bool> _useMaOpen;
 	private readonly StrategyParam<int> _fastMaLength;
 	private readonly StrategyParam<int> _slowMaLength;
 	private readonly StrategyParam<MaTypes> _maType;
@@ -347,25 +368,4 @@ public class Lego4BetaStrategy : Strategy
 			_ => new ExponentialMovingAverage { Length = length },
 		};
 	}
-}
-
-/// <summary>
-/// Moving average type.
-/// </summary>
-public enum MaTypes
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	SMA,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	EMA,
-
-	/// <summary>
-	/// Weighted moving average.
-	/// </summary>
-	WMA,
 }

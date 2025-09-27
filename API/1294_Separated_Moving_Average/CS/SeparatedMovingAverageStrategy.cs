@@ -13,16 +13,16 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum MaTypes
-{
-	SMA,
-	EMA,
-	HMA,
-}
-
 public class SeparatedMovingAverageStrategy : Strategy
 {
-	private readonly StrategyParam<MaTypes> _maType;
+        public enum MaTypes
+        {
+                SMA,
+                EMA,
+                HMA,
+        }
+
+        private readonly StrategyParam<MaTypes> _maType;
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<bool> _useHeikinAshi;
 	private readonly StrategyParam<DataType> _candleType;

@@ -18,7 +18,15 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class XmacdModesStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
+        public enum XmacdModes
+        {
+                Breakdown,
+                MacdTwist,
+                SignalTwist,
+                MacdDisposition
+        }
+
+        private readonly StrategyParam<int> _fastEmaPeriod;
 	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<int> _signalPeriod;
 	private readonly StrategyParam<DataType> _candleType;
@@ -185,12 +193,4 @@ public class XmacdModesStrategy : Strategy
 		_prevSignal2 = _prevSignal;
 		_prevSignal = signal;
 	}
-}
-
-public enum XmacdModes
-{
-	Breakdown,
-	MacdTwist,
-	SignalTwist,
-	MacdDisposition
 }

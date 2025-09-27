@@ -19,7 +19,33 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BullsVsBearsCrossoverStrategy : Strategy
 {
-	private readonly StrategyParam<MovingAverageTypes> _maType;
+        /// <summary>
+        /// Moving average types.
+        /// </summary>
+        public enum MovingAverageTypes
+        {
+                /// <summary>
+                /// Simple moving average.
+                /// </summary>
+                SMA,
+
+                /// <summary>
+                /// Exponential moving average.
+                /// </summary>
+                EMA,
+
+                /// <summary>
+                /// Smoothed moving average.
+                /// </summary>
+                SMMA,
+
+                /// <summary>
+                /// Weighted moving average.
+                /// </summary>
+                WMA
+        }
+
+        private readonly StrategyParam<MovingAverageTypes> _maType;
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
@@ -266,30 +292,4 @@ public class BullsVsBearsCrossoverStrategy : Strategy
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
-}
-
-/// <summary>
-/// Moving average types.
-/// </summary>
-public enum MovingAverageTypes
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	SMA,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	EMA,
-
-	/// <summary>
-	/// Smoothed moving average.
-	/// </summary>
-	SMMA,
-
-	/// <summary>
-	/// Weighted moving average.
-	/// </summary>
-	WMA
 }

@@ -19,7 +19,23 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class PriceActionStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _tp;
+        /// <summary>
+        /// Trade direction options.
+        /// </summary>
+        public enum TradeDirections
+        {
+                /// <summary>
+                /// Start with long trades.
+                /// </summary>
+                Buy,
+
+                /// <summary>
+                /// Start with short trades.
+                /// </summary>
+                Sell
+        }
+
+        private readonly StrategyParam<decimal> _tp;
 	private readonly StrategyParam<decimal> _leverage;
 	private readonly StrategyParam<decimal> _trailingStop;
 	private readonly StrategyParam<decimal> _trailingStep;
@@ -152,10 +168,4 @@ public class PriceActionStrategy : Strategy
 				BuyMarket(-Position);
 		}
 	}
-}
-
-public enum TradeDirections
-{
-	Buy = 1,
-	Sell = 2
 }

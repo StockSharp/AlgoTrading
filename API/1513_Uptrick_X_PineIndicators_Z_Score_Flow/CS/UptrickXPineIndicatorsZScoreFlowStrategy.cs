@@ -18,12 +18,12 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class UptrickXPineIndicatorsZScoreFlowStrategy : Strategy
 {
-public enum TradeModes
-{
-Standard,
-ZeroCross,
-TrendReversal
-}
+        public enum TradeModes
+        {
+                Standard,
+                ZeroCross,
+                TrendReversal
+        }
 
 private readonly StrategyParam<DataType> _candleType;
 private readonly StrategyParam<int> _zScorePeriod;
