@@ -13,17 +13,17 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class AK47A1Strategy : Strategy
 {
-	private const int JawLength = 13;
-	private const int JawShift = 8;
-	private const int TeethLength = 8;
-	private const int TeethShift = 5;
-	private const int LipsLength = 5;
-	private const int LipsShift = 3;
-	private const int FractalWindow = 5;
-	private const int FractalLookback = 3;
-	private const decimal DemarkerThreshold = 0.5m;
-	private const decimal WprLowerBound = 0.25m;
-	private const decimal WprUpperBound = 0.75m;
+	private readonly StrategyParam<int> _jawLength;
+	private readonly StrategyParam<int> _jawShift;
+	private readonly StrategyParam<int> _teethLength;
+	private readonly StrategyParam<int> _teethShift;
+	private readonly StrategyParam<int> _lipsLength;
+	private readonly StrategyParam<int> _lipsShift;
+	private readonly StrategyParam<int> _fractalWindow;
+	private readonly StrategyParam<int> _fractalLookback;
+	private readonly StrategyParam<decimal> _demarkerThreshold;
+	private readonly StrategyParam<decimal> _wprLowerBound;
+	private readonly StrategyParam<decimal> _wprUpperBound;
 
 	private readonly StrategyParam<decimal> _spanGatorPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
@@ -57,6 +57,105 @@ public class AK47A1Strategy : Strategy
 	private decimal? _longTargetPrice;
 	private decimal? _shortStopPrice;
 	private decimal? _shortTargetPrice;
+
+	/// <summary>
+	/// Length of the Alligator jaw moving average.
+	/// </summary>
+	public int JawLength
+	{
+		get => _jawLength.Value;
+		set => _jawLength.Value = value;
+	}
+
+	/// <summary>
+	/// Shift applied to the Alligator jaw line.
+	/// </summary>
+	public int JawShift
+	{
+		get => _jawShift.Value;
+		set => _jawShift.Value = value;
+	}
+
+	/// <summary>
+	/// Length of the Alligator teeth moving average.
+	/// </summary>
+	public int TeethLength
+	{
+		get => _teethLength.Value;
+		set => _teethLength.Value = value;
+	}
+
+	/// <summary>
+	/// Shift applied to the Alligator teeth line.
+	/// </summary>
+	public int TeethShift
+	{
+		get => _teethShift.Value;
+		set => _teethShift.Value = value;
+	}
+
+	/// <summary>
+	/// Length of the Alligator lips moving average.
+	/// </summary>
+	public int LipsLength
+	{
+		get => _lipsLength.Value;
+		set => _lipsLength.Value = value;
+	}
+
+	/// <summary>
+	/// Shift applied to the Alligator lips line.
+	/// </summary>
+	public int LipsShift
+	{
+		get => _lipsShift.Value;
+		set => _lipsShift.Value = value;
+	}
+
+	/// <summary>
+	/// Number of candles used to detect fractal formations.
+	/// </summary>
+	public int FractalWindow
+	{
+		get => _fractalWindow.Value;
+		set => _fractalWindow.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum age for a detected fractal to remain valid.
+	/// </summary>
+	public int FractalLookback
+	{
+		get => _fractalLookback.Value;
+		set => _fractalLookback.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum DeMarker value required for long entries.
+	/// </summary>
+	public decimal DemarkerThreshold
+	{
+		get => _demarkerThreshold.Value;
+		set => _demarkerThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Lower bound of the Williams %R filter range.
+	/// </summary>
+	public decimal WprLowerBound
+	{
+		get => _wprLowerBound.Value;
+		set => _wprLowerBound.Value = value;
+	}
+
+	/// <summary>
+	/// Upper bound of the Williams %R filter range.
+	/// </summary>
+	public decimal WprUpperBound
+	{
+		get => _wprUpperBound.Value;
+		set => _wprUpperBound.Value = value;
+	}
 
 	/// <summary>
 	/// Required Alligator mouth width in points.
@@ -108,6 +207,72 @@ public class AK47A1Strategy : Strategy
 	/// </summary>
 	public AK47A1Strategy()
 	{
+		_jawLength = Param(nameof(JawLength), 13)
+		.SetGreaterThanZero()
+		.SetDisplay("Jaw Length", "Length of the Alligator jaw line", "Alligator")
+		.SetCanOptimize(true)
+		.SetOptimize(5, 40, 1);
+
+		_jawShift = Param(nameof(JawShift), 8)
+		.SetGreaterThanOrEqualTo(0)
+		.SetDisplay("Jaw Shift", "Shift applied to the Alligator jaw line", "Alligator")
+		.SetCanOptimize(true)
+		.SetOptimize(0, 16, 1);
+
+		_teethLength = Param(nameof(TeethLength), 8)
+		.SetGreaterThanZero()
+		.SetDisplay("Teeth Length", "Length of the Alligator teeth line", "Alligator")
+		.SetCanOptimize(true)
+		.SetOptimize(5, 30, 1);
+
+		_teethShift = Param(nameof(TeethShift), 5)
+		.SetGreaterThanOrEqualTo(0)
+		.SetDisplay("Teeth Shift", "Shift applied to the Alligator teeth line", "Alligator")
+		.SetCanOptimize(true)
+		.SetOptimize(0, 16, 1);
+
+		_lipsLength = Param(nameof(LipsLength), 5)
+		.SetGreaterThanZero()
+		.SetDisplay("Lips Length", "Length of the Alligator lips line", "Alligator")
+		.SetCanOptimize(true)
+		.SetOptimize(3, 20, 1);
+
+		_lipsShift = Param(nameof(LipsShift), 3)
+		.SetGreaterThanOrEqualTo(0)
+		.SetDisplay("Lips Shift", "Shift applied to the Alligator lips line", "Alligator")
+		.SetCanOptimize(true)
+		.SetOptimize(0, 10, 1);
+
+		_fractalWindow = Param(nameof(FractalWindow), 5)
+		.SetGreaterThanZero()
+		.SetDisplay("Fractal Window", "Number of candles for fractal detection", "Fractals")
+		.SetCanOptimize(true)
+		.SetOptimize(3, 9, 2);
+
+		_fractalLookback = Param(nameof(FractalLookback), 3)
+		.SetGreaterThanZero()
+		.SetDisplay("Fractal Lookback", "Maximum age of a detected fractal", "Fractals")
+		.SetCanOptimize(true)
+		.SetOptimize(1, 6, 1);
+
+		_demarkerThreshold = Param(nameof(DemarkerThreshold), 0.5m)
+		.SetGreaterThanOrEqualTo(0m)
+		.SetDisplay("DeMarker Threshold", "Minimum value for long setups", "Filters")
+		.SetCanOptimize(true)
+		.SetOptimize(0m, 1m, 0.05m);
+
+		_wprLowerBound = Param(nameof(WprLowerBound), 0.25m)
+		.SetGreaterThanOrEqualTo(0m)
+		.SetDisplay("WPR Lower", "Lower Williams %R filter bound", "Filters")
+		.SetCanOptimize(true)
+		.SetOptimize(0m, 0.5m, 0.05m);
+
+		_wprUpperBound = Param(nameof(WprUpperBound), 0.75m)
+		.SetGreaterThanOrEqualTo(0m)
+		.SetDisplay("WPR Upper", "Upper Williams %R filter bound", "Filters")
+		.SetCanOptimize(true)
+		.SetOptimize(0.5m, 1m, 0.05m);
+
 		_spanGatorPoints = Param(nameof(SpanGatorPoints), 0.5m)
 		.SetGreaterThanOrEqualTo(0m)
 		.SetDisplay("Alligator Span", "Required gap between Alligator lines", "Alligator")

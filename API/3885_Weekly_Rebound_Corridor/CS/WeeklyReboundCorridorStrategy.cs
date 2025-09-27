@@ -11,7 +11,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class WeeklyReboundCorridorStrategy : Strategy
 {
-	private const decimal AdditionalBuyTakeProfitPoints = 3m;
+	private readonly StrategyParam<decimal> _additionalBuyTakeProfitPoints;
 
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _stopLossPoints;
@@ -46,6 +46,15 @@ public class WeeklyReboundCorridorStrategy : Strategy
 	{
 		get => _stopLossPoints.Value;
 		set => _stopLossPoints.Value = value;
+	}
+
+	/// <summary>
+	/// Additional take-profit points added when buying.
+	/// </summary>
+	public decimal AdditionalBuyTakeProfitPoints
+	{
+		get => _additionalBuyTakeProfitPoints.Value;
+		set => _additionalBuyTakeProfitPoints.Value = value;
 	}
 
 	/// <summary>
@@ -89,6 +98,12 @@ public class WeeklyReboundCorridorStrategy : Strategy
 	/// </summary>
 	public WeeklyReboundCorridorStrategy()
 	{
+		_additionalBuyTakeProfitPoints = Param(nameof(AdditionalBuyTakeProfitPoints), 3m)
+		.SetGreaterThanOrEqualTo(0m)
+		.SetDisplay("Buy Bonus Take Profit", "Additional points added to long take profits", "Risk Management")
+		.SetCanOptimize(true)
+		.SetOptimize(0m, 10m, 0.5m);
+
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit", "Take-profit size in points", "Risk Management")
