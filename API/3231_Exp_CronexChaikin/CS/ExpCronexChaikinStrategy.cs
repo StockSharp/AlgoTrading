@@ -538,103 +538,99 @@ public class ExpCronexChaikinStrategy : Strategy
 		if (_historyCount < length)
 			_historyCount++;
 	}
+
+	public enum ChaikinAverageMethods
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Simple,
+
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Exponential,
+
+		/// <summary>
+		/// Smoothed moving average (RMA).
+		/// </summary>
+		Smoothed,
+
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		LinearWeighted,
+	}
+
+	/// <summary>
+	/// Cronex smoothing algorithms supported by the strategy.
+	/// </summary>
+	public enum CronexSmoothingMethods
+	{
+		/// <summary>
+		/// Simple moving average (SMA).
+		/// </summary>
+		Simple,
+
+		/// <summary>
+		/// Exponential moving average (EMA).
+		/// </summary>
+		Exponential,
+
+		/// <summary>
+		/// Smoothed moving average (SMMA).
+		/// </summary>
+		Smoothed,
+
+		/// <summary>
+		/// Linear weighted moving average (LWMA).
+		/// </summary>
+		LinearWeighted,
+
+		/// <summary>
+		/// Jurik moving average (JJMA variant).
+		/// </summary>
+		Jjma,
+
+		/// <summary>
+		/// Jurik moving average (JurX variant).
+		/// </summary>
+		JurX,
+
+		/// <summary>
+		/// Parabolic moving average approximation.
+		/// </summary>
+		ParMa,
+
+		/// <summary>
+		/// Tillson T3 moving average.
+		/// </summary>
+		T3,
+
+		/// <summary>
+		/// VIDYA adaptive moving average.
+		/// </summary>
+		Vidya,
+
+		/// <summary>
+		/// Kaufman adaptive moving average (AMA).
+		/// </summary>
+		Ama,
+	}
+
+	/// <summary>
+	/// Volume source applied to the accumulation/distribution formula.
+	/// </summary>
+	public enum CronexVolumeTypes
+	{
+		/// <summary>
+		/// Use tick volume when available.
+		/// </summary>
+		Tick,
+
+		/// <summary>
+		/// Use real volume when available.
+		/// </summary>
+		Real,
+	}
 }
-
-/// <summary>
-/// Moving average methods available for the Chaikin oscillator calculation.
-/// </summary>
-public enum ChaikinAverageMethods
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Exponential,
-
-	/// <summary>
-	/// Smoothed moving average (RMA).
-	/// </summary>
-	Smoothed,
-
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	LinearWeighted,
-}
-
-/// <summary>
-/// Cronex smoothing algorithms supported by the strategy.
-/// </summary>
-public enum CronexSmoothingMethods
-{
-	/// <summary>
-	/// Simple moving average (SMA).
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Exponential moving average (EMA).
-	/// </summary>
-	Exponential,
-
-	/// <summary>
-	/// Smoothed moving average (SMMA).
-	/// </summary>
-	Smoothed,
-
-	/// <summary>
-	/// Linear weighted moving average (LWMA).
-	/// </summary>
-	LinearWeighted,
-
-	/// <summary>
-	/// Jurik moving average (JJMA variant).
-	/// </summary>
-	Jjma,
-
-	/// <summary>
-	/// Jurik moving average (JurX variant).
-	/// </summary>
-	JurX,
-
-	/// <summary>
-	/// Parabolic moving average approximation.
-	/// </summary>
-	ParMa,
-
-	/// <summary>
-	/// Tillson T3 moving average.
-	/// </summary>
-	T3,
-
-	/// <summary>
-	/// VIDYA adaptive moving average.
-	/// </summary>
-	Vidya,
-
-	/// <summary>
-	/// Kaufman adaptive moving average (AMA).
-	/// </summary>
-	Ama,
-}
-
-/// <summary>
-/// Volume source applied to the accumulation/distribution formula.
-/// </summary>
-public enum CronexVolumeTypes
-{
-	/// <summary>
-	/// Use tick volume when available.
-	/// </summary>
-	Tick,
-
-	/// <summary>
-	/// Use real volume when available.
-	/// </summary>
-	Real,
-}
-

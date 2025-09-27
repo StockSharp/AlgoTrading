@@ -637,52 +637,48 @@ public class AdjustableMovingAverageStrategy : Strategy
 		_longTrailingStop = null;
 		_shortTrailingStop = null;
 	}
+
+	public enum MovingAverageMethods
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Simple,
+
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Exponential,
+
+		/// <summary>
+		/// Smoothed moving average.
+		/// </summary>
+		Smoothed,
+
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		Weighted
+	}
+
+	/// <summary>
+	/// Directional filter for new positions.
+	/// </summary>
+	public enum EntryModes
+	{
+		/// <summary>
+		/// Allow both long and short entries.
+		/// </summary>
+		Both,
+
+		/// <summary>
+		/// Allow only long entries.
+		/// </summary>
+		BuyOnly,
+
+		/// <summary>
+		/// Allow only short entries.
+		/// </summary>
+		SellOnly
+	}
 }
-
-/// <summary>
-/// Moving average calculation methods supported by the strategy.
-/// </summary>
-public enum MovingAverageMethods
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Exponential,
-
-	/// <summary>
-	/// Smoothed moving average.
-	/// </summary>
-	Smoothed,
-
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	Weighted
-}
-
-/// <summary>
-/// Directional filter for new positions.
-/// </summary>
-public enum EntryModes
-{
-	/// <summary>
-	/// Allow both long and short entries.
-	/// </summary>
-	Both,
-
-	/// <summary>
-	/// Allow only long entries.
-	/// </summary>
-	BuyOnly,
-
-	/// <summary>
-	/// Allow only short entries.
-	/// </summary>
-	SellOnly
-}
-

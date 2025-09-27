@@ -580,42 +580,38 @@ public class FetchNewsStrategy : Strategy
 	}
 
 	private sealed record CalendarEvent(string Id, DateTimeOffset Time, string Currency, NewsImportanceLevels Importance, string Name);
+
+	public enum FetchNewsOperationModes
+	{
+		/// <summary>
+		/// Only log matching events.
+		/// </summary>
+		Alerting,
+
+		/// <summary>
+		/// Place pending orders around the price near selected events.
+		/// </summary>
+		Trading,
+	}
+
+	/// <summary>
+	/// Importance level used by the macroeconomic calendar.
+	/// </summary>
+	public enum NewsImportanceLevels
+	{
+		/// <summary>
+		/// Low importance release.
+		/// </summary>
+		Low,
+
+		/// <summary>
+		/// Moderate importance release.
+		/// </summary>
+		Moderate,
+
+		/// <summary>
+		/// High importance release.
+		/// </summary>
+		High,
+	}
 }
-
-/// <summary>
-/// Available modes for <see cref="FetchNewsStrategy"/>.
-/// </summary>
-public enum FetchNewsOperationModes
-{
-	/// <summary>
-	/// Only log matching events.
-	/// </summary>
-	Alerting,
-
-	/// <summary>
-	/// Place pending orders around the price near selected events.
-	/// </summary>
-	Trading,
-}
-
-/// <summary>
-/// Importance level used by the macroeconomic calendar.
-/// </summary>
-public enum NewsImportanceLevels
-{
-	/// <summary>
-	/// Low importance release.
-	/// </summary>
-	Low,
-
-	/// <summary>
-	/// Moderate importance release.
-	/// </summary>
-	Moderate,
-
-	/// <summary>
-	/// High importance release.
-	/// </summary>
-	High,
-}
-

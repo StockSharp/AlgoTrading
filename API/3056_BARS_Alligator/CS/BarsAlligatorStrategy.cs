@@ -664,88 +664,84 @@ public class BarsAlligatorStrategy : Strategy
 			_ => candle.ClosePrice
 		};
 	}
+
+	public enum MoneyManagementModes
+	{
+		/// <summary>
+		/// Use a fixed volume defined by <see cref="BarsAlligatorStrategy.OrderVolume"/>.
+		/// </summary>
+		FixedVolume,
+
+		/// <summary>
+		/// Allocate volume so that the stop-loss represents the configured risk percentage of equity.
+		/// </summary>
+		RiskPercent
+	}
+
+	/// <summary>
+	/// Moving average types supported by the Alligator implementation.
+	/// </summary>
+	public enum MovingAverageTypes
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Simple,
+
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Exponential,
+
+		/// <summary>
+		/// Smoothed moving average.
+		/// </summary>
+		Smoothed,
+
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		Weighted
+	}
+
+	/// <summary>
+	/// Price sources that can feed the Alligator averages.
+	/// </summary>
+	public enum AppliedPriceTypes
+	{
+		/// <summary>
+		/// Candle close price.
+		/// </summary>
+		Close,
+
+		/// <summary>
+		/// Candle open price.
+		/// </summary>
+		Open,
+
+		/// <summary>
+		/// Candle high price.
+		/// </summary>
+		High,
+
+		/// <summary>
+		/// Candle low price.
+		/// </summary>
+		Low,
+
+		/// <summary>
+		/// Median price calculated as (high + low) / 2.
+		/// </summary>
+		Median,
+
+		/// <summary>
+		/// Typical price calculated as (high + low + close) / 3.
+		/// </summary>
+		Typical,
+
+		/// <summary>
+		/// Weighted price calculated as (high + low + 2 * close) / 4.
+		/// </summary>
+		Weighted
+	}
 }
-
-/// <summary>
-/// Available money management modes.
-/// </summary>
-public enum MoneyManagementModes
-{
-	/// <summary>
-	/// Use a fixed volume defined by <see cref="BarsAlligatorStrategy.OrderVolume"/>.
-	/// </summary>
-	FixedVolume,
-
-	/// <summary>
-	/// Allocate volume so that the stop-loss represents the configured risk percentage of equity.
-	/// </summary>
-	RiskPercent
-}
-
-/// <summary>
-/// Moving average types supported by the Alligator implementation.
-/// </summary>
-public enum MovingAverageTypes
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Exponential,
-
-	/// <summary>
-	/// Smoothed moving average.
-	/// </summary>
-	Smoothed,
-
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	Weighted
-}
-
-/// <summary>
-/// Price sources that can feed the Alligator averages.
-/// </summary>
-public enum AppliedPriceTypes
-{
-	/// <summary>
-	/// Candle close price.
-	/// </summary>
-	Close,
-
-	/// <summary>
-	/// Candle open price.
-	/// </summary>
-	Open,
-
-	/// <summary>
-	/// Candle high price.
-	/// </summary>
-	High,
-
-	/// <summary>
-	/// Candle low price.
-	/// </summary>
-	Low,
-
-	/// <summary>
-	/// Median price calculated as (high + low) / 2.
-	/// </summary>
-	Median,
-
-	/// <summary>
-	/// Typical price calculated as (high + low + close) / 3.
-	/// </summary>
-	Typical,
-
-	/// <summary>
-	/// Weighted price calculated as (high + low + 2 * close) / 4.
-	/// </summary>
-	Weighted
-}
-

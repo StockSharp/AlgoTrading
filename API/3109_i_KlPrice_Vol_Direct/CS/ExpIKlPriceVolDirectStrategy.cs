@@ -567,95 +567,91 @@ public class ExpIKlPriceVolDirectStrategy : Strategy
 
 		return jurik;
 	}
+
+	public enum SmoothingMethods
+	{
+		/// <summary>Simple moving average.</summary>
+		Sma,
+
+		/// <summary>Exponential moving average.</summary>
+		Ema,
+
+		/// <summary>Smoothed moving average.</summary>
+		Smma,
+
+		/// <summary>Linear weighted moving average.</summary>
+		Lwma,
+
+		/// <summary>Jurik moving average.</summary>
+		Jjma,
+
+		/// <summary>Zero-lag exponential moving average (JurX approximation).</summary>
+		Jurx,
+
+		/// <summary>Parabolic moving average approximation.</summary>
+		Parma,
+
+		/// <summary>Tillson T3 moving average.</summary>
+		T3,
+
+		/// <summary>VIDYA approximation using exponential smoothing.</summary>
+		Vidya,
+
+		/// <summary>Kaufman adaptive moving average.</summary>
+		Ama
+	}
+
+	/// <summary>
+	/// Applied price options provided by the original indicator.
+	/// </summary>
+	public enum AppliedPrices
+	{
+		/// <summary>Close price.</summary>
+		Close,
+
+		/// <summary>Open price.</summary>
+		Open,
+
+		/// <summary>High price.</summary>
+		High,
+
+		/// <summary>Low price.</summary>
+		Low,
+
+		/// <summary>Median price (high + low) / 2.</summary>
+		Median,
+
+		/// <summary>Typical price (high + low + close) / 3.</summary>
+		Typical,
+
+		/// <summary>Weighted price (high + low + close * 2) / 4.</summary>
+		Weighted,
+
+		/// <summary>Simple average of open and close.</summary>
+		Simple,
+
+		/// <summary>Quarted price (open + high + low + close) / 4.</summary>
+		Quarter,
+
+		/// <summary>TrendFollow 0 price.</summary>
+		TrendFollow0,
+
+		/// <summary>TrendFollow 1 price.</summary>
+		TrendFollow1,
+
+		/// <summary>Demark price.</summary>
+		Demark
+	}
+
+	/// <summary>
+	/// Volume mode used to weight the oscillator.
+	/// </summary>
+	public enum VolumeModes
+	{
+		/// <summary>Tick volume.</summary>
+		Tick,
+
+		/// <summary>Real (exchange reported) volume.</summary>
+		Real
+	}
 }
-
-/// <summary>
-/// Supported smoothing methods mirroring the original SmoothAlgorithms library.
-/// </summary>
-public enum SmoothingMethods
-{
-	/// <summary>Simple moving average.</summary>
-	Sma,
-
-	/// <summary>Exponential moving average.</summary>
-	Ema,
-
-	/// <summary>Smoothed moving average.</summary>
-	Smma,
-
-	/// <summary>Linear weighted moving average.</summary>
-	Lwma,
-
-	/// <summary>Jurik moving average.</summary>
-	Jjma,
-
-	/// <summary>Zero-lag exponential moving average (JurX approximation).</summary>
-	Jurx,
-
-	/// <summary>Parabolic moving average approximation.</summary>
-	Parma,
-
-	/// <summary>Tillson T3 moving average.</summary>
-	T3,
-
-	/// <summary>VIDYA approximation using exponential smoothing.</summary>
-	Vidya,
-
-	/// <summary>Kaufman adaptive moving average.</summary>
-	Ama
-}
-
-/// <summary>
-/// Applied price options provided by the original indicator.
-/// </summary>
-public enum AppliedPrices
-{
-	/// <summary>Close price.</summary>
-	Close,
-
-	/// <summary>Open price.</summary>
-	Open,
-
-	/// <summary>High price.</summary>
-	High,
-
-	/// <summary>Low price.</summary>
-	Low,
-
-	/// <summary>Median price (high + low) / 2.</summary>
-	Median,
-
-	/// <summary>Typical price (high + low + close) / 3.</summary>
-	Typical,
-
-	/// <summary>Weighted price (high + low + close * 2) / 4.</summary>
-	Weighted,
-
-	/// <summary>Simple average of open and close.</summary>
-	Simple,
-
-	/// <summary>Quarted price (open + high + low + close) / 4.</summary>
-	Quarter,
-
-	/// <summary>TrendFollow 0 price.</summary>
-	TrendFollow0,
-
-	/// <summary>TrendFollow 1 price.</summary>
-	TrendFollow1,
-
-	/// <summary>Demark price.</summary>
-	Demark
-}
-
-/// <summary>
-/// Volume mode used to weight the oscillator.
-/// </summary>
-public enum VolumeModes
-{
-	/// <summary>Tick volume.</summary>
-	Tick,
-
-	/// <summary>Real (exchange reported) volume.</summary>
-	Real
-}
-

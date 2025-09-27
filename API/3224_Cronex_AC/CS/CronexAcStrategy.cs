@@ -278,31 +278,27 @@ public class CronexAcStrategy : Strategy
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
+
+	public enum CronexMovingAverageTypes
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Simple,
+
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Exponential,
+
+		/// <summary>
+		/// Smoothed moving average.
+		/// </summary>
+		Smoothed,
+
+		/// <summary>
+		/// Weighted moving average.
+		/// </summary>
+		Weighted
+	}
 }
-
-/// <summary>
-/// Moving average algorithms supported by Cronex AC strategy.
-/// </summary>
-public enum CronexMovingAverageTypes
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Exponential,
-
-	/// <summary>
-	/// Smoothed moving average.
-	/// </summary>
-	Smoothed,
-
-	/// <summary>
-	/// Weighted moving average.
-	/// </summary>
-	Weighted
-}
-

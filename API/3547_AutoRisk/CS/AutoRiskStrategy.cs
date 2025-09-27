@@ -202,21 +202,17 @@ public class AutoRiskStrategy : Strategy
 
 		return volume;
 	}
+
+	public enum AutoRiskCalculationModes
+	{
+		/// <summary>
+		/// Uses portfolio equity (current value) for the calculation.
+		/// </summary>
+		Equity,
+
+		/// <summary>
+		/// Uses portfolio balance (initial value) for the calculation.
+		/// </summary>
+		Balance
+	}
 }
-
-/// <summary>
-/// Available account metrics for the AutoRisk sizing logic.
-/// </summary>
-public enum AutoRiskCalculationModes
-{
-	/// <summary>
-	/// Uses portfolio equity (current value) for the calculation.
-	/// </summary>
-	Equity,
-
-	/// <summary>
-	/// Uses portfolio balance (initial value) for the calculation.
-	/// </summary>
-	Balance
-}
-

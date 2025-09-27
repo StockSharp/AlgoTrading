@@ -513,26 +513,22 @@ public class BullRowBreakoutStrategy : Strategy
 	{
 		return _candles[^shift];
 	}
+
+	public enum RowSequenceModes
+	{
+		/// <summary>
+		/// Only direction and minimum body size are checked.
+		/// </summary>
+		Normal,
+
+		/// <summary>
+		/// Each candle must have a larger body than the previous one.
+		/// </summary>
+		Bigger,
+
+		/// <summary>
+		/// Each candle must have a smaller body than the previous one.
+		/// </summary>
+		Smaller
+	}
 }
-
-/// <summary>
-/// Defines how candle bodies must evolve inside a row.
-/// </summary>
-public enum RowSequenceModes
-{
-	/// <summary>
-	/// Only direction and minimum body size are checked.
-	/// </summary>
-	Normal,
-
-	/// <summary>
-	/// Each candle must have a larger body than the previous one.
-	/// </summary>
-	Bigger,
-
-	/// <summary>
-	/// Each candle must have a smaller body than the previous one.
-	/// </summary>
-	Smaller
-}
-

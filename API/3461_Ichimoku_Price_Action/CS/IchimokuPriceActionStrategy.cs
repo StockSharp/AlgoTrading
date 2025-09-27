@@ -611,17 +611,17 @@ public class IchimokuPriceActionStrategy : Strategy
 		_shortEntryPrice = null;
 		_shortStopPrice = null;
 	}
-}
 
-public enum StopLossModes
-{
-	FixedPips,
-	AtrMultiplier,
-	SwingHighLow
-}
+	public enum StopLossModes
+	{
+		FixedPips,
+		AtrMultiplier,
+		SwingHighLow
+	}
 
-public enum TakeProfitModes
-{
-	FixedPips,
-	RiskReward
+	public enum TakeProfitModes
+	{
+		FixedPips,
+		RiskReward
+	}
 }

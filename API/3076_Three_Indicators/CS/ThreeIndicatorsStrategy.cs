@@ -387,16 +387,15 @@ public class ThreeIndicatorsStrategy : Strategy
 			_ => candle.ClosePrice
 		};
 	}
-}
 
-public enum IndicatorAppliedPrices
-{
-	Close,
-	Open,
-	High,
-	Low,
-	Median,
-	Typical,
-	Weighted
+	public enum IndicatorAppliedPrices
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted
+	}
 }
-

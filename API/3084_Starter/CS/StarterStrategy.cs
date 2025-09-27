@@ -587,31 +587,27 @@ public class StarterStrategy : Strategy
 			ResetShortProtection();
 		}
 	}
+
+	public enum MovingAverageMethods
+	{
+		/// <summary>
+		/// Simple moving average (equivalent to MODE_SMA in MetaTrader).
+		/// </summary>
+		Simple,
+
+		/// <summary>
+		/// Exponential moving average (MODE_EMA).
+		/// </summary>
+		Exponential,
+
+		/// <summary>
+		/// Smoothed moving average (MODE_SMMA).
+		/// </summary>
+		Smoothed,
+
+		/// <summary>
+		/// Linear weighted moving average (MODE_LWMA).
+		/// </summary>
+		LinearWeighted
+	}
 }
-
-/// <summary>
-/// Moving average methods supported by <see cref="StarterStrategy"/>.
-/// </summary>
-public enum MovingAverageMethods
-{
-	/// <summary>
-	/// Simple moving average (equivalent to MODE_SMA in MetaTrader).
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Exponential moving average (MODE_EMA).
-	/// </summary>
-	Exponential,
-
-	/// <summary>
-	/// Smoothed moving average (MODE_SMMA).
-	/// </summary>
-	Smoothed,
-
-	/// <summary>
-	/// Linear weighted moving average (MODE_LWMA).
-	/// </summary>
-	LinearWeighted
-}
-

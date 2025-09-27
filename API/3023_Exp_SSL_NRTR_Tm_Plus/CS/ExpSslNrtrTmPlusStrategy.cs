@@ -13,30 +13,6 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
-
-public enum ExpSslNrtrSmoothingMethods
-{
-	Sma,
-	Ema,
-	Smma,
-	Lwma,
-	Jjma,
-	Jurx,
-	Parma,
-	T3,
-	Vidya,
-	Ama,
-}
-
-public enum MarginModes
-{
-	FreeMargin,
-	Balance,
-	LossFreeMargin,
-	LossBalance,
-	Lot,
-}
-
 public class ExpSslNrtrTmPlusStrategy : Strategy
 {
 
@@ -846,5 +822,27 @@ public class ExpSslNrtrTmPlusStrategy : Strategy
 			_count = 0;
 		}
 	}
-}
 
+	public enum ExpSslNrtrSmoothingMethods
+	{
+		Sma,
+		Ema,
+		Smma,
+		Lwma,
+		Jjma,
+		Jurx,
+		Parma,
+		T3,
+		Vidya,
+		Ama,
+	}
+
+	public enum MarginModes
+	{
+		FreeMargin,
+		Balance,
+		LossFreeMargin,
+		LossBalance,
+		Lot,
+	}
+}

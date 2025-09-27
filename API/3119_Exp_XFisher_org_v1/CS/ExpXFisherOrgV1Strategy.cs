@@ -15,36 +15,6 @@ using System.Reflection;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum XfisherSmoothingMethods
-{
-	Sma,
-	Ema,
-	Smma,
-	Lwma,
-	Jjma,
-	Jurx,
-	Parabolic,
-	T3,
-	Vidya,
-	Ama,
-}
-
-public enum XfisherAppliedPrices
-{
-	Close,
-	Open,
-	High,
-	Low,
-	Median,
-	Typical,
-	Weighted,
-	Simple,
-	Quarter,
-	TrendFollow0,
-	TrendFollow1,
-	Demark,
-}
-
 /// <summary>
 /// Port of the MetaTrader 5 expert Exp_XFisher_org_v1.
 /// Detects turning points of the Fisher transform smoothed with a configurable average.
@@ -351,6 +321,36 @@ public class ExpXFisherOrgV1Strategy : Strategy
 
 		return volume;
 	}
+
+	public enum XfisherSmoothingMethods
+	{
+		Sma,
+		Ema,
+		Smma,
+		Lwma,
+		Jjma,
+		Jurx,
+		Parabolic,
+		T3,
+		Vidya,
+		Ama,
+	}
+
+	public enum XfisherAppliedPrices
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted,
+		Simple,
+		Quarter,
+		TrendFollow0,
+		TrendFollow1,
+		Demark,
+	}
 }
 
 /// <summary>
@@ -582,4 +582,3 @@ public sealed class XFisherOrgValue : ComplexIndicatorValue
 	/// </summary>
 	public decimal Signal => (decimal)GetValue(nameof(Signal));
 }
-

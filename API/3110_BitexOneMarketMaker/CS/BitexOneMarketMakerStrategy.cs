@@ -525,26 +525,22 @@ public class BitexOneMarketMakerStrategy : Strategy
 
 		return false;
 	}
+
+	public enum LeadPriceSources
+	{
+		/// <summary>
+		/// Use the strategy security order book as the reference.
+		/// </summary>
+		OrderBook = 1,
+
+		/// <summary>
+		/// Use mark prices supplied by an auxiliary instrument.
+		/// </summary>
+		MarkPrice = 2,
+
+		/// <summary>
+		/// Use index prices supplied by an auxiliary instrument.
+		/// </summary>
+		IndexPrice = 3
+	}
 }
-
-/// <summary>
-/// Defines available sources of reference prices for the market-making grid.
-/// </summary>
-public enum LeadPriceSources
-{
-	/// <summary>
-	/// Use the strategy security order book as the reference.
-	/// </summary>
-	OrderBook = 1,
-
-	/// <summary>
-	/// Use mark prices supplied by an auxiliary instrument.
-	/// </summary>
-	MarkPrice = 2,
-
-	/// <summary>
-	/// Use index prices supplied by an auxiliary instrument.
-	/// </summary>
-	IndexPrice = 3
-}
-

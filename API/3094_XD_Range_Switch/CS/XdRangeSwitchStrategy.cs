@@ -499,21 +499,17 @@ public class XdRangeSwitchStrategy : Strategy
 	public decimal? UpSignal { get; }
 	public decimal? DownSignal { get; }
 	}
+
+	public enum XdRangeSwitchTradeDirections
+	{
+		/// <summary>
+		/// Counter-trend logic: buy on downward channel breaks and sell on upward breaks.
+		/// </summary>
+		AgainstSignal,
+
+		/// <summary>
+		/// Trend-following logic: align with the XD-RangeSwitch arrows.
+		/// </summary>
+		WithSignal
+	}
 }
-
-/// <summary>
-/// Trade direction selection matching the MT5 expert advisor input.
-/// </summary>
-public enum XdRangeSwitchTradeDirections
-{
-	/// <summary>
-	/// Counter-trend logic: buy on downward channel breaks and sell on upward breaks.
-	/// </summary>
-	AgainstSignal,
-
-	/// <summary>
-	/// Trend-following logic: align with the XD-RangeSwitch arrows.
-	/// </summary>
-	WithSignal
-}
-

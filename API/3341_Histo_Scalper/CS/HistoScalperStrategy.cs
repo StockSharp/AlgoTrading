@@ -12,16 +12,6 @@ using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-/// <summary>
-/// Defines how indicator signals are interpreted.
-/// </summary>
-public enum SignalDirections
-{
-	Straight,
-	Reverse,
-}
-
 /// <summary>
 /// Multi-indicator scalping strategy converted from the MQL HistoScalper expert advisor.
 /// Combines eight histogram-style filters and requires signal agreement before trading.
@@ -1036,5 +1026,13 @@ public class HistoScalperStrategy : Strategy
 
 		return time >= SessionStart || time < SessionEnd;
 	}
-}
 
+	/// <summary>
+	/// Defines how indicator signals are interpreted.
+	/// </summary>
+	public enum SignalDirections
+	{
+		Straight,
+		Reverse,
+	}
+}

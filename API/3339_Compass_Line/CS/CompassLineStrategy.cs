@@ -12,33 +12,6 @@ using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-/// <summary>
-/// Exit modes for Compass Line strategy.
-/// </summary>
-public enum CompassLineExitModes
-{
-	/// <summary>
-	/// Do not close positions on indicator signals.
-	/// </summary>
-	None = 0,
-
-	/// <summary>
-	/// Close when both Compass and Follow Line signals reverse.
-	/// </summary>
-	BothIndicators = 1,
-
-	/// <summary>
-	/// Close only when Follow Line reverses.
-	/// </summary>
-	FollowLineOnly = 2,
-
-	/// <summary>
-	/// Close only when Compass turns.
-	/// </summary>
-	CompassOnly = 3,
-}
-
 /// <summary>
 /// Compass Line strategy combines Follow Line and Compass trend filters with optional time window and protective stops.
 /// </summary>
@@ -463,5 +436,30 @@ public class CompassLineStrategy : Strategy
 		TimeSpan.TryParseExact(parts[0], "hhmm", null, out start);
 		TimeSpan.TryParseExact(parts[1], "hhmm", null, out end);
 	}
-}
 
+	/// <summary>
+	/// Exit modes for Compass Line strategy.
+	/// </summary>
+	public enum CompassLineExitModes
+	{
+		/// <summary>
+		/// Do not close positions on indicator signals.
+		/// </summary>
+		None = 0,
+
+		/// <summary>
+		/// Close when both Compass and Follow Line signals reverse.
+		/// </summary>
+		BothIndicators = 1,
+
+		/// <summary>
+		/// Close only when Follow Line reverses.
+		/// </summary>
+		FollowLineOnly = 2,
+
+		/// <summary>
+		/// Close only when Compass turns.
+		/// </summary>
+		CompassOnly = 3,
+	}
+}

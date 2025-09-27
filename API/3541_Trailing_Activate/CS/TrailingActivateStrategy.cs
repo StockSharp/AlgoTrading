@@ -13,12 +13,6 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum TrailingActivateModes
-{
-	EveryTick,
-	NewBar,
-}
-
 /// <summary>
 /// Converts the MetaTrader 5 "Trailing Activate" expert advisor into a StockSharp strategy.
 /// The strategy manages existing positions by moving an internal trailing stop that mirrors the original logic.
@@ -265,5 +259,10 @@ public class TrailingActivateStrategy : Strategy
 		_stopOffset = TrailingStopPoints * step;
 		_stepOffset = TrailingStepPoints * step;
 	}
-}
 
+	public enum TrailingActivateModes
+	{
+		EveryTick,
+		NewBar,
+	}
+}

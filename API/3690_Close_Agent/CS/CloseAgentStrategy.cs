@@ -17,43 +17,6 @@ using System.Reflection;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Defines which positions should be processed by the strategy.
-/// </summary>
-public enum CloseAgentModes
-{
-	/// <summary>
-	/// Only process positions opened manually or by other strategies.
-	/// </summary>
-	Manual,
-
-	/// <summary>
-	/// Only process positions opened by this strategy instance.
-	/// </summary>
-	Auto,
-
-	/// <summary>
-	/// Process all positions regardless of origin.
-	/// </summary>
-	Both,
-}
-
-/// <summary>
-/// Defines how indicator data should be sampled for signal evaluation.
-/// </summary>
-public enum CloseAgentOperationModes
-{
-	/// <summary>
-	/// Evaluate signals using the latest forming candle values.
-	/// </summary>
-	LiveBar,
-
-	/// <summary>
-	/// Evaluate signals using only closed candles.
-	/// </summary>
-	NewBar,
-}
-
-/// <summary>
 /// Closes open positions when price stretches beyond Bollinger Bands and RSI reaches extreme values.
 /// Implements the logic of the original CloseAgent MQL tool.
 /// </summary>
@@ -421,5 +384,42 @@ public class CloseAgentStrategy : Strategy
 			SellMarket(absVolume);
 		else
 			BuyMarket(absVolume);
+	}
+
+	/// <summary>
+	/// Defines which positions should be processed by the strategy.
+	/// </summary>
+	public enum CloseAgentModes
+	{
+		/// <summary>
+		/// Only process positions opened manually or by other strategies.
+		/// </summary>
+		Manual,
+
+		/// <summary>
+		/// Only process positions opened by this strategy instance.
+		/// </summary>
+		Auto,
+
+		/// <summary>
+		/// Process all positions regardless of origin.
+		/// </summary>
+		Both,
+	}
+
+	/// <summary>
+	/// Defines how indicator data should be sampled for signal evaluation.
+	/// </summary>
+	public enum CloseAgentOperationModes
+	{
+		/// <summary>
+		/// Evaluate signals using the latest forming candle values.
+		/// </summary>
+		LiveBar,
+
+		/// <summary>
+		/// Evaluate signals using only closed candles.
+		/// </summary>
+		NewBar,
 	}
 }

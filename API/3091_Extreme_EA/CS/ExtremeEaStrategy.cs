@@ -574,30 +574,26 @@ public class ExtremeEaStrategy : Strategy
 			_lastClosedTradeTime = trade.Trade.ServerTime;
 		}
 	}
-}
 
-/// <summary>
-/// Moving average methods supported by the strategy.
-/// </summary>
-public enum MaMethods
-{
-	Simple,
-	Exponential,
-	Smoothed,
-	LinearWeighted
-}
+	public enum MaMethods
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		LinearWeighted
+	}
 
-/// <summary>
-/// Price sources compatible with the indicators used by the strategy.
-/// </summary>
-public enum AppliedPriceModes
-{
-	Close,
-	Open,
-	High,
-	Low,
-	Median,
-	Typical,
-	Weighted
+	/// <summary>
+	/// Price sources compatible with the indicators used by the strategy.
+	/// </summary>
+	public enum AppliedPriceModes
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted
+	}
 }
-

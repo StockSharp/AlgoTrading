@@ -405,77 +405,73 @@ public class CronexRsiStrategy : Strategy
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
+
+	public enum CronexSmoothingMethods
+	{
+	/// <summary>
+	/// Simple moving average.
+	/// </summary>
+	Simple,
+
+	/// <summary>
+	/// Exponential moving average.
+	/// </summary>
+	Exponential,
+
+	/// <summary>
+	/// Smoothed moving average.
+	/// </summary>
+	Smoothed,
+
+	/// <summary>
+	/// Linear weighted moving average.
+	/// </summary>
+	LinearWeighted,
+
+	/// <summary>
+	/// Volume weighted moving average as a pragmatic substitute for VIDYA and AMA options.
+	/// </summary>
+	VolumeWeighted,
+	}
+
+	/// <summary>
+	/// Applied price selection matching the MQL5 Cronex RSI inputs.
+	/// </summary>
+	public enum AppliedPriceTypes
+	{
+	/// <summary>
+	/// Close price.
+	/// </summary>
+	Close,
+
+	/// <summary>
+	/// Open price.
+	/// </summary>
+	Open,
+
+	/// <summary>
+	/// High price.
+	/// </summary>
+	High,
+
+	/// <summary>
+	/// Low price.
+	/// </summary>
+	Low,
+
+	/// <summary>
+	/// Median price = (High + Low) / 2.
+	/// </summary>
+	Median,
+
+	/// <summary>
+	/// Typical price = (High + Low + Close) / 3.
+	/// </summary>
+	Typical,
+
+	/// <summary>
+	/// Weighted close = (High + Low + 2 * Close) / 4.
+	/// </summary>
+	Weighted,
+	}
 }
-
-/// <summary>
-/// Moving average methods available in the Cronex RSI indicator.
-/// </summary>
-public enum CronexSmoothingMethods
-{
-/// <summary>
-/// Simple moving average.
-/// </summary>
-Simple,
-
-/// <summary>
-/// Exponential moving average.
-/// </summary>
-Exponential,
-
-/// <summary>
-/// Smoothed moving average.
-/// </summary>
-Smoothed,
-
-/// <summary>
-/// Linear weighted moving average.
-/// </summary>
-LinearWeighted,
-
-/// <summary>
-/// Volume weighted moving average as a pragmatic substitute for VIDYA and AMA options.
-/// </summary>
-VolumeWeighted,
-}
-
-/// <summary>
-/// Applied price selection matching the MQL5 Cronex RSI inputs.
-/// </summary>
-public enum AppliedPriceTypes
-{
-/// <summary>
-/// Close price.
-/// </summary>
-Close,
-
-/// <summary>
-/// Open price.
-/// </summary>
-Open,
-
-/// <summary>
-/// High price.
-/// </summary>
-High,
-
-/// <summary>
-/// Low price.
-/// </summary>
-Low,
-
-/// <summary>
-/// Median price = (High + Low) / 2.
-/// </summary>
-Median,
-
-/// <summary>
-/// Typical price = (High + Low + Close) / 3.
-/// </summary>
-Typical,
-
-/// <summary>
-/// Weighted close = (High + Low + 2 * Close) / 4.
-/// </summary>
-Weighted,
-}
-

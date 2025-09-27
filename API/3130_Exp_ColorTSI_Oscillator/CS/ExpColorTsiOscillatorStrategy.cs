@@ -518,63 +518,59 @@ property.SetValue(jurik, clamped);
 
 return jurik;
 }
-}
 
-/// <summary>
-/// Supported smoothing methods for the ColorTSI oscillator.
-/// </summary>
-public enum ColorTsiSmoothingMethods
-{
-/// <summary>Simple moving average.</summary>
-Sma,
-/// <summary>Exponential moving average.</summary>
-Ema,
-/// <summary>Smoothed moving average.</summary>
-Smma,
-/// <summary>Linear weighted moving average.</summary>
-Lwma,
-/// <summary>Jurik moving average.</summary>
-Jjma,
-/// <summary>Zero-lag exponential moving average (JurX approximation).</summary>
-Jurx,
-/// <summary>Parabolic moving average (ALMA approximation).</summary>
-Parma,
-/// <summary>Tillson T3 moving average.</summary>
-T3,
-/// <summary>VIDYA moving average approximation.</summary>
-Vidya,
-/// <summary>Kaufman adaptive moving average.</summary>
-Ama
-}
+	public enum ColorTsiSmoothingMethods
+	{
+	/// <summary>Simple moving average.</summary>
+	Sma,
+	/// <summary>Exponential moving average.</summary>
+	Ema,
+	/// <summary>Smoothed moving average.</summary>
+	Smma,
+	/// <summary>Linear weighted moving average.</summary>
+	Lwma,
+	/// <summary>Jurik moving average.</summary>
+	Jjma,
+	/// <summary>Zero-lag exponential moving average (JurX approximation).</summary>
+	Jurx,
+	/// <summary>Parabolic moving average (ALMA approximation).</summary>
+	Parma,
+	/// <summary>Tillson T3 moving average.</summary>
+	T3,
+	/// <summary>VIDYA moving average approximation.</summary>
+	Vidya,
+	/// <summary>Kaufman adaptive moving average.</summary>
+	Ama
+	}
 
-/// <summary>
-/// Applied price options mirroring the original indicator.
-/// </summary>
-public enum ColorTsiAppliedPrices
-{
-/// <summary>Close price.</summary>
-Close,
-/// <summary>Open price.</summary>
-Open,
-/// <summary>High price.</summary>
-High,
-/// <summary>Low price.</summary>
-Low,
-/// <summary>Median price (high + low) / 2.</summary>
-Median,
-/// <summary>Typical price (high + low + close) / 3.</summary>
-Typical,
-/// <summary>Weighted price (high + low + close * 2) / 4.</summary>
-Weighted,
-/// <summary>Simple average of open and close.</summary>
-Simple,
-/// <summary>Quarted price (open + high + low + close) / 4.</summary>
-Quarter,
-/// <summary>Trend-following price variant 0.</summary>
-TrendFollow0,
-/// <summary>Trend-following price variant 1.</summary>
-TrendFollow1,
-/// <summary>Demark price.</summary>
-Demark
+	/// <summary>
+	/// Applied price options mirroring the original indicator.
+	/// </summary>
+	public enum ColorTsiAppliedPrices
+	{
+	/// <summary>Close price.</summary>
+	Close,
+	/// <summary>Open price.</summary>
+	Open,
+	/// <summary>High price.</summary>
+	High,
+	/// <summary>Low price.</summary>
+	Low,
+	/// <summary>Median price (high + low) / 2.</summary>
+	Median,
+	/// <summary>Typical price (high + low + close) / 3.</summary>
+	Typical,
+	/// <summary>Weighted price (high + low + close * 2) / 4.</summary>
+	Weighted,
+	/// <summary>Simple average of open and close.</summary>
+	Simple,
+	/// <summary>Quarted price (open + high + low + close) / 4.</summary>
+	Quarter,
+	/// <summary>Trend-following price variant 0.</summary>
+	TrendFollow0,
+	/// <summary>Trend-following price variant 1.</summary>
+	TrendFollow1,
+	/// <summary>Demark price.</summary>
+	Demark
+	}
 }
-

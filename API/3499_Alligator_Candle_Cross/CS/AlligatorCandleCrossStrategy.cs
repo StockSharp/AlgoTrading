@@ -469,26 +469,22 @@ public class AlligatorCandleCrossStrategy : Strategy
 
 		return step;
 	}
+
+	public enum AlligatorCrossModes
+	{
+		/// <summary>
+		/// Enable both long and short entries.
+		/// </summary>
+		Both,
+
+		/// <summary>
+		/// Only take long signals.
+		/// </summary>
+		LongOnly,
+
+		/// <summary>
+		/// Only take short signals.
+		/// </summary>
+		ShortOnly
+	}
 }
-
-/// <summary>
-/// Selects the trade direction for the Alligator candle cross logic.
-/// </summary>
-public enum AlligatorCrossModes
-{
-	/// <summary>
-	/// Enable both long and short entries.
-	/// </summary>
-	Both,
-
-	/// <summary>
-	/// Only take long signals.
-	/// </summary>
-	LongOnly,
-
-	/// <summary>
-	/// Only take short signals.
-	/// </summary>
-	ShortOnly
-}
-

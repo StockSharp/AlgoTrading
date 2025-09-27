@@ -642,22 +642,17 @@ public class DayTradingPamxaStrategy : Strategy
 		var bits = decimal.GetBits(value);
 		return (bits[3] >> 16) & 31;
 	}
+
+	public enum PositionSizingModes
+	{
+		/// <summary>
+		/// Always trade a fixed volume regardless of the stop distance.
+		/// </summary>
+		FixedVolume,
+
+		/// <summary>
+		/// Size the position so the configured percentage of equity is lost if the stop hits.
+		/// </summary>
+		RiskPercent
+	}
 }
-
-/// <summary>
-/// Position sizing modes supported by <see cref="DayTradingPamxaStrategy"/>.
-/// </summary>
-public enum PositionSizingModes
-{
-	/// <summary>
-	/// Always trade a fixed volume regardless of the stop distance.
-	/// </summary>
-	FixedVolume,
-
-	/// <summary>
-	/// Size the position so the configured percentage of equity is lost if the stop hits.
-	/// </summary>
-	RiskPercent
-}
-
-

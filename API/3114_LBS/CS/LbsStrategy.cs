@@ -610,21 +610,17 @@ public class LbsStrategy : Strategy
 			_stopForLong = false;
 		}
 	}
+
+	public enum MoneyManagementModes
+	{
+		/// <summary>
+		/// Use a fixed trading volume.
+		/// </summary>
+		FixedLot,
+
+		/// <summary>
+		/// Risk a percentage of the portfolio based on stop distance.
+		/// </summary>
+		RiskPercent
+	}
 }
-
-/// <summary>
-/// Money management options reproduced from the original MQL strategy.
-/// </summary>
-public enum MoneyManagementModes
-{
-	/// <summary>
-	/// Use a fixed trading volume.
-	/// </summary>
-	FixedLot,
-
-	/// <summary>
-	/// Risk a percentage of the portfolio based on stop distance.
-	/// </summary>
-	RiskPercent
-}
-

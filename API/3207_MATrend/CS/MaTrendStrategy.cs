@@ -511,63 +511,59 @@ public class MaTrendStrategy : Strategy
 			_ => new WeightedMovingAverage { Length = length },
 		};
 	}
-}
 
-/// <summary>
-/// Moving average methods supported by <see cref="MaTrendStrategy"/>.
-/// </summary>
-public enum MovingAverageKinds
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Simple,
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Exponential,
-	/// <summary>
-	/// Smoothed moving average.
-	/// </summary>
-	Smoothed,
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	Weighted
-}
+	public enum MovingAverageKinds
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Simple,
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Exponential,
+		/// <summary>
+		/// Smoothed moving average.
+		/// </summary>
+		Smoothed,
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		Weighted
+	}
 
-/// <summary>
-/// Candle price modes compatible with <see cref="MaTrendStrategy"/>.
-/// </summary>
-public enum AppliedPriceModes
-{
 	/// <summary>
-	/// Close price of the candle.
+	/// Candle price modes compatible with <see cref="MaTrendStrategy"/>.
 	/// </summary>
-	Close,
-	/// <summary>
-	/// Open price of the candle.
-	/// </summary>
-	Open,
-	/// <summary>
-	/// High price of the candle.
-	/// </summary>
-	High,
-	/// <summary>
-	/// Low price of the candle.
-	/// </summary>
-	Low,
-	/// <summary>
-	/// Median price (high + low) / 2.
-	/// </summary>
-	Median,
-	/// <summary>
-	/// Typical price (high + low + close) / 3.
-	/// </summary>
-	Typical,
-	/// <summary>
-	/// Weighted price (2 * close + high + low) / 4.
-	/// </summary>
-	Weighted
+	public enum AppliedPriceModes
+	{
+		/// <summary>
+		/// Close price of the candle.
+		/// </summary>
+		Close,
+		/// <summary>
+		/// Open price of the candle.
+		/// </summary>
+		Open,
+		/// <summary>
+		/// High price of the candle.
+		/// </summary>
+		High,
+		/// <summary>
+		/// Low price of the candle.
+		/// </summary>
+		Low,
+		/// <summary>
+		/// Median price (high + low) / 2.
+		/// </summary>
+		Median,
+		/// <summary>
+		/// Typical price (high + low + close) / 3.
+		/// </summary>
+		Typical,
+		/// <summary>
+		/// Weighted price (2 * close + high + low) / 4.
+		/// </summary>
+		Weighted
+	}
 }
-

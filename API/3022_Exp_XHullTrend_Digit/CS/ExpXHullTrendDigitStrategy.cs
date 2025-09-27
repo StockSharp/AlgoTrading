@@ -344,185 +344,181 @@ public class ExpXHullTrendDigitStrategy : Strategy
 				SellMarket();
 		}
 	}
-}
 
-/// <summary>
-/// Available smoothing methods for the indicator internals.
-/// </summary>
-public enum SmoothMethods
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Exponential,
-
-	/// <summary>
-	/// Smoothed moving average (RMA).
-	/// </summary>
-	Smoothed,
-
-	/// <summary>
-	/// Weighted moving average.
-	/// </summary>
-	Weighted
-}
-
-/// <summary>
-/// Indicator reproducing the logic of the XHullTrend Digit MQL5 indicator.
-/// </summary>
-public class XHullTrendDigitIndicator : BaseIndicator<decimal>
-{
-	private IIndicator _shortMa;
-	private IIndicator _longMa;
-	private IIndicator _hullSmoother;
-	private IIndicator _signalSmoother;
-
-	public int BaseLength { get; set; } = 20;
-	public int SignalLength { get; set; } = 5;
-	public CandlePrice PriceType { get; set; } = CandlePrice.Close;
-	public SmoothMethods Method { get; set; } = SmoothMethods.Weighted;
-	public int Phase { get; set; }
-	public int RoundingDigits { get; set; } = 2;
-	public decimal PriceStep { get; set; } = 0.0001m;
-
-	protected override IIndicatorValue OnProcess(IIndicatorValue input)
+	public enum SmoothMethods
 	{
-		if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
-			return new XHullTrendDigitValue(this, input, 0m, 0m, false);
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Simple,
 
-		EnsureIndicators();
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Exponential,
 
-		var price = SelectPrice(candle);
-		var time = input.Time;
+		/// <summary>
+		/// Smoothed moving average (RMA).
+		/// </summary>
+		Smoothed,
 
-		var shortValue = _shortMa!.Process(new DecimalIndicatorValue(_shortMa, price, time)).ToDecimal();
-		var longValue = _longMa!.Process(new DecimalIndicatorValue(_longMa, price, time)).ToDecimal();
+		/// <summary>
+		/// Weighted moving average.
+		/// </summary>
+		Weighted
+	}
 
-		if (!_shortMa.IsFormed || !_longMa.IsFormed)
+	/// <summary>
+	/// Indicator reproducing the logic of the XHullTrend Digit MQL5 indicator.
+	/// </summary>
+	public class XHullTrendDigitIndicator : BaseIndicator<decimal>
+	{
+		private IIndicator _shortMa;
+		private IIndicator _longMa;
+		private IIndicator _hullSmoother;
+		private IIndicator _signalSmoother;
+
+		public int BaseLength { get; set; } = 20;
+		public int SignalLength { get; set; } = 5;
+		public CandlePrice PriceType { get; set; } = CandlePrice.Close;
+		public SmoothMethods Method { get; set; } = SmoothMethods.Weighted;
+		public int Phase { get; set; }
+		public int RoundingDigits { get; set; } = 2;
+		public decimal PriceStep { get; set; } = 0.0001m;
+
+		protected override IIndicatorValue OnProcess(IIndicatorValue input)
 		{
-			IsFormed = false;
-			return new XHullTrendDigitValue(this, input, shortValue, longValue, false);
+			if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
+				return new XHullTrendDigitValue(this, input, 0m, 0m, false);
+
+			EnsureIndicators();
+
+			var price = SelectPrice(candle);
+			var time = input.Time;
+
+			var shortValue = _shortMa!.Process(new DecimalIndicatorValue(_shortMa, price, time)).ToDecimal();
+			var longValue = _longMa!.Process(new DecimalIndicatorValue(_longMa, price, time)).ToDecimal();
+
+			if (!_shortMa.IsFormed || !_longMa.IsFormed)
+			{
+				IsFormed = false;
+				return new XHullTrendDigitValue(this, input, shortValue, longValue, false);
+			}
+
+			var hullRaw = 2m * shortValue - longValue;
+			var hullValue = _hullSmoother!.Process(new DecimalIndicatorValue(_hullSmoother, hullRaw, time)).ToDecimal();
+			var signalValue = _signalSmoother!.Process(new DecimalIndicatorValue(_signalSmoother, hullValue, time)).ToDecimal();
+
+			IsFormed = _signalSmoother.IsFormed;
+
+			var fast = RoundValue(hullValue);
+			var slow = RoundValue(signalValue);
+
+			if (fast == slow && hullValue != signalValue)
+			{
+				var step = GetRoundedStep();
+				if (step > 0m)
+				{
+					if (hullValue > signalValue)
+						fast += step;
+					else
+						slow += step;
+				}
+			}
+
+			return new XHullTrendDigitValue(this, input, fast, slow, IsFormed);
 		}
 
-		var hullRaw = 2m * shortValue - longValue;
-		var hullValue = _hullSmoother!.Process(new DecimalIndicatorValue(_hullSmoother, hullRaw, time)).ToDecimal();
-		var signalValue = _signalSmoother!.Process(new DecimalIndicatorValue(_signalSmoother, hullValue, time)).ToDecimal();
+		public override void Reset()
+		{
+			base.Reset();
+			_shortMa?.Reset();
+			_longMa?.Reset();
+			_hullSmoother?.Reset();
+			_signalSmoother?.Reset();
+		}
 
-		IsFormed = _signalSmoother.IsFormed;
+		private void EnsureIndicators()
+		{
+			if (_shortMa != null && _longMa != null && _hullSmoother != null && _signalSmoother != null)
+				return;
 
-		var fast = RoundValue(hullValue);
-		var slow = RoundValue(signalValue);
+			var halfLength = Math.Max(1, BaseLength / 2);
+			var sqrtLength = Math.Max(1, (int)Math.Max(1, Math.Sqrt(BaseLength)));
 
-		if (fast == slow && hullValue != signalValue)
+			_shortMa = CreateSmoother(halfLength);
+			_longMa = CreateSmoother(Math.Max(1, BaseLength));
+			_hullSmoother = CreateSmoother(Math.Max(1, SignalLength));
+			_signalSmoother = CreateSmoother(sqrtLength);
+		}
+
+		private IIndicator CreateSmoother(int length)
+		{
+			return Method switch
+			{
+				SmoothMethods.Simple => new SimpleMovingAverage { Length = length },
+				SmoothMethods.Exponential => new ExponentialMovingAverage { Length = length },
+				SmoothMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+				_ => new WeightedMovingAverage { Length = length },
+			};
+		}
+
+		private decimal SelectPrice(ICandleMessage candle)
+		{
+			return PriceType switch
+			{
+				CandlePrice.Open => candle.OpenPrice,
+				CandlePrice.High => candle.HighPrice,
+				CandlePrice.Low => candle.LowPrice,
+				CandlePrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+				CandlePrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+				CandlePrice.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+				CandlePrice.Average => (candle.OpenPrice + candle.ClosePrice) / 2m,
+				_ => candle.ClosePrice,
+			};
+		}
+
+		private decimal RoundValue(decimal value)
 		{
 			var step = GetRoundedStep();
-			if (step > 0m)
-			{
-				if (hullValue > signalValue)
-					fast += step;
-				else
-					slow += step;
-			}
+			if (step <= 0m)
+				return value;
+
+			return Math.Round(value / step, MidpointRounding.AwayFromZero) * step;
 		}
 
-		return new XHullTrendDigitValue(this, input, fast, slow, IsFormed);
-	}
-
-	public override void Reset()
-	{
-		base.Reset();
-		_shortMa?.Reset();
-		_longMa?.Reset();
-		_hullSmoother?.Reset();
-		_signalSmoother?.Reset();
-	}
-
-	private void EnsureIndicators()
-	{
-		if (_shortMa != null && _longMa != null && _hullSmoother != null && _signalSmoother != null)
-			return;
-
-		var halfLength = Math.Max(1, BaseLength / 2);
-		var sqrtLength = Math.Max(1, (int)Math.Max(1, Math.Sqrt(BaseLength)));
-
-		_shortMa = CreateSmoother(halfLength);
-		_longMa = CreateSmoother(Math.Max(1, BaseLength));
-		_hullSmoother = CreateSmoother(Math.Max(1, SignalLength));
-		_signalSmoother = CreateSmoother(sqrtLength);
-	}
-
-	private IIndicator CreateSmoother(int length)
-	{
-		return Method switch
+		private decimal GetRoundedStep()
 		{
-			SmoothMethods.Simple => new SimpleMovingAverage { Length = length },
-			SmoothMethods.Exponential => new ExponentialMovingAverage { Length = length },
-			SmoothMethods.Smoothed => new SmoothedMovingAverage { Length = length },
-			_ => new WeightedMovingAverage { Length = length },
-		};
+			var baseStep = PriceStep > 0m ? PriceStep : 0.0001m;
+			var multiplier = (decimal)Math.Pow(10, RoundingDigits);
+			return baseStep * (multiplier <= 0m ? 1m : multiplier);
+		}
 	}
 
-	private decimal SelectPrice(ICandleMessage candle)
+	/// <summary>
+	/// Indicator value carrying both fast and slow rounded lines.
+	/// </summary>
+	public class XHullTrendDigitValue : ComplexIndicatorValue
 	{
-		return PriceType switch
+		public XHullTrendDigitValue(IIndicator indicator, IIndicatorValue input, decimal fast, decimal slow, bool isFormed)
+			: base(indicator, input, (nameof(Fast), fast), (nameof(Slow), slow))
 		{
-			CandlePrice.Open => candle.OpenPrice,
-			CandlePrice.High => candle.HighPrice,
-			CandlePrice.Low => candle.LowPrice,
-			CandlePrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			CandlePrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			CandlePrice.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
-			CandlePrice.Average => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			_ => candle.ClosePrice,
-		};
-	}
+			IsFormed = isFormed;
+		}
 
-	private decimal RoundValue(decimal value)
-	{
-		var step = GetRoundedStep();
-		if (step <= 0m)
-			return value;
+		/// <summary>
+		/// Rounded fast line of the indicator.
+		/// </summary>
+		public decimal Fast => (decimal)GetValue(nameof(Fast));
 
-		return Math.Round(value / step, MidpointRounding.AwayFromZero) * step;
-	}
+		/// <summary>
+		/// Rounded slow line of the indicator.
+		/// </summary>
+		public decimal Slow => (decimal)GetValue(nameof(Slow));
 
-	private decimal GetRoundedStep()
-	{
-		var baseStep = PriceStep > 0m ? PriceStep : 0.0001m;
-		var multiplier = (decimal)Math.Pow(10, RoundingDigits);
-		return baseStep * (multiplier <= 0m ? 1m : multiplier);
+		/// <summary>
+		/// Shows whether all internal smoothers are formed.
+		/// </summary>
+		public bool IsFormed { get; }
 	}
 }
-
-/// <summary>
-/// Indicator value carrying both fast and slow rounded lines.
-/// </summary>
-public class XHullTrendDigitValue : ComplexIndicatorValue
-{
-	public XHullTrendDigitValue(IIndicator indicator, IIndicatorValue input, decimal fast, decimal slow, bool isFormed)
-		: base(indicator, input, (nameof(Fast), fast), (nameof(Slow), slow))
-	{
-		IsFormed = isFormed;
-	}
-
-	/// <summary>
-	/// Rounded fast line of the indicator.
-	/// </summary>
-	public decimal Fast => (decimal)GetValue(nameof(Fast));
-
-	/// <summary>
-	/// Rounded slow line of the indicator.
-	/// </summary>
-	public decimal Slow => (decimal)GetValue(nameof(Slow));
-
-	/// <summary>
-	/// Shows whether all internal smoothers are formed.
-	/// </summary>
-	public bool IsFormed { get; }
-}
-

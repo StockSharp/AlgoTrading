@@ -409,151 +409,147 @@ public class StochasticCgOscillatorStrategy : Strategy
 		if (Position == 0)
 			_entryPrice = null;
 	}
-}
 
-/// <summary>
-/// Position sizing modes supported by the strategy.
-/// </summary>
-public enum PositionSizingModes
-{
-	/// <summary>Always trade the configured fixed volume.</summary>
-	FixedVolume,
+	public enum PositionSizingModes
+	{
+		/// <summary>Always trade the configured fixed volume.</summary>
+		FixedVolume,
 
-	/// <summary>Convert a share of the portfolio value into contracts.</summary>
-	PortfolioShare
-}
-
-/// <summary>
-/// Stochastic Center of Gravity oscillator with trigger line output.
-/// </summary>
-public sealed class StochasticCgOscillatorIndicator : BaseIndicator<decimal>
-{
-	private readonly List<decimal> _medianPrices = new();
-	private readonly List<decimal> _cgValues = new();
-	private readonly decimal[] _normalizedBuffer = new decimal[4];
-	private int _normalizedCount;
-	private decimal? _previousOscillator;
-	private int _length = 10;
+		/// <summary>Convert a share of the portfolio value into contracts.</summary>
+		PortfolioShare
+	}
 
 	/// <summary>
-	/// Gets or sets the calculation length.
+	/// Stochastic Center of Gravity oscillator with trigger line output.
 	/// </summary>
-	public int Length
+	public sealed class StochasticCgOscillatorIndicator : BaseIndicator<decimal>
 	{
-		get => _length;
-		set => _length = Math.Max(1, value);
+		private readonly List<decimal> _medianPrices = new();
+		private readonly List<decimal> _cgValues = new();
+		private readonly decimal[] _normalizedBuffer = new decimal[4];
+		private int _normalizedCount;
+		private decimal? _previousOscillator;
+		private int _length = 10;
+
+		/// <summary>
+		/// Gets or sets the calculation length.
+		/// </summary>
+		public int Length
+		{
+			get => _length;
+			set => _length = Math.Max(1, value);
+		}
+
+		/// <inheritdoc />
+		protected override IIndicatorValue OnProcess(IIndicatorValue input)
+		{
+			if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
+				return new StochasticCgOscillatorValue(this, input, null, null);
+
+			var price = (candle.HighPrice + candle.LowPrice) / 2m;
+			_medianPrices.Add(price);
+			while (_medianPrices.Count > Length)
+				_medianPrices.RemoveAt(0);
+
+			if (_medianPrices.Count < Length)
+			{
+				IsFormed = false;
+				return new StochasticCgOscillatorValue(this, input, null, null);
+			}
+
+			decimal num = 0m;
+			decimal denom = 0m;
+			var weight = 1;
+
+			for (var index = _medianPrices.Count - 1; index >= 0; index--)
+			{
+				var median = _medianPrices[index];
+				num += weight * median;
+				denom += median;
+				weight++;
+			}
+
+			decimal cg;
+			if (denom != 0m)
+				cg = -num / denom + (Length + 1m) / 2m;
+			else
+				cg = 0m;
+
+			_cgValues.Add(cg);
+			while (_cgValues.Count > Length)
+				_cgValues.RemoveAt(0);
+
+			var high = cg;
+			var low = cg;
+
+			for (var i = 0; i < _cgValues.Count; i++)
+			{
+				var value = _cgValues[i];
+				if (value > high)
+					high = value;
+				if (value < low)
+					low = value;
+			}
+
+			decimal normalized;
+			if (high != low)
+				normalized = (cg - low) / (high - low);
+			else
+				normalized = 0m;
+
+			var limit = Math.Min(_normalizedCount, 3);
+			for (var shift = limit; shift > 0; shift--)
+				_normalizedBuffer[shift] = _normalizedBuffer[shift - 1];
+
+			_normalizedBuffer[0] = normalized;
+
+			if (_normalizedCount < 4)
+				_normalizedCount++;
+
+			if (_normalizedCount < 4)
+			{
+				IsFormed = false;
+				return new StochasticCgOscillatorValue(this, input, null, null);
+			}
+
+			var smoothed = (4m * _normalizedBuffer[0] + 3m * _normalizedBuffer[1] + 2m * _normalizedBuffer[2] + _normalizedBuffer[3]) / 10m;
+			var oscillator = 2m * (smoothed - 0.5m);
+			var triggerSource = _previousOscillator ?? oscillator;
+			var trigger = 0.96m * (triggerSource + 0.02m);
+			_previousOscillator = oscillator;
+			IsFormed = true;
+
+			return new StochasticCgOscillatorValue(this, input, oscillator, trigger);
+		}
+
+		/// <inheritdoc />
+		protected override void OnReset()
+		{
+			base.OnReset();
+
+			_medianPrices.Clear();
+			_cgValues.Clear();
+			Array.Clear(_normalizedBuffer, 0, _normalizedBuffer.Length);
+			_normalizedCount = 0;
+			_previousOscillator = null;
+			IsFormed = false;
+		}
 	}
 
-	/// <inheritdoc />
-	protected override IIndicatorValue OnProcess(IIndicatorValue input)
+	/// <summary>
+	/// Complex indicator value exposing both oscillator and trigger line.
+	/// </summary>
+	public sealed class StochasticCgOscillatorValue : ComplexIndicatorValue
 	{
-		if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
-			return new StochasticCgOscillatorValue(this, input, null, null);
-
-		var price = (candle.HighPrice + candle.LowPrice) / 2m;
-		_medianPrices.Add(price);
-		while (_medianPrices.Count > Length)
-			_medianPrices.RemoveAt(0);
-
-		if (_medianPrices.Count < Length)
+		public StochasticCgOscillatorValue(IIndicator indicator, IIndicatorValue input, decimal? main, decimal? trigger)
+			: base(indicator, input, (nameof(Main), main), (nameof(Trigger), trigger))
 		{
-			IsFormed = false;
-			return new StochasticCgOscillatorValue(this, input, null, null);
 		}
 
-		decimal num = 0m;
-		decimal denom = 0m;
-		var weight = 1;
+		/// <summary>Gets the oscillator main value.</summary>
+		public decimal? Main => (decimal?)GetValue(nameof(Main));
 
-		for (var index = _medianPrices.Count - 1; index >= 0; index--)
-		{
-			var median = _medianPrices[index];
-			num += weight * median;
-			denom += median;
-			weight++;
-		}
-
-		decimal cg;
-		if (denom != 0m)
-			cg = -num / denom + (Length + 1m) / 2m;
-		else
-			cg = 0m;
-
-		_cgValues.Add(cg);
-		while (_cgValues.Count > Length)
-			_cgValues.RemoveAt(0);
-
-		var high = cg;
-		var low = cg;
-
-		for (var i = 0; i < _cgValues.Count; i++)
-		{
-			var value = _cgValues[i];
-			if (value > high)
-				high = value;
-			if (value < low)
-				low = value;
-		}
-
-		decimal normalized;
-		if (high != low)
-			normalized = (cg - low) / (high - low);
-		else
-			normalized = 0m;
-
-		var limit = Math.Min(_normalizedCount, 3);
-		for (var shift = limit; shift > 0; shift--)
-			_normalizedBuffer[shift] = _normalizedBuffer[shift - 1];
-
-		_normalizedBuffer[0] = normalized;
-
-		if (_normalizedCount < 4)
-			_normalizedCount++;
-
-		if (_normalizedCount < 4)
-		{
-			IsFormed = false;
-			return new StochasticCgOscillatorValue(this, input, null, null);
-		}
-
-		var smoothed = (4m * _normalizedBuffer[0] + 3m * _normalizedBuffer[1] + 2m * _normalizedBuffer[2] + _normalizedBuffer[3]) / 10m;
-		var oscillator = 2m * (smoothed - 0.5m);
-		var triggerSource = _previousOscillator ?? oscillator;
-		var trigger = 0.96m * (triggerSource + 0.02m);
-		_previousOscillator = oscillator;
-		IsFormed = true;
-
-		return new StochasticCgOscillatorValue(this, input, oscillator, trigger);
-	}
-
-	/// <inheritdoc />
-	protected override void OnReset()
-	{
-		base.OnReset();
-
-		_medianPrices.Clear();
-		_cgValues.Clear();
-		Array.Clear(_normalizedBuffer, 0, _normalizedBuffer.Length);
-		_normalizedCount = 0;
-		_previousOscillator = null;
-		IsFormed = false;
+		/// <summary>Gets the trigger line value.</summary>
+		public decimal? Trigger => (decimal?)GetValue(nameof(Trigger));
 	}
 }
-
-/// <summary>
-/// Complex indicator value exposing both oscillator and trigger line.
-/// </summary>
-public sealed class StochasticCgOscillatorValue : ComplexIndicatorValue
-{
-	public StochasticCgOscillatorValue(IIndicator indicator, IIndicatorValue input, decimal? main, decimal? trigger)
-		: base(indicator, input, (nameof(Main), main), (nameof(Trigger), trigger))
-	{
-	}
-
-	/// <summary>Gets the oscillator main value.</summary>
-	public decimal? Main => (decimal?)GetValue(nameof(Main));
-
-	/// <summary>Gets the trigger line value.</summary>
-	public decimal? Trigger => (decimal?)GetValue(nameof(Trigger));
-}
-

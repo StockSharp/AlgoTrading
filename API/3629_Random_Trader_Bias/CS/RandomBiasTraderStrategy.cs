@@ -493,21 +493,17 @@ public class RandomBiasTraderStrategy : Strategy
 		_takePrice = null;
 		_breakevenActivated = false;
 	}
+
+	public enum LossModes
+	{
+		/// <summary>
+		/// Calculate stop distance from the ATR(10) indicator.
+		/// </summary>
+		Atr,
+
+		/// <summary>
+		/// Use fixed pip distance for the stop.
+		/// </summary>
+		Pip
+	}
 }
-
-/// <summary>
-/// Stop loss calculation modes supported by <see cref="RandomBiasTraderStrategy"/>.
-/// </summary>
-public enum LossModes
-{
-	/// <summary>
-	/// Calculate stop distance from the ATR(10) indicator.
-	/// </summary>
-	Atr,
-
-	/// <summary>
-	/// Use fixed pip distance for the stop.
-	/// </summary>
-	Pip
-}
-

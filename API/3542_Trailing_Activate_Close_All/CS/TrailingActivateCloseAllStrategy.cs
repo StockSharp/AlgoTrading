@@ -15,23 +15,6 @@ using StockSharp.Messages;
 
 using System.Globalization;
 using StockSharp.Algo;
-
-/// <summary>
-/// Defines how often the trailing logic is evaluated.
-/// </summary>
-public enum TrailingModes
-{
-	/// <summary>
-	/// Recalculate protection on every tick.
-	/// </summary>
-	EveryTick,
-
-	/// <summary>
-	/// Recalculate protection only when a candle closes.
-	/// </summary>
-	NewBar
-}
-
 /// <summary>
 /// Risk management strategy that mirrors the MetaTrader expert "Trailing Activate Close All".
 /// It attaches protective orders to existing positions, applies trailing logic and can liquidate all trades on a profit target.
@@ -686,5 +669,20 @@ public class TrailingActivateCloseAllStrategy : Strategy
 			_ => null
 		};
 	}
-}
 
+	/// <summary>
+	/// Defines how often the trailing logic is evaluated.
+	/// </summary>
+	public enum TrailingModes
+	{
+		/// <summary>
+		/// Recalculate protection on every tick.
+		/// </summary>
+		EveryTick,
+
+		/// <summary>
+		/// Recalculate protection only when a candle closes.
+		/// </summary>
+		NewBar
+	}
+}

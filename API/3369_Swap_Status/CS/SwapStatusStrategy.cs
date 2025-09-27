@@ -276,31 +276,27 @@ public class SwapStatusStrategy : Strategy
 		public string LastShortStatus;
 		public string LastLongStatus;
 	}
+
+	public enum SwapPresets
+	{
+		/// <summary>
+		/// Only monitors the primary strategy security (matches Swap.mq4 behaviour).
+		/// </summary>
+		PrimarySymbol,
+
+		/// <summary>
+		/// Uses the MetaTrader major pairs watch list.
+		/// </summary>
+		MajorPairs,
+
+		/// <summary>
+		/// Uses the MetaTrader minor pairs watch list.
+		/// </summary>
+		MinorPairs,
+
+		/// <summary>
+		/// Uses the MetaTrader exotic pairs watch list.
+		/// </summary>
+		ExoticPairs
+	}
 }
-
-/// <summary>
-/// Lists available symbol presets that mirror the MetaTrader scripts.
-/// </summary>
-public enum SwapPresets
-{
-	/// <summary>
-	/// Only monitors the primary strategy security (matches Swap.mq4 behaviour).
-	/// </summary>
-	PrimarySymbol,
-
-	/// <summary>
-	/// Uses the MetaTrader major pairs watch list.
-	/// </summary>
-	MajorPairs,
-
-	/// <summary>
-	/// Uses the MetaTrader minor pairs watch list.
-	/// </summary>
-	MinorPairs,
-
-	/// <summary>
-	/// Uses the MetaTrader exotic pairs watch list.
-	/// </summary>
-	ExoticPairs
-}
-
