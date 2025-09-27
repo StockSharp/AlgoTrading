@@ -1,5 +1,13 @@
 namespace StockSharp.Samples.Strategies;
 
+using System;
+using System.Collections.Generic;
+
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
+using StockSharp.Messages;
+
 /// <summary>
 /// Moving average crossover strategy.
 /// Enters long when fast MA crosses above slow MA.

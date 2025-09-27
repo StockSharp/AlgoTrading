@@ -99,13 +99,13 @@ public class AscvBrainTrendSignalStrategy : Strategy
 
 		_atrRangeDivisor = Param(nameof(AtrRangeDivisor), 2.3m)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Range Divisor", "Divisor applied to ATR to define neutral zone", "Indicators")
+			.SetDisplay("ATR Range Divisor", "Divisor applied to ATR to define neutral zone", "Indicators");
 
 		_upperThreshold = Param(nameof(UpperThreshold), 53m)
-			.SetDisplay("Upper Threshold", "Stochastic value marking bullish breakout", "Indicators")
+			.SetDisplay("Upper Threshold", "Stochastic value marking bullish breakout", "Indicators");
 
 		_lowerThreshold = Param(nameof(LowerThreshold), 47m)
-			.SetDisplay("Lower Threshold", "Stochastic value marking bearish breakout", "Indicators")
+			.SetDisplay("Lower Threshold", "Stochastic value marking bearish breakout", "Indicators");
 
 		Volume = 1m;
 	}

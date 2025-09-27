@@ -129,7 +129,7 @@ public class MacdSignalStrategy : Strategy
 	{
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 10)
 			.SetNotNegative()
-			.SetDisplay("Take Profit (points)", "Distance for the fixed take-profit target in price steps.", "Risk");
+			.SetDisplay("Take Profit (points)", "Distance for the fixed take-profit target in price steps.", "Risk")
 			.SetCanOptimize(true);
 
 		_tradeVolume = Param(nameof(TradeVolume), 10m)

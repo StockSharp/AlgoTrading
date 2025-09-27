@@ -110,11 +110,11 @@ public class NightFlatTradeStrategy : Strategy
 		_openHour = Param(nameof(OpenHour), 0)
 			.SetRange(0, 23)
 			.SetDisplay("Open Hour", "Hour (exchange time) when entries become active", "Schedule");
-	}
 
 		_rangeLength = Param(nameof(RangeLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Length", "Number of candles composing the range", "Setup");
+	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
