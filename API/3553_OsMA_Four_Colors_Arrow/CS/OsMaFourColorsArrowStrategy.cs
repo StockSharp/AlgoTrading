@@ -29,7 +29,7 @@ public class OsMaFourColorsArrowStrategy : Strategy
 		Both
 	}
 
-	private const decimal ExposureTolerance = 1e-8m;
+	private readonly StrategyParam<decimal> _exposureTolerance;
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _fastPeriod;
@@ -61,6 +61,10 @@ public class OsMaFourColorsArrowStrategy : Strategy
 	/// </summary>
 	public OsMaFourColorsArrowStrategy()
 	{
+		_exposureTolerance = Param(nameof(ExposureTolerance), 1e-8m)
+			.SetGreaterOrEqualThanZero()
+			.SetDisplay("Exposure Tolerance", "Minimal tolerance when comparing aggregated exposure.", "Trading");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for signal generation", "General");
 
@@ -134,6 +138,15 @@ public class OsMaFourColorsArrowStrategy : Strategy
 		.SetGreaterThanZero();
 
 		Volume = TradeVolume;
+	}
+
+	/// <summary>
+	/// Minimal tolerance used when checking aggregated exposure.
+	/// </summary>
+	public decimal ExposureTolerance
+	{
+		get => _exposureTolerance.Value;
+		set => _exposureTolerance.Value = value;
 	}
 
 	/// <summary>

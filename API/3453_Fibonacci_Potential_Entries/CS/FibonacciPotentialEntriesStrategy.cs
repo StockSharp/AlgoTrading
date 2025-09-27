@@ -12,8 +12,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class FibonacciPotentialEntriesStrategy : Strategy
 {
-	private const decimal FirstTradeRiskShare = 0.7m;
-	private const decimal SpreadMultiplier = 3m;
+	private readonly StrategyParam<decimal> _firstTradeRiskShare;
+	private readonly StrategyParam<decimal> _spreadMultiplier;
 	
 	private readonly StrategyParam<decimal> _priceOn50Level;
 	private readonly StrategyParam<decimal> _priceOn61Level;
@@ -30,6 +30,24 @@ public class FibonacciPotentialEntriesStrategy : Strategy
 	private bool _ordersPlaced;
 	private bool _targetHandled;
 	
+	/// <summary>
+	/// Share of the total risk allocated to the first trade.
+	/// </summary>
+	public decimal FirstTradeRiskShare
+	{
+		get => _firstTradeRiskShare.Value;
+		set => _firstTradeRiskShare.Value = value;
+	}
+
+	/// <summary>
+	/// Multiplier applied to the spread when calculating stop orders.
+	/// </summary>
+	public decimal SpreadMultiplier
+	{
+		get => _spreadMultiplier.Value;
+		set => _spreadMultiplier.Value = value;
+	}
+
 	/// <summary>
 	/// Price of the 50% Fibonacci retracement level.
 	/// </summary>
@@ -89,6 +107,14 @@ public class FibonacciPotentialEntriesStrategy : Strategy
 	/// </summary>
 	public FibonacciPotentialEntriesStrategy()
 	{
+		_firstTradeRiskShare = Param(nameof(FirstTradeRiskShare), 0.7m)
+			.SetDisplay("First Trade Risk Share", "Portion of the total risk assigned to the first entry.", "Risk Management")
+			.SetGreaterThanZero();
+
+		_spreadMultiplier = Param(nameof(SpreadMultiplier), 3m)
+			.SetDisplay("Spread Multiplier", "Multiplier applied to the spread when placing stop orders.", "Risk Management")
+			.SetGreaterThanZero();
+
 		_priceOn50Level = Param(nameof(PriceOn50Level), 1.08261m)
 			.SetDisplay("50% Level", "Price on the 50% retracement level", "General");
 		

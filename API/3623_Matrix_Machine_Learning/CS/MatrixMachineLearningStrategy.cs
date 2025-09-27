@@ -13,8 +13,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MatrixMachineLearningStrategy : Strategy
 {
-	private const int MaxIterations = 100;
-	private const double Accuracy = 0.00001;
+	private readonly StrategyParam<int> _maxIterations;
+	private readonly StrategyParam<double> _accuracy;
 
 	private readonly StrategyParam<int> _historyDepth;
 	private readonly StrategyParam<int> _forwardDepth;
@@ -73,6 +73,24 @@ public class MatrixMachineLearningStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Maximum number of Hopfield iterations executed per forecast.
+	/// </summary>
+	public int MaxIterations
+	{
+		get => _maxIterations.Value;
+		set => _maxIterations.Value = value;
+	}
+
+	/// <summary>
+	/// Desired accuracy when checking convergence of neuron states.
+	/// </summary>
+	public double Accuracy
+	{
+		get => _accuracy.Value;
+		set => _accuracy.Value = value;
+	}
+
+	/// <summary>
 	/// Enables verbose logging of the neural network state.
 	/// </summary>
 	public bool EnableDebugLog
@@ -86,6 +104,13 @@ public class MatrixMachineLearningStrategy : Strategy
 	/// </summary>
 	public MatrixMachineLearningStrategy()
 	{
+		_maxIterations = Param(nameof(MaxIterations), 100)
+			.SetGreaterThanZero()
+			.SetDisplay("Max Iterations", "Maximum number of Hopfield iterations executed per forecast.", "Machine Learning");
+
+		_accuracy = Param(nameof(Accuracy), 0.00001)
+			.SetDisplay("Accuracy", "Desired accuracy when checking convergence of neuron states.", "Machine Learning");
+
 		_historyDepth = Param(nameof(HistoryDepth), 120)
 			.SetGreaterThanZero()
 			.SetDisplay("History Depth", "Total amount of closes stored for the Hopfield network.", "Machine Learning")

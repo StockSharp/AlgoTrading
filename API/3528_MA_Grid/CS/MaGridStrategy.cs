@@ -15,7 +15,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MaGridStrategy : Strategy
 {
-	private const decimal VolumeTolerance = 0.0000001m;
+	private readonly StrategyParam<decimal> _volumeTolerance;
 
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _gridAmount;
@@ -47,6 +47,10 @@ public class MaGridStrategy : Strategy
 	/// </summary>
 	public MaGridStrategy()
 	{
+		_volumeTolerance = Param(nameof(VolumeTolerance), 0.0000001m)
+			.SetGreaterOrEqualThanZero()
+			.SetDisplay("Volume Tolerance", "Small tolerance applied when balancing grid exposure.", "Risk");
+
 		_maPeriod = Param(nameof(MaPeriod), 48)
 		.SetRange(5, 400)
 		.SetDisplay("MA Period", "Exponential moving average length", "Grid")
@@ -69,6 +73,15 @@ public class MaGridStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 		.SetDisplay("Candle Type", "Primary candle type used by the strategy", "Data");
+	}
+
+	/// <summary>
+	/// Small tolerance used when comparing accumulated exposure.
+	/// </summary>
+	public decimal VolumeTolerance
+	{
+		get => _volumeTolerance.Value;
+		set => _volumeTolerance.Value = value;
 	}
 
 	/// <summary>
