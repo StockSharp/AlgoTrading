@@ -19,12 +19,24 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class StochasticHistogramStrategy : Strategy
 {
+	public enum TrendModes
+	{
+		/// <summary>
+		/// Generate signals on %K and %D line crossovers.
+		/// </summary>
+		Cross,
+		/// <summary>
+		/// Generate signals when %K leaves overbought/oversold zones.
+		/// </summary>
+		Levels
+	}
+
 	private readonly StrategyParam<int> _kPeriod;
 	private readonly StrategyParam<int> _dPeriod;
 	private readonly StrategyParam<int> _slowing;
 	private readonly StrategyParam<decimal> _highLevel;
 	private readonly StrategyParam<decimal> _lowLevel;
-	private readonly StrategyParam<TrendMode> _mode;
+	private readonly StrategyParam<TrendModes> _mode;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevK;
@@ -79,7 +91,7 @@ public class StochasticHistogramStrategy : Strategy
 	/// <summary>
 	/// Signal generation mode.
 	/// </summary>
-	public TrendMode Mode
+	public TrendModes Mode
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
@@ -127,7 +139,7 @@ public class StochasticHistogramStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(20m, 45m, 5m);
 
-		_mode = Param(nameof(Mode), TrendMode.Cross)
+		_mode = Param(nameof(Mode), TrendModes.Cross)
 			.SetDisplay("Mode", "Signal mode", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -198,7 +210,7 @@ public class StochasticHistogramStrategy : Strategy
 		var buySignal = false;
 		var sellSignal = false;
 
-		if (Mode == TrendMode.Levels)
+		if (Mode == TrendModes.Levels)
 		{
 			// Buy when %K leaves overbought zone, sell when leaving oversold zone.
 			buySignal = _prevK > HighLevel && k <= HighLevel;

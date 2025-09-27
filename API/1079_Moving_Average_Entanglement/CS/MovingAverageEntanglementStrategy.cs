@@ -24,8 +24,8 @@ public class MovingAverageEntanglementStrategy : Strategy
 	private readonly StrategyParam<MaTypes> _maType;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverage _fastMa = null!;
-	private MovingAverage _slowMa = null!;
+	private IIndicator _fastMa = null!;
+	private IIndicator _slowMa = null!;
 	private AverageTrueRange _atr = null!;
 
 	private bool _prevBuyCondition;
@@ -176,12 +176,12 @@ public class MovingAverageEntanglementStrategy : Strategy
 		_prevSellCondition = sellCondition;
 	}
 
-	private static MovingAverage CreateMa(MaTypes type, int length)
+	private static IIndicator CreateMa(MaTypes type, int length)
 	{
 		return type switch
 		{
-		MaTypes.Ema => new ExponentialMovingAverage { Length = length },
-		_ => new SimpleMovingAverage { Length = length },
+			MaTypes.Ema => new ExponentialMovingAverage { Length = length },
+			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
 

@@ -37,7 +37,7 @@ public class RandomStateMachineStrategy : Strategy
 	private readonly StrategyParam<int> _barsHoldShort;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverage _maIndicator = null!;
+	private LengthIndicator<decimal> _maIndicator = null!;
 	private int _barsSinceReset;
 	private int _transitions;
 	private int _barIndex;
@@ -239,7 +239,7 @@ public class RandomStateMachineStrategy : Strategy
 		subscription.Bind(_maIndicator, ProcessCandle).Start();
 	}
 
-	private MovingAverage CreateMa(MaTypes type, int length)
+	private LengthIndicator<decimal> CreateMa(MaTypes type, int length)
 	{
 		return type switch
 		{

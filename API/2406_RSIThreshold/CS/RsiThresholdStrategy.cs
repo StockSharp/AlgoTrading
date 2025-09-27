@@ -19,10 +19,25 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class RsiThresholdStrategy : Strategy
 {
+	public enum TrendModes
+	{
+		/// <summary>
+		/// Trade in the direction of RSI crossings.
+		/// Buy when RSI crosses above the low level, sell when it crosses below the high level.
+		/// </summary>
+		Direct,
+		/// <summary>
+		/// Trade against the direction of RSI crossings.
+		/// Sell when RSI crosses above the low level, buy when it crosses below the high level.
+		/// </summary>
+		Reverse
+	}
+
+
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<decimal> _highLevel;
 	private readonly StrategyParam<decimal> _lowLevel;
-	private readonly StrategyParam<TrendMode> _trend;
+	private readonly StrategyParam<TrendModes> _trend;
 	private readonly StrategyParam<bool> _buyOpen;
 	private readonly StrategyParam<bool> _sellOpen;
 	private readonly StrategyParam<bool> _buyClose;
@@ -36,7 +51,7 @@ public class RsiThresholdStrategy : Strategy
 	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
 	public decimal HighLevel { get => _highLevel.Value; set => _highLevel.Value = value; }
 	public decimal LowLevel { get => _lowLevel.Value; set => _lowLevel.Value = value; }
-	public TrendMode Trend { get => _trend.Value; set => _trend.Value = value; }
+	public TrendModes Trend { get => _trend.Value; set => _trend.Value = value; }
 	public bool BuyOpen { get => _buyOpen.Value; set => _buyOpen.Value = value; }
 	public bool SellOpen { get => _sellOpen.Value; set => _sellOpen.Value = value; }
 	public bool BuyClose { get => _buyClose.Value; set => _buyClose.Value = value; }
@@ -63,7 +78,7 @@ public class RsiThresholdStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(20m, 50m, 5m);
 		
-		_trend = Param(nameof(Trend), TrendMode.Direct)
+		_trend = Param(nameof(Trend), TrendModes.Direct)
 		.SetDisplay("Trend Mode", "Trading direction relative to RSI crossings", "General");
 		
 		_buyOpen = Param(nameof(BuyOpen), true)
@@ -123,7 +138,7 @@ public class RsiThresholdStrategy : Strategy
 			return;
 		}
 		
-		if (Trend == TrendMode.Direct)
+		if (Trend == TrendModes.Direct)
 		{
 			if (_prevRsi <= LowLevel && rsi > LowLevel)
 			// RSI crossed above oversold level

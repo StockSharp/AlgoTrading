@@ -19,6 +19,15 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ChoWithFlatStrategy : Strategy
 {
+	public enum MovingAverageTypes
+	{
+		Simple,
+		Exponential,
+		Weighted,
+		Smoothed,
+		LinearWeighted
+	}
+
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;

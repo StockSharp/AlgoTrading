@@ -30,7 +30,7 @@ public class MaTrend2Strategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
 	private readonly StrategyParam<MovingAverageMethods> _maMethod;
-	private readonly StrategyParam<CandlePrice> _maPrice;
+	private readonly StrategyParam<CandlePrices> _maPrice;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<TradingDirections> _tradingDirection;
 	private readonly StrategyParam<bool> _onlyOnePosition;
@@ -127,7 +127,7 @@ public class MaTrend2Strategy : Strategy
 	/// <summary>
 	/// Candle price used by the moving average calculation.
 	/// </summary>
-	public CandlePrice MaPrice
+	public CandlePrices MaPrice
 	{
 		get => _maPrice.Value;
 		set => _maPrice.Value = value;
@@ -217,7 +217,7 @@ public class MaTrend2Strategy : Strategy
 		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.LinearWeighted)
 			.SetDisplay("MA Method", "Moving average smoothing method", "Indicators");
 
-		_maPrice = Param(nameof(MaPrice), CandlePrice.Weighted)
+		_maPrice = Param(nameof(MaPrice), CandlePrices.Weighted)
 			.SetDisplay("MA Price", "Candle price used by the moving average", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -540,7 +540,7 @@ public class MaTrend2Strategy : Strategy
 		return digits;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length, CandlePrice price)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length, CandlePrices price)
 	{
 		LengthIndicator<decimal> indicator = method switch
 		{
@@ -633,6 +633,38 @@ public class MaTrend2Strategy : Strategy
 		/// Linear weighted moving average.
 		/// </summary>
 		LinearWeighted
+	}
+
+	public enum CandlePrices
+	{
+		/// <summary>
+		/// Open price.
+		/// </summary>
+		Open,
+		/// <summary>
+		/// High price.
+		/// </summary>
+		High,
+		/// <summary>
+		/// Low price.
+		/// </summary>
+		Low,
+		/// <summary>
+		/// Close price.
+		/// </summary>
+		Close,
+		/// <summary>
+		/// Median price (HL/2).
+		/// </summary>
+		Median,
+		/// <summary>
+		/// Typical price (HLC/3).
+		/// </summary>
+		Typical,
+		/// <summary>
+		/// Weighted price (HLCC/4).
+		/// </summary>
+		Weighted
 	}
 }
 

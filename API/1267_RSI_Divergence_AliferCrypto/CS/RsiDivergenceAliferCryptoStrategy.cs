@@ -16,47 +16,48 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// RSI divergence strategy with optional trend and RSI zone filters.
 /// </summary>
-public class RsiDivergenceAliferCryptoStrategy : Strategy {
-        /// <summary>
-        /// Moving average types.
-        /// </summary>
-        public enum MaTypes
-        {
-                /// <summary> Simple moving average. </summary>
-                Sma,
-                /// <summary> Exponential moving average. </summary>
-                Ema,
-                /// <summary> Smoothed moving average. </summary>
-                Smma,
-                /// <summary> Weighted moving average. </summary>
-                Wma,
-                /// <summary> Volume weighted moving average. </summary>
-                Vwma
-        }
+public class RsiDivergenceAliferCryptoStrategy : Strategy
+{
+	/// <summary>
+	/// Moving average types.
+	/// </summary>
+	public enum MaTypes
+	{
+		/// <summary> Simple moving average. </summary>
+		Sma,
+		/// <summary> Exponential moving average. </summary>
+		Ema,
+		/// <summary> Smoothed moving average. </summary>
+		Smma,
+		/// <summary> Weighted moving average. </summary>
+		Wma,
+		/// <summary> Volume weighted moving average. </summary>
+		Vwma
+	}
 
-        /// <summary>
-        /// Stop loss and take profit calculation method.
-        /// </summary>
-        public enum SlTpMethods
-        {
-                /// <summary> Use recent swing high/low. </summary>
-                Swing,
-                /// <summary> Use ATR based calculation. </summary>
-                Atr
-        }
+	/// <summary>
+	/// Stop loss and take profit calculation method.
+	/// </summary>
+	public enum SlTpMethods
+	{
+		/// <summary> Use recent swing high/low. </summary>
+		Swing,
+		/// <summary> Use ATR based calculation. </summary>
+		Atr
+	}
 
-        /// <summary>
-        /// Exit levels mode.
-        /// </summary>
-        public enum ExitModes
-        {
-                /// <summary> Recalculate SL/TP each bar. </summary>
-                Dynamic,
-                /// <summary> Lock SL/TP at entry. </summary>
-                Static
-        }
+	/// <summary>
+	/// Exit levels mode.
+	/// </summary>
+	public enum ExitModes
+	{
+		/// <summary> Recalculate SL/TP each bar. </summary>
+		Dynamic,
+		/// <summary> Lock SL/TP at entry. </summary>
+		Static
+	}
 
-        private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<int> _lookLeft;
 	private readonly StrategyParam<int> _lookRight;
 	private readonly StrategyParam<int> _rangeLower;
@@ -98,88 +99,109 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy {
 	private decimal? _slPrice;
 	private decimal? _tpPrice;
 
-	public int RsiLength {
+	public int RsiLength
+	{
 		get => _rsiLength.Value;
 		set => _rsiLength.Value = value;
 	}
-	public int LookLeft {
+	public int LookLeft
+	{
 		get => _lookLeft.Value;
 		set => _lookLeft.Value = value;
 	}
-	public int LookRight {
+	public int LookRight
+	{
 		get => _lookRight.Value;
 		set => _lookRight.Value = value;
 	}
-	public int RangeLower {
+	public int RangeLower
+	{
 		get => _rangeLower.Value;
 		set => _rangeLower.Value = value;
 	}
-	public int RangeUpper {
+	public int RangeUpper
+	{
 		get => _rangeUpper.Value;
 		set => _rangeUpper.Value = value;
 	}
-	public bool EnableRsiFilter {
+	public bool EnableRsiFilter
+	{
 		get => _enableRsiFilter.Value;
 		set => _enableRsiFilter.Value = value;
 	}
-	public int OversoldLevel {
+	public int OversoldLevel
+	{
 		get => _oversoldLevel.Value;
 		set => _oversoldLevel.Value = value;
 	}
-	public int OverboughtLevel {
+	public int OverboughtLevel
+	{
 		get => _overboughtLevel.Value;
 		set => _overboughtLevel.Value = value;
 	}
-	public bool EnableTrendFilter {
+	public bool EnableTrendFilter
+	{
 		get => _enableTrendFilter.Value;
 		set => _enableTrendFilter.Value = value;
 	}
-	public MaTypes TrendMaType {
+	public MaTypes TrendMaType
+	{
 		get => _maType.Value;
 		set => _maType.Value = value;
 	}
-	public int TrendMaLength {
+	public int TrendMaLength
+	{
 		get => _maLength.Value;
 		set => _maLength.Value = value;
 	}
-	public SlTpMethods Method {
+	public SlTpMethods Method
+	{
 		get => _method.Value;
 		set => _method.Value = value;
 	}
-	public ExitModes ExitMode {
+	public ExitModes ExitMode
+	{
 		get => _exitMode.Value;
 		set => _exitMode.Value = value;
 	}
-	public int SwingLook {
+	public int SwingLook
+	{
 		get => _swingLook.Value;
 		set => _swingLook.Value = value;
 	}
-	public decimal SwingMarginPct {
+	public decimal SwingMarginPct
+	{
 		get => _swingMarginPct.Value;
 		set => _swingMarginPct.Value = value;
 	}
-	public decimal RrSwing {
+	public decimal RrSwing
+	{
 		get => _rrSwing.Value;
 		set => _rrSwing.Value = value;
 	}
-	public int AtrLength {
+	public int AtrLength
+	{
 		get => _atrLength.Value;
 		set => _atrLength.Value = value;
 	}
-	public decimal AtrMultiplier {
+	public decimal AtrMultiplier
+	{
 		get => _atrMultiplier.Value;
 		set => _atrMultiplier.Value = value;
 	}
-	public decimal RrAtr {
+	public decimal RrAtr
+	{
 		get => _rrAtr.Value;
 		set => _rrAtr.Value = value;
 	}
-	public DataType CandleType {
+	public DataType CandleType
+	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	public RsiDivergenceAliferCryptoStrategy() {
+	public RsiDivergenceAliferCryptoStrategy()
+	{
 		_rsiLength = Param(nameof(RsiLength), 14)
 						 .SetDisplay("RSI Length", "RSI calculation length",
 									 "Indicators");
@@ -215,7 +237,7 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy {
 		_method = Param(nameof(Method), SlTpMethods.Swing)
 					  .SetDisplay("SL/TP Method", "Stop/target method", "Risk");
 		_exitMode =
-			Param(nameof(ExitMode), Strategies.ExitModes.Dynamic)
+			Param(nameof(ExitMode), ExitModes.Dynamic)
 				.SetDisplay("Exit Mode", "Dynamic or static exits", "Risk");
 		_swingLook = Param(nameof(SwingLook), 20)
 						 .SetDisplay("Swing Lookback",
@@ -243,7 +265,8 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy {
 	public override IEnumerable<(Security sec, DataType dt)>
 	GetWorkingSecurities() => [(Security, CandleType)];
 
-	protected override void OnReseted() {
+	protected override void OnReseted()
+	{
 		base.OnReseted();
 		_rsiBuffer.Clear();
 		_lowBuffer.Clear();
@@ -263,7 +286,8 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy {
 		_tpPrice = null;
 	}
 
-	protected override void OnStarted(DateTimeOffset time) {
+	protected override void OnStarted(DateTimeOffset time)
+	{
 		base.OnStarted(time);
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
@@ -273,11 +297,13 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy {
 		var atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(rsi, ma, swingLow, swingHigh, atr, ProcessCandle)
+		subscription
+			.Bind(rsi, ma, swingLow, swingHigh, atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
-		if (area != null) {
+		if (area != null)
+		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, rsi);
 			DrawIndicator(area, ma);
@@ -292,7 +318,8 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy {
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsi,
 							   decimal trendMa, decimal swingLow,
-							   decimal swingHigh, decimal atr) {
+							   decimal swingHigh, decimal atr)
+	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
@@ -305,7 +332,8 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy {
 		_highBuffer.Add(candle.HighPrice);
 
 		var maxCount = LookLeft + LookRight + 1;
-		if (_rsiBuffer.Count > maxCount) {
+		if (_rsiBuffer.Count > maxCount)
+		{
 			_rsiBuffer.RemoveAt(0);
 			_lowBuffer.RemoveAt(0);
 			_highBuffer.RemoveAt(0);
@@ -314,7 +342,8 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy {
 		var rawBull = false;
 		var rawBear = false;
 
-		if (_rsiBuffer.Count == maxCount) {
+		if (_rsiBuffer.Count == maxCount)
+		{
 			var idx = LookLeft;
 			var pivotRsi = _rsiBuffer[idx];
 			var pivotLow = _lowBuffer[idx];
@@ -322,7 +351,8 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy {
 			var isLow = true;
 			var isHigh = true;
 
-			for (var i = 0; i < maxCount; i++) {
+			for (var i = 0; i < maxCount; i++)
+			{
 				if (i == idx)
 					continue;
 				if (_rsiBuffer[i] <= pivotRsi)
@@ -333,9 +363,11 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy {
 
 			var pivotIndex = _barIndex - LookRight - 1;
 
-			if (isLow) {
+			if (isLow)
+			{
 				if (_prevPivotLowRsi is decimal pr &&
-					_prevPivotLowPrice is decimal pp) {
+					_prevPivotLowPrice is decimal pp)
+				{
 					var dist = pivotIndex - _prevPivotLowIndex;
 					var inRange = dist >= RangeLower && dist <= RangeUpper;
 					rawBull = pivotLow < pp && pivotRsi > pr && inRange;
@@ -345,9 +377,11 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy {
 				_prevPivotLowIndex = pivotIndex;
 			}
 
-			if (isHigh) {
+			if (isHigh)
+			{
 				if (_prevPivotHighRsi is decimal pr &&
-					_prevPivotHighPrice is decimal pp) {
+					_prevPivotHighPrice is decimal pp)
+				{
 					var dist = pivotIndex - _prevPivotHighIndex;
 					var inRange = dist >= RangeLower && dist <= RangeUpper;
 					rawBear = pivotHigh > pp && pivotRsi < pr && inRange;
@@ -366,84 +400,102 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy {
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (bullCond && Position <= 0) {
+		if (bullCond && Position <= 0)
+		{
 			BuyMarket();
 			_rsiOversoldFlag = false;
 			_entrySl = null;
 			_entryTp = null;
-		} else if (bearCond && Position >= 0) {
+		}
+		else if (bearCond && Position >= 0)
+		{
 			SellMarket();
 			_rsiOverboughtFlag = false;
 			_entrySl = null;
 			_entryTp = null;
 		}
 
-		if (Position > 0) {
+		if (Position > 0)
+		{
 			var entryPrice = PositionAvgPrice;
 			decimal slCalc;
 			decimal tpCalc;
 			decimal rr;
 
-			if (Method == SlTpMethods.Swing) {
+			if (Method == SlTpMethods.Swing)
+			{
 				slCalc = swingLow * (1m - SwingMarginPct / 100m);
 				rr = RrSwing;
-			} else {
+			}
+			else
+			{
 				slCalc = entryPrice - atr * AtrMultiplier;
 				rr = RrAtr;
 			}
 			var risk = entryPrice - slCalc;
 			tpCalc = entryPrice + risk * rr;
 
-			if (ExitModes == ExitModes.Static && _entrySl is null) {
+			if (ExitMode == ExitModes.Static && _entrySl is null)
+			{
 				_entrySl = slCalc;
 				_entryTp = tpCalc;
 			}
 
-			_slPrice = ExitModes == ExitModes.Dynamic ? slCalc : _entrySl;
-			_tpPrice = ExitModes == ExitModes.Dynamic ? tpCalc : _entryTp;
+			_slPrice = ExitMode == ExitModes.Dynamic ? slCalc : _entrySl;
+			_tpPrice = ExitMode == ExitModes.Dynamic ? tpCalc : _entryTp;
 
-			if (_slPrice is decimal sl && candle.LowPrice <= sl) {
+			if (_slPrice is decimal sl && candle.LowPrice <= sl)
+			{
 				SellMarket(Math.Abs(Position));
 				_entrySl = null;
 				_entryTp = null;
 				return;
 			}
-			if (_tpPrice is decimal tp && candle.HighPrice >= tp) {
+			if (_tpPrice is decimal tp && candle.HighPrice >= tp)
+			{
 				SellMarket(Math.Abs(Position));
 				_entrySl = null;
 				_entryTp = null;
 			}
-		} else if (Position < 0) {
+		}
+		else if (Position < 0)
+		{
 			var entryPrice = PositionAvgPrice;
 			decimal slCalc;
 			decimal tpCalc;
 			decimal rr;
 
-			if (Method == SlTpMethods.Swing) {
+			if (Method == SlTpMethods.Swing)
+			{
 				slCalc = swingHigh * (1m + SwingMarginPct / 100m);
 				rr = RrSwing;
-			} else {
+			}
+			else
+			{
 				slCalc = entryPrice + atr * AtrMultiplier;
 				rr = RrAtr;
 			}
 			var risk = slCalc - entryPrice;
 			tpCalc = entryPrice - risk * rr;
 
-			if (ExitModes == ExitModes.Static && _entrySl is null) {
+			if (ExitMode == ExitModes.Static && _entrySl is null)
+			{
 				_entrySl = slCalc;
 				_entryTp = tpCalc;
 			}
 
-			_slPrice = ExitModes == ExitModes.Dynamic ? slCalc : _entrySl;
-			_tpPrice = ExitModes == ExitModes.Dynamic ? tpCalc : _entryTp;
+			_slPrice = ExitMode == ExitModes.Dynamic ? slCalc : _entrySl;
+			_tpPrice = ExitMode == ExitModes.Dynamic ? tpCalc : _entryTp;
 
-			if (_slPrice is decimal sl && candle.HighPrice >= sl) {
+			if (_slPrice is decimal sl && candle.HighPrice >= sl)
+			{
 				BuyMarket(Math.Abs(Position));
 				_entrySl = null;
 				_entryTp = null;
 				return;
 			}
-			if (_tpPrice is decimal tp && candle.LowPrice <= tp) {
+			if (_tpPrice is decimal tp && candle.LowPrice <= tp)
+			{
 				BuyMarket(Math.Abs(Position));
 				_entrySl = null;
 				_entryTp = null;
@@ -451,8 +503,10 @@ public class RsiDivergenceAliferCryptoStrategy : Strategy {
 		}
 	}
 
-	private static MovingAverage CreateMa(MaTypes type, int length) {
-		return type switch {
+	private static LengthIndicator<decimal> CreateMa(MaTypes type, int length)
+	{
+		return type switch
+		{
 			MaTypes.Sma => new SimpleMovingAverage { Length = length },
 			MaTypes.Ema => new ExponentialMovingAverage { Length = length },
 			MaTypes.Smma => new SmoothedMovingAverage { Length = length },

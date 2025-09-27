@@ -34,7 +34,7 @@ public class MaTrendStrategy : Strategy
 	private readonly StrategyParam<bool> _closeOpposite;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverage _movingAverage;
+	private LengthIndicator<decimal> _movingAverage;
 	private readonly List<decimal> _maHistory = new();
 	private decimal _pipSize;
 	private int _historyCapacity;
@@ -500,7 +500,7 @@ public class MaTrendStrategy : Strategy
 		};
 	}
 
-	private static MovingAverage CreateMovingAverage(MovingAverageKinds kind, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageKinds kind, int length)
 	{
 		return kind switch
 		{

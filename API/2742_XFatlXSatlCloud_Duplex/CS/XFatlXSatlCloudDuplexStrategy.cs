@@ -58,6 +58,18 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 		/// </summary>
 		Kaufman,
 	}
+
+	public enum AppliedPrices
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted
+	}
+
 	private readonly StrategyParam<decimal> _longVolume;
 	private readonly StrategyParam<decimal> _shortVolume;
 	private readonly StrategyParam<bool> _longAllowOpen;
@@ -74,14 +86,14 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 	private readonly StrategyParam<XmaMethods> _longMethod2;
 	private readonly StrategyParam<int> _longLength2;
 	private readonly StrategyParam<int> _longPhase2;
-	private readonly StrategyParam<AppliedPrice> _longPriceType;
+	private readonly StrategyParam<AppliedPrices> _longPriceType;
 	private readonly StrategyParam<XmaMethods> _shortMethod1;
 	private readonly StrategyParam<int> _shortLength1;
 	private readonly StrategyParam<int> _shortPhase1;
 	private readonly StrategyParam<XmaMethods> _shortMethod2;
 	private readonly StrategyParam<int> _shortLength2;
 	private readonly StrategyParam<int> _shortPhase2;
-	private readonly StrategyParam<AppliedPrice> _shortPriceType;
+	private readonly StrategyParam<AppliedPrices> _shortPriceType;
 	private readonly StrategyParam<decimal> _longStopLoss;
 	private readonly StrategyParam<decimal> _longTakeProfit;
 	private readonly StrategyParam<decimal> _shortStopLoss;
@@ -153,7 +165,7 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 		_longPhase2 = Param(nameof(LongPhase2), 15)
 			.SetDisplay("Long Slow Phase", "Phase parameter for the slow long smoother", "Indicators");
 
-		_longPriceType = Param(nameof(LongAppliedPrice), AppliedPrice.Close)
+		_longPriceType = Param(nameof(LongAppliedPrice), AppliedPrices.Close)
 			.SetDisplay("Long Applied Price", "Price type used for the long indicator", "Indicators");
 
 		_shortMethod1 = Param(nameof(ShortMethod1), XmaMethods.Jurik)
@@ -176,7 +188,7 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 		_shortPhase2 = Param(nameof(ShortPhase2), 15)
 			.SetDisplay("Short Slow Phase", "Phase parameter for the slow short smoother", "Indicators");
 
-		_shortPriceType = Param(nameof(ShortAppliedPrice), AppliedPrice.Close)
+		_shortPriceType = Param(nameof(ShortAppliedPrice), AppliedPrices.Close)
 			.SetDisplay("Short Applied Price", "Price type used for the short indicator", "Indicators");
 
 		_longStopLoss = Param(nameof(LongStopLoss), 0m)
@@ -343,7 +355,7 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 	/// <summary>
 	/// Applied price for long calculations.
 	/// </summary>
-	public AppliedPrice LongAppliedPrice
+	public AppliedPrices LongAppliedPrice
 	{
 		get => _longPriceType.Value;
 		set => _longPriceType.Value = value;
@@ -406,7 +418,7 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 	/// <summary>
 	/// Applied price for short calculations.
 	/// </summary>
-	public AppliedPrice ShortAppliedPrice
+	public AppliedPrices ShortAppliedPrice
 	{
 		get => _shortPriceType.Value;
 		set => _shortPriceType.Value = value;
@@ -454,7 +466,7 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 		var result = new List<(Security, DataType)> { (Security, LongCandleType) };
 
 		if (ShortCandleType != LongCandleType)
-		result.Add((Security, ShortCandleType));
+			result.Add((Security, ShortCandleType));
 
 		return result;
 	}
@@ -489,160 +501,160 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 
 	private void ProcessLong(ICandleMessage candle, IIndicatorValue indicatorValue)
 	{
-	if (candle.State != CandleStates.Finished || !indicatorValue.IsFinal)
-	return;
+		if (candle.State != CandleStates.Finished || !indicatorValue.IsFinal)
+			return;
 
-	var value = (XFatlXSatlValue)indicatorValue;
-	// Store the latest indicator readings so we can evaluate the configured shift.
-	_longHistory.Insert(0, (value.Fast, value.Slow));
-	var maxSize = Math.Max(LongSignalBar + 2, 2);
-	if (_longHistory.Count > maxSize)
-	_longHistory.RemoveAt(_longHistory.Count - 1);
+		var value = (XFatlXSatlValue)indicatorValue;
+		// Store the latest indicator readings so we can evaluate the configured shift.
+		_longHistory.Insert(0, (value.Fast, value.Slow));
+		var maxSize = Math.Max(LongSignalBar + 2, 2);
+		if (_longHistory.Count > maxSize)
+			_longHistory.RemoveAt(_longHistory.Count - 1);
 
-	// Risk management can close the position immediately before analyzing crossovers.
-	if (HandleLongRisk(candle))
-	return;
+		// Risk management can close the position immediately before analyzing crossovers.
+		if (HandleLongRisk(candle))
+			return;
 
-	if (_longHistory.Count <= LongSignalBar + 1)
-	return;
+		if (_longHistory.Count <= LongSignalBar + 1)
+			return;
 
-	var current = _longHistory[LongSignalBar];
-	var previous = _longHistory[LongSignalBar + 1];
-	var crossUp = current.fast > current.slow && previous.fast <= previous.slow;
-	var crossDown = current.fast < current.slow && previous.fast >= previous.slow;
+		var current = _longHistory[LongSignalBar];
+		var previous = _longHistory[LongSignalBar + 1];
+		var crossUp = current.fast > current.slow && previous.fast <= previous.slow;
+		var crossDown = current.fast < current.slow && previous.fast >= previous.slow;
 
-	// Close an existing long when the fast line drops below the slow line.
-	if (LongAllowClose && crossDown && Position > 0m)
-	{
-	SellMarket(Position);
-	_longEntryPrice = null;
-	}
+		// Close an existing long when the fast line drops below the slow line.
+		if (LongAllowClose && crossDown && Position > 0m)
+		{
+			SellMarket(Position);
+			_longEntryPrice = null;
+		}
 
-	if (!LongAllowOpen || !crossUp)
-	return;
+		if (!LongAllowOpen || !crossUp)
+			return;
 
-	// Flatten shorts before reversing into a long position.
-	if (Position < 0m)
-	{
-	if (!ShortAllowClose)
-	return;
+		// Flatten shorts before reversing into a long position.
+		if (Position < 0m)
+		{
+			if (!ShortAllowClose)
+				return;
 
-	BuyMarket(-Position);
-	_shortEntryPrice = null;
-	}
+			BuyMarket(-Position);
+			_shortEntryPrice = null;
+		}
 
-	// Open the long trade only if no opposite exposure remains.
-	if (Position <= 0m)
-	{
-	BuyMarket(LongVolume);
-	_longEntryPrice = candle.ClosePrice;
-	}
+		// Open the long trade only if no opposite exposure remains.
+		if (Position <= 0m)
+		{
+			BuyMarket(LongVolume);
+			_longEntryPrice = candle.ClosePrice;
+		}
 	}
 
 	private bool HandleLongRisk(ICandleMessage candle)
 	{
-	if (!LongAllowClose || Position <= 0m || _longEntryPrice is not decimal entry)
-	return false;
+		if (!LongAllowClose || Position <= 0m || _longEntryPrice is not decimal entry)
+			return false;
 
-	// Hard stop: candle low moved below entry minus configured distance.
-	if (LongStopLoss > 0m && candle.LowPrice <= entry - LongStopLoss)
-	{
-	SellMarket(Position);
-	_longEntryPrice = null;
-	return true;
-	}
+		// Hard stop: candle low moved below entry minus configured distance.
+		if (LongStopLoss > 0m && candle.LowPrice <= entry - LongStopLoss)
+		{
+			SellMarket(Position);
+			_longEntryPrice = null;
+			return true;
+		}
 
-	// Hard target: candle high exceeded entry plus configured distance.
-	if (LongTakeProfit > 0m && candle.HighPrice >= entry + LongTakeProfit)
-	{
-	SellMarket(Position);
-	_longEntryPrice = null;
-	return true;
-	}
+		// Hard target: candle high exceeded entry plus configured distance.
+		if (LongTakeProfit > 0m && candle.HighPrice >= entry + LongTakeProfit)
+		{
+			SellMarket(Position);
+			_longEntryPrice = null;
+			return true;
+		}
 
-	return false;
+		return false;
 	}
 
 	private void ProcessShort(ICandleMessage candle, IIndicatorValue indicatorValue)
 	{
-	if (candle.State != CandleStates.Finished || !indicatorValue.IsFinal)
-	return;
+		if (candle.State != CandleStates.Finished || !indicatorValue.IsFinal)
+			return;
 
-	var value = (XFatlXSatlValue)indicatorValue;
-	// Maintain the rolling history for the short configuration.
-	_shortHistory.Insert(0, (value.Fast, value.Slow));
-	var maxSize = Math.Max(ShortSignalBar + 2, 2);
-	if (_shortHistory.Count > maxSize)
-	_shortHistory.RemoveAt(_shortHistory.Count - 1);
+		var value = (XFatlXSatlValue)indicatorValue;
+		// Maintain the rolling history for the short configuration.
+		_shortHistory.Insert(0, (value.Fast, value.Slow));
+		var maxSize = Math.Max(ShortSignalBar + 2, 2);
+		if (_shortHistory.Count > maxSize)
+			_shortHistory.RemoveAt(_shortHistory.Count - 1);
 
-	// Stop or target may close the short before trend analysis.
-	if (HandleShortRisk(candle))
-	return;
+		// Stop or target may close the short before trend analysis.
+		if (HandleShortRisk(candle))
+			return;
 
-	if (_shortHistory.Count <= ShortSignalBar + 1)
-	return;
+		if (_shortHistory.Count <= ShortSignalBar + 1)
+			return;
 
-	var current = _shortHistory[ShortSignalBar];
-	var previous = _shortHistory[ShortSignalBar + 1];
-	var crossDown = current.fast < current.slow && previous.fast >= previous.slow;
-	var crossUp = current.fast > current.slow && previous.fast <= previous.slow;
+		var current = _shortHistory[ShortSignalBar];
+		var previous = _shortHistory[ShortSignalBar + 1];
+		var crossDown = current.fast < current.slow && previous.fast >= previous.slow;
+		var crossUp = current.fast > current.slow && previous.fast <= previous.slow;
 
-	// Cover a short when the fast line rises above the slow line again.
-	if (ShortAllowClose && crossUp && Position < 0m)
-	{
-	BuyMarket(-Position);
-	_shortEntryPrice = null;
-	}
+		// Cover a short when the fast line rises above the slow line again.
+		if (ShortAllowClose && crossUp && Position < 0m)
+		{
+			BuyMarket(-Position);
+			_shortEntryPrice = null;
+		}
 
-	if (!ShortAllowOpen || !crossDown)
-	return;
+		if (!ShortAllowOpen || !crossDown)
+			return;
 
-	// Close existing longs before flipping into a short position.
-	if (Position > 0m)
-	{
-	if (!LongAllowClose)
-	return;
+		// Close existing longs before flipping into a short position.
+		if (Position > 0m)
+		{
+			if (!LongAllowClose)
+				return;
 
-	SellMarket(Position);
-	_longEntryPrice = null;
-	}
+			SellMarket(Position);
+			_longEntryPrice = null;
+		}
 
-	// Enter the new short once the direction is clear.
-	if (Position >= 0m)
-	{
-	SellMarket(ShortVolume);
-	_shortEntryPrice = candle.ClosePrice;
-	}
+		// Enter the new short once the direction is clear.
+		if (Position >= 0m)
+		{
+			SellMarket(ShortVolume);
+			_shortEntryPrice = candle.ClosePrice;
+		}
 	}
 
 	private bool HandleShortRisk(ICandleMessage candle)
 	{
-	if (!ShortAllowClose || Position >= 0m || _shortEntryPrice is not decimal entry)
-	return false;
+		if (!ShortAllowClose || Position >= 0m || _shortEntryPrice is not decimal entry)
+			return false;
 
-	// Stop loss for the short side is triggered by a move above the entry price.
-	if (ShortStopLoss > 0m && candle.HighPrice >= entry + ShortStopLoss)
-	{
-	BuyMarket(-Position);
-	_shortEntryPrice = null;
-	return true;
-	}
+		// Stop loss for the short side is triggered by a move above the entry price.
+		if (ShortStopLoss > 0m && candle.HighPrice >= entry + ShortStopLoss)
+		{
+			BuyMarket(-Position);
+			_shortEntryPrice = null;
+			return true;
+		}
 
-	// Take profit for shorts fires when the low pierces the target distance.
-	if (ShortTakeProfit > 0m && candle.LowPrice <= entry - ShortTakeProfit)
-	{
-	BuyMarket(-Position);
-	_shortEntryPrice = null;
-	return true;
-	}
+		// Take profit for shorts fires when the low pierces the target distance.
+		if (ShortTakeProfit > 0m && candle.LowPrice <= entry - ShortTakeProfit)
+		{
+			BuyMarket(-Position);
+			_shortEntryPrice = null;
+			return true;
+		}
 
-	return false;
+		return false;
 	}
 
 	private sealed class XFatlXSatlCloudIndicator : Indicator<ICandleMessage>
 	{
-	private static readonly decimal[] FatlCoefficients =
-	{
+		private static readonly decimal[] FatlCoefficients =
+		{
 	0.4360409450m,
 	0.3658689069m,
 	0.2460452079m,
@@ -684,8 +696,8 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 	0.0040364019m,
 	};
 
-	private static readonly decimal[] SatlCoefficients =
-	{
+		private static readonly decimal[] SatlCoefficients =
+		{
 	0.0982862174m,
 	0.0975682269m,
 	0.0961401078m,
@@ -753,136 +765,136 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 	0.0161380976m,
 	};
 
-	private readonly IIndicator _fastSmoother;
-	private readonly IIndicator _slowSmoother;
-	private readonly AppliedPrice _appliedPrice;
-	private readonly decimal[] _priceBuffer = new decimal[SatlCoefficients.Length];
-	private int _bufferIndex;
-	private int _bufferCount;
+		private readonly IIndicator _fastSmoother;
+		private readonly IIndicator _slowSmoother;
+		private readonly AppliedPrices _appliedPrice;
+		private readonly decimal[] _priceBuffer = new decimal[SatlCoefficients.Length];
+		private int _bufferIndex;
+		private int _bufferCount;
 
-	public XFatlXSatlCloudIndicator(XmaMethods fastMethod, int fastLength, int fastPhase, XmaMethods slowMethod, int slowLength, int slowPhase, AppliedPrice appliedPrice)
-	{
-	_fastSmoother = CreateSmoother(fastMethod, fastLength, fastPhase);
-	_slowSmoother = CreateSmoother(slowMethod, slowLength, slowPhase);
-	_appliedPrice = appliedPrice;
-	}
+		public XFatlXSatlCloudIndicator(XmaMethods fastMethod, int fastLength, int fastPhase, XmaMethods slowMethod, int slowLength, int slowPhase, AppliedPrices appliedPrice)
+		{
+			_fastSmoother = CreateSmoother(fastMethod, fastLength, fastPhase);
+			_slowSmoother = CreateSmoother(slowMethod, slowLength, slowPhase);
+			_appliedPrice = appliedPrice;
+		}
 
-	protected override IIndicatorValue OnProcess(IIndicatorValue input)
-	{
-	var candle = input.GetValue<ICandleMessage>();
-	var price = SelectPrice(candle, _appliedPrice);
-	// Feed the latest price into the circular buffer used by the FIR filters.
-	_priceBuffer[_bufferIndex] = price;
-	_bufferIndex = (_bufferIndex + 1) % _priceBuffer.Length;
-	if (_bufferCount < _priceBuffer.Length)
-	_bufferCount++;
+		protected override IIndicatorValue OnProcess(IIndicatorValue input)
+		{
+			var candle = input.GetValue<ICandleMessage>();
+			var price = SelectPrice(candle, _appliedPrice);
+			// Feed the latest price into the circular buffer used by the FIR filters.
+			_priceBuffer[_bufferIndex] = price;
+			_bufferIndex = (_bufferIndex + 1) % _priceBuffer.Length;
+			if (_bufferCount < _priceBuffer.Length)
+				_bufferCount++;
 
-	var fastRaw = ComputeFilter(FatlCoefficients);
-	var slowRaw = ComputeFilter(SatlCoefficients);
+			var fastRaw = ComputeFilter(FatlCoefficients);
+			var slowRaw = ComputeFilter(SatlCoefficients);
 
-	// Smooth both raw filters with the configured moving averages.
-	var fastValue = _fastSmoother.Process(new DecimalIndicatorValue(_fastSmoother, fastRaw, input.Time));
-	var slowValue = _slowSmoother.Process(new DecimalIndicatorValue(_slowSmoother, slowRaw, input.Time));
-	var fast = fastValue.ToDecimal();
-	var slow = slowValue.ToDecimal();
+			// Smooth both raw filters with the configured moving averages.
+			var fastValue = _fastSmoother.Process(new DecimalIndicatorValue(_fastSmoother, fastRaw, input.Time));
+			var slowValue = _slowSmoother.Process(new DecimalIndicatorValue(_slowSmoother, slowRaw, input.Time));
+			var fast = fastValue.ToDecimal();
+			var slow = slowValue.ToDecimal();
 
-	IsFormed = _bufferCount >= SatlCoefficients.Length && fastValue.IsFinal && slowValue.IsFinal;
-	return new XFatlXSatlValue(this, input, fast, slow, fastRaw, slowRaw);
-	}
+			IsFormed = _bufferCount >= SatlCoefficients.Length && fastValue.IsFinal && slowValue.IsFinal;
+			return new XFatlXSatlValue(this, input, fast, slow, fastRaw, slowRaw);
+		}
 
-	public override void Reset()
-	{
-	base.Reset();
-	Array.Clear(_priceBuffer, 0, _priceBuffer.Length);
-	_bufferIndex = 0;
-	_bufferCount = 0;
-	_fastSmoother.Reset();
-	_slowSmoother.Reset();
-	}
+		public override void Reset()
+		{
+			base.Reset();
+			Array.Clear(_priceBuffer, 0, _priceBuffer.Length);
+			_bufferIndex = 0;
+			_bufferCount = 0;
+			_fastSmoother.Reset();
+			_slowSmoother.Reset();
+		}
 
-	private decimal ComputeFilter(IReadOnlyList<decimal> coefficients)
-	{
-	if (_bufferCount < coefficients.Count)
-	return 0m;
+		private decimal ComputeFilter(IReadOnlyList<decimal> coefficients)
+		{
+			if (_bufferCount < coefficients.Count)
+				return 0m;
 
-	decimal sum = 0m;
-	for (var i = 0; i < coefficients.Count; i++)
-	{
-	// Traverse the ring buffer backwards to align with the newest price first.
-	var index = _bufferIndex - 1 - i;
-	if (index < 0)
-	index += _priceBuffer.Length;
+			decimal sum = 0m;
+			for (var i = 0; i < coefficients.Count; i++)
+			{
+				// Traverse the ring buffer backwards to align with the newest price first.
+				var index = _bufferIndex - 1 - i;
+				if (index < 0)
+					index += _priceBuffer.Length;
 
-	sum += coefficients[i] * _priceBuffer[index];
-	}
+				sum += coefficients[i] * _priceBuffer[index];
+			}
 
-	return sum;
-	}
+			return sum;
+		}
 
-	private static IIndicator CreateSmoother(XmaMethods method, int length, int phase)
-	{
-	length = Math.Max(1, length);
+		private static IIndicator CreateSmoother(XmaMethods method, int length, int phase)
+		{
+			length = Math.Max(1, length);
 
-	// Map the MQL smoothing options to the closest available StockSharp moving averages.
-	return method switch
-	{
-	XmaMethods.Sma => new SMA { Length = length },
-	XmaMethods.Ema => new EMA { Length = length },
-	XmaMethods.Smma => new SmoothedMovingAverage { Length = length },
-	XmaMethods.Lwma => new WMA { Length = length },
-	XmaMethods.Jurik => new JurikMovingAverage { Length = length },
-	XmaMethods.ZeroLag => new ZeroLagExponentialMovingAverage { Length = length },
-	XmaMethods.Kaufman => new KaufmanAdaptiveMovingAverage { Length = length },
-	_ => throw new ArgumentOutOfRangeException(nameof(method), method, "Unsupported smoothing method."),
-	};
-	}
+			// Map the MQL smoothing options to the closest available StockSharp moving averages.
+			return method switch
+			{
+				XmaMethods.Sma => new SMA { Length = length },
+				XmaMethods.Ema => new EMA { Length = length },
+				XmaMethods.Smma => new SmoothedMovingAverage { Length = length },
+				XmaMethods.Lwma => new WMA { Length = length },
+				XmaMethods.Jurik => new JurikMovingAverage { Length = length },
+				XmaMethods.ZeroLag => new ZeroLagExponentialMovingAverage { Length = length },
+				XmaMethods.Kaufman => new KaufmanAdaptiveMovingAverage { Length = length },
+				_ => throw new ArgumentOutOfRangeException(nameof(method), method, "Unsupported smoothing method."),
+			};
+		}
 
-	private static decimal SelectPrice(ICandleMessage candle, AppliedPrice price)
-	{
-	return price switch
-	{
-	AppliedPrice.Open => candle.OpenPrice,
-	AppliedPrice.High => candle.HighPrice,
-	AppliedPrice.Low => candle.LowPrice,
-	AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-	AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-	AppliedPrice.Weighted => (candle.ClosePrice * 2m + candle.HighPrice + candle.LowPrice) / 4m,
-	AppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-	AppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-	AppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
-	AppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
-	AppliedPrice.Demark => CalculateDemarkPrice(candle),
-	_ => candle.ClosePrice,
-	};
-	}
+		private static decimal SelectPrice(ICandleMessage candle, AppliedPrices price)
+		{
+			return price switch
+			{
+				AppliedPrices.Open => candle.OpenPrice,
+				AppliedPrices.High => candle.HighPrice,
+				AppliedPrices.Low => candle.LowPrice,
+				AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+				AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+				AppliedPrices.Weighted => (candle.ClosePrice * 2m + candle.HighPrice + candle.LowPrice) / 4m,
+				AppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+				AppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+				AppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
+				AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
+				AppliedPrices.Demark => CalculateDemarkPrice(candle),
+				_ => candle.ClosePrice,
+			};
+		}
 
-	private static decimal CalculateDemarkPrice(ICandleMessage candle)
-	{
-	var sum = candle.HighPrice + candle.LowPrice + candle.ClosePrice;
-	if (candle.ClosePrice < candle.OpenPrice)
-	sum = (sum + candle.LowPrice) / 2m;
-	else if (candle.ClosePrice > candle.OpenPrice)
-	sum = (sum + candle.HighPrice) / 2m;
-	else
-	sum = (sum + candle.ClosePrice) / 2m;
+		private static decimal CalculateDemarkPrice(ICandleMessage candle)
+		{
+			var sum = candle.HighPrice + candle.LowPrice + candle.ClosePrice;
+			if (candle.ClosePrice < candle.OpenPrice)
+				sum = (sum + candle.LowPrice) / 2m;
+			else if (candle.ClosePrice > candle.OpenPrice)
+				sum = (sum + candle.HighPrice) / 2m;
+			else
+				sum = (sum + candle.ClosePrice) / 2m;
 
-	return ((sum - candle.LowPrice) + (sum - candle.HighPrice)) / 2m;
-	}
+			return ((sum - candle.LowPrice) + (sum - candle.HighPrice)) / 2m;
+		}
 	}
 
 	private sealed class XFatlXSatlValue : ComplexIndicatorValue
 	{
-	public XFatlXSatlValue(IIndicator indicator, IIndicatorValue input, decimal fast, decimal slow, decimal fastRaw, decimal slowRaw)
-	: base(indicator, input, (nameof(Fast), fast), (nameof(Slow), slow), (nameof(FastRaw), fastRaw), (nameof(SlowRaw), slowRaw))
-	{
-	}
+		public XFatlXSatlValue(IIndicator indicator, IIndicatorValue input, decimal fast, decimal slow, decimal fastRaw, decimal slowRaw)
+		: base(indicator, input, (nameof(Fast), fast), (nameof(Slow), slow), (nameof(FastRaw), fastRaw), (nameof(SlowRaw), slowRaw))
+		{
+		}
 
-	public decimal Fast => (decimal)GetValue(nameof(Fast));
+		public decimal Fast => (decimal)GetValue(nameof(Fast));
 
-	public decimal Slow => (decimal)GetValue(nameof(Slow));
+		public decimal Slow => (decimal)GetValue(nameof(Slow));
 
-	public decimal FastRaw => (decimal)GetValue(nameof(FastRaw));
+		public decimal FastRaw => (decimal)GetValue(nameof(FastRaw));
 
-	public decimal SlowRaw => (decimal)GetValue(nameof(SlowRaw));
+		public decimal SlowRaw => (decimal)GetValue(nameof(SlowRaw));
 	}
 }

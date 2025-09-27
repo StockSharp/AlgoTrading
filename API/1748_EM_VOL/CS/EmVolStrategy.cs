@@ -29,7 +29,7 @@ public class EmVolStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private AverageTrueRange _atr;
-	private Adx _adx;
+	private ADX _adx;
 
 	private ICandleMessage _prevCandle;
 	private decimal _prevAtr;
@@ -134,7 +134,7 @@ public class EmVolStrategy : Strategy
 		_tickSize = Security.PriceStep ?? 1m;
 
 		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_adx = new Adx { Length = AdxPeriod };
+		_adx = new ADX { Length = AdxPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_atr, _adx, ProcessCandle).Start();

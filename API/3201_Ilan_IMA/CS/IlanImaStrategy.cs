@@ -22,7 +22,7 @@ public class IlanImaStrategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
 	private readonly StrategyParam<MovingAverageMethods> _maMethod;
-	private readonly StrategyParam<CandlePrice> _priceMode;
+	private readonly StrategyParam<CandlePrices> _priceMode;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _trailingStopPips;
@@ -71,7 +71,7 @@ public class IlanImaStrategy : Strategy
 	/// <summary>
 	/// Candle price applied to the moving average.
 	/// </summary>
-	public CandlePrice PriceMode
+	public CandlePrices PriceMode
 	{
 		get => _priceMode.Value;
 		set => _priceMode.Value = value;
@@ -187,7 +187,7 @@ public class IlanImaStrategy : Strategy
 		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Weighted)
 			.SetDisplay("MA Method", "Moving average smoothing type", "Indicators");
 
-		_priceMode = Param(nameof(PriceMode), CandlePrice.Weighted)
+		_priceMode = Param(nameof(PriceMode), CandlePrices.Weighted)
 			.SetDisplay("Applied Price", "Candle price used by the moving average", "Indicators");
 
 		_stopLossPips = Param(nameof(StopLossPips), 0m)
@@ -607,6 +607,17 @@ public class IlanImaStrategy : Strategy
 		Exponential,
 		Smoothed,
 		Weighted,
+	}
+
+	public enum CandlePrices
+	{
+		Open,
+		High,
+		Low,
+		Close,
+		Median,
+		Typical,
+		Weighted
 	}
 
 	private readonly struct GridEntry

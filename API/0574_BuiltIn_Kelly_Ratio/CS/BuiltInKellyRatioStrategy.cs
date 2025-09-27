@@ -29,7 +29,7 @@ public class BuiltInKellyRatioStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
 
-	private MovingAverage _ma;
+	private LengthIndicator<decimal> _ma;
 	private AverageTrueRange _atr;
 
 	private decimal _prevClose;

@@ -8,12 +8,11 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-using StockSharp.Algo;
 
 /// <summary>
 /// Mean-reversion strategy converted from the MetaTrader expert "WE TRUST".
@@ -21,6 +20,39 @@ using StockSharp.Algo;
 /// </summary>
 public class WeTrustChannelStrategy : Strategy
 {
+	public enum CandlePrices
+	{
+		/// <summary>
+		/// Open price.
+		/// </summary>
+		Open,
+		/// <summary>
+		/// High price.
+		/// </summary>
+		High,
+		/// <summary>
+		/// Low price.
+		/// </summary>
+		Low,
+		/// <summary>
+		/// Median price (HL/2).
+		/// </summary>
+		Median,
+		/// <summary>
+		/// Typical price (HLC/3).
+		/// </summary>
+		Typical,
+		/// <summary>
+		/// Weighted price (OHLC/4).
+		/// </summary>
+		Weighted,
+		/// <summary>
+		/// Close price.
+		/// </summary>
+		Close
+	}
+
+
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
@@ -34,7 +66,7 @@ public class WeTrustChannelStrategy : Strategy
 	private readonly StrategyParam<decimal> _channelIndentPips;
 	private readonly StrategyParam<bool> _reverseSignals;
 	private readonly StrategyParam<bool> _closeOpposite;
-	private readonly StrategyParam<CandlePrice> _appliedPrice;
+	private readonly StrategyParam<CandlePrices> _appliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private LinearWeightedMovingAverage _movingAverage;
@@ -98,7 +130,7 @@ public class WeTrustChannelStrategy : Strategy
 		_closeOpposite = Param(nameof(CloseOpposite), false)
 			.SetDisplay("Close opposite", "Close an opposing position before entering a new trade.", "Trading");
 
-		_appliedPrice = Param(nameof(AppliedPrice), CandlePrice.Weighted)
+		_appliedPrice = Param(nameof(AppliedPrice), CandlePrices.Weighted)
 			.SetDisplay("Applied price", "Price source fed into the indicators.", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -225,7 +257,7 @@ public class WeTrustChannelStrategy : Strategy
 	/// <summary>
 	/// Price type supplied to the indicators.
 	/// </summary>
-	public CandlePrice AppliedPrice
+	public CandlePrices AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -395,16 +427,16 @@ public class WeTrustChannelStrategy : Strategy
 		return history[index];
 	}
 
-	private static decimal GetPrice(ICandleMessage candle, CandlePrice priceType)
+	private static decimal GetPrice(ICandleMessage candle, CandlePrices priceType)
 	{
 		return priceType switch
 		{
-			CandlePrice.Open => candle.OpenPrice,
-			CandlePrice.High => candle.HighPrice,
-			CandlePrice.Low => candle.LowPrice,
-			CandlePrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			CandlePrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			CandlePrice.Weighted => (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
+			CandlePrices.Open => candle.OpenPrice,
+			CandlePrices.High => candle.HighPrice,
+			CandlePrices.Low => candle.LowPrice,
+			CandlePrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			CandlePrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			CandlePrices.Weighted => (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}

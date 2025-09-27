@@ -11,14 +11,27 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
-
 /// <summary>
 /// Strategy based on the Loco indicator.
 /// </summary>
 public class LocoStrategy : Strategy
 {
+	public enum AppliedPrice
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted,
+		Simple,
+		Quarter,
+		TrendFollow0,
+		TrendFollow1,
+		DeMark
+	}
+
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<AppliedPrice> _priceType;

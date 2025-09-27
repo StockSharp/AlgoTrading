@@ -17,7 +17,8 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Short strategy entering after consecutive closes above moving average.
 /// </summary>
-public class ConsecutiveBarsAboveMaStrategy : Strategy {
+public class ConsecutiveBarsAboveMaStrategy : Strategy
+{
 	private readonly StrategyParam<int> _threshold;
 	private readonly StrategyParam<string> _maType;
 	private readonly StrategyParam<int> _maLength;
@@ -27,7 +28,7 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy {
 	private readonly StrategyParam<DateTimeOffset> _startTime;
 	private readonly StrategyParam<DateTimeOffset> _endTime;
 
-	private MovingAverage _signalMa;
+	private LengthIndicator<decimal> _signalMa;
 	private ExponentialMovingAverage _ema200;
 	private int _bullCount;
 	private decimal? _prevHigh;
@@ -36,7 +37,8 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy {
 	/// <summary>
 	/// Number of bars above MA to trigger entry.
 	/// </summary>
-	public int Threshold {
+	public int Threshold
+	{
 		get => _threshold.Value;
 		set => _threshold.Value = value;
 	}
@@ -44,7 +46,8 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy {
 	/// <summary>
 	/// Moving average type.
 	/// </summary>
-	public string MaType {
+	public string MaType
+	{
 		get => _maType.Value;
 		set => _maType.Value = value;
 	}
@@ -52,7 +55,8 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy {
 	/// <summary>
 	/// Moving average length.
 	/// </summary>
-	public int MaLength {
+	public int MaLength
+	{
 		get => _maLength.Value;
 		set => _maLength.Value = value;
 	}
@@ -60,7 +64,8 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy {
 	/// <summary>
 	/// Enable EMA trend filter.
 	/// </summary>
-	public bool UseEmaFilter {
+	public bool UseEmaFilter
+	{
 		get => _useEmaFilter.Value;
 		set => _useEmaFilter.Value = value;
 	}
@@ -68,7 +73,8 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy {
 	/// <summary>
 	/// EMA period for trend filter.
 	/// </summary>
-	public int EmaPeriod {
+	public int EmaPeriod
+	{
 		get => _emaPeriod.Value;
 		set => _emaPeriod.Value = value;
 	}
@@ -76,7 +82,8 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy {
 	/// <summary>
 	/// Candle type to process.
 	/// </summary>
-	public DataType CandleType {
+	public DataType CandleType
+	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
@@ -84,7 +91,8 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy {
 	/// <summary>
 	/// Start time for signals.
 	/// </summary>
-	public DateTimeOffset StartTime {
+	public DateTimeOffset StartTime
+	{
 		get => _startTime.Value;
 		set => _startTime.Value = value;
 	}
@@ -92,7 +100,8 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy {
 	/// <summary>
 	/// End time for signals.
 	/// </summary>
-	public DateTimeOffset EndTime {
+	public DateTimeOffset EndTime
+	{
 		get => _endTime.Value;
 		set => _endTime.Value = value;
 	}
@@ -101,7 +110,8 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy {
 	/// Initializes a new instance of <see
 	/// cref="ConsecutiveBarsAboveMaStrategy"/>.
 	/// </summary>
-	public ConsecutiveBarsAboveMaStrategy() {
+	public ConsecutiveBarsAboveMaStrategy()
+	{
 		_threshold = Param(nameof(Threshold), 3)
 						 .SetGreaterThanZero()
 						 .SetDisplay("Signal Threshold",
@@ -145,12 +155,14 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy {
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)>
-	GetWorkingSecurities() {
+	GetWorkingSecurities()
+	{
 		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted() {
+	protected override void OnReseted()
+	{
 		base.OnReseted();
 
 		_signalMa = default;
@@ -161,7 +173,8 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy {
 	}
 
 	/// <inheritdoc />
-	protected override void OnStarted(DateTimeOffset time) {
+	protected override void OnStarted(DateTimeOffset time)
+	{
 		base.OnStarted(time);
 
 		StartProtection();
@@ -173,7 +186,8 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy {
 		subscription.Bind(_signalMa, _ema200, ProcessCandle).Start();
 
 		var area = CreateChartArea();
-		if (area != null) {
+		if (area != null)
+		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, _signalMa);
 			DrawIndicator(area, _ema200);
@@ -182,11 +196,13 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy {
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue,
-							   decimal emaValue) {
+							   decimal emaValue)
+	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevHigh is null || _prevLow is null) {
+		if (_prevHigh is null || _prevLow is null)
+		{
 			_prevHigh = candle.HighPrice;
 			_prevLow = candle.LowPrice;
 			return;
@@ -204,10 +220,13 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy {
 							 candle.ClosePrice > _prevHigh &&
 							 (!UseEmaFilter || candle.ClosePrice < emaValue);
 
-		if (shortCondition && Position >= 0) {
+		if (shortCondition && Position >= 0)
+		{
 			var volume = Volume + (Position > 0 ? Position : 0m);
 			SellMarket(volume);
-		} else if (Position < 0 && candle.ClosePrice < _prevLow) {
+		}
+		else if (Position < 0 && candle.ClosePrice < _prevLow)
+		{
 			BuyMarket(Math.Abs(Position));
 		}
 
@@ -215,7 +234,8 @@ public class ConsecutiveBarsAboveMaStrategy : Strategy {
 		_prevLow = candle.LowPrice;
 	}
 
-	private MovingAverage CreateMa(string type, int length) {
+	private LengthIndicator<decimal> CreateMa(string type, int length)
+	{
 		return type == "SMA" ? new SimpleMovingAverage { Length = length }
 							 : new ExponentialMovingAverage { Length = length };
 	}

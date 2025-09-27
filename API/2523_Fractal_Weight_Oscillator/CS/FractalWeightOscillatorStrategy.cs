@@ -36,11 +36,65 @@ public class FractalWeightOscillatorStrategy : Strategy
 		/// </summary>
 		Real
 	}
-	private readonly StrategyParam<TrendMode> _trendMode;
+
+	public enum TrendModes
+	{
+		/// <summary>
+		/// Follow the trend.
+		/// </summary>
+		Direct,
+		/// <summary>
+		/// Trade against the trend.
+		/// </summary>
+		Counter
+	}
+
+	public enum SmoothingMethods
+	{
+		/// <summary>
+		/// No smoothing.
+		/// </summary>
+		None,
+		/// <summary>
+		/// Simple Moving Average.
+		/// </summary>
+		Sma,
+		/// <summary>
+		/// Exponential Moving Average.
+		/// </summary>
+		Ema,
+		/// <summary>
+		/// Smoothed Moving Average.
+		/// </summary>
+		Smma,
+		/// <summary>
+		/// Linear Weighted Moving Average.
+		/// </summary>
+		Lwma
+	}
+
+	public enum AppliedPrice
+	{
+		None,
+		Open,
+		High,
+		Low,
+		Close,
+		Median,
+		Typical,
+		Weighted,
+		Simple,
+		Quarter,
+		TrendFollow0,
+		TrendFollow1,
+		DeMark
+	}
+
+	private readonly StrategyParam<TrendModes> _trendMode;
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<int> _smoothingLength;
-	private readonly StrategyParam<SmoothingMethod> _smoothingMethod;
+	private readonly StrategyParam<SmoothingMethods> _smoothingMethod;
 	private readonly StrategyParam<AppliedPrice> _rsiPrice;
 	private readonly StrategyParam<AppliedPrice> _mfiPrice;
 	private readonly StrategyParam<MfiVolumeTypes> _mfiVolumeType;
@@ -81,7 +135,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 	/// <summary>
 	/// Trading direction mode.
 	/// </summary>
-	public TrendMode TrendMode
+	public TrendModes TrendMode
 	{
 		get => _trendMode.Value;
 		set => _trendMode.Value = value;
@@ -117,7 +171,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 	/// <summary>
 	/// Type of moving average used for smoothing.
 	/// </summary>
-	public SmoothingMethod SmoothingMethod
+	public SmoothingMethods SmoothingMethod
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -272,7 +326,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 	/// </summary>
 	public FractalWeightOscillatorStrategy()
 	{
-		_trendMode = Param(nameof(TrendMode), TrendMode.Direct)
+		_trendMode = Param(nameof(TrendMode), TrendModes.Direct)
 		.SetDisplay("Trend Mode", "Follow trend or counter-trend", "Trading");
 
 		_signalBar = Param(nameof(SignalBar), 1)
@@ -287,7 +341,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Smoothing Length", "Window for smoothing", "Indicators");
 
-		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothingMethod.Smma)
+		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothingMethods.Smma)
 		.SetDisplay("Smoothing Method", "Moving average type for smoothing", "Indicators");
 
 		_rsiPrice = Param(nameof(RsiPrice), AppliedPrice.Close)
@@ -450,7 +504,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 		var openSell = false;
 		var closeSell = false;
 
-		if (TrendMode == TrendMode.Direct)
+		if (TrendMode == TrendModes.Direct)
 		{
 			if (crossBelowLow)
 			{
@@ -706,15 +760,15 @@ public class FractalWeightOscillatorStrategy : Strategy
 		return candle.TotalVolume;
 	}
 
-	private static LengthIndicator<decimal> CreateSmoother(SmoothingMethod method, int length)
+	private static LengthIndicator<decimal> CreateSmoother(SmoothingMethods method, int length)
 	{
 		return method switch
 		{
-			SmoothingMethod.None => null,
-			SmoothingMethod.Sma => new SimpleMovingAverage { Length = length },
-			SmoothingMethod.Ema => new ExponentialMovingAverage { Length = length },
-			SmoothingMethod.Smma => new SmoothedMovingAverage { Length = length },
-			SmoothingMethod.Lwma => new WeightedMovingAverage { Length = length },
+			SmoothingMethods.None => null,
+			SmoothingMethods.Sma => new SimpleMovingAverage { Length = length },
+			SmoothingMethods.Ema => new ExponentialMovingAverage { Length = length },
+			SmoothingMethods.Smma => new SmoothedMovingAverage { Length = length },
+			SmoothingMethods.Lwma => new WeightedMovingAverage { Length = length },
 			_ => new SmoothedMovingAverage { Length = length }
 		};
 	}

@@ -26,8 +26,8 @@ public class MaBbSupertrendStrategy : Strategy
 	private readonly StrategyParam<decimal> _supertrendFactor;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverage _maBasis;
-	private MovingAverage _maSignal;
+	private LengthIndicator<decimal> _maBasis;
+	private LengthIndicator<decimal> _maSignal;
 	private BollingerBands _bollinger;
 	private SuperTrend _supertrend;
 

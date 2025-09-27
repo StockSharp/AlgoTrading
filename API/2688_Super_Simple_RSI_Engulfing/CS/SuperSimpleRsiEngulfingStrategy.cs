@@ -18,10 +18,21 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SuperSimpleRsiEngulfingStrategy : Strategy
 {
+	public enum CandlePrices
+	{
+		Open,
+		High,
+		Low,
+		Close,
+		Median,
+		Typical,
+		Weighted
+	}
+
 	private readonly StrategyParam<decimal> _profitGoal;
 	private readonly StrategyParam<decimal> _maxLoss;
 	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<CandlePrice> _rsiPrice;
+	private readonly StrategyParam<CandlePrices> _rsiPrice;
 	private readonly StrategyParam<decimal> _overboughtLevel;
 	private readonly StrategyParam<decimal> _oversoldLevel;
 	private readonly StrategyParam<DataType> _candleType;
@@ -64,7 +75,7 @@ public class SuperSimpleRsiEngulfingStrategy : Strategy
 	/// <summary>
 	/// Price source used by the RSI indicator.
 	/// </summary>
-	public CandlePrice RsiPrice
+	public CandlePrices RsiPrice
 	{
 		get => _rsiPrice.Value;
 		set => _rsiPrice.Value = value;
@@ -115,7 +126,7 @@ public class SuperSimpleRsiEngulfingStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI averaging period", "Indicators");
 
-		_rsiPrice = Param(nameof(RsiPrice), CandlePrice.High)
+		_rsiPrice = Param(nameof(RsiPrice), CandlePrices.High)
 			.SetDisplay("RSI Price", "Price source for RSI", "Indicators");
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 88m)
@@ -155,7 +166,7 @@ public class SuperSimpleRsiEngulfingStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.WhenNew(ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -244,18 +255,18 @@ public class SuperSimpleRsiEngulfingStrategy : Strategy
 		_prevClose = candle.ClosePrice;
 	}
 
-	private static decimal GetPrice(ICandleMessage candle, CandlePrice price)
+	private static decimal GetPrice(ICandleMessage candle, CandlePrices price)
 	{
 		// Support different RSI inputs without duplicating indicator logic.
 		return price switch
 		{
-			CandlePrice.Open => candle.OpenPrice,
-			CandlePrice.High => candle.HighPrice,
-			CandlePrice.Low => candle.LowPrice,
-			CandlePrice.Close => candle.ClosePrice,
-			CandlePrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			CandlePrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			CandlePrice.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			CandlePrices.Open => candle.OpenPrice,
+			CandlePrices.High => candle.HighPrice,
+			CandlePrices.Low => candle.LowPrice,
+			CandlePrices.Close => candle.ClosePrice,
+			CandlePrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			CandlePrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			CandlePrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}

@@ -63,13 +63,13 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 	private readonly StrategyParam<int> _channelPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverage _fastMa = null!;
-	private MovingAverage _middleMa = null!;
-	private MovingAverage _slowMa = null!;
+	private LengthIndicator<decimal> _fastMa = null!;
+	private LengthIndicator<decimal> _middleMa = null!;
+	private LengthIndicator<decimal> _slowMa = null!;
 	private DonchianChannels _channel = null!;
-	private Shift? _fastShiftIndicator;
-	private Shift? _middleShiftIndicator;
-	private Shift? _slowShiftIndicator;
+	private Shift _fastShiftIndicator;
+	private Shift _middleShiftIndicator;
+	private Shift _slowShiftIndicator;
 
 	private decimal _prevFast;
 	private decimal _prevMiddle;
@@ -773,7 +773,7 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 		_shortBreakEvenActivated = false;
 	}
 
-	private MovingAverage CreateMovingAverage(MovingAverageModes mode, int length)
+	private LengthIndicator<decimal> CreateMovingAverage(MovingAverageModes mode, int length)
 	{
 		return mode switch
 		{

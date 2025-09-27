@@ -20,10 +20,22 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class FractalForceIndexStrategy : Strategy
 {
+	public enum TrendModes
+	{
+		/// <summary>
+		/// Trade in the direction of the indicator.
+		/// </summary>
+		Direct,
+		/// <summary>
+		/// Trade against the direction of the indicator.
+		/// </summary>
+		Reverse
+	}
+
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<decimal> _highLevel;
 	private readonly StrategyParam<decimal> _lowLevel;
-	private readonly StrategyParam<TrendMode> _trend;
+	private readonly StrategyParam<TrendModes> _trend;
 	private readonly StrategyParam<bool> _buyOpen;
 	private readonly StrategyParam<bool> _sellOpen;
 	private readonly StrategyParam<bool> _buyClose;
@@ -65,7 +77,7 @@ public class FractalForceIndexStrategy : Strategy
 	/// <summary>
 	/// Trading mode relative to the indicator direction.
 	/// </summary>
-	public TrendMode Trend
+	public TrendModes Trend
 	{
 		get => _trend.Value;
 		set => _trend.Value = value;
@@ -133,7 +145,7 @@ public class FractalForceIndexStrategy : Strategy
 		_lowLevel = Param(nameof(LowLevel), 0m)
 		.SetDisplay("Low Level", "Lower force threshold", "Indicator");
 
-		_trend = Param(nameof(Trend), TrendMode.Direct)
+		_trend = Param(nameof(Trend), TrendModes.Direct)
 		.SetDisplay("Trend", "Trading relative to indicator direction", "General");
 
 		_buyOpen = Param(nameof(BuyOpen), true)
@@ -218,7 +230,7 @@ public class FractalForceIndexStrategy : Strategy
 
 		if (crossedAbove)
 		{
-			if (Trend == TrendMode.Direct)
+			if (Trend == TrendModes.Direct)
 			{
 				if (SellClose && Position < 0)
 					BuyMarket(Math.Abs(Position));
@@ -237,7 +249,7 @@ public class FractalForceIndexStrategy : Strategy
 		}
 		else if (crossedBelow)
 		{
-			if (Trend == TrendMode.Direct)
+			if (Trend == TrendModes.Direct)
 			{
 				if (BuyClose && Position > 0)
 					SellMarket(Math.Abs(Position));

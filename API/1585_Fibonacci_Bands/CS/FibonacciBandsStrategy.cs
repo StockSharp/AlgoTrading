@@ -28,7 +28,7 @@ public class FibonacciBandsStrategy : Strategy
 	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverage _ma;
+	private LengthIndicator<decimal> _ma;
 	private AverageTrueRange _atr;
 	private RelativeStrengthIndex _rsi;
 	private decimal _prevSrc;

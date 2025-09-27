@@ -69,9 +69,9 @@ public class CrossingOfTwoIMAStrategy : Strategy
 	private readonly StrategyParam<int> _trailingStepPips;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverage _firstMa;
-	private MovingAverage _secondMa;
-	private MovingAverage _thirdMa;
+	private LengthIndicator<decimal> _firstMa;
+	private LengthIndicator<decimal> _secondMa;
+	private LengthIndicator<decimal> _thirdMa;
 
 	private readonly List<decimal> _firstValues = new();
 	private readonly List<decimal> _secondValues = new();
@@ -810,9 +810,9 @@ public class CrossingOfTwoIMAStrategy : Strategy
 		return _openTimes[targetIndex];
 	}
 
-	private static MovingAverage CreateMovingAverage(MovingAverageMethods method, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
 	{
-		MovingAverage ma = method switch
+		LengthIndicator<decimal> ma = method switch
 		{
 			MovingAverageMethods.Simple => new SimpleMovingAverage(),
 			MovingAverageMethods.Exponential => new ExponentialMovingAverage(),

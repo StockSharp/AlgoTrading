@@ -23,11 +23,23 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class WaddahAttarTrendStrategy : Strategy
 {
+	public enum TrendModes
+	{
+		/// <summary>
+		/// Direct mode: buy on color change to up, sell on color change to down.
+		/// </summary>
+		Direct,
+		/// <summary>
+		/// Reverse mode: buy on color change to down, sell on color change to up.
+		/// </summary>
+		Reverse
+	}
+
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<int> _signalBar;
-	private readonly StrategyParam<TrendMode> _trendMode;
+	private readonly StrategyParam<TrendModes> _trendMode;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 	private readonly StrategyParam<DataType> _candleType;
@@ -75,7 +87,7 @@ public class WaddahAttarTrendStrategy : Strategy
 	/// <summary>
 	/// Determines how indicator colors are interpreted.
 	/// </summary>
-	public TrendMode TrendMode
+	public TrendModes TrendMode
 	{
 		get => _trendMode.Value;
 		set => _trendMode.Value = value;
@@ -135,7 +147,7 @@ public class WaddahAttarTrendStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Bar", "Bar offset for signal detection", "General");
 
-		_trendMode = Param(nameof(TrendMode), Strategies.TrendMode.Direct)
+		_trendMode = Param(nameof(TrendMode), TrendModes.Direct)
 			.SetDisplay("Trend Mode", "Interpretation of indicator colors", "General");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
@@ -221,7 +233,7 @@ public class WaddahAttarTrendStrategy : Strategy
 
 		var volume = Volume + Math.Abs(Position);
 
-		if (TrendMode == Strategies.TrendMode.Direct)
+		if (TrendMode == TrendModes.Direct)
 		{
 			if (prevSignalColor == 0m && signalColor > 0m)
 				BuyMarket(volume);

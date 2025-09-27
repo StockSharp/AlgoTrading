@@ -20,7 +20,13 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class HelloSmartStrategy : Strategy
 {
-	private readonly StrategyParam<TradeMode> _tradeMode;
+	public enum TradeModes
+	{
+		Buy,
+		Sell
+	}
+
+	private readonly StrategyParam<TradeModes> _tradeMode;
 	private readonly StrategyParam<decimal> _step;
 	private readonly StrategyParam<decimal> _lot;
 	private readonly StrategyParam<decimal> _bigLot;
@@ -34,7 +40,7 @@ public class HelloSmartStrategy : Strategy
 	private decimal _lastPrice;
 
 	/// <summary>Trade direction. 1 - Buy only, 2 - Sell only.</summary>
-	public TradeMode Mode { get => _tradeMode.Value; set => _tradeMode.Value = value; }
+	public TradeModes Mode { get => _tradeMode.Value; set => _tradeMode.Value = value; }
 	/// <summary>Price movement in ticks to add a new position.</summary>
 	public decimal Step { get => _step.Value; set => _step.Value = value; }
 	/// <summary>Base volume for the first order.</summary>
@@ -55,7 +61,7 @@ public class HelloSmartStrategy : Strategy
 	/// <summary>Constructor.</summary>
 	public HelloSmartStrategy()
 	{
-		_tradeMode = Param(nameof(Mode), TradeMode.Sell)
+		_tradeMode = Param(nameof(Mode), TradeModes.Sell)
 			.SetDisplay("Trade Direction", "1 - Buy only, 2 - Sell only", "General");
 		_step = Param(nameof(Step), 1000m)
 			.SetGreaterThanZero()
@@ -111,7 +117,7 @@ public class HelloSmartStrategy : Strategy
 		var price = candle.ClosePrice;
 		var stepPrice = Step * (Security.PriceStep ?? 1m);
 
-		if (Mode == TradeMode.Buy)
+		if (Mode == TradeModes.Buy)
 		{
 			var needOpen = Position <= 0 || (Position > 0 && (_lastPrice - price) >= stepPrice);
 			if (needOpen)

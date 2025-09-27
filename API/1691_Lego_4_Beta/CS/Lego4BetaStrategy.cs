@@ -56,8 +56,8 @@ public class Lego4BetaStrategy : Strategy
 	private readonly StrategyParam<decimal> _rsiLow;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverage _fastMa;
-	private MovingAverage _slowMa;
+	private LengthIndicator<decimal> _fastMa;
+	private LengthIndicator<decimal> _slowMa;
 	private StochasticOscillator _stochastic;
 	private RelativeStrengthIndex _rsi;
 
@@ -359,7 +359,7 @@ public class Lego4BetaStrategy : Strategy
 		_prevSlow = slow;
 	}
 
-	private MovingAverage CreateMa(MaTypes type, int length)
+	private LengthIndicator<decimal> CreateMa(MaTypes type, int length)
 	{
 		return type switch
 		{

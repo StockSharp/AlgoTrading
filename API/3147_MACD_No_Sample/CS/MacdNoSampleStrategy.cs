@@ -71,7 +71,7 @@ public class MacdNoSampleStrategy : Strategy
 	private readonly StrategyParam<decimal> _macdLevelPips;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverage _ma = null!;
+	private LengthIndicator<decimal> _ma = null!;
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 
 	private decimal? _previousMa;
@@ -333,10 +333,10 @@ public class MacdNoSampleStrategy : Strategy
 		{
 			Macd =
 			{
-				ShortMa = new ExponentialMovingAverage { Length = MacdFastPeriod },
-				LongMa = new ExponentialMovingAverage { Length = MacdSlowPeriod },
+				ShortMa = { Length = MacdFastPeriod },
+				LongMa = { Length = MacdSlowPeriod },
 			},
-			SignalMa = new ExponentialMovingAverage { Length = MacdSignalPeriod }
+			SignalMa = { Length = MacdSignalPeriod }
 		};
 
 		Volume = TradeVolume;
@@ -695,14 +695,14 @@ public class MacdNoSampleStrategy : Strategy
 		};
 	}
 
-	private MovingAverage CreateMovingAverage(MaMethodOptions method)
+	private static LengthIndicator<decimal> CreateMovingAverage(MaMethodOptions method)
 	{
 		return method switch
 		{
-		MaMethodOptions.Exponential => new ExponentialMovingAverage(),
-		MaMethodOptions.Smoothed => new SmoothedMovingAverage(),
-		MaMethodOptions.Weighted => new WeightedMovingAverage(),
-		_ => new SimpleMovingAverage(),
+			MaMethodOptions.Exponential => new ExponentialMovingAverage(),
+			MaMethodOptions.Smoothed => new SmoothedMovingAverage(),
+			MaMethodOptions.Weighted => new WeightedMovingAverage(),
+			_ => new SimpleMovingAverage(),
 		};
 	}
 }

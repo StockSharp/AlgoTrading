@@ -39,8 +39,8 @@ public class LongEmaAdvancedExitStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private SimpleMovingAverage _atrSma;
-	private MovingAverage _shortMa;
-	private MovingAverage _midMa;
+	private LengthIndicator<decimal> _shortMa;
+	private LengthIndicator<decimal> _midMa;
 	private decimal _prevShort;
 	private decimal _prevMid;
 	private decimal _prevMacd;
@@ -237,7 +237,7 @@ public class LongEmaAdvancedExitStrategy : Strategy
 		StartProtection();
 	}
 
-	private MovingAverage CreateMa(string type, int length)
+	private static LengthIndicator<decimal> CreateMa(string type, int length)
 	{
 		return type switch
 		{

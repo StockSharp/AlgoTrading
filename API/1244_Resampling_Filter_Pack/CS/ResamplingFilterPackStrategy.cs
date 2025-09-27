@@ -30,7 +30,7 @@ public class ResamplingFilterPackStrategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverage _ma;
+	private LengthIndicator<decimal> _ma;
 	private int _barCounter;
 	private decimal _currentFilter;
 	private decimal _previousFilter;

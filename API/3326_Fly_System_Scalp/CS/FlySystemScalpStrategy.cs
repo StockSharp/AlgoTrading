@@ -32,7 +32,7 @@ public class FlySystemScalpStrategy : Strategy
 	private readonly StrategyParam<TimeSpan> _tradeStopTime;
 	private readonly StrategyParam<decimal> _modifyThreshold;
 
-	private MarketDataSubscription _level1Subscription;
+	private ISubscriptionHandler<Level1ChangeMessage> _level1Subscription;
 	private Order _buyStopOrder;
 	private Order _sellStopOrder;
 	private decimal? _bestBid;

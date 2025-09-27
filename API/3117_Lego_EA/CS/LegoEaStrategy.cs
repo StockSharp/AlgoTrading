@@ -20,6 +20,17 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class LegoEaStrategy : Strategy
 {
+	public enum CandlePrices
+	{
+		Open,
+		High,
+		Low,
+		Close,
+		Median,
+		Typical,
+		Weighted
+	}
+
 	private readonly StrategyParam<decimal> _lotMultiplier;
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _takeProfitPips;
@@ -40,7 +51,7 @@ public class LegoEaStrategy : Strategy
 	private readonly StrategyParam<int> _maSlowPeriod;
 	private readonly StrategyParam<int> _maShift;
 	private readonly StrategyParam<MaMethodOptions> _maMethod;
-	private readonly StrategyParam<CandlePrice> _maPrice;
+	private readonly StrategyParam<CandlePrices> _maPrice;
 	private readonly StrategyParam<int> _stochasticKPeriod;
 	private readonly StrategyParam<int> _stochasticDPeriod;
 	private readonly StrategyParam<int> _stochasticSlow;
@@ -142,7 +153,7 @@ public class LegoEaStrategy : Strategy
 		_maMethod = Param(nameof(MaMethod), MaMethodOptions.Simple)
 			.SetDisplay("MA Method", "Smoothing method for moving averages", "Indicators");
 
-		_maPrice = Param(nameof(MaPrice), CandlePrice.Close)
+		_maPrice = Param(nameof(MaPrice), CandlePrices.Close)
 			.SetDisplay("MA Price", "Price source for moving averages", "Indicators");
 
 		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 5)
@@ -361,7 +372,7 @@ public class LegoEaStrategy : Strategy
 	/// <summary>
 	/// Price source for moving averages.
 	/// </summary>
-	public CandlePrice MaPrice
+	public CandlePrices MaPrice
 	{
 		get => _maPrice.Value;
 		set => _maPrice.Value = value;
@@ -479,7 +490,7 @@ public class LegoEaStrategy : Strategy
 		_cci = new CommodityChannelIndex
 		{
 			Length = Math.Max(1, CciPeriod),
-			CandlePrice = CandlePrice.Typical
+			CandlePrice = CandlePrices.Typical
 		};
 
 		_maFast = CreateMovingAverage(MaMethod, MaFastPeriod, MaPrice);
@@ -771,7 +782,7 @@ public class LegoEaStrategy : Strategy
 		return priceStep * pipFactor;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MaMethodOptions method, int length, CandlePrice price)
+	private static LengthIndicator<decimal> CreateMovingAverage(MaMethodOptions method, int length, CandlePrices price)
 	{
 		LengthIndicator<decimal> indicator = method switch
 		{

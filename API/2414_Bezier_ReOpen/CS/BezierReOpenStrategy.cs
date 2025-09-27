@@ -20,10 +20,21 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BezierReOpenStrategy : Strategy
 {
+	public enum AppliedPrices
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted
+	}
+
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _bPeriod;
 	private readonly StrategyParam<decimal> _t;
-	private readonly StrategyParam<AppliedPrice> _priceType;
+	private readonly StrategyParam<AppliedPrices> _priceType;
 	private readonly StrategyParam<decimal> _priceStep;
 	private readonly StrategyParam<int> _posTotal;
 	private readonly StrategyParam<bool> _buyPosOpen;
@@ -68,7 +79,7 @@ public class BezierReOpenStrategy : Strategy
 	/// <summary>
 	/// Price type used by the indicator.
 	/// </summary>
-	public AppliedPrice PriceType
+	public AppliedPrices PriceType
 	{
 		get => _priceType.Value;
 		set => _priceType.Value = value;
@@ -161,7 +172,7 @@ public class BezierReOpenStrategy : Strategy
 		_t = Param(nameof(T), 0.5m)
 			.SetDisplay("T", "Bezier curve tension", "Indicator");
 
-		_priceType = Param(nameof(PriceType), AppliedPrice.Weighted)
+		_priceType = Param(nameof(PriceType), AppliedPrices.Weighted)
 			.SetDisplay("Price Type", "Price source for indicator", "Indicator");
 
 		_priceStep = Param(nameof(PriceStep), 300m)
