@@ -15,8 +15,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TradeArbitrageStrategy : Strategy
 {
-	private const decimal Alpha = 0.001m;
-
 	private readonly StrategyParam<string> _currenciesParam;
 	private readonly StrategyParam<decimal> _minimumEdgePipsParam;
 	private readonly StrategyParam<decimal> _lotSizeParam;
@@ -24,6 +22,7 @@ public class TradeArbitrageStrategy : Strategy
 	private readonly StrategyParam<decimal> _maxLotParam;
 	private readonly StrategyParam<string> _allowedPatternsParam;
 	private readonly StrategyParam<string> _symbolSuffixParam;
+	private readonly StrategyParam<decimal> _alphaParam;
 
 	private readonly Dictionary<Security, Quote> _quotes = new();
 	private readonly List<Combination> _combinations = new();
@@ -115,6 +114,15 @@ public class TradeArbitrageStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Smoothing coefficient applied when distributing the basket volume across hedged legs.
+	/// </summary>
+	public decimal Alpha
+	{
+		get => _alphaParam.Value;
+		set => _alphaParam.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes parameters for <see cref="TradeArbitrageStrategy"/>.
 	/// </summary>
 	public TradeArbitrageStrategy()
@@ -144,6 +152,10 @@ public class TradeArbitrageStrategy : Strategy
 
 		_symbolSuffixParam = Param(nameof(SymbolSuffix), string.Empty)
 		.SetDisplay("Symbol Suffix", "Suffix appended to every generated currency pair", "Connectivity");
+
+		_alphaParam = Param(nameof(Alpha), 0.001m)
+		.SetGreaterThanZero()
+		.SetDisplay("Alpha", "Smoothing coefficient used when distributing basket volume", "Execution");
 	}
 
 	/// <inheritdoc />

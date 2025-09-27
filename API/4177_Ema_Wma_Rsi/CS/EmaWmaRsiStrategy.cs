@@ -15,8 +15,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class EmaWmaRsiStrategy : Strategy
 {
-	private const int HistoryLimit = 200;
-	private const decimal TrailingBufferPoints = 5m;
 
 	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<int> _wmaPeriod;
@@ -29,6 +27,8 @@ public class EmaWmaRsiStrategy : Strategy
 	private readonly StrategyParam<decimal> _riskPercent;
 	private readonly StrategyParam<TrailingSource> _trailingMode;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _historyLimit;
+	private readonly StrategyParam<decimal> _trailingBufferPoints;
 
 	private ExponentialMovingAverage _ema = null!;
 	private WeightedMovingAverage _wma = null!;
@@ -153,6 +153,31 @@ public class EmaWmaRsiStrategy : Strategy
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
+	/// <summary>
+	/// Maximum number of candles stored for fractal and trailing stop calculations.
+	/// </summary>
+	public int HistoryLimit
+	{
+		get => _historyLimit.Value;
+		set
+		{
+			if (_historyLimit.Value == value)
+				return;
+
+			_historyLimit.Value = value;
+			EnforceHistoryLimit();
+		}
+	}
+
+	/// <summary>
+	/// Buffer in instrument points added to adaptive trailing stops.
+	/// </summary>
+	public decimal TrailingBufferPoints
+	{
+		get => _trailingBufferPoints.Value;
+		set => _trailingBufferPoints.Value = value;
+	}
+
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="EmaWmaRsiStrategy"/> class.
@@ -210,8 +235,30 @@ public class EmaWmaRsiStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for the strategy", "General");
+		_historyLimit = Param(nameof(HistoryLimit), 200)
+			.SetGreaterThanZero()
+			.SetDisplay("History Limit", "Maximum number of candles stored for trailing logic", "Data");
+
+		_trailingBufferPoints = Param(nameof(TrailingBufferPoints), 5m)
+			.SetNotNegative()
+			.SetDisplay("Trailing Buffer (points)", "Additional buffer applied to adaptive trailing stops", "Risk");
 	}
 
+
+	private void EnforceHistoryLimit()
+	{
+		var limit = _historyLimit.Value;
+		if (limit <= 0)
+		{
+			limit = 1;
+			_historyLimit.Value = limit;
+		}
+
+		while (_history.Count > limit)
+		{
+			_history.RemoveAt(0);
+		}
+	}
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{

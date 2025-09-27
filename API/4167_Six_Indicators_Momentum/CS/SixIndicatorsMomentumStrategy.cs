@@ -15,8 +15,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SixIndicatorsMomentumStrategy : Strategy
 {
-	private const int HistoryLength = 256;
-
 	private readonly StrategyParam<bool> _allowBuy;
 	private readonly StrategyParam<bool> _allowSell;
 	private readonly StrategyParam<bool> _closeOnReverseSignal;
@@ -38,11 +36,12 @@ public class SixIndicatorsMomentumStrategy : Strategy
 	private readonly StrategyParam<decimal> _lockProfitPips;
 	private readonly StrategyParam<bool> _useMartingale;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _historyLength;
 
-private readonly SimpleMovingAverage _acAverage = new() { Length = 5 };
+	private readonly SimpleMovingAverage _acAverage = new() { Length = 5 };
 
-	private readonly decimal[] _acHistory = new decimal[HistoryLength];
-	private readonly decimal[] _aoHistory = new decimal[HistoryLength];
+	private decimal[] _acHistory = Array.Empty<decimal>();
+	private decimal[] _aoHistory = Array.Empty<decimal>();
 	private int _acCount;
 	private int _aoCount;
 
@@ -248,6 +247,22 @@ private readonly SimpleMovingAverage _acAverage = new() { Length = 5 };
 	}
 
 	/// <summary>
+	/// Number of historical samples kept for oscillator comparisons.
+	/// </summary>
+	public int HistoryLength
+	{
+		get => _historyLength.Value;
+		set
+		{
+			if (_historyLength.Value == value)
+				return;
+
+			_historyLength.Value = value;
+			ResizeHistoryBuffers();
+		}
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="SixIndicatorsMomentumStrategy"/> class.
 	/// </summary>
 	public SixIndicatorsMomentumStrategy()
@@ -328,7 +343,28 @@ private readonly SimpleMovingAverage _acAverage = new() { Length = 5 };
 		.SetDisplay("Use Martingale", "Multiply volume after losing trades", "Trading Rules");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-		.SetDisplay("Candle Type", "Primary candle series", "General");
+			.SetDisplay("Candle Type", "Primary candle series", "General");
+
+		_historyLength = Param(nameof(HistoryLength), 256)
+			.SetGreaterThanZero()
+			.SetDisplay("History Length", "Number of samples retained for oscillator comparisons", "Signal Mixer");
+
+		ResizeHistoryBuffers();
+}
+
+
+	private void ResizeHistoryBuffers()
+	{
+		var length = _historyLength.Value;
+		if (length <= 0)
+		{
+			length = 1;
+		}
+
+		_acHistory = new decimal[length];
+		_aoHistory = new decimal[length];
+		_acCount = 0;
+		_aoCount = 0;
 	}
 
 	/// <inheritdoc />
