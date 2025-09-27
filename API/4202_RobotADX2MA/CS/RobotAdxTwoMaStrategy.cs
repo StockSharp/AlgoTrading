@@ -13,11 +13,10 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class RobotAdxTwoMaStrategy : Strategy
 {
-	private const int FastEmaPeriod = 5;
-	private const int SlowEmaPeriod = 12;
-	private const int AdxPeriod = 6;
-
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<decimal> _tradeVolume;
@@ -43,12 +42,27 @@ public class RobotAdxTwoMaStrategy : Strategy
 
 	public RobotAdxTwoMaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Primary timeframe processed by the strategy.", "General");
+	        _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+	                .SetDisplay("Candle Type", "Primary timeframe processed by the strategy.", "General");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 4700)
-			.SetNotNegative()
-			.SetDisplay("Take Profit (points)", "Distance to the take profit measured in price steps.", "Risk");
+	        _fastEmaPeriod = Param(nameof(FastEmaPeriod), 5)
+	                .SetGreaterThanZero()
+	                .SetDisplay("Fast EMA", "Period of the fast exponential moving average.", "Indicator")
+	                .SetCanOptimize(true);
+
+	        _slowEmaPeriod = Param(nameof(SlowEmaPeriod), 12)
+	                .SetGreaterThanZero()
+	                .SetDisplay("Slow EMA", "Period of the slow exponential moving average.", "Indicator")
+	                .SetCanOptimize(true);
+
+	        _adxPeriod = Param(nameof(AdxPeriod), 6)
+	                .SetGreaterThanZero()
+	                .SetDisplay("ADX Period", "Number of candles used for ADX calculation.", "Indicator")
+	                .SetCanOptimize(true);
+
+	        _takeProfitPoints = Param(nameof(TakeProfitPoints), 4700)
+	                .SetNotNegative()
+	                .SetDisplay("Take Profit (points)", "Distance to the take profit measured in price steps.", "Risk");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 2400)
 			.SetNotNegative()
@@ -65,14 +79,32 @@ public class RobotAdxTwoMaStrategy : Strategy
 
 	public DataType CandleType
 	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+	        get => _candleType.Value;
+	        set => _candleType.Value = value;
+	}
+
+	public int FastEmaPeriod
+	{
+	        get => _fastEmaPeriod.Value;
+	        set => _fastEmaPeriod.Value = value;
+	}
+
+	public int SlowEmaPeriod
+	{
+	        get => _slowEmaPeriod.Value;
+	        set => _slowEmaPeriod.Value = value;
+	}
+
+	public int AdxPeriod
+	{
+	        get => _adxPeriod.Value;
+	        set => _adxPeriod.Value = value;
 	}
 
 	public int TakeProfitPoints
 	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
+	        get => _takeProfitPoints.Value;
+	        set => _takeProfitPoints.Value = value;
 	}
 
 	public int StopLossPoints
