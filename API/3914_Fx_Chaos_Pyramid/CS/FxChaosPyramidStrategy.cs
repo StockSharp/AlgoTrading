@@ -17,6 +17,7 @@ private readonly StrategyParam<DataType> _dailyCandleType;
 private readonly StrategyParam<int> _awesomeShortPeriod;
 private readonly StrategyParam<int> _awesomeLongPeriod;
 private readonly StrategyParam<decimal> _breakoutBufferPoints;
+private readonly StrategyParam<int> _fractalWindowSize;
 private readonly StrategyParam<int> _maxStages;
 private readonly StrategyParam<bool> _requireProfitForNextStage;
 private readonly StrategyParam<decimal> _volumeScale;
@@ -65,6 +66,10 @@ _breakoutBufferPoints = Param(nameof(BreakoutBufferPoints), 2m)
 .SetDisplay("Breakout Buffer", "Additional buffer in price steps added to previous highs and lows", "Trading")
 .SetNotNegative();
 
+_fractalWindowSize = Param(nameof(FractalWindowSize), 5)
+.SetDisplay("Fractal Window", "Number of candles required to confirm a fractal.", "Indicators")
+.SetRange(5, 15);
+
 _maxStages = Param(nameof(MaxStages), 5)
 .SetDisplay("Max Stages", "Maximum number of pyramid entries", "Risk")
 .SetRange(1, 5);
@@ -83,6 +88,8 @@ _baseBalance = Param(nameof(BaseBalance), 3000m)
 _balanceStep = Param(nameof(BalanceStep), 3000m)
 .SetDisplay("Balance Step", "Balance increment that increases the maximum lot bucket", "Money Management")
 .SetGreaterThanZero();
+
+ApplyFractalWindow(_fractalWindowSize.Value);
 }
 
 /// <summary>
@@ -148,6 +155,31 @@ get => _requireProfitForNextStage.Value;
 set => _requireProfitForNextStage.Value = value;
 }
 
+public int FractalWindowSize
+{
+get => _fractalWindowSize.Value;
+set => ApplyFractalWindow(value);
+}
+
+private void ApplyFractalWindow(int value)
+{
+var normalized = NormalizeWindow(value);
+_fractalWindowSize.Value = normalized;
+_dailyTracker = new FractalTracker(normalized);
+_primaryTracker = new FractalTracker(normalized);
+}
+
+private static int NormalizeWindow(int value)
+{
+if (value < 5)
+value = 5;
+
+if ((value & 1) == 0)
+value += 1;
+
+return value;
+}
+
 /// <summary>
 /// Global multiplier applied to the MQL4 lot matrix.
 /// </summary>
@@ -190,8 +222,7 @@ protected override void OnReseted()
 {
 base.OnReseted();
 
-_dailyTracker = new FractalTracker();
-_primaryTracker = new FractalTracker();
+ApplyFractalWindow(_fractalWindowSize.Value);
 
 _currentDay = default;
 _currentDayOpen = 0m;
@@ -471,51 +502,81 @@ _hasPreviousCandle = true;
 
 private sealed class FractalTracker
 {
-private const int WindowSize = 5;
-private readonly CandleInfo[] _window = new CandleInfo[WindowSize];
+private readonly int _windowSize;
+private readonly CandleInfo[] _window;
 private int _count;
+
+public FractalTracker(int windowSize)
+{
+_windowSize = windowSize;
+_window = new CandleInfo[_windowSize];
+}
 
 public decimal? LastUp { get; private set; }
 public decimal? LastDown { get; private set; }
 
 public void Update(ICandleMessage candle)
 {
-if (_count < WindowSize)
+if (_count < _windowSize)
 {
 _window[_count++] = new CandleInfo(candle.HighPrice, candle.LowPrice);
-if (_count == WindowSize)
+if (_count == _windowSize)
 Evaluate();
 return;
 }
 
-for (var i = 0; i < WindowSize - 1; i++)
+for (var i = 0; i < _windowSize - 1; i++)
 _window[i] = _window[i + 1];
 
-_window[WindowSize - 1] = new CandleInfo(candle.HighPrice, candle.LowPrice);
+_window[_windowSize - 1] = new CandleInfo(candle.HighPrice, candle.LowPrice);
 Evaluate();
 }
 
 private void Evaluate()
 {
-if (_count < WindowSize)
+if (_count < _windowSize)
 return;
 
-var c0 = _window[0];
-var c1 = _window[1];
-var c2 = _window[2];
-var c3 = _window[3];
-var c4 = _window[4];
+var center = _windowSize / 2;
+var pivot = _window[center];
+var isUp = true;
+var isDown = true;
 
-var isUp = c2.High > c1.High && c2.High > c0.High && c2.High >= c3.High && c2.High >= c4.High;
-var isDown = c2.Low < c1.Low && c2.Low < c0.Low && c2.Low <= c3.Low && c2.Low <= c4.Low;
+for (var i = 0; i < _windowSize; i++)
+{
+if (i == center)
+continue;
+
+var sample = _window[i];
+
+if (i < center)
+{
+if (!(pivot.High > sample.High))
+isUp = false;
+
+if (!(pivot.Low < sample.Low))
+isDown = false;
+}
+else
+{
+if (!(pivot.High >= sample.High))
+isUp = false;
+
+if (!(pivot.Low <= sample.Low))
+isDown = false;
+}
+
+if (!isUp && !isDown)
+break;
+}
 
 if (isUp)
 {
-LastUp = LastUp is decimal up && up > c2.High ? up : c2.High;
+LastUp = LastUp is decimal up && up > pivot.High ? up : pivot.High;
 }
 else if (isDown)
 {
-LastDown = LastDown is decimal down && down < c2.Low ? down : c2.Low;
+LastDown = LastDown is decimal down && down < pivot.Low ? down : pivot.Low;
 }
 }
 

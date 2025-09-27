@@ -16,12 +16,12 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class OzFxSimpleStrategy : Strategy
 {
-private const int LayersCount = 5;
-private const int AwesomeShortPeriod = 5;
-private const int AwesomeLongPeriod = 34;
-private const int AcceleratorAveragePeriod = 5;
-private const int StochasticKSmooth = 3;
-private const int StochasticDSmooth = 3;
+private readonly StrategyParam<int> _layersCount;
+private readonly StrategyParam<int> _awesomeShortPeriod;
+private readonly StrategyParam<int> _awesomeLongPeriod;
+private readonly StrategyParam<int> _acceleratorAveragePeriod;
+private readonly StrategyParam<int> _stochasticKSmooth;
+private readonly StrategyParam<int> _stochasticDSmooth;
 
 private readonly StrategyParam<decimal> _orderVolume;
 private readonly StrategyParam<decimal> _stopLossPips;
@@ -66,6 +66,57 @@ public int Index;
 /// <summary>
 /// Volume of each submitted market order layer.
 /// </summary>
+public int LayersCount
+{
+get => _layersCount.Value;
+set => _layersCount.Value = value;
+}
+
+/// <summary>
+/// Short period used for the Awesome Oscillator.
+/// </summary>
+public int AwesomeShortPeriod
+{
+get => _awesomeShortPeriod.Value;
+set => _awesomeShortPeriod.Value = value;
+}
+
+/// <summary>
+/// Long period used for the Awesome Oscillator.
+/// </summary>
+public int AwesomeLongPeriod
+{
+get => _awesomeLongPeriod.Value;
+set => _awesomeLongPeriod.Value = value;
+}
+
+/// <summary>
+/// Length of the moving average applied to the accelerator oscillator.
+/// </summary>
+public int AcceleratorAveragePeriod
+{
+get => _acceleratorAveragePeriod.Value;
+set => _acceleratorAveragePeriod.Value = value;
+}
+
+/// <summary>
+/// Smoothing factor of the stochastic %K line.
+/// </summary>
+public int StochasticKSmooth
+{
+get => _stochasticKSmooth.Value;
+set => _stochasticKSmooth.Value = value;
+}
+
+/// <summary>
+/// Smoothing factor of the stochastic %D line.
+/// </summary>
+public int StochasticDSmooth
+{
+get => _stochasticDSmooth.Value;
+set => _stochasticDSmooth.Value = value;
+}
+
 public decimal OrderVolume
 {
 get => _orderVolume.Value;
@@ -122,6 +173,42 @@ set => _candleType.Value = value;
 /// </summary>
 public OzFxSimpleStrategy()
 {
+_layersCount = Param(nameof(LayersCount), 5)
+.SetGreaterThanZero()
+.SetDisplay("Layers", "Number of layered market orders opened per signal.", "Execution")
+.SetCanOptimize(true)
+.SetOptimize(3, 7, 1);
+
+_awesomeShortPeriod = Param(nameof(AwesomeShortPeriod), 5)
+.SetGreaterThanZero()
+.SetDisplay("AO Fast", "Short period of the Awesome Oscillator.", "Indicators")
+.SetCanOptimize(true)
+.SetOptimize(3, 10, 1);
+
+_awesomeLongPeriod = Param(nameof(AwesomeLongPeriod), 34)
+.SetGreaterThanZero()
+.SetDisplay("AO Slow", "Long period of the Awesome Oscillator.", "Indicators")
+.SetCanOptimize(true)
+.SetOptimize(20, 60, 2);
+
+_acceleratorAveragePeriod = Param(nameof(AcceleratorAveragePeriod), 5)
+.SetGreaterThanZero()
+.SetDisplay("Accelerator MA", "Length of the moving average smoothing the accelerator oscillator.", "Indicators")
+.SetCanOptimize(true)
+.SetOptimize(3, 10, 1);
+
+_stochasticKSmooth = Param(nameof(StochasticKSmooth), 3)
+.SetGreaterThanZero()
+.SetDisplay("Stochastic %K Smooth", "Smoothing period applied to %K.", "Indicators")
+.SetCanOptimize(true)
+.SetOptimize(1, 5, 1);
+
+_stochasticDSmooth = Param(nameof(StochasticDSmooth), 3)
+.SetGreaterThanZero()
+.SetDisplay("Stochastic %D Smooth", "Smoothing period applied to %D.", "Indicators")
+.SetCanOptimize(true)
+.SetOptimize(1, 5, 1);
+
 _orderVolume = Param(nameof(OrderVolume), 0.1m)
 .SetGreaterThanZero()
 .SetDisplay("Order Volume", "Lot size per each market order layer.", "Trading")

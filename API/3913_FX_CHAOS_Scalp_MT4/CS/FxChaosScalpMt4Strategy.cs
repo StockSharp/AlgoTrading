@@ -16,14 +16,15 @@ public class FxChaosScalpMt4Strategy : Strategy
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
-	private readonly StrategyParam<decimal> _breakoutBufferPoints;
-	private readonly StrategyParam<decimal> _spreadPoints;
-	private readonly StrategyParam<DataType> _tradingCandleType;
-	private readonly StrategyParam<DataType> _dailyCandleType;
+private readonly StrategyParam<decimal> _breakoutBufferPoints;
+private readonly StrategyParam<decimal> _spreadPoints;
+private readonly StrategyParam<int> _zigZagWindowSize;
+private readonly StrategyParam<DataType> _tradingCandleType;
+private readonly StrategyParam<DataType> _dailyCandleType;
 
 	private AwesomeOscillator _awesomeOscillator;
-	private FractalZigZagTracker _hourlyTracker;
-	private FractalZigZagTracker _dailyTracker;
+private FractalZigZagTracker _hourlyTracker;
+private FractalZigZagTracker _dailyTracker;
 
 	private decimal _previousHigh;
 	private decimal _previousLow;
@@ -68,14 +69,39 @@ public class FxChaosScalpMt4Strategy : Strategy
 		set => _tradingCandleType.Value = value;
 	}
 
-	public DataType DailyCandleType
-	{
-		get => _dailyCandleType.Value;
-		set => _dailyCandleType.Value = value;
-	}
+public DataType DailyCandleType
+{
+get => _dailyCandleType.Value;
+set => _dailyCandleType.Value = value;
+}
 
-	public FxChaosScalpMt4Strategy()
-	{
+private void ApplyZigZagWindow(int value)
+{
+var normalized = NormalizeWindow(value);
+_zigZagWindowSize.Value = normalized;
+_hourlyTracker = new FractalZigZagTracker(normalized);
+_dailyTracker = new FractalZigZagTracker(normalized);
+}
+
+private static int NormalizeWindow(int value)
+{
+if (value < 5)
+value = 5;
+
+if ((value & 1) == 0)
+value += 1;
+
+return value;
+}
+
+public int ZigZagWindowSize
+{
+get => _zigZagWindowSize.Value;
+set => ApplyZigZagWindow(value);
+}
+
+public FxChaosScalpMt4Strategy()
+{
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume", "Order volume in lots", "Trading");
@@ -89,18 +115,21 @@ public class FxChaosScalpMt4Strategy : Strategy
 		_breakoutBufferPoints = Param(nameof(BreakoutBufferPoints), 2m)
 			.SetDisplay("Breakout Buffer", "Extra points added to previous extremes", "Setup");
 
-		_spreadPoints = Param(nameof(SpreadPoints), 0m)
-			.SetDisplay("Spread (pts)", "Average spread in points added to buy stop", "Setup");
+_spreadPoints = Param(nameof(SpreadPoints), 0m)
+.SetDisplay("Spread (pts)", "Average spread in points added to buy stop", "Setup");
 
-		_tradingCandleType = Param(nameof(TradingCandleType), TimeSpan.FromHours(1).TimeFrame())
+_zigZagWindowSize = Param(nameof(ZigZagWindowSize), 5)
+.SetRange(5, 15)
+.SetDisplay("ZigZag Window", "Number of candles considered by the ZigZag tracker.", "Setup");
+
+_tradingCandleType = Param(nameof(TradingCandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Trading Candle", "Primary trading timeframe", "General");
 
-		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromDays(1).TimeFrame())
-			.SetDisplay("Daily Candle", "Higher timeframe for ZigZag filter", "General");
+_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromDays(1).TimeFrame())
+.SetDisplay("Daily Candle", "Higher timeframe for ZigZag filter", "General");
 
-		_hourlyTracker = new FractalZigZagTracker();
-		_dailyTracker = new FractalZigZagTracker();
-	}
+ApplyZigZagWindow(_zigZagWindowSize.Value);
+}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -113,14 +142,13 @@ public class FxChaosScalpMt4Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
+protected override void OnReseted()
+{
+base.OnReseted();
 
-		Volume = OrderVolume;
-		_hourlyTracker.Reset();
-		_dailyTracker.Reset();
-		_previousHigh = 0m;
+Volume = OrderVolume;
+ApplyZigZagWindow(_zigZagWindowSize.Value);
+_previousHigh = 0m;
 		_previousLow = 0m;
 		_hasPrevious = false;
 		_entryPrice = 0m;
@@ -327,86 +355,116 @@ public class FxChaosScalpMt4Strategy : Strategy
 		return step is decimal value && value > 0m ? value : 1m;
 	}
 
-	private sealed class FractalZigZagTracker
-	{
-		private const int WindowSize = 5;
-		private readonly CandleInfo[] _window = new CandleInfo[WindowSize];
-		private int _count;
-		private decimal? _lastValue;
-		private int _direction;
+private sealed class FractalZigZagTracker
+{
+private readonly int _windowSize;
+private readonly CandleInfo[] _window;
+private int _count;
+private decimal? _lastValue;
+private int _direction;
 
-		public decimal? LastValue => _lastValue;
+public FractalZigZagTracker(int windowSize)
+{
+_windowSize = windowSize;
+_window = new CandleInfo[_windowSize];
+}
 
-		public void Reset()
-		{
-			Array.Clear(_window);
-			_count = 0;
-			_lastValue = null;
-			_direction = 0;
-		}
+public decimal? LastValue => _lastValue;
 
-		public decimal? Update(ICandleMessage candle)
-		{
-			if (_count < WindowSize)
-			{
-				_window[_count++] = new CandleInfo(candle.HighPrice, candle.LowPrice);
-				if (_count < WindowSize)
-					return _lastValue;
+public void Reset()
+{
+Array.Clear(_window);
+_count = 0;
+_lastValue = null;
+_direction = 0;
+}
 
-				Evaluate();
-				return _lastValue;
-			}
+public decimal? Update(ICandleMessage candle)
+{
+if (_count < _windowSize)
+{
+_window[_count++] = new CandleInfo(candle.HighPrice, candle.LowPrice);
+if (_count < _windowSize)
+return _lastValue;
 
-			for (var i = 0; i < WindowSize - 1; i++)
-				_window[i] = _window[i + 1];
+Evaluate();
+return _lastValue;
+}
 
-			_window[WindowSize - 1] = new CandleInfo(candle.HighPrice, candle.LowPrice);
+for (var i = 0; i < _windowSize - 1; i++)
+_window[i] = _window[i + 1];
 
-			Evaluate();
-			return _lastValue;
-		}
+_window[_windowSize - 1] = new CandleInfo(candle.HighPrice, candle.LowPrice);
 
-		private void Evaluate()
-		{
-			if (_count < WindowSize)
-				return;
+Evaluate();
+return _lastValue;
+}
 
-			var c0 = _window[0];
-			var c1 = _window[1];
-			var c2 = _window[2];
-			var c3 = _window[3];
-			var c4 = _window[4];
+private void Evaluate()
+{
+if (_count < _windowSize)
+return;
 
-			var isUp = c2.High > c1.High && c2.High > c0.High && c2.High >= c3.High && c2.High >= c4.High;
-			var isDown = c2.Low < c1.Low && c2.Low < c0.Low && c2.Low <= c3.Low && c2.Low <= c4.Low;
+var center = _windowSize / 2;
+var pivot = _window[center];
+var isUp = true;
+var isDown = true;
 
-			if (isUp)
-			{
-				if (_direction == 1)
-				{
-					if (_lastValue == null || c2.High > _lastValue.Value)
-						_lastValue = c2.High;
-				}
-				else
-				{
-					_lastValue = c2.High;
-					_direction = 1;
-				}
-			}
-			else if (isDown)
-			{
-				if (_direction == -1)
-				{
-					if (_lastValue == null || c2.Low < _lastValue.Value)
-						_lastValue = c2.Low;
-				}
-				else
-				{
-					_lastValue = c2.Low;
-					_direction = -1;
-				}
-			}
-		}
+for (var i = 0; i < _windowSize; i++)
+{
+if (i == center)
+continue;
+
+var sample = _window[i];
+
+if (i < center)
+{
+if (!(pivot.High > sample.High))
+isUp = false;
+
+if (!(pivot.Low < sample.Low))
+isDown = false;
+}
+else
+{
+if (!(pivot.High >= sample.High))
+isUp = false;
+
+if (!(pivot.Low <= sample.Low))
+isDown = false;
+}
+
+if (!isUp && !isDown)
+break;
+}
+
+if (isUp)
+{
+if (_direction == 1)
+{
+if (_lastValue == null || pivot.High > _lastValue.Value)
+_lastValue = pivot.High;
+}
+else
+{
+_lastValue = pivot.High;
+_direction = 1;
+}
+}
+else if (isDown)
+{
+if (_direction == -1)
+{
+if (_lastValue == null || pivot.Low < _lastValue.Value)
+_lastValue = pivot.Low;
+}
+else
+{
+_lastValue = pivot.Low;
+_direction = -1;
+}
+}
+}
 
 		private readonly struct CandleInfo
 		{
