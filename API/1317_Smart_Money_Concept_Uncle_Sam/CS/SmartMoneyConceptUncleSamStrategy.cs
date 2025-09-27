@@ -18,9 +18,37 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SmartMoneyConceptUncleSamStrategy : Strategy
 {
+	public enum MovingAverageTypes
+	{
+		/// <summary>
+		/// Simple Moving Average (SMA).
+		/// </summary>
+		SMA,
+		/// <summary>
+		/// Exponential Moving Average (EMA).
+		/// </summary>
+		EMA,
+		/// <summary>
+		/// Double Exponential Moving Average (DEMA).
+		/// </summary>
+		DEMA,
+		/// <summary>
+		/// Triple Exponential Moving Average (TEMA).
+		/// </summary>
+		TEMA,
+		/// <summary>
+		/// Weighted Moving Average (WMA).
+		/// </summary>
+		WMA,
+		/// <summary>
+		/// Volume Weighted Moving Average (VWMA).
+		/// </summary>
+		VWMA
+	}
+
 	private readonly StrategyParam<int> _pivotLength;
 	private readonly StrategyParam<bool> _useMaFilter;
-	private readonly StrategyParam<MovingAverageTypeEnum> _maType;
+	private readonly StrategyParam<MovingAverageTypes> _maType;
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -29,7 +57,7 @@ public class SmartMoneyConceptUncleSamStrategy : Strategy
 	private int _bufferCount;
 	private decimal? _pivotHigh;
 	private decimal? _pivotLow;
-	private MovingAverage _ma;
+	private IIndicator _ma;
 
 	/// <summary>
 	/// Pivot size to identify highs and lows.
@@ -52,7 +80,7 @@ public class SmartMoneyConceptUncleSamStrategy : Strategy
 	/// <summary>
 	/// Moving average type.
 	/// </summary>
-	public MovingAverageTypeEnum MaType
+	public MovingAverageTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -90,7 +118,7 @@ public class SmartMoneyConceptUncleSamStrategy : Strategy
 		_useMaFilter = Param(nameof(UseMaFilter), false)
 			.SetDisplay("Enable MA Trend", "Use MA trend filter", "Trend");
 
-		_maType = Param(nameof(MaType), MovingAverageTypeEnum.SMA)
+		_maType = Param(nameof(MaType), MovingAverageTypes.SMA)
 			.SetDisplay("MA Type", "Type of moving average", "Trend");
 
 		_maLength = Param(nameof(MaLength), 200)
@@ -132,12 +160,12 @@ public class SmartMoneyConceptUncleSamStrategy : Strategy
 
 		_ma = new MovingAverage { Length = MaLength, Type = MaType switch
 		{
-			MovingAverageTypeEnum.SMA => MovingAverageTypes.Simple,
-			MovingAverageTypeEnum.EMA => MovingAverageTypes.Exponential,
-			MovingAverageTypeEnum.DEMA => MovingAverageTypes.DoubleExponential,
-			MovingAverageTypeEnum.TEMA => MovingAverageTypes.TripleExponential,
-			MovingAverageTypeEnum.WMA => MovingAverageTypes.Weighted,
-			MovingAverageTypeEnum.VWMA => MovingAverageTypes.VolumeWeighted,
+			MovingAverageTypes.SMA => MovingAverageTypes.Simple,
+			MovingAverageTypes.EMA => MovingAverageTypes.Exponential,
+			MovingAverageTypes.DEMA => MovingAverageTypes.DoubleExponential,
+			MovingAverageTypes.TEMA => MovingAverageTypes.TripleExponential,
+			MovingAverageTypes.WMA => MovingAverageTypes.Weighted,
+			MovingAverageTypes.VWMA => MovingAverageTypes.VolumeWeighted,
 			_ => MovingAverageTypes.Simple
 		}};
 

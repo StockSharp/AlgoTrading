@@ -11,22 +11,40 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
 /// MACD strategy with selectable trend detection modes.
 /// </summary>
 public class MacdTrendModeStrategy : Strategy
 {
+	/// <summary>
+	/// Trend detection modes.
+	/// </summary>
+	public enum TrendModes
+	{
+		/// <summary>
+		/// Histogram-based trend detection.
+		/// </summary>
+		Histogram,
+		/// <summary>
+		/// MACD and Signal line crossover trend detection.
+		/// </summary>
+		Cloud,
+		/// <summary>
+		/// Zero line crossover trend detection.
+		/// </summary>
+		Zero
+	}
+
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<int> _signalLength;
-	private readonly StrategyParam<TrendMode> _trendMode;
+	private readonly StrategyParam<TrendModes> _trendMode;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevHist;
 	private decimal _prevPrevHist;
 	private bool _hasPrevHist;
+	private bool _hasPrevPrevHist;
 
 	private decimal _prevMacd;
 	private decimal _prevSignal;
@@ -53,8 +71,7 @@ public class MacdTrendModeStrategy : Strategy
 	/// <summary>
 	/// Selected trend detection mode.
 	/// </summary>
-	public TrendMode TrendMode { get => _trendMode.Value; set => _trendMode.Value = value; }
-
+	public TrendModes TrendMode { get => _trendMode.Value; set => _trendMode.Value = value; }
 
 	/// <summary>
 	/// Candle type for calculations.
@@ -78,7 +95,7 @@ public class MacdTrendModeStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Signal Length", "Signal line period", "MACD");
 
-		_trendMode = Param(nameof(TrendMode), Strategies.TrendMode.Cloud)
+		_trendMode = Param(nameof(TrendMode), TrendModes.Cloud)
 		.SetDisplay("Trend Mode", "Trend detection mode", "General");
 
 
@@ -100,17 +117,17 @@ public class MacdTrendModeStrategy : Strategy
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =
-{
-	ShortMa = { Length = FastLength },
-	LongMa = { Length = SlowLength },
-},
+			{
+				ShortMa = { Length = FastLength },
+				LongMa = { Length = SlowLength },
+			},
 			SignalMa = { Length = SignalLength }
 		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.BindEx(macd, ProcessCandle)
-		.Start();
+			.BindEx(macd, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -129,8 +146,10 @@ public class MacdTrendModeStrategy : Strategy
 			return;
 
 		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var macd = macdTyped.Macd;
-		var signal = macdTyped.Signal;
+
+		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
+			return;
+
 		var hist = macd - signal;
 
 		var buyOpen = false;
@@ -140,7 +159,7 @@ public class MacdTrendModeStrategy : Strategy
 
 		switch (TrendMode)
 		{
-			case Strategies.TrendMode.Histogram:
+			case TrendModes.Histogram:
 				if (_hasPrevHist)
 				{
 					if (_hasPrevPrevHist)
@@ -164,7 +183,7 @@ public class MacdTrendModeStrategy : Strategy
 				_hasPrevHist = true;
 				break;
 
-			case Strategies.TrendMode.Cloud:
+			case TrendModes.Cloud:
 				if (_hasPrevLines)
 				{
 					if (_prevMacd > _prevSignal)
@@ -185,7 +204,7 @@ public class MacdTrendModeStrategy : Strategy
 				_hasPrevLines = true;
 				break;
 
-			case Strategies.TrendMode.Zero:
+			case TrendModes.Zero:
 				if (_hasPrevZeroHist)
 				{
 					if (_prevZeroHist > 0m)

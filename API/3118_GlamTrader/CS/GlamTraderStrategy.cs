@@ -29,7 +29,7 @@ public class GlamTraderStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStepPips;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MaMethods> _maMethod;
+	private readonly StrategyParam<MaIndicators> _maMethod;
 	private readonly StrategyParam<AppliedPrices> _appliedPrice;
 	private readonly StrategyParam<decimal> _laguerreGamma;
 
@@ -115,11 +115,11 @@ public class GlamTraderStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(0, 5, 1);
 
-		_maMethod = Param(nameof(MaMethods), MaMethods.LinearWeighted)
-		.SetDisplay("MA Method", "Averaging method applied to the moving average", "Indicators");
+		_maMethod = Param(nameof(MaMethods), MaIndicators.LinearWeighted)
+			.SetDisplay("MA Method", "Averaging method applied to the moving average", "Indicators");
 
 		_appliedPrice = Param(nameof(AppliedPrices), AppliedPrices.Weighted)
-		.SetDisplay("Applied Price", "Price source used for both MA and Laguerre filters", "Indicators");
+			.SetDisplay("Applied Price", "Price source used for both MA and Laguerre filters", "Indicators");
 
 		_laguerreGamma = Param(nameof(LaguerreGamma), 0.7m)
 		.SetRange(0.1m, 0.9m)
@@ -221,7 +221,7 @@ public class GlamTraderStrategy : Strategy
 	/// <summary>
 	/// Moving average method replicated from MetaTrader constants.
 	/// </summary>
-	public MaMethods MaMethods
+	public MaIndicators MaMethods
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -230,7 +230,7 @@ public class GlamTraderStrategy : Strategy
 	/// <summary>
 	/// Price source used by the moving average and Laguerre filter.
 	/// </summary>
-	public AppliedPrices AppliedPrices
+	public AppliedPrices AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -306,9 +306,10 @@ public class GlamTraderStrategy : Strategy
 			DrawOwnTrades(mainArea);
 		}
 
-		var oscillatorArea = CreateChartArea("Awesome Oscillator");
+		var oscillatorArea = CreateChartArea();
 		if (oscillatorArea != null)
 		{
+			oscillatorArea.Title = "Awesome Oscillator";
 			DrawIndicator(oscillatorArea, _awesomeOscillator);
 		}
 
@@ -609,7 +610,7 @@ public class GlamTraderStrategy : Strategy
 
 	private decimal GetAppliedPrice(ICandleMessage candle)
 	{
-		return AppliedPrices switch
+		return AppliedPrice switch
 		{
 			AppliedPrices.Close => candle.ClosePrice,
 			AppliedPrices.Open => candle.OpenPrice,
@@ -622,14 +623,14 @@ public class GlamTraderStrategy : Strategy
 		};
 	}
 
-	private LengthIndicator<decimal> CreateMovingAverage(MaMethods method, int length)
+	private LengthIndicator<decimal> CreateMovingAverage(MaIndicators method, int length)
 	{
 		return method switch
 		{
-			MaMethods.Simple => new SimpleMovingAverage { Length = length },
-			MaMethods.Exponential => new ExponentialMovingAverage { Length = length },
-			MaMethods.Smoothed => new SmoothedMovingAverage { Length = length },
-			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
+			MaIndicators.Simple => new SimpleMovingAverage { Length = length },
+			MaIndicators.Exponential => new ExponentialMovingAverage { Length = length },
+			MaIndicators.Smoothed => new SmoothedMovingAverage { Length = length },
+			MaIndicators.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}
@@ -659,7 +660,7 @@ public class GlamTraderStrategy : Strategy
 	/// <summary>
 	/// Moving average methods corresponding to MetaTrader modes.
 	/// </summary>
-	public enum MaMethods
+	public enum MaIndicators
 	{
 		Simple,
 		Exponential,

@@ -20,8 +20,19 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class DerivativeZeroCrossStrategy : Strategy
 {
+	public enum PriceTypes
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted
+	}
+
 	private readonly StrategyParam<int> _derivativePeriod;
-	private readonly StrategyParam<PriceTypeEnum> _priceType;
+	private readonly StrategyParam<PriceTypes> _priceType;
 	private readonly StrategyParam<bool> _buyEntry;
 	private readonly StrategyParam<bool> _sellEntry;
 	private readonly StrategyParam<bool> _buyExit;
@@ -45,7 +56,7 @@ public class DerivativeZeroCrossStrategy : Strategy
 	/// <summary>
 	/// Price type used in derivative calculation.
 	/// </summary>
-	public PriceTypeEnum PriceType
+	public PriceTypes PriceType
 	{
 		get => _priceType.Value;
 		set => _priceType.Value = value;
@@ -123,7 +134,7 @@ public class DerivativeZeroCrossStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Derivative Period", "Smoothing period for derivative", "Indicator");
 
-		_priceType = Param(nameof(PriceType), PriceTypeEnum.Weighted)
+		_priceType = Param(nameof(PriceType), PriceTypes.Weighted)
 			.SetDisplay("Price Type", "Source price for derivative", "Indicator");
 
 		_buyEntry = Param(nameof(BuyEntry), true)
@@ -234,13 +245,13 @@ public class DerivativeZeroCrossStrategy : Strategy
 	{
 		return PriceType switch
 		{
-			PriceTypeEnum.Close => candle.ClosePrice,
-			PriceTypeEnum.Open => candle.OpenPrice,
-			PriceTypeEnum.High => candle.HighPrice,
-			PriceTypeEnum.Low => candle.LowPrice,
-			PriceTypeEnum.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			PriceTypeEnum.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			PriceTypeEnum.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			PriceTypes.Close => candle.ClosePrice,
+			PriceTypes.Open => candle.OpenPrice,
+			PriceTypes.High => candle.HighPrice,
+			PriceTypes.Low => candle.LowPrice,
+			PriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			PriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			PriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}

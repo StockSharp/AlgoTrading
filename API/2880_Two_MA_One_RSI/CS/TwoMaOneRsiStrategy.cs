@@ -12,16 +12,24 @@ using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
 /// Port of the “Two MA one RSI” MetaTrader 5 strategy.
 /// Combines a fast and slow moving average crossover with RSI filters and fixed/trailed exits.
 /// </summary>
 public class TwoMaOneRsiStrategy : Strategy
 {
+	public enum MovingAverageTypes
+	{
+		Simple,
+		Exponential,
+		DoubleExponential,
+		TripleExponential,
+		Weighted,
+		VolumeWeighted
+	}
+
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<MovingAverageTypeEnum> _maType;
+	private readonly StrategyParam<MovingAverageTypes> _maType;
 	private readonly StrategyParam<int> _fastMaPeriod;
 	private readonly StrategyParam<int> _slowPeriodMultiplier;
 	private readonly StrategyParam<int> _fastMaShift;
@@ -68,88 +76,88 @@ public class TwoMaOneRsiStrategy : Strategy
 	/// </summary>
 	public TwoMaOneRsiStrategy()
 	{
-	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-	.SetDisplay("Candle Type", "Working timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		.SetDisplay("Candle Type", "Working timeframe", "General");
 
-	_maType = Param(nameof(MaType), MovingAverageTypeEnum.Simple)
-	.SetDisplay("MA Type", "Type of moving averages", "Indicators");
+		_maType = Param(nameof(MaType), MovingAverageTypes.Simple)
+		.SetDisplay("MA Type", "Type of moving averages", "Indicators");
 
-	_fastMaPeriod = Param(nameof(FastMaPeriod), 10)
-	.SetGreaterThanZero()
-	.SetDisplay("Fast MA Period", "Length of the fast moving average", "Indicators");
+		_fastMaPeriod = Param(nameof(FastMaPeriod), 10)
+		.SetGreaterThanZero()
+		.SetDisplay("Fast MA Period", "Length of the fast moving average", "Indicators");
 
-	_slowPeriodMultiplier = Param(nameof(SlowPeriodMultiplier), 2)
-	.SetGreaterThanZero()
-	.SetDisplay("Slow MA Multiplier", "Slow MA period = Fast period * multiplier", "Indicators");
+		_slowPeriodMultiplier = Param(nameof(SlowPeriodMultiplier), 2)
+		.SetGreaterThanZero()
+		.SetDisplay("Slow MA Multiplier", "Slow MA period = Fast period * multiplier", "Indicators");
 
-	_fastMaShift = Param(nameof(FastMaShift), 3)
-	.SetNotNegative()
-	.SetDisplay("Fast MA Shift", "Horizontal shift applied to the fast MA", "Indicators");
+		_fastMaShift = Param(nameof(FastMaShift), 3)
+		.SetNotNegative()
+		.SetDisplay("Fast MA Shift", "Horizontal shift applied to the fast MA", "Indicators");
 
-	_slowMaShift = Param(nameof(SlowMaShift), 0)
-	.SetNotNegative()
-	.SetDisplay("Slow MA Shift", "Horizontal shift applied to the slow MA", "Indicators");
+		_slowMaShift = Param(nameof(SlowMaShift), 0)
+		.SetNotNegative()
+		.SetDisplay("Slow MA Shift", "Horizontal shift applied to the slow MA", "Indicators");
 
-	_rsiPeriod = Param(nameof(RsiPeriod), 10)
-	.SetGreaterThanZero()
-	.SetDisplay("RSI Period", "Length of the RSI filter", "Indicators");
+		_rsiPeriod = Param(nameof(RsiPeriod), 10)
+		.SetGreaterThanZero()
+		.SetDisplay("RSI Period", "Length of the RSI filter", "Indicators");
 
-	_rsiUpperLevel = Param(nameof(RsiUpperLevel), 70m)
-	.SetRange(0m, 100m)
-	.SetDisplay("RSI Upper", "RSI threshold for long confirmation", "Indicators");
+		_rsiUpperLevel = Param(nameof(RsiUpperLevel), 70m)
+		.SetRange(0m, 100m)
+		.SetDisplay("RSI Upper", "RSI threshold for long confirmation", "Indicators");
 
-	_rsiLowerLevel = Param(nameof(RsiLowerLevel), 30m)
-	.SetRange(0m, 100m)
-	.SetDisplay("RSI Lower", "RSI threshold for short confirmation", "Indicators");
+		_rsiLowerLevel = Param(nameof(RsiLowerLevel), 30m)
+		.SetRange(0m, 100m)
+		.SetDisplay("RSI Lower", "RSI threshold for short confirmation", "Indicators");
 
-	_buyPreviousFastBelowSlow = Param(nameof(BuyPreviousFastBelowSlow), true)
-	.SetDisplay("Buy Previous <", "Require fast MA below slow MA two bars ago", "Signals");
+		_buyPreviousFastBelowSlow = Param(nameof(BuyPreviousFastBelowSlow), true)
+		.SetDisplay("Buy Previous <", "Require fast MA below slow MA two bars ago", "Signals");
 
-	_buyCurrentFastAboveSlow = Param(nameof(BuyCurrentFastAboveSlow), true)
-	.SetDisplay("Buy Current >", "Require fast MA above slow MA on the last bar", "Signals");
+		_buyCurrentFastAboveSlow = Param(nameof(BuyCurrentFastAboveSlow), true)
+		.SetDisplay("Buy Current >", "Require fast MA above slow MA on the last bar", "Signals");
 
-	_buyRequiresRsiAboveUpper = Param(nameof(BuyRequiresRsiAboveUpper), true)
-	.SetDisplay("Buy RSI >", "Require RSI above the upper level", "Signals");
+		_buyRequiresRsiAboveUpper = Param(nameof(BuyRequiresRsiAboveUpper), true)
+		.SetDisplay("Buy RSI >", "Require RSI above the upper level", "Signals");
 
-	_sellPreviousFastAboveSlow = Param(nameof(SellPreviousFastAboveSlow), true)
-	.SetDisplay("Sell Previous >", "Require fast MA above slow MA two bars ago", "Signals");
+		_sellPreviousFastAboveSlow = Param(nameof(SellPreviousFastAboveSlow), true)
+		.SetDisplay("Sell Previous >", "Require fast MA above slow MA two bars ago", "Signals");
 
-	_sellCurrentFastBelowSlow = Param(nameof(SellCurrentFastBelowSlow), true)
-	.SetDisplay("Sell Current <", "Require fast MA below slow MA on the last bar", "Signals");
+		_sellCurrentFastBelowSlow = Param(nameof(SellCurrentFastBelowSlow), true)
+		.SetDisplay("Sell Current <", "Require fast MA below slow MA on the last bar", "Signals");
 
-	_sellRequiresRsiBelowLower = Param(nameof(SellRequiresRsiBelowLower), true)
-	.SetDisplay("Sell RSI <", "Require RSI below the lower level", "Signals");
+		_sellRequiresRsiBelowLower = Param(nameof(SellRequiresRsiBelowLower), true)
+		.SetDisplay("Sell RSI <", "Require RSI below the lower level", "Signals");
 
-	_stopLossPips = Param(nameof(StopLossPips), 50)
-	.SetNotNegative()
-	.SetDisplay("Stop Loss (pips)", "Distance of the stop-loss in pips", "Risk");
+		_stopLossPips = Param(nameof(StopLossPips), 50)
+		.SetNotNegative()
+		.SetDisplay("Stop Loss (pips)", "Distance of the stop-loss in pips", "Risk");
 
-	_takeProfitPips = Param(nameof(TakeProfitPips), 150)
-	.SetNotNegative()
-	.SetDisplay("Take Profit (pips)", "Distance of the take-profit in pips", "Risk");
+		_takeProfitPips = Param(nameof(TakeProfitPips), 150)
+		.SetNotNegative()
+		.SetDisplay("Take Profit (pips)", "Distance of the take-profit in pips", "Risk");
 
-	_trailingStopPips = Param(nameof(TrailingStopPips), 15)
-	.SetNotNegative()
-	.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk");
+		_trailingStopPips = Param(nameof(TrailingStopPips), 15)
+		.SetNotNegative()
+		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk");
 
-	_trailingStepPips = Param(nameof(TrailingStepPips), 5)
-	.SetNotNegative()
-	.SetDisplay("Trailing Step (pips)", "Minimum improvement before trailing moves", "Risk");
+		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
+		.SetNotNegative()
+		.SetDisplay("Trailing Step (pips)", "Minimum improvement before trailing moves", "Risk");
 
-	_maxPositions = Param(nameof(MaxPositions), 10)
-	.SetNotNegative()
-	.SetDisplay("Max Positions", "Maximum simultaneous entries per side (0 = unlimited)", "Risk");
+		_maxPositions = Param(nameof(MaxPositions), 10)
+		.SetNotNegative()
+		.SetDisplay("Max Positions", "Maximum simultaneous entries per side (0 = unlimited)", "Risk");
 
-	_profitClose = Param(nameof(ProfitClose), 100m)
-	.SetNotNegative()
-	.SetDisplay("Profit Close", "Close all positions when floating profit (in currency) reaches this level", "Risk");
+		_profitClose = Param(nameof(ProfitClose), 100m)
+		.SetNotNegative()
+		.SetDisplay("Profit Close", "Close all positions when floating profit (in currency) reaches this level", "Risk");
 
-	_closeOppositePositions = Param(nameof(CloseOppositePositions), false)
-	.SetDisplay("Close Opposite", "Close opposite positions before opening a new trade", "Risk");
+		_closeOppositePositions = Param(nameof(CloseOppositePositions), false)
+		.SetDisplay("Close Opposite", "Close opposite positions before opening a new trade", "Risk");
 
-	_tradeVolume = Param(nameof(TradeVolume), 1m)
-	.SetGreaterThanZero()
-	.SetDisplay("Trade Volume", "Order volume for each new entry", "Trading");
+		_tradeVolume = Param(nameof(TradeVolume), 1m)
+		.SetGreaterThanZero()
+		.SetDisplay("Trade Volume", "Order volume for each new entry", "Trading");
 	}
 
 	/// <summary>
@@ -157,17 +165,17 @@ public class TwoMaOneRsiStrategy : Strategy
 	/// </summary>
 	public DataType CandleType
 	{
-	get => _candleType.Value;
-	set => _candleType.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
 	/// Type of moving averages.
 	/// </summary>
-	public MovingAverageTypeEnum MaType
+	public MovingAverageTypes MaType
 	{
-	get => _maType.Value;
-	set => _maType.Value = value;
+		get => _maType.Value;
+		set => _maType.Value = value;
 	}
 
 	/// <summary>
@@ -175,8 +183,8 @@ public class TwoMaOneRsiStrategy : Strategy
 	/// </summary>
 	public int FastMaPeriod
 	{
-	get => _fastMaPeriod.Value;
-	set => _fastMaPeriod.Value = value;
+		get => _fastMaPeriod.Value;
+		set => _fastMaPeriod.Value = value;
 	}
 
 	/// <summary>
@@ -184,8 +192,8 @@ public class TwoMaOneRsiStrategy : Strategy
 	/// </summary>
 	public int SlowPeriodMultiplier
 	{
-	get => _slowPeriodMultiplier.Value;
-	set => _slowPeriodMultiplier.Value = value;
+		get => _slowPeriodMultiplier.Value;
+		set => _slowPeriodMultiplier.Value = value;
 	}
 
 	/// <summary>
@@ -198,8 +206,8 @@ public class TwoMaOneRsiStrategy : Strategy
 	/// </summary>
 	public int FastMaShift
 	{
-	get => _fastMaShift.Value;
-	set => _fastMaShift.Value = value;
+		get => _fastMaShift.Value;
+		set => _fastMaShift.Value = value;
 	}
 
 	/// <summary>
@@ -207,8 +215,8 @@ public class TwoMaOneRsiStrategy : Strategy
 	/// </summary>
 	public int SlowMaShift
 	{
-	get => _slowMaShift.Value;
-	set => _slowMaShift.Value = value;
+		get => _slowMaShift.Value;
+		set => _slowMaShift.Value = value;
 	}
 
 	/// <summary>
@@ -216,8 +224,8 @@ public class TwoMaOneRsiStrategy : Strategy
 	/// </summary>
 	public int RsiPeriod
 	{
-	get => _rsiPeriod.Value;
-	set => _rsiPeriod.Value = value;
+		get => _rsiPeriod.Value;
+		set => _rsiPeriod.Value = value;
 	}
 
 	/// <summary>
@@ -225,8 +233,8 @@ public class TwoMaOneRsiStrategy : Strategy
 	/// </summary>
 	public decimal RsiUpperLevel
 	{
-	get => _rsiUpperLevel.Value;
-	set => _rsiUpperLevel.Value = value;
+		get => _rsiUpperLevel.Value;
+		set => _rsiUpperLevel.Value = value;
 	}
 
 	/// <summary>
@@ -234,8 +242,8 @@ public class TwoMaOneRsiStrategy : Strategy
 	/// </summary>
 	public decimal RsiLowerLevel
 	{
-	get => _rsiLowerLevel.Value;
-	set => _rsiLowerLevel.Value = value;
+		get => _rsiLowerLevel.Value;
+		set => _rsiLowerLevel.Value = value;
 	}
 
 	/// <summary>
@@ -243,8 +251,8 @@ public class TwoMaOneRsiStrategy : Strategy
 	/// </summary>
 	public bool BuyPreviousFastBelowSlow
 	{
-	get => _buyPreviousFastBelowSlow.Value;
-	set => _buyPreviousFastBelowSlow.Value = value;
+		get => _buyPreviousFastBelowSlow.Value;
+		set => _buyPreviousFastBelowSlow.Value = value;
 	}
 
 	/// <summary>
@@ -252,8 +260,8 @@ public class TwoMaOneRsiStrategy : Strategy
 	/// </summary>
 	public bool BuyCurrentFastAboveSlow
 	{
-	get => _buyCurrentFastAboveSlow.Value;
-	set => _buyCurrentFastAboveSlow.Value = value;
+		get => _buyCurrentFastAboveSlow.Value;
+		set => _buyCurrentFastAboveSlow.Value = value;
 	}
 
 	/// <summary>
@@ -261,8 +269,8 @@ public class TwoMaOneRsiStrategy : Strategy
 	/// </summary>
 	public bool BuyRequiresRsiAboveUpper
 	{
-	get => _buyRequiresRsiAboveUpper.Value;
-	set => _buyRequiresRsiAboveUpper.Value = value;
+		get => _buyRequiresRsiAboveUpper.Value;
+		set => _buyRequiresRsiAboveUpper.Value = value;
 	}
 
 	/// <summary>
@@ -270,8 +278,8 @@ public class TwoMaOneRsiStrategy : Strategy
 	/// </summary>
 	public bool SellPreviousFastAboveSlow
 	{
-	get => _sellPreviousFastAboveSlow.Value;
-	set => _sellPreviousFastAboveSlow.Value = value;
+		get => _sellPreviousFastAboveSlow.Value;
+		set => _sellPreviousFastAboveSlow.Value = value;
 	}
 
 	/// <summary>
@@ -279,8 +287,8 @@ public class TwoMaOneRsiStrategy : Strategy
 	/// </summary>
 	public bool SellCurrentFastBelowSlow
 	{
-	get => _sellCurrentFastBelowSlow.Value;
-	set => _sellCurrentFastBelowSlow.Value = value;
+		get => _sellCurrentFastBelowSlow.Value;
+		set => _sellCurrentFastBelowSlow.Value = value;
 	}
 
 	/// <summary>
@@ -288,8 +296,8 @@ public class TwoMaOneRsiStrategy : Strategy
 	/// </summary>
 	public bool SellRequiresRsiBelowLower
 	{
-	get => _sellRequiresRsiBelowLower.Value;
-	set => _sellRequiresRsiBelowLower.Value = value;
+		get => _sellRequiresRsiBelowLower.Value;
+		set => _sellRequiresRsiBelowLower.Value = value;
 	}
 
 	/// <summary>
@@ -297,8 +305,8 @@ public class TwoMaOneRsiStrategy : Strategy
 	/// </summary>
 	public int StopLossPips
 	{
-	get => _stopLossPips.Value;
-	set => _stopLossPips.Value = value;
+		get => _stopLossPips.Value;
+		set => _stopLossPips.Value = value;
 	}
 
 	/// <summary>
@@ -306,8 +314,8 @@ public class TwoMaOneRsiStrategy : Strategy
 	/// </summary>
 	public int TakeProfitPips
 	{
-	get => _takeProfitPips.Value;
-	set => _takeProfitPips.Value = value;
+		get => _takeProfitPips.Value;
+		set => _takeProfitPips.Value = value;
 	}
 
 	/// <summary>
@@ -315,8 +323,8 @@ public class TwoMaOneRsiStrategy : Strategy
 	/// </summary>
 	public int TrailingStopPips
 	{
-	get => _trailingStopPips.Value;
-	set => _trailingStopPips.Value = value;
+		get => _trailingStopPips.Value;
+		set => _trailingStopPips.Value = value;
 	}
 
 	/// <summary>
@@ -324,8 +332,8 @@ public class TwoMaOneRsiStrategy : Strategy
 	/// </summary>
 	public int TrailingStepPips
 	{
-	get => _trailingStepPips.Value;
-	set => _trailingStepPips.Value = value;
+		get => _trailingStepPips.Value;
+		set => _trailingStepPips.Value = value;
 	}
 
 	/// <summary>
@@ -333,8 +341,8 @@ public class TwoMaOneRsiStrategy : Strategy
 	/// </summary>
 	public int MaxPositions
 	{
-	get => _maxPositions.Value;
-	set => _maxPositions.Value = value;
+		get => _maxPositions.Value;
+		set => _maxPositions.Value = value;
 	}
 
 	/// <summary>
@@ -342,8 +350,8 @@ public class TwoMaOneRsiStrategy : Strategy
 	/// </summary>
 	public decimal ProfitClose
 	{
-	get => _profitClose.Value;
-	set => _profitClose.Value = value;
+		get => _profitClose.Value;
+		set => _profitClose.Value = value;
 	}
 
 	/// <summary>
@@ -351,8 +359,8 @@ public class TwoMaOneRsiStrategy : Strategy
 	/// </summary>
 	public bool CloseOppositePositions
 	{
-	get => _closeOppositePositions.Value;
-	set => _closeOppositePositions.Value = value;
+		get => _closeOppositePositions.Value;
+		set => _closeOppositePositions.Value = value;
 	}
 
 	/// <summary>
@@ -360,446 +368,446 @@ public class TwoMaOneRsiStrategy : Strategy
 	/// </summary>
 	public decimal TradeVolume
 	{
-	get => _tradeVolume.Value;
-	set
-	{
-	_tradeVolume.Value = value;
-	Volume = value;
-	}
+		get => _tradeVolume.Value;
+		set
+		{
+			_tradeVolume.Value = value;
+			Volume = value;
+		}
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-	return [(Security, CandleType)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
-	base.OnReseted();
+		base.OnReseted();
 
-	_fastHistory.Clear();
-	_slowHistory.Clear();
-	_previousRsi = null;
-	ResetLongState();
-	ResetShortState();
+		_fastHistory.Clear();
+		_slowHistory.Clear();
+		_previousRsi = null;
+		ResetLongState();
+		ResetShortState();
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
-	base.OnStarted(time);
+		base.OnStarted(time);
 
-	if (TrailingStopPips > 0 && TrailingStepPips == 0)
-	throw new InvalidOperationException("Trailing step must be greater than zero when trailing stop is enabled.");
+		if (TrailingStopPips > 0 && TrailingStepPips == 0)
+			throw new InvalidOperationException("Trailing step must be greater than zero when trailing stop is enabled.");
 
-	Volume = TradeVolume;
+		Volume = TradeVolume;
 
-	_fastMa = CreateMovingAverage(MaType, FastMaPeriod);
-	_slowMa = CreateMovingAverage(MaType, SlowMaPeriod);
-	_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		_fastMa = CreateMovingAverage(MaType, FastMaPeriod);
+		_slowMa = CreateMovingAverage(MaType, SlowMaPeriod);
+		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
-	_fastHistory.Clear();
-	_slowHistory.Clear();
-	_previousRsi = null;
+		_fastHistory.Clear();
+		_slowHistory.Clear();
+		_previousRsi = null;
 
-	_pipSize = Security?.PriceStep ?? 1m;
-	if (Security?.PriceStep is decimal step && step < 1m)
-	_pipSize = step * 10m;
+		_pipSize = Security?.PriceStep ?? 1m;
+		if (Security?.PriceStep is decimal step && step < 1m)
+			_pipSize = step * 10m;
 
-	_stepPrice = Security?.StepPrice ?? 1m;
+		_stepPrice = Security?.StepPrice ?? 1m;
 
-	var subscription = SubscribeCandles(CandleType);
-	subscription
-	.Bind(_fastMa, _slowMa, _rsi, ProcessCandle)
-	.Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+		.Bind(_fastMa, _slowMa, _rsi, ProcessCandle)
+		.Start();
 
-	var area = CreateChartArea();
-	if (area != null)
-	{
-	DrawCandles(area, subscription);
-	DrawIndicator(area, _fastMa);
-	DrawIndicator(area, _slowMa);
-	DrawOwnTrades(area);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, _fastMa);
+			DrawIndicator(area, _slowMa);
+			DrawOwnTrades(area);
 
-	var rsiArea = CreateChartArea();
-	if (rsiArea != null)
-	DrawIndicator(rsiArea, _rsi);
-	}
+			var rsiArea = CreateChartArea();
+			if (rsiArea != null)
+				DrawIndicator(rsiArea, _rsi);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue, decimal rsiValue)
 	{
-	if (candle.State != CandleStates.Finished)
-	return;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	if (!_fastMa.IsFormed || !_slowMa.IsFormed || !_rsi.IsFormed)
-	{
-	_fastHistory.Add(fastValue);
-	_slowHistory.Add(slowValue);
-	_previousRsi = rsiValue;
-	return;
-	}
+		if (!_fastMa.IsFormed || !_slowMa.IsFormed || !_rsi.IsFormed)
+		{
+			_fastHistory.Add(fastValue);
+			_slowHistory.Add(slowValue);
+			_previousRsi = rsiValue;
+			return;
+		}
 
-	_fastHistory.Add(fastValue);
-	_slowHistory.Add(slowValue);
+		_fastHistory.Add(fastValue);
+		_slowHistory.Add(slowValue);
 
-	UpdateRiskManagement(candle);
-	if (ProfitClose > 0m && TryCloseOnProfit(candle))
-	{
-	_previousRsi = rsiValue;
-	return;
-	}
+		UpdateRiskManagement(candle);
+		if (ProfitClose > 0m && TryCloseOnProfit(candle))
+		{
+			_previousRsi = rsiValue;
+			return;
+		}
 
-	if (!IsFormedAndOnlineAndAllowTrading())
-	{
-	_previousRsi = rsiValue;
-	return;
-	}
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_previousRsi = rsiValue;
+			return;
+		}
 
-	var fastPrevIndex = _fastHistory.Count - FastMaShift - 2;
-	var fastPrevPrevIndex = _fastHistory.Count - FastMaShift - 3;
-	var slowPrevIndex = _slowHistory.Count - SlowMaShift - 2;
-	var slowPrevPrevIndex = _slowHistory.Count - SlowMaShift - 3;
+		var fastPrevIndex = _fastHistory.Count - FastMaShift - 2;
+		var fastPrevPrevIndex = _fastHistory.Count - FastMaShift - 3;
+		var slowPrevIndex = _slowHistory.Count - SlowMaShift - 2;
+		var slowPrevPrevIndex = _slowHistory.Count - SlowMaShift - 3;
 
-	if (fastPrevIndex < 0 || fastPrevPrevIndex < 0 || slowPrevIndex < 0 || slowPrevPrevIndex < 0 || _previousRsi is null)
-	{
-	_previousRsi = rsiValue;
-	return;
-	}
+		if (fastPrevIndex < 0 || fastPrevPrevIndex < 0 || slowPrevIndex < 0 || slowPrevPrevIndex < 0 || _previousRsi is null)
+		{
+			_previousRsi = rsiValue;
+			return;
+		}
 
-	var fastPrev = _fastHistory[fastPrevIndex];
-	var fastPrevPrev = _fastHistory[fastPrevPrevIndex];
-	var slowPrev = _slowHistory[slowPrevIndex];
-	var slowPrevPrev = _slowHistory[slowPrevPrevIndex];
-	var prevRsi = _previousRsi.Value;
+		var fastPrev = _fastHistory[fastPrevIndex];
+		var fastPrevPrev = _fastHistory[fastPrevPrevIndex];
+		var slowPrev = _slowHistory[slowPrevIndex];
+		var slowPrevPrev = _slowHistory[slowPrevPrevIndex];
+		var prevRsi = _previousRsi.Value;
 
-	var buyPrevCondition = BuyPreviousFastBelowSlow ? fastPrevPrev < slowPrevPrev : fastPrevPrev > slowPrevPrev;
-	var buyCurrentCondition = BuyCurrentFastAboveSlow ? fastPrev > slowPrev : fastPrev < slowPrev;
-	var buyRsiCondition = BuyRequiresRsiAboveUpper ? prevRsi > RsiUpperLevel : prevRsi < RsiUpperLevel;
-	var buySignal = buyPrevCondition && buyCurrentCondition && buyRsiCondition;
+		var buyPrevCondition = BuyPreviousFastBelowSlow ? fastPrevPrev < slowPrevPrev : fastPrevPrev > slowPrevPrev;
+		var buyCurrentCondition = BuyCurrentFastAboveSlow ? fastPrev > slowPrev : fastPrev < slowPrev;
+		var buyRsiCondition = BuyRequiresRsiAboveUpper ? prevRsi > RsiUpperLevel : prevRsi < RsiUpperLevel;
+		var buySignal = buyPrevCondition && buyCurrentCondition && buyRsiCondition;
 
-	var sellPrevCondition = SellPreviousFastAboveSlow ? fastPrevPrev > slowPrevPrev : fastPrevPrev < slowPrevPrev;
-	var sellCurrentCondition = SellCurrentFastBelowSlow ? fastPrev < slowPrev : fastPrev > slowPrev;
-	var sellRsiCondition = SellRequiresRsiBelowLower ? prevRsi < RsiLowerLevel : prevRsi > RsiLowerLevel;
-	var sellSignal = sellPrevCondition && sellCurrentCondition && sellRsiCondition;
+		var sellPrevCondition = SellPreviousFastAboveSlow ? fastPrevPrev > slowPrevPrev : fastPrevPrev < slowPrevPrev;
+		var sellCurrentCondition = SellCurrentFastBelowSlow ? fastPrev < slowPrev : fastPrev > slowPrev;
+		var sellRsiCondition = SellRequiresRsiBelowLower ? prevRsi < RsiLowerLevel : prevRsi > RsiLowerLevel;
+		var sellSignal = sellPrevCondition && sellCurrentCondition && sellRsiCondition;
 
-	if (buySignal)
-	TryOpenLong(candle);
+		if (buySignal)
+			TryOpenLong(candle);
 
-	if (sellSignal)
-	TryOpenShort(candle);
+		if (sellSignal)
+			TryOpenShort(candle);
 
-	_previousRsi = rsiValue;
+		_previousRsi = rsiValue;
 	}
 
 	private void TryOpenLong(ICandleMessage candle)
 	{
-	var currentLongCount = GetLongCount();
-	if (MaxPositions > 0 && currentLongCount >= MaxPositions)
-		return;
+		var currentLongCount = GetLongCount();
+		if (MaxPositions > 0 && currentLongCount >= MaxPositions)
+			return;
 
-	if (!CloseOppositePositions && Position < 0)
-		return;
+		if (!CloseOppositePositions && Position < 0)
+			return;
 
-	var existingLongVolume = Math.Max(Position, 0m);
-	var volume = TradeVolume;
-	if (CloseOppositePositions && Position < 0)
-	{
-		volume += Math.Abs(Position);
-		ResetShortState();
-	}
+		var existingLongVolume = Math.Max(Position, 0m);
+		var volume = TradeVolume;
+		if (CloseOppositePositions && Position < 0)
+		{
+			volume += Math.Abs(Position);
+			ResetShortState();
+		}
 
-	if (volume <= 0m)
-		return;
+		if (volume <= 0m)
+			return;
 
-	BuyMarket(volume);
+		BuyMarket(volume);
 
-	var entryPrice = candle.ClosePrice;
-	UpdateLongEntry(existingLongVolume, volume, entryPrice);
-	LogInfo($"Opened long at {entryPrice} with volume {volume}.");
+		var entryPrice = candle.ClosePrice;
+		UpdateLongEntry(existingLongVolume, volume, entryPrice);
+		LogInfo($"Opened long at {entryPrice} with volume {volume}.");
 	}
 
 	private void TryOpenShort(ICandleMessage candle)
 	{
-	var currentShortCount = GetShortCount();
-	if (MaxPositions > 0 && currentShortCount >= MaxPositions)
-		return;
+		var currentShortCount = GetShortCount();
+		if (MaxPositions > 0 && currentShortCount >= MaxPositions)
+			return;
 
-	if (!CloseOppositePositions && Position > 0)
-		return;
+		if (!CloseOppositePositions && Position > 0)
+			return;
 
-	var existingShortVolume = Math.Max(-Position, 0m);
-	var volume = TradeVolume;
-	if (CloseOppositePositions && Position > 0)
-	{
-		volume += Position;
-		ResetLongState();
-	}
+		var existingShortVolume = Math.Max(-Position, 0m);
+		var volume = TradeVolume;
+		if (CloseOppositePositions && Position > 0)
+		{
+			volume += Position;
+			ResetLongState();
+		}
 
-	if (volume <= 0m)
-		return;
+		if (volume <= 0m)
+			return;
 
-	SellMarket(volume);
+		SellMarket(volume);
 
-	var entryPrice = candle.ClosePrice;
-	UpdateShortEntry(existingShortVolume, volume, entryPrice);
-	LogInfo($"Opened short at {entryPrice} with volume {volume}.");
+		var entryPrice = candle.ClosePrice;
+		UpdateShortEntry(existingShortVolume, volume, entryPrice);
+		LogInfo($"Opened short at {entryPrice} with volume {volume}.");
 	}
 
 	private void UpdateLongEntry(decimal existingVolume, decimal addedVolume, decimal entryPrice)
 	{
-	if (_longEntryPrice is null || existingVolume <= 0m)
-	{
-		_longEntryPrice = entryPrice;
-	}
-	else
-	{
-		var total = existingVolume + addedVolume;
-		_longEntryPrice = total > 0m
-			? ((_longEntryPrice.Value * existingVolume) + entryPrice * addedVolume) / total
-			: entryPrice;
-	}
+		if (_longEntryPrice is null || existingVolume <= 0m)
+		{
+			_longEntryPrice = entryPrice;
+		}
+		else
+		{
+			var total = existingVolume + addedVolume;
+			_longEntryPrice = total > 0m
+				? ((_longEntryPrice.Value * existingVolume) + entryPrice * addedVolume) / total
+				: entryPrice;
+		}
 
-	if (_longEntryPrice.HasValue)
-	{
-		var averageEntry = _longEntryPrice.Value;
-		if (StopLossPips > 0)
-			_longStopPrice = averageEntry - StopLossPips * _pipSize;
-		else if (TrailingStopPips <= 0)
+		if (_longEntryPrice.HasValue)
+		{
+			var averageEntry = _longEntryPrice.Value;
+			if (StopLossPips > 0)
+				_longStopPrice = averageEntry - StopLossPips * _pipSize;
+			else if (TrailingStopPips <= 0)
+				_longStopPrice = null;
+
+			_longTakePrice = TakeProfitPips > 0 ? averageEntry + TakeProfitPips * _pipSize : null;
+		}
+		else
+		{
 			_longStopPrice = null;
+			_longTakePrice = null;
+		}
 
-		_longTakePrice = TakeProfitPips > 0 ? averageEntry + TakeProfitPips * _pipSize : null;
-	}
-	else
-	{
-		_longStopPrice = null;
-		_longTakePrice = null;
-	}
-
-	_shortEntryPrice = null;
-	_shortStopPrice = null;
-	_shortTakePrice = null;
-	}
-
-	private void UpdateShortEntry(decimal existingVolume, decimal addedVolume, decimal entryPrice)
-	{
-	if (_shortEntryPrice is null || existingVolume <= 0m)
-	{
-		_shortEntryPrice = entryPrice;
-	}
-	else
-	{
-		var total = existingVolume + addedVolume;
-		_shortEntryPrice = total > 0m
-			? ((_shortEntryPrice.Value * existingVolume) + entryPrice * addedVolume) / total
-			: entryPrice;
-	}
-
-	if (_shortEntryPrice.HasValue)
-	{
-		var averageEntry = _shortEntryPrice.Value;
-		if (StopLossPips > 0)
-			_shortStopPrice = averageEntry + StopLossPips * _pipSize;
-		else if (TrailingStopPips <= 0)
-			_shortStopPrice = null;
-
-		_shortTakePrice = TakeProfitPips > 0 ? averageEntry - TakeProfitPips * _pipSize : null;
-	}
-	else
-	{
+		_shortEntryPrice = null;
 		_shortStopPrice = null;
 		_shortTakePrice = null;
 	}
 
-	_longEntryPrice = null;
-	_longStopPrice = null;
-	_longTakePrice = null;
+	private void UpdateShortEntry(decimal existingVolume, decimal addedVolume, decimal entryPrice)
+	{
+		if (_shortEntryPrice is null || existingVolume <= 0m)
+		{
+			_shortEntryPrice = entryPrice;
+		}
+		else
+		{
+			var total = existingVolume + addedVolume;
+			_shortEntryPrice = total > 0m
+				? ((_shortEntryPrice.Value * existingVolume) + entryPrice * addedVolume) / total
+				: entryPrice;
+		}
+
+		if (_shortEntryPrice.HasValue)
+		{
+			var averageEntry = _shortEntryPrice.Value;
+			if (StopLossPips > 0)
+				_shortStopPrice = averageEntry + StopLossPips * _pipSize;
+			else if (TrailingStopPips <= 0)
+				_shortStopPrice = null;
+
+			_shortTakePrice = TakeProfitPips > 0 ? averageEntry - TakeProfitPips * _pipSize : null;
+		}
+		else
+		{
+			_shortStopPrice = null;
+			_shortTakePrice = null;
+		}
+
+		_longEntryPrice = null;
+		_longStopPrice = null;
+		_longTakePrice = null;
 	}
 
 	private void UpdateRiskManagement(ICandleMessage candle)
 	{
-	if (Position > 0)
-	{
-	TryUpdateLongTrailing(candle);
+		if (Position > 0)
+		{
+			TryUpdateLongTrailing(candle);
 
-	if (_longStopPrice.HasValue && candle.LowPrice <= _longStopPrice.Value)
-	{
-	LogInfo($"Long stop hit at {_longStopPrice.Value}.");
-	CloseLong();
-	return;
-	}
+			if (_longStopPrice.HasValue && candle.LowPrice <= _longStopPrice.Value)
+			{
+				LogInfo($"Long stop hit at {_longStopPrice.Value}.");
+				CloseLong();
+				return;
+			}
 
-	if (_longTakePrice.HasValue && candle.HighPrice >= _longTakePrice.Value)
-	{
-	LogInfo($"Long take-profit hit at {_longTakePrice.Value}.");
-	CloseLong();
-	}
-	}
-	else if (Position < 0)
-	{
-	TryUpdateShortTrailing(candle);
+			if (_longTakePrice.HasValue && candle.HighPrice >= _longTakePrice.Value)
+			{
+				LogInfo($"Long take-profit hit at {_longTakePrice.Value}.");
+				CloseLong();
+			}
+		}
+		else if (Position < 0)
+		{
+			TryUpdateShortTrailing(candle);
 
-	if (_shortStopPrice.HasValue && candle.HighPrice >= _shortStopPrice.Value)
-	{
-	LogInfo($"Short stop hit at {_shortStopPrice.Value}.");
-	CloseShort();
-	return;
-	}
+			if (_shortStopPrice.HasValue && candle.HighPrice >= _shortStopPrice.Value)
+			{
+				LogInfo($"Short stop hit at {_shortStopPrice.Value}.");
+				CloseShort();
+				return;
+			}
 
-	if (_shortTakePrice.HasValue && candle.LowPrice <= _shortTakePrice.Value)
-	{
-	LogInfo($"Short take-profit hit at {_shortTakePrice.Value}.");
-	CloseShort();
-	}
-	}
+			if (_shortTakePrice.HasValue && candle.LowPrice <= _shortTakePrice.Value)
+			{
+				LogInfo($"Short take-profit hit at {_shortTakePrice.Value}.");
+				CloseShort();
+			}
+		}
 	}
 
 	private void TryUpdateLongTrailing(ICandleMessage candle)
 	{
-	if (TrailingStopPips <= 0 || TrailingStepPips <= 0 || _longEntryPrice is null)
-	return;
+		if (TrailingStopPips <= 0 || TrailingStepPips <= 0 || _longEntryPrice is null)
+			return;
 
-	var trailingDistance = TrailingStopPips * _pipSize;
-	var trailingStep = TrailingStepPips * _pipSize;
-	var profit = candle.ClosePrice - _longEntryPrice.Value;
+		var trailingDistance = TrailingStopPips * _pipSize;
+		var trailingStep = TrailingStepPips * _pipSize;
+		var profit = candle.ClosePrice - _longEntryPrice.Value;
 
-	if (profit <= trailingDistance + trailingStep)
-	return;
+		if (profit <= trailingDistance + trailingStep)
+			return;
 
-	var newStop = candle.ClosePrice - trailingDistance;
+		var newStop = candle.ClosePrice - trailingDistance;
 
-	if (!_longStopPrice.HasValue || newStop > _longStopPrice.Value + trailingStep)
-	{
-	_longStopPrice = newStop;
-	LogInfo($"Adjusted long trailing stop to {newStop}.");
-	}
+		if (!_longStopPrice.HasValue || newStop > _longStopPrice.Value + trailingStep)
+		{
+			_longStopPrice = newStop;
+			LogInfo($"Adjusted long trailing stop to {newStop}.");
+		}
 	}
 
 	private void TryUpdateShortTrailing(ICandleMessage candle)
 	{
-	if (TrailingStopPips <= 0 || TrailingStepPips <= 0 || _shortEntryPrice is null)
-	return;
+		if (TrailingStopPips <= 0 || TrailingStepPips <= 0 || _shortEntryPrice is null)
+			return;
 
-	var trailingDistance = TrailingStopPips * _pipSize;
-	var trailingStep = TrailingStepPips * _pipSize;
-	var profit = _shortEntryPrice.Value - candle.ClosePrice;
+		var trailingDistance = TrailingStopPips * _pipSize;
+		var trailingStep = TrailingStepPips * _pipSize;
+		var profit = _shortEntryPrice.Value - candle.ClosePrice;
 
-	if (profit <= trailingDistance + trailingStep)
-	return;
+		if (profit <= trailingDistance + trailingStep)
+			return;
 
-	var newStop = candle.ClosePrice + trailingDistance;
+		var newStop = candle.ClosePrice + trailingDistance;
 
-	if (!_shortStopPrice.HasValue || newStop < _shortStopPrice.Value - trailingStep)
-	{
-	_shortStopPrice = newStop;
-	LogInfo($"Adjusted short trailing stop to {newStop}.");
-	}
+		if (!_shortStopPrice.HasValue || newStop < _shortStopPrice.Value - trailingStep)
+		{
+			_shortStopPrice = newStop;
+			LogInfo($"Adjusted short trailing stop to {newStop}.");
+		}
 	}
 
 	private bool TryCloseOnProfit(ICandleMessage candle)
 	{
-	if (ProfitClose <= 0m)
-	return false;
+		if (ProfitClose <= 0m)
+			return false;
 
-	var step = Security?.PriceStep ?? 1m;
-	if (step == 0m)
-	step = 1m;
+		var step = Security?.PriceStep ?? 1m;
+		if (step == 0m)
+			step = 1m;
 
-	var stepPrice = _stepPrice;
-	if (stepPrice == 0m)
-	stepPrice = 1m;
+		var stepPrice = _stepPrice;
+		if (stepPrice == 0m)
+			stepPrice = 1m;
 
-	decimal profit = 0m;
+		decimal profit = 0m;
 
-	if (Position > 0 && _longEntryPrice.HasValue)
-	{
-	var diff = candle.ClosePrice - _longEntryPrice.Value;
-	profit = diff / step * stepPrice * Position;
-	}
-	else if (Position < 0 && _shortEntryPrice.HasValue)
-	{
-	var diff = _shortEntryPrice.Value - candle.ClosePrice;
-	profit = diff / step * stepPrice * Math.Abs(Position);
-	}
+		if (Position > 0 && _longEntryPrice.HasValue)
+		{
+			var diff = candle.ClosePrice - _longEntryPrice.Value;
+			profit = diff / step * stepPrice * Position;
+		}
+		else if (Position < 0 && _shortEntryPrice.HasValue)
+		{
+			var diff = _shortEntryPrice.Value - candle.ClosePrice;
+			profit = diff / step * stepPrice * Math.Abs(Position);
+		}
 
-	if (profit >= ProfitClose && profit > 0m)
-	{
-	LogInfo($"Floating profit {profit} reached target {ProfitClose}. Closing positions.");
-	CloseAllPositions();
-	return true;
-	}
+		if (profit >= ProfitClose && profit > 0m)
+		{
+			LogInfo($"Floating profit {profit} reached target {ProfitClose}. Closing positions.");
+			CloseAllPositions();
+			return true;
+		}
 
-	return false;
+		return false;
 	}
 
 	private void CloseLong()
 	{
-	if (Position <= 0)
-	return;
+		if (Position <= 0)
+			return;
 
-	SellMarket(Position);
-	ResetLongState();
+		SellMarket(Position);
+		ResetLongState();
 	}
 
 	private void CloseShort()
 	{
-	if (Position >= 0)
-	return;
+		if (Position >= 0)
+			return;
 
-	BuyMarket(Math.Abs(Position));
-	ResetShortState();
+		BuyMarket(Math.Abs(Position));
+		ResetShortState();
 	}
 
 	private void CloseAllPositions()
 	{
-	if (Position > 0)
-	CloseLong();
-	else if (Position < 0)
-	CloseShort();
+		if (Position > 0)
+			CloseLong();
+		else if (Position < 0)
+			CloseShort();
 	}
 
 	private void ResetLongState()
 	{
-	_longEntryPrice = null;
-	_longStopPrice = null;
-	_longTakePrice = null;
+		_longEntryPrice = null;
+		_longStopPrice = null;
+		_longTakePrice = null;
 	}
 
 	private void ResetShortState()
 	{
-	_shortEntryPrice = null;
-	_shortStopPrice = null;
-	_shortTakePrice = null;
+		_shortEntryPrice = null;
+		_shortStopPrice = null;
+		_shortTakePrice = null;
 	}
 
 	private int GetLongCount()
 	{
-	if (TradeVolume <= 0m)
-	return 0;
+		if (TradeVolume <= 0m)
+			return 0;
 
-	return (int)Math.Round(Math.Max(Position, 0m) / TradeVolume, MidpointRounding.AwayFromZero);
+		return (int)Math.Round(Math.Max(Position, 0m) / TradeVolume, MidpointRounding.AwayFromZero);
 	}
 
 	private int GetShortCount()
 	{
-	if (TradeVolume <= 0m)
-	return 0;
+		if (TradeVolume <= 0m)
+			return 0;
 
-	return (int)Math.Round(Math.Max(-Position, 0m) / TradeVolume, MidpointRounding.AwayFromZero);
+		return (int)Math.Round(Math.Max(-Position, 0m) / TradeVolume, MidpointRounding.AwayFromZero);
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypeEnum type, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type, int length)
 	{
-	return type switch
-	{
-	MovingAverageTypeEnum.Simple => new SimpleMovingAverage { Length = length },
-	MovingAverageTypeEnum.Exponential => new ExponentialMovingAverage { Length = length },
-	MovingAverageTypeEnum.Smoothed => new SmoothedMovingAverage { Length = length },
-	MovingAverageTypeEnum.Weighted => new WeightedMovingAverage { Length = length },
-	MovingAverageTypeEnum.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
-	_ => new SimpleMovingAverage { Length = length },
-	};
+		return type switch
+		{
+			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
+			_ => new SimpleMovingAverage { Length = length },
+		};
 	}
 }

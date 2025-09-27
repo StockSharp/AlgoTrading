@@ -19,6 +19,38 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class PuriaMethodStrategy : Strategy
 {
+	public enum CandlePrices
+	{
+		/// <summary>
+		/// Open price.
+		/// </summary>
+		Open,
+		/// <summary>
+		/// High price.
+		/// </summary>
+		High,
+		/// <summary>
+		/// Low price.
+		/// </summary>
+		Low,
+		/// <summary>
+		/// Close price.
+		/// </summary>
+		Close,
+		/// <summary>
+		/// Median price (HL/2).
+		/// </summary>
+		Median,
+		/// <summary>
+		/// Typical price (HLC/3).
+		/// </summary>
+		Typical,
+		/// <summary>
+		/// Weighted close price (HLCC/4).
+		/// </summary>
+		WClose
+	}
+
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _trailingStopPips;
@@ -31,23 +63,23 @@ public class PuriaMethodStrategy : Strategy
 	private readonly StrategyParam<int> _ma0Period;
 	private readonly StrategyParam<int> _ma0Shift;
 	private readonly StrategyParam<MaMethods> _ma0Method;
-	private readonly StrategyParam<CandlePrice> _ma0Price;
+	private readonly StrategyParam<CandlePrices> _ma0Price;
 
 	private readonly StrategyParam<int> _ma1Period;
 	private readonly StrategyParam<int> _ma1Shift;
 	private readonly StrategyParam<MaMethods> _ma1Method;
-	private readonly StrategyParam<CandlePrice> _ma1Price;
+	private readonly StrategyParam<CandlePrices> _ma1Price;
 
 	private readonly StrategyParam<int> _ma2Period;
 	private readonly StrategyParam<int> _ma2Shift;
 	private readonly StrategyParam<MaMethods> _ma2Method;
-	private readonly StrategyParam<CandlePrice> _ma2Price;
+	private readonly StrategyParam<CandlePrices> _ma2Price;
 
 	private readonly StrategyParam<int> _macdFastPeriod;
 	private readonly StrategyParam<int> _macdSlowPeriod;
 	private readonly StrategyParam<int> _macdSignalPeriod;
 	private readonly StrategyParam<int> _macdTrendBars;
-	private readonly StrategyParam<CandlePrice> _macdPrice;
+	private readonly StrategyParam<CandlePrices> _macdPrice;
 
 	private LengthIndicator<decimal> _ma0 = null!;
 	private LengthIndicator<decimal> _ma1 = null!;
@@ -121,7 +153,7 @@ public class PuriaMethodStrategy : Strategy
 		_ma0Method = Param(nameof(Ma0Method), MaMethods.Smoothed)
 			.SetDisplay("MA 0 Method", "Smoothing for first MA", "Indicators");
 
-		_ma0Price = Param(nameof(Ma0Price), CandlePrice.High)
+		_ma0Price = Param(nameof(Ma0Price), CandlePrices.High)
 			.SetDisplay("MA 0 Price", "Price source for first MA", "Indicators");
 
 		_ma1Period = Param(nameof(Ma1Period), 74)
@@ -135,7 +167,7 @@ public class PuriaMethodStrategy : Strategy
 		_ma1Method = Param(nameof(Ma1Method), MaMethods.Smoothed)
 			.SetDisplay("MA 1 Method", "Smoothing for second MA", "Indicators");
 
-		_ma1Price = Param(nameof(Ma1Price), CandlePrice.High)
+		_ma1Price = Param(nameof(Ma1Price), CandlePrices.High)
 			.SetDisplay("MA 1 Price", "Price source for second MA", "Indicators");
 
 		_ma2Period = Param(nameof(Ma2Period), 19)
@@ -149,7 +181,7 @@ public class PuriaMethodStrategy : Strategy
 		_ma2Method = Param(nameof(Ma2Method), MaMethods.Exponential)
 			.SetDisplay("MA 2 Method", "Smoothing for third MA", "Indicators");
 
-		_ma2Price = Param(nameof(Ma2Price), CandlePrice.Open)
+		_ma2Price = Param(nameof(Ma2Price), CandlePrices.Open)
 			.SetDisplay("MA 2 Price", "Price source for third MA", "Indicators");
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 17)
@@ -168,7 +200,7 @@ public class PuriaMethodStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("MACD Trend Bars", "Number of bars for MACD trend check", "Indicators");
 
-		_macdPrice = Param(nameof(MacdPrice), CandlePrice.Open)
+		_macdPrice = Param(nameof(MacdPrice), CandlePrices.Open)
 			.SetDisplay("MACD Price", "Price source for MACD", "Indicators");
 	}
 
@@ -274,7 +306,7 @@ public class PuriaMethodStrategy : Strategy
 	/// <summary>
 	/// Price source for the first moving average.
 	/// </summary>
-	public CandlePrice Ma0Price
+	public CandlePrices Ma0Price
 	{
 		get => _ma0Price.Value;
 		set => _ma0Price.Value = value;
@@ -310,7 +342,7 @@ public class PuriaMethodStrategy : Strategy
 	/// <summary>
 	/// Price source for the second moving average.
 	/// </summary>
-	public CandlePrice Ma1Price
+	public CandlePrices Ma1Price
 	{
 		get => _ma1Price.Value;
 		set => _ma1Price.Value = value;
@@ -346,7 +378,7 @@ public class PuriaMethodStrategy : Strategy
 	/// <summary>
 	/// Price source for the third moving average.
 	/// </summary>
-	public CandlePrice Ma2Price
+	public CandlePrices Ma2Price
 	{
 		get => _ma2Price.Value;
 		set => _ma2Price.Value = value;
@@ -391,7 +423,7 @@ public class PuriaMethodStrategy : Strategy
 	/// <summary>
 	/// Price source for the MACD calculation.
 	/// </summary>
-	public CandlePrice MacdPrice
+	public CandlePrices MacdPrice
 	{
 		get => _macdPrice.Value;
 		set => _macdPrice.Value = value;
@@ -853,7 +885,7 @@ public class PuriaMethodStrategy : Strategy
 		_shortLowestPrice = null;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MaMethods method, int length, CandlePrice price)
+	private static LengthIndicator<decimal> CreateMovingAverage(MaMethods method, int length, CandlePrices price)
 	{
 		var maLength = Math.Max(1, length);
 

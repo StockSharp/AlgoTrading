@@ -20,10 +20,66 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SimpleTradingSystemStrategy : Strategy
 {
-	private readonly StrategyParam<MovingAverageTypeEnum> _maType;
+	public enum MovingAverageTypes
+	{
+		/// <summary>
+		/// Simple Moving Average (SMA).
+		/// </summary>
+		SMA,
+		/// <summary>
+		/// Exponential Moving Average (EMA).
+		/// </summary>
+		EMA,
+		/// <summary>
+		/// Double Exponential Moving Average (DEMA).
+		/// </summary>
+		DEMA,
+		/// <summary>
+		/// Triple Exponential Moving Average (TEMA).
+		/// </summary>
+		TEMA,
+		/// <summary>
+		/// Weighted Moving Average (WMA).
+		/// </summary>
+		WMA,
+		/// <summary>
+		/// Volume Weighted Moving Average (VWMA).
+		/// </summary>
+		VWMA
+	}
+
+	public enum PriceTypes
+	{
+		/// <summary>
+		/// Close price.
+		/// </summary>
+		Close,
+		/// <summary>
+		/// High price.
+		/// </summary>
+		High,
+		/// <summary>
+		/// Open price.
+		/// </summary>
+		Open,
+		/// <summary>
+		/// Low price.
+		/// </summary>
+		Low,
+		/// <summary>
+		/// Typical price (HL + C) / 3.
+		/// </summary>
+		Typical,
+		/// <summary>
+		/// Center price (HL) / 2.
+		/// </summary>
+		Center
+	}
+
+	private readonly StrategyParam<MovingAverageTypes> _maType;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<PriceTypeEnum> _priceType;
+	private readonly StrategyParam<PriceTypes> _priceType;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<bool> _buyOpen;
 	private readonly StrategyParam<bool> _sellOpen;
@@ -40,7 +96,7 @@ public class SimpleTradingSystemStrategy : Strategy
 	/// <summary>
 	/// Moving average type.
 	/// </summary>
-	public MovingAverageTypeEnum MaType
+	public MovingAverageTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -67,7 +123,7 @@ public class SimpleTradingSystemStrategy : Strategy
 	/// <summary>
 	/// Price type for the moving average.
 	/// </summary>
-	public PriceTypeEnum PriceType
+	public PriceTypes PriceType
 	{
 		get => _priceType.Value;
 		set => _priceType.Value = value;
@@ -142,7 +198,7 @@ public class SimpleTradingSystemStrategy : Strategy
 	/// </summary>
 	public SimpleTradingSystemStrategy()
 	{
-		_maType = Param(nameof(MaType), MovingAverageTypeEnum.EMA)
+		_maType = Param(nameof(MaType), MovingAverageTypes.EMA)
 			.SetDisplay("MA Type", "Moving average type", "Parameters");
 
 		_maPeriod = Param(nameof(MaPeriod), 2)
@@ -155,7 +211,7 @@ public class SimpleTradingSystemStrategy : Strategy
 			.SetDisplay("MA Shift", "Shift for comparisons", "Parameters")
 			.SetCanOptimize(true);
 
-		_priceType = Param(nameof(PriceType), PriceTypeEnum.Close)
+		_priceType = Param(nameof(PriceType), PriceTypes.Close)
 			.SetDisplay("Price Type", "Source price for MA", "Parameters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())
@@ -278,26 +334,26 @@ public class SimpleTradingSystemStrategy : Strategy
 	{
 		return PriceType switch
 		{
-			PriceTypeEnum.Close => candle.ClosePrice,
-			PriceTypeEnum.High => candle.HighPrice,
-			PriceTypeEnum.Open => candle.OpenPrice,
-			PriceTypeEnum.Low => candle.LowPrice,
-			PriceTypeEnum.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			PriceTypeEnum.Center => (candle.HighPrice + candle.LowPrice) / 2m,
+			PriceTypes.Close => candle.ClosePrice,
+			PriceTypes.High => candle.HighPrice,
+			PriceTypes.Open => candle.OpenPrice,
+			PriceTypes.Low => candle.LowPrice,
+			PriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			PriceTypes.Center => (candle.HighPrice + candle.LowPrice) / 2m,
 			_ => candle.ClosePrice
 		};
 	}
 
-	private static IIndicator CreateMa(MovingAverageTypeEnum type, int length)
+	private static IIndicator CreateMa(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageTypeEnum.SMA => new SimpleMovingAverage { Length = length },
-			MovingAverageTypeEnum.EMA => new ExponentialMovingAverage { Length = length },
-			MovingAverageTypeEnum.DEMA => new DoubleExponentialMovingAverage { Length = length },
-			MovingAverageTypeEnum.TEMA => new TripleExponentialMovingAverage { Length = length },
-			MovingAverageTypeEnum.WMA => new WeightedMovingAverage { Length = length },
-			MovingAverageTypeEnum.VWMA => new VolumeWeightedMovingAverage { Length = length },
+			MovingAverageTypes.SMA => new SimpleMovingAverage { Length = length },
+			MovingAverageTypes.EMA => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.DEMA => new DoubleExponentialMovingAverage { Length = length },
+			MovingAverageTypes.TEMA => new TripleExponentialMovingAverage { Length = length },
+			MovingAverageTypes.WMA => new WeightedMovingAverage { Length = length },
+			MovingAverageTypes.VWMA => new VolumeWeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}

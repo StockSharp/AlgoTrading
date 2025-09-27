@@ -26,16 +26,16 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStepPips;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MaMethod> _maMethod;
-	private readonly StrategyParam<AppliedPriceType> _maAppliedPrice;
+	private readonly StrategyParam<MaIndicators> _maMethod;
+	private readonly StrategyParam<AppliedPrices> _maAppliedPrice;
 	private readonly StrategyParam<int> _macdFastPeriod;
 	private readonly StrategyParam<int> _macdSlowPeriod;
 	private readonly StrategyParam<int> _macdSignalPeriod;
-	private readonly StrategyParam<AppliedPriceType> _macdAppliedPrice;
+	private readonly StrategyParam<AppliedPrices> _macdAppliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverage _maIndicator = null!;
-	private MovingAverageConvergenceDivergence _macdIndicator = null!;
+	private IIndicator _maIndicator = null!;
+	private MovingAverageConvergenceDivergenceSignal _macdIndicator = null!;
 	private readonly List<decimal> _maSeries = new();
 
 	private decimal? _macdCurrent;
@@ -97,11 +97,11 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(0, 5, 1);
 
-		_maMethod = Param(nameof(MaMethod), MaMethod.LinearWeighted)
+		_maMethod = Param(nameof(MaMethod), MaIndicators.LinearWeighted)
 			.SetDisplay("MA Method", "Moving average calculation method", "Indicators")
 			.SetCanOptimize(true);
 
-		_maAppliedPrice = Param(nameof(MaAppliedPrice), AppliedPriceType.Weighted)
+		_maAppliedPrice = Param(nameof(MaAppliedPrice), AppliedPrices.Weighted)
 			.SetDisplay("MA Price", "Price source for moving average input", "Indicators")
 			.SetCanOptimize(true);
 
@@ -123,7 +123,7 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(5, 15, 1);
 
-		_macdAppliedPrice = Param(nameof(MacdAppliedPrice), AppliedPriceType.Weighted)
+		_macdAppliedPrice = Param(nameof(MacdAppliedPrice), AppliedPrices.Weighted)
 			.SetDisplay("MACD Price", "Price source fed into MACD", "Indicators")
 			.SetCanOptimize(true);
 
@@ -189,7 +189,7 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 	/// <summary>
 	/// Moving average smoothing method.
 	/// </summary>
-	public MaMethod MaMethod
+	public MaIndicators MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -198,7 +198,7 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 	/// <summary>
 	/// Price source for the moving average.
 	/// </summary>
-	public AppliedPriceType MaAppliedPrice
+	public AppliedPrices MaAppliedPrice
 	{
 		get => _maAppliedPrice.Value;
 		set => _maAppliedPrice.Value = value;
@@ -234,7 +234,7 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 	/// <summary>
 	/// Price source for MACD calculations.
 	/// </summary>
-	public AppliedPriceType MacdAppliedPrice
+	public AppliedPrices MacdAppliedPrice
 	{
 		get => _macdAppliedPrice.Value;
 		set => _macdAppliedPrice.Value = value;
@@ -276,11 +276,14 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 		ResetState();
 
 		_maIndicator = CreateMovingAverage(MaMethod, MaPeriod);
-		_macdIndicator = new MovingAverageConvergenceDivergence
+		_macdIndicator = new()
 		{
-			ShortPeriod = MacdFastPeriod,
-			LongPeriod = MacdSlowPeriod,
-			SignalPeriod = MacdSignalPeriod
+			Macd =
+			{
+				ShortMa = { Length = MacdFastPeriod },
+				LongMa = { Length = MacdSlowPeriod },
+			},
+			SignalMa = { Length = MacdSignalPeriod },
 		};
 
 		_pipSize = Security?.PriceStep ?? 0m;
@@ -292,7 +295,7 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 			_pipSize = Security?.PriceStep ?? 1m;
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.ForEach(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -302,9 +305,10 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		var macdArea = CreateChartArea("MACD");
+		var macdArea = CreateChartArea();
 		if (macdArea != null)
 		{
+			macdArea.Title = "MACD";
 			DrawIndicator(macdArea, _macdIndicator);
 		}
 	}
@@ -702,31 +706,56 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 		_shortExitRequested = false;
 	}
 
-	private static MovingAverage CreateMovingAverage(MaMethod method, int period)
+	private static IIndicator CreateMovingAverage(MaIndicators method, int period)
 	{
 		var length = Math.Max(1, period);
 		return method switch
 		{
-			MaMethod.Simple => new SimpleMovingAverage { Length = length },
-			MaMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			MaMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MaMethod.LinearWeighted => new WeightedMovingAverage { Length = length },
+			MaIndicators.Simple => new SimpleMovingAverage { Length = length },
+			MaIndicators.Exponential => new ExponentialMovingAverage { Length = length },
+			MaIndicators.Smoothed => new SmoothedMovingAverage { Length = length },
+			MaIndicators.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new WeightedMovingAverage { Length = length }
 		};
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceType type)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrices type)
 	{
 		return type switch
 		{
-			AppliedPriceType.Open => candle.OpenPrice,
-			AppliedPriceType.High => candle.HighPrice,
-			AppliedPriceType.Low => candle.LowPrice,
-			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
+	}
+
+	/// <summary>
+	/// Moving average methods corresponding to MetaTrader modes.
+	/// </summary>
+	public enum MaIndicators
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		LinearWeighted,
+	}
+
+	/// <summary>
+	/// Price source equivalents of MetaTrader's applied price constants.
+	/// </summary>
+	public enum AppliedPrices
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted,
 	}
 }
 

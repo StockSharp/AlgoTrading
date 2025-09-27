@@ -21,10 +21,30 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class VrMovingDistanceStrategy : Strategy
 {
+	public enum MovingAverageTypes
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		Weighted,
+		VolumeWeighted
+	}
+
+	public enum CandlePrices
+	{
+		Open,
+		High,
+		Low,
+		Close,
+		Median,
+		Typical,
+		Weighted
+	}
+
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<MovingAverageTypeEnum> _maType;
-	private readonly StrategyParam<CandlePrice> _priceSource;
+	private readonly StrategyParam<MovingAverageTypes> _maType;
+	private readonly StrategyParam<CandlePrices> _priceSource;
 	private readonly StrategyParam<decimal> _distancePips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _volumeMultiplier;
@@ -61,7 +81,7 @@ public class VrMovingDistanceStrategy : Strategy
 	/// <summary>
 	/// Moving average smoothing type.
 	/// </summary>
-	public MovingAverageTypeEnum MaType
+	public MovingAverageTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
@@ -70,7 +90,7 @@ public class VrMovingDistanceStrategy : Strategy
 	/// <summary>
 	/// Candle price source for the moving average.
 	/// </summary>
-	public CandlePrice PriceSource
+	public CandlePrices PriceSource
 	{
 		get => _priceSource.Value;
 		set => _priceSource.Value = value;
@@ -126,10 +146,10 @@ public class VrMovingDistanceStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(10, 200, 10);
 
-		_maType = Param(nameof(MaType), MovingAverageTypeEnum.Exponential)
+		_maType = Param(nameof(MaType), MovingAverageTypes.Exponential)
 			.SetDisplay("MA Type", "Moving average smoothing method", "Moving Average");
 
-		_priceSource = Param(nameof(PriceSource), CandlePrice.Close)
+		_priceSource = Param(nameof(PriceSource), CandlePrices.Close)
 			.SetDisplay("Price Source", "Price used for the moving average", "Moving Average");
 
 		_distancePips = Param(nameof(DistancePips), 50m)
@@ -139,7 +159,7 @@ public class VrMovingDistanceStrategy : Strategy
 			.SetOptimize(10m, 150m, 10m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
-			.SetGreaterThanOrEqualsZero()
+			.SetRange(0.000001m, 0.999999m)
 			.SetDisplay("Take Profit (pips)", "Exit distance when only one position is open", "Trading")
 			.SetCanOptimize(true)
 			.SetOptimize(10m, 150m, 10m);
@@ -325,15 +345,15 @@ public class VrMovingDistanceStrategy : Strategy
 		return digits;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypeEnum type, int length, CandlePrice priceSource)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type, int length, CandlePrices priceSource)
 	{
 		LengthIndicator<decimal> indicator = type switch
 		{
-			MovingAverageTypeEnum.Simple => new SimpleMovingAverage(),
-			MovingAverageTypeEnum.Exponential => new ExponentialMovingAverage(),
-			MovingAverageTypeEnum.Smoothed => new SmoothedMovingAverage(),
-			MovingAverageTypeEnum.Weighted => new WeightedMovingAverage(),
-			MovingAverageTypeEnum.VolumeWeighted => new VolumeWeightedMovingAverage(),
+			MovingAverageTypes.Simple => new SimpleMovingAverage(),
+			MovingAverageTypes.Exponential => new ExponentialMovingAverage(),
+			MovingAverageTypes.Smoothed => new SmoothedMovingAverage(),
+			MovingAverageTypes.Weighted => new WeightedMovingAverage(),
+			MovingAverageTypes.VolumeWeighted => new VolumeWeightedMovingAverage(),
 			_ => new SimpleMovingAverage(),
 		};
 
