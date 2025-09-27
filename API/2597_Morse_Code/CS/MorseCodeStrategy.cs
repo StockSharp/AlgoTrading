@@ -280,8 +280,8 @@ public class MorseCodeStrategy : Strategy
 
 		// Configure automatic take profit and stop loss handling
 		StartProtection(
-			takeProfit: new Unit(_takeProfitDistance, UnitTypes.Price),
-			stopLoss: new Unit(_stopLossDistance, UnitTypes.Price),
+			takeProfit: new Unit(_takeProfitDistance, UnitTypes.Absolute),
+			stopLoss: new Unit(_stopLossDistance, UnitTypes.Absolute),
 			useMarketOrders: true);
 
 		var subscription = SubscribeCandles(CandleType);

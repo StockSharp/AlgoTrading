@@ -259,7 +259,7 @@ public class MT45Strategy : Strategy
 		if (points <= 0m || _pointValue <= 0m)
 			return default;
 
-		return new Unit(points * _pointValue, UnitTypes.Price);
+		return new Unit(points * _pointValue, UnitTypes.Absolute);
 	}
 
 	private static Sides Opposite(Sides side)

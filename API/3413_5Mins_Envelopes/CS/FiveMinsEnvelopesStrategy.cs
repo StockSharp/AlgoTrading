@@ -202,9 +202,9 @@ public class FiveMinsEnvelopesStrategy : Strategy
 		Volume = TradeVolume;
 
 		StartProtection(
-			takeProfit: TakeProfitPoints > 0 ? new Unit(TakeProfitPoints * _priceStep, UnitTypes.Price) : null,
-			stopLoss: StopLossPoints > 0 ? new Unit(StopLossPoints * _priceStep, UnitTypes.Price) : null,
-			trailingStop: TrailingStopPoints > 0 ? new Unit(TrailingStopPoints * _priceStep, UnitTypes.Price) : null,
+			takeProfit: TakeProfitPoints > 0 ? new Unit(TakeProfitPoints * _priceStep, UnitTypes.Absolute) : null,
+			stopLoss: StopLossPoints > 0 ? new Unit(StopLossPoints * _priceStep, UnitTypes.Absolute) : null,
+			trailingStop: TrailingStopPoints > 0 ? new Unit(TrailingStopPoints * _priceStep, UnitTypes.Absolute) : null,
 			useMarketOrders: true);
 
 		var area = CreateChartArea();

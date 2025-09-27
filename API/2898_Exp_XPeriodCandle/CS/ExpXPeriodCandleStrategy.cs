@@ -320,8 +320,8 @@ using StockSharp.Messages;
 				return;
 
 			StartProtection(
-				stopLoss: stop is null ? null : new Unit(stop.Value, UnitTypes.Price),
-				takeProfit: take is null ? null : new Unit(take.Value, UnitTypes.Price));
+				stopLoss: stop is null ? null : new Unit(stop.Value, UnitTypes.Absolute),
+				takeProfit: take is null ? null : new Unit(take.Value, UnitTypes.Absolute));
 		}
 
 		private static void UpdateQueue(Queue<decimal> queue, decimal value, int maxCount)

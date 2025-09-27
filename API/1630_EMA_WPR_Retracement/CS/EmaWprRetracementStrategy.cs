@@ -135,9 +135,9 @@ var subscription = SubscribeCandles(CandleType);
 subscription.Bind(ProcessCandle).Start();
 
 StartProtection(
-takeProfit: new Unit(TakeProfit, UnitTypes.Price),
-stopLoss: new Unit(StopLoss, UnitTypes.Price),
-trailingStop: UseTrailingStop ? new Unit(TrailingStop, UnitTypes.Price) : null);
+takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
+stopLoss: new Unit(StopLoss, UnitTypes.Absolute),
+trailingStop: UseTrailingStop ? new Unit(TrailingStop, UnitTypes.Absolute) : null);
 
 Volume = OrderVolume;
 }

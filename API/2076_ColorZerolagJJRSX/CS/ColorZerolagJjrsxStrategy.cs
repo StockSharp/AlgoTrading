@@ -166,8 +166,8 @@ public class ColorZerolagJjrsxStrategy : Strategy
 		_slowRsi = new RelativeStrengthIndex { Length = SlowPeriod };
 
 		StartProtection(
-			takeProfit: new Unit(TakeProfit, UnitTypes.Price),
-			stopLoss: new Unit(StopLoss, UnitTypes.Price));
+			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
+			stopLoss: new Unit(StopLoss, UnitTypes.Absolute));
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

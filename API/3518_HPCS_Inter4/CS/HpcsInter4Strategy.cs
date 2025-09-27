@@ -123,8 +123,8 @@ public class HpcsInter4Strategy : Strategy
 		var stopLossTotalPips = StopLossPips + ExtraStopPips;
 		var stopLossDistance = stopLossTotalPips > 0 ? stopLossTotalPips * _pipSize : 0m;
 
-		Unit takeProfitUnit = takeProfitDistance > 0m ? new Unit(takeProfitDistance, UnitTypes.Price) : null;
-		Unit stopLossUnit = stopLossDistance > 0m ? new Unit(stopLossDistance, UnitTypes.Price) : null;
+		Unit takeProfitUnit = takeProfitDistance > 0m ? new Unit(takeProfitDistance, UnitTypes.Absolute) : null;
+		Unit stopLossUnit = stopLossDistance > 0m ? new Unit(stopLossDistance, UnitTypes.Absolute) : null;
 
 		StartProtection(takeProfit: takeProfitUnit, stopLoss: stopLossUnit, useMarketOrders: true);
 

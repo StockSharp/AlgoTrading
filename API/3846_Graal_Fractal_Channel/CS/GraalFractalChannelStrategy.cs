@@ -352,8 +352,8 @@ public class GraalFractalChannelStrategy : Strategy
 		if (stopLossDistance > 0m || takeProfitDistance > 0m)
 		{
 			StartProtection(
-				stopLoss: stopLossDistance > 0m ? new Unit(stopLossDistance, UnitTypes.Price) : null,
-				takeProfit: takeProfitDistance > 0m ? new Unit(takeProfitDistance, UnitTypes.Price) : null);
+				stopLoss: stopLossDistance > 0m ? new Unit(stopLossDistance, UnitTypes.Absolute) : null,
+				takeProfit: takeProfitDistance > 0m ? new Unit(takeProfitDistance, UnitTypes.Absolute) : null);
 		}
 
 		Volume = OrderVolume;

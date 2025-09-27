@@ -127,11 +127,11 @@ public class CoinFlippingStrategy : Strategy
 		_stopLossDistance = StopLossPips * _priceStep;
 
 		var takeProfitUnit = _takeProfitDistance > 0m
-			? new Unit(_takeProfitDistance, UnitTypes.Price)
+			? new Unit(_takeProfitDistance, UnitTypes.Absolute)
 			: new Unit();
 
 		var stopLossUnit = _stopLossDistance > 0m
-			? new Unit(_stopLossDistance, UnitTypes.Price)
+			? new Unit(_stopLossDistance, UnitTypes.Absolute)
 			: new Unit();
 
 		// Attach protective orders so every position has an exit target and stop.

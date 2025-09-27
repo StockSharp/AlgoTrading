@@ -206,10 +206,10 @@ public class Up3x1Premium2VmStrategy : Strategy
 		Unit stopLoss = null;
 
 		if (TakeProfitPoints > 0m && _pointSize > 0m)
-			takeProfit = new Unit(TakeProfitPoints * _pointSize, UnitTypes.Price);
+			takeProfit = new Unit(TakeProfitPoints * _pointSize, UnitTypes.Absolute);
 
 		if (StopLossPoints > 0m && _pointSize > 0m)
-			stopLoss = new Unit(StopLossPoints * _pointSize, UnitTypes.Price);
+			stopLoss = new Unit(StopLossPoints * _pointSize, UnitTypes.Absolute);
 
 		StartProtection(takeProfit, stopLoss, useMarketOrders: true);
 		// Use the built-in protection engine to manage stop-loss and take-profit orders.

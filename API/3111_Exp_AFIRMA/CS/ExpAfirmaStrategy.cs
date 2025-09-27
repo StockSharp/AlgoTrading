@@ -237,8 +237,8 @@ public class ExpAfirmaStrategy : Strategy
 
 	private void ConfigureProtection()
 	{
-		Unit stopLoss = StopLossPoints > 0m ? new Unit(StopLossPoints, UnitTypes.Price) : null;
-		Unit takeProfit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints, UnitTypes.Price) : null;
+		Unit stopLoss = StopLossPoints > 0m ? new Unit(StopLossPoints, UnitTypes.Absolute) : null;
+		Unit takeProfit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints, UnitTypes.Absolute) : null;
 
 		if (stopLoss != null || takeProfit != null)
 			StartProtection(takeProfit: takeProfit, stopLoss: stopLoss);

@@ -242,8 +242,8 @@ public class MacdSampleClassicStrategy : Strategy
 		if (takeProfitDistance > 0m || trailingDistance > 0m)
 		{
 			StartProtection(
-			takeProfitDistance > 0m ? new Unit(takeProfitDistance, UnitTypes.Price) : null,
-			trailingDistance > 0m ? new Unit(trailingDistance, UnitTypes.Price) : null,
+			takeProfitDistance > 0m ? new Unit(takeProfitDistance, UnitTypes.Absolute) : null,
+			trailingDistance > 0m ? new Unit(trailingDistance, UnitTypes.Absolute) : null,
 			isStopTrailing: trailingDistance > 0m);
 		}
 	}

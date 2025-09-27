@@ -263,8 +263,8 @@ public class ExpSpearmanRankCorrelationHistogramStrategy : Strategy
 
 	private void ConfigureProtection()
 	{
-		var stopLoss = StopLossPoints > 0m ? new Unit(StopLossPoints, UnitTypes.Price) : null;
-		var takeProfit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints, UnitTypes.Price) : null;
+		var stopLoss = StopLossPoints > 0m ? new Unit(StopLossPoints, UnitTypes.Absolute) : null;
+		var takeProfit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints, UnitTypes.Absolute) : null;
 
 		if (stopLoss != null || takeProfit != null)
 		{

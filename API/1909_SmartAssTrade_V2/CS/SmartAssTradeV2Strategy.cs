@@ -144,11 +144,11 @@ public class SmartAssTradeV2Strategy : Strategy
 		}
 
 		StartProtection(
-			takeProfit: new Unit(TakeProfit, UnitTypes.Price),
-			stopLoss: new Unit(StopLoss, UnitTypes.Price),
+			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
+			stopLoss: new Unit(StopLoss, UnitTypes.Absolute),
 			isTrailingStop: UseTrailingStop,
-			trailingStop: new Unit(TrailingStop, UnitTypes.Price),
-			trailingStopStep: new Unit(TrailingStopStep, UnitTypes.Price));
+			trailingStop: new Unit(TrailingStop, UnitTypes.Absolute),
+			trailingStopStep: new Unit(TrailingStopStep, UnitTypes.Absolute));
 	}
 
 	private void ProcessTf(ICandleMessage candle, int tf, decimal macdVal, decimal maVal)

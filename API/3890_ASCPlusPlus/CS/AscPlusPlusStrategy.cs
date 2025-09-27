@@ -176,8 +176,8 @@ public class AscPlusPlusStrategy : Strategy
 			.Start();
 
 		StartProtection(
-			new Unit(TakeProfitPoints * _priceStep, UnitTypes.Price),
-			new Unit(StopLossPoints * _priceStep, UnitTypes.Price),
+			new Unit(TakeProfitPoints * _priceStep, UnitTypes.Absolute),
+			new Unit(StopLossPoints * _priceStep, UnitTypes.Absolute),
 			isStopTrailing: TrailingStopPoints > 0
 		);
 	}

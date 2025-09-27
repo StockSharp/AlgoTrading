@@ -144,8 +144,8 @@ public class KarakaticaStrategy : Strategy
 		var priceStep = GetPriceStep();
 
 		StartProtection(
-		stopLoss: StopLossPoints > 0 ? new Unit(StopLossPoints * priceStep, UnitTypes.Price) : null,
-		takeProfit: TakeProfitPoints > 0 ? new Unit(TakeProfitPoints * priceStep, UnitTypes.Price) : null);
+		stopLoss: StopLossPoints > 0 ? new Unit(StopLossPoints * priceStep, UnitTypes.Absolute) : null,
+		takeProfit: TakeProfitPoints > 0 ? new Unit(TakeProfitPoints * priceStep, UnitTypes.Absolute) : null);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();

@@ -178,8 +178,8 @@ public class HedgeAverageStrategy : Strategy
 		subscription.Bind(ProcessCandle).Start();
 
 		StartProtection(
-			new Unit(TakeProfit, UnitTypes.Price),
-			new Unit(StopLoss, UnitTypes.Price),
+			new Unit(TakeProfit, UnitTypes.Absolute),
+			new Unit(StopLoss, UnitTypes.Absolute),
 			isStopTrailing: UseTrailing,
 			useMarketOrders: true);
 	}

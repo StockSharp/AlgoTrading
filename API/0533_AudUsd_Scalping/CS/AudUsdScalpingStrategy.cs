@@ -216,7 +216,7 @@ public class AudUsdScalpingStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(new Unit(TakeProfit, UnitTypes.Price), new Unit(StopLoss, UnitTypes.Price));
+		StartProtection(new Unit(TakeProfit, UnitTypes.Absolute), new Unit(StopLoss, UnitTypes.Absolute));
 	}
 
 	private void ProcessCandle(ICandleMessage candle,

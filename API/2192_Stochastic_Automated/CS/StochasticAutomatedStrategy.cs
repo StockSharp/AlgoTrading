@@ -209,8 +209,8 @@ public class StochasticAutomatedStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(new Unit(TakeProfit * _tickSize, UnitTypes.Price),
-						new Unit(StopLoss * _tickSize, UnitTypes.Price));
+		StartProtection(new Unit(TakeProfit * _tickSize, UnitTypes.Absolute),
+						new Unit(StopLoss * _tickSize, UnitTypes.Absolute));
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)

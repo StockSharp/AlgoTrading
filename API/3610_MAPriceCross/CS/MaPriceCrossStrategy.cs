@@ -188,8 +188,8 @@ public class MaPriceCrossStrategy : Strategy
 		var takeProfit = ToPriceDistance(TakeProfitPoints);
 
 		StartProtection(
-		stopLoss: stopLoss > 0m ? new Unit(stopLoss, UnitTypes.Price) : null,
-		takeProfit: takeProfit > 0m ? new Unit(takeProfit, UnitTypes.Price) : null);
+		stopLoss: stopLoss > 0m ? new Unit(stopLoss, UnitTypes.Absolute) : null,
+		takeProfit: takeProfit > 0m ? new Unit(takeProfit, UnitTypes.Absolute) : null);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

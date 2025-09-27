@@ -8,12 +8,11 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-using StockSharp.Algo;
 
 /// <summary>
 /// Moving average crossover strategy converted from the MT4 expert "wajdyss MA expert v3".
@@ -21,14 +20,67 @@ using StockSharp.Algo;
 /// </summary>
 public class WajdyssMaExpertStrategy : Strategy
 {
+	public enum MovingAverageMethods
+	{
+		/// <summary>
+		/// Simple Moving Average (SMA).
+		/// </summary>
+		Sma,
+		/// <summary>
+		/// Exponential Moving Average (EMA).
+		/// </summary>
+		Ema,
+		/// <summary>
+		/// Smoothed Moving Average (SMMA).
+		/// </summary>
+		Smma,
+		/// <summary>
+		/// Linear Weighted Moving Average (LWMA).
+		/// </summary>
+		Lwma
+	}
+
+	public enum PriceSources
+	{
+		/// <summary>
+		/// Close price.
+		/// </summary>
+		Close,
+		/// <summary>
+		/// Open price.
+		/// </summary>
+		Open,
+		/// <summary>
+		/// High price.
+		/// </summary>
+		High,
+		/// <summary>
+		/// Low price.
+		/// </summary>
+		Low,
+		/// <summary>
+		/// Median price (HL/2).
+		/// </summary>
+		Median,
+		/// <summary>
+		/// Typical price (HLC/3).
+		/// </summary>
+		Typical,
+		/// <summary>
+		/// Weighted price (HLCC/4).
+		/// </summary>
+		Weighted
+	}
+
+
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _fastShift;
-	private readonly StrategyParam<MovingAverageMethod> _fastMethod;
-	private readonly StrategyParam<PriceSource> _fastPrice;
+	private readonly StrategyParam<MovingAverageMethods> _fastMethod;
+	private readonly StrategyParam<PriceSources> _fastPrice;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _slowShift;
-	private readonly StrategyParam<MovingAverageMethod> _slowMethod;
-	private readonly StrategyParam<PriceSource> _slowPrice;
+	private readonly StrategyParam<MovingAverageMethods> _slowMethod;
+	private readonly StrategyParam<PriceSources> _slowPrice;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _trailingStopPips;
@@ -50,8 +102,8 @@ public class WajdyssMaExpertStrategy : Strategy
 	private TimeSpan? _timeFrame;
 	private DateTimeOffset? _lastBuyTime;
 	private DateTimeOffset? _lastSellTime;
-	private MovingAverageMethod _currentFastMethod;
-	private MovingAverageMethod _currentSlowMethod;
+	private MovingAverageMethods _currentFastMethod;
+	private MovingAverageMethods _currentSlowMethod;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="WajdyssMaExpertStrategy"/> class.
@@ -66,10 +118,10 @@ public class WajdyssMaExpertStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Fast MA Shift", "Shift applied to the fast moving average.", "Indicators");
 
-		_fastMethod = Param(nameof(FastMethod), MovingAverageMethod.Ema)
+		_fastMethod = Param(nameof(FastMethod), MovingAverageMethods.Ema)
 		.SetDisplay("Fast MA Method", "Smoothing method used for the fast moving average.", "Indicators");
 
-		_fastPrice = Param(nameof(FastPriceType), PriceSource.Close)
+		_fastPrice = Param(nameof(FastPriceType), PriceSources.Close)
 		.SetDisplay("Fast Price", "Price source fed into the fast moving average.", "Indicators");
 
 		_slowPeriod = Param(nameof(SlowPeriod), 20)
@@ -80,10 +132,10 @@ public class WajdyssMaExpertStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Slow MA Shift", "Shift applied to the slow moving average.", "Indicators");
 
-		_slowMethod = Param(nameof(SlowMethod), MovingAverageMethod.Ema)
+		_slowMethod = Param(nameof(SlowMethod), MovingAverageMethods.Ema)
 		.SetDisplay("Slow MA Method", "Smoothing method used for the slow moving average.", "Indicators");
 
-		_slowPrice = Param(nameof(SlowPriceType), PriceSource.Close)
+		_slowPrice = Param(nameof(SlowPriceType), PriceSources.Close)
 		.SetDisplay("Slow Price", "Price source fed into the slow moving average.", "Indicators");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100m)
@@ -153,7 +205,7 @@ public class WajdyssMaExpertStrategy : Strategy
 	/// <summary>
 	/// Moving average method used for the fast line.
 	/// </summary>
-	public MovingAverageMethod FastMethod
+	public MovingAverageMethods FastMethod
 	{
 		get => _fastMethod.Value;
 		set => _fastMethod.Value = value;
@@ -162,7 +214,7 @@ public class WajdyssMaExpertStrategy : Strategy
 	/// <summary>
 	/// Candle price fed into the fast moving average.
 	/// </summary>
-	public PriceSource FastPriceType
+	public PriceSources FastPriceType
 	{
 		get => _fastPrice.Value;
 		set => _fastPrice.Value = value;
@@ -189,7 +241,7 @@ public class WajdyssMaExpertStrategy : Strategy
 	/// <summary>
 	/// Moving average method used for the slow line.
 	/// </summary>
-	public MovingAverageMethod SlowMethod
+	public MovingAverageMethods SlowMethod
 	{
 		get => _slowMethod.Value;
 		set => _slowMethod.Value = value;
@@ -198,7 +250,7 @@ public class WajdyssMaExpertStrategy : Strategy
 	/// <summary>
 	/// Candle price fed into the slow moving average.
 	/// </summary>
-	public PriceSource SlowPriceType
+	public PriceSources SlowPriceType
 	{
 		get => _slowPrice.Value;
 		set => _slowPrice.Value = value;
@@ -657,28 +709,28 @@ public class WajdyssMaExpertStrategy : Strategy
 		return CandleType.Arg is TimeSpan span ? span : null;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethod method, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Sma => new SimpleMovingAverage { Length = length },
-			MovingAverageMethod.Ema => new ExponentialMovingAverage { Length = length },
-			MovingAverageMethod.Smma => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.Lwma => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.Sma => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Ema => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Smma => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.Lwma => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
 
-	private static decimal GetPrice(ICandleMessage candle, PriceSource priceType)
+	private static decimal GetPrice(ICandleMessage candle, PriceSources priceType)
 	{
 		return priceType switch
 		{
-			PriceSource.Open => candle.OpenPrice,
-			PriceSource.High => candle.HighPrice,
-			PriceSource.Low => candle.LowPrice,
-			PriceSource.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			PriceSource.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			PriceSource.Weighted => (candle.HighPrice + candle.LowPrice + (candle.ClosePrice * 2m)) / 4m,
+			PriceSources.Open => candle.OpenPrice,
+			PriceSources.High => candle.HighPrice,
+			PriceSources.Low => candle.LowPrice,
+			PriceSources.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			PriceSources.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			PriceSources.Weighted => (candle.HighPrice + candle.LowPrice + (candle.ClosePrice * 2m)) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}

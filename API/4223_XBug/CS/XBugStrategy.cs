@@ -8,12 +8,11 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-using StockSharp.Algo;
 
 /// <summary>
 /// Moving average crossover strategy converted from the MQL4 expert "X bug".
@@ -21,6 +20,17 @@ using StockSharp.Algo;
 /// </summary>
 public class XBugStrategy : Strategy
 {
+	public enum CandlePrices
+	{
+		Open,
+		High,
+		Low,
+		Close,
+		Median,
+		Typical,
+		Weighted
+	}
+
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
@@ -32,7 +42,7 @@ public class XBugStrategy : Strategy
 	private readonly StrategyParam<int> _slowShift;
 	private readonly StrategyParam<bool> _closeOnSignal;
 	private readonly StrategyParam<bool> _reverseSignals;
-	private readonly StrategyParam<CandlePrice> _appliedPrice;
+	private readonly StrategyParam<CandlePrices> _appliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private SimpleMovingAverage _fastMa;
@@ -87,7 +97,7 @@ public class XBugStrategy : Strategy
 		_reverseSignals = Param(nameof(ReverseSignals), false)
 			.SetDisplay("Reverse signals", "Invert buy and sell directions.", "Trading");
 
-		_appliedPrice = Param(nameof(AppliedPrice), CandlePrice.Median)
+		_appliedPrice = Param(nameof(AppliedPrice), CandlePrices.Median)
 			.SetDisplay("Applied price", "Price source fed into the moving averages.", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
@@ -196,7 +206,7 @@ public class XBugStrategy : Strategy
 	/// <summary>
 	/// Candle price used for moving average calculations.
 	/// </summary>
-	public CandlePrice AppliedPrice
+	public CandlePrices AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -356,16 +366,16 @@ public class XBugStrategy : Strategy
 		}
 	}
 
-	private static decimal GetPrice(ICandleMessage candle, CandlePrice priceType)
+	private static decimal GetPrice(ICandleMessage candle, CandlePrices priceType)
 	{
 		return priceType switch
 		{
-			CandlePrice.Open => candle.OpenPrice,
-			CandlePrice.High => candle.HighPrice,
-			CandlePrice.Low => candle.LowPrice,
-			CandlePrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			CandlePrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			CandlePrice.Weighted => (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
+			CandlePrices.Open => candle.OpenPrice,
+			CandlePrices.High => candle.HighPrice,
+			CandlePrices.Low => candle.LowPrice,
+			CandlePrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			CandlePrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			CandlePrices.Weighted => (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}

@@ -155,8 +155,8 @@ public class SimpleEngulfingStrategy : Strategy
 			.Bind(ProcessCandle)
 			.Start();
 
-		var takeUnit = TakeProfitPips > 0m && _pipSize > 0m ? new Unit(TakeProfitPips * _pipSize, UnitTypes.Price) : null;
-		var stopUnit = StopLossPips > 0m && _pipSize > 0m ? new Unit(StopLossPips * _pipSize, UnitTypes.Price) : null;
+		var takeUnit = TakeProfitPips > 0m && _pipSize > 0m ? new Unit(TakeProfitPips * _pipSize, UnitTypes.Absolute) : null;
+		var stopUnit = StopLossPips > 0m && _pipSize > 0m ? new Unit(StopLossPips * _pipSize, UnitTypes.Absolute) : null;
 
 		if (takeUnit != null || stopUnit != null)
 		{

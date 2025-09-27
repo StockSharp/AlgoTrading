@@ -251,11 +251,11 @@ public class AnyRangeCloudTailSystemTmPlusStrategy : Strategy
 		var step = Security?.PriceStep ?? 1m;
 		Unit takeProfit = null;
 		if (TakeProfitPoints > 0)
-			takeProfit = new Unit(TakeProfitPoints * step, UnitTypes.Price);
+			takeProfit = new Unit(TakeProfitPoints * step, UnitTypes.Absolute);
 
 		Unit stopLoss = null;
 		if (StopLossPoints > 0)
-			stopLoss = new Unit(StopLossPoints * step, UnitTypes.Price);
+			stopLoss = new Unit(StopLossPoints * step, UnitTypes.Absolute);
 
 		StartProtection(takeProfit, stopLoss, useMarketOrders: true);
 	}

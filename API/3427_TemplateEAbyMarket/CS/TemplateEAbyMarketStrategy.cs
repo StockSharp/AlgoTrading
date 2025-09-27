@@ -151,8 +151,8 @@ public class TemplateEAbyMarketStrategy : Strategy
 		Volume = OrderVolume;
 
 		StartProtection(
-			takeProfit: TakeProfitPoints > 0m ? new Unit(TakeProfitPoints, UnitTypes.Price) : null,
-			stopLoss: StopLossPoints > 0m ? new Unit(StopLossPoints, UnitTypes.Price) : null);
+			takeProfit: TakeProfitPoints > 0m ? new Unit(TakeProfitPoints, UnitTypes.Absolute) : null,
+			stopLoss: StopLossPoints > 0m ? new Unit(StopLossPoints, UnitTypes.Absolute) : null);
 
 		var area = CreateChartArea();
 		if (area != null)

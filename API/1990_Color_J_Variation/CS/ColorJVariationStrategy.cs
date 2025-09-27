@@ -117,8 +117,8 @@ public class ColorJVariationStrategy : Strategy
 			.Start();
 
 		StartProtection(
-			stopLoss: new Unit(StopLoss, UnitTypes.Price),
-			takeProfit: new Unit(TakeProfit, UnitTypes.Price));
+			stopLoss: new Unit(StopLoss, UnitTypes.Absolute),
+			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute));
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal jmaValue)

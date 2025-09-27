@@ -318,9 +318,9 @@ public class FibonacciTimeZonesStrategy : Strategy
 
 		_initialEquity = GetPortfolioValue();
 
-		Unit stopLossUnit = StopLossPips > 0m ? new Unit(StopLossPips * _pipSize, UnitTypes.Price) : null;
-		Unit takeProfitUnit = TakeProfitPips > 0m ? new Unit(TakeProfitPips * _pipSize, UnitTypes.Price) : null;
-		Unit trailingUnit = TrailingStopPips > 0m ? new Unit(TrailingStopPips * _pipSize, UnitTypes.Price) : null;
+		Unit stopLossUnit = StopLossPips > 0m ? new Unit(StopLossPips * _pipSize, UnitTypes.Absolute) : null;
+		Unit takeProfitUnit = TakeProfitPips > 0m ? new Unit(TakeProfitPips * _pipSize, UnitTypes.Absolute) : null;
+		Unit trailingUnit = TrailingStopPips > 0m ? new Unit(TrailingStopPips * _pipSize, UnitTypes.Absolute) : null;
 
 		StartProtection(takeProfit: takeProfitUnit, stopLoss: stopLossUnit, trailingStop: trailingUnit);
 

@@ -101,7 +101,7 @@ public class AroonHornSignStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		StartProtection(new Unit(TakeProfit, UnitTypes.Price), new Unit(StopLoss, UnitTypes.Price));
+		StartProtection(new Unit(TakeProfit, UnitTypes.Absolute), new Unit(StopLoss, UnitTypes.Absolute));
 
 		var aroon = new Aroon { Length = AroonPeriod };
 

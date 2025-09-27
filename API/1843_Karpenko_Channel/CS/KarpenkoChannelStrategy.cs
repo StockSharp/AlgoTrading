@@ -148,7 +148,7 @@ public class KarpenkoChannelStrategy : Strategy
 		_rangeSma = new SMA { Length = History };
 
 		// Configure protection using fixed take-profit and stop-loss.
-		StartProtection(new Unit(TakeProfit, UnitTypes.Price), new Unit(StopLoss, UnitTypes.Price));
+		StartProtection(new Unit(TakeProfit, UnitTypes.Absolute), new Unit(StopLoss, UnitTypes.Absolute));
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

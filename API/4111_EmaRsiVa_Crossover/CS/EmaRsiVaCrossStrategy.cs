@@ -19,16 +19,32 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class EmaRsiVaCrossStrategy : Strategy
 {
+	public enum AppliedPrices
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted,
+		Simple,
+		Quarter,
+		TrendFollow0,
+		TrendFollow1,
+		Demark
+	}
+
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<bool> _useBalanceMultiplier;
 	private readonly StrategyParam<decimal> _maxDrawdown;
 	private readonly StrategyParam<int> _slowRsiPeriod;
 	private readonly StrategyParam<int> _slowEmaPeriod;
-	private readonly StrategyParam<AppliedPrice> _slowAppliedPrice;
+	private readonly StrategyParam<AppliedPrices> _slowAppliedPrice;
 	private readonly StrategyParam<int> _fastRsiPeriod;
 	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<AppliedPrice> _fastAppliedPrice;
+	private readonly StrategyParam<AppliedPrices> _fastAppliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private EmaRsiVolatilityAdaptiveIndicator _slowIndicator = default!;
@@ -94,7 +110,7 @@ public class EmaRsiVaCrossStrategy : Strategy
 	/// <summary>
 	/// Applied price mode for the slow EMA_RSI_VA indicator.
 	/// </summary>
-	public AppliedPrice SlowAppliedPrice
+	public AppliedPrices SlowAppliedPrice
 	{
 		get => _slowAppliedPrice.Value;
 		set => _slowAppliedPrice.Value = value;
@@ -121,7 +137,7 @@ public class EmaRsiVaCrossStrategy : Strategy
 	/// <summary>
 	/// Applied price mode for the fast EMA_RSI_VA indicator.
 	/// </summary>
-	public AppliedPrice FastAppliedPrice
+	public AppliedPrices FastAppliedPrice
 	{
 		get => _fastAppliedPrice.Value;
 		set => _fastAppliedPrice.Value = value;
@@ -165,7 +181,7 @@ public class EmaRsiVaCrossStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Slow EMA Period", "Slow EMA_RSI_VA smoothing length", "Indicators");
 
-		_slowAppliedPrice = Param(nameof(SlowAppliedPrice), AppliedPrice.Close)
+		_slowAppliedPrice = Param(nameof(SlowAppliedPrice), AppliedPrices.Close)
 		.SetDisplay("Slow Applied Price", "Price input for the slow indicator", "Indicators");
 
 		_fastRsiPeriod = Param(nameof(FastRsiPeriod), 200)
@@ -176,7 +192,7 @@ public class EmaRsiVaCrossStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Fast EMA Period", "Fast EMA_RSI_VA smoothing length", "Indicators");
 
-		_fastAppliedPrice = Param(nameof(FastAppliedPrice), AppliedPrice.Close)
+		_fastAppliedPrice = Param(nameof(FastAppliedPrice), AppliedPrices.Close)
 		.SetDisplay("Fast Applied Price", "Price input for the fast indicator", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

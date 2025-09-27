@@ -272,8 +272,8 @@ public class HeikenAshiIdeaStrategy : Strategy
 				DrawOwnTrades(area);
 		}
 
-		var takeProfitUnit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * _priceStep, UnitTypes.Price) : null;
-		var stopLossUnit = StopLossPoints > 0m ? new Unit(StopLossPoints * _priceStep, UnitTypes.Price) : null;
+		var takeProfitUnit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * _priceStep, UnitTypes.Absolute) : null;
+		var stopLossUnit = StopLossPoints > 0m ? new Unit(StopLossPoints * _priceStep, UnitTypes.Absolute) : null;
 
 		if (takeProfitUnit != null || stopLossUnit != null)
 		{

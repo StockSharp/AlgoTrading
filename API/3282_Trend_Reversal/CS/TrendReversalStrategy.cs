@@ -293,8 +293,8 @@ public class TrendReversalStrategy : Strategy
 
 		if (TakeProfit > 0m || StopLoss > 0m)
 		{
-			var takeProfit = TakeProfit > 0m ? new Unit(TakeProfit, UnitTypes.Price) : null;
-			var stopLoss = StopLoss > 0m ? new Unit(StopLoss, UnitTypes.Price) : null;
+			var takeProfit = TakeProfit > 0m ? new Unit(TakeProfit, UnitTypes.Absolute) : null;
+			var stopLoss = StopLoss > 0m ? new Unit(StopLoss, UnitTypes.Absolute) : null;
 			StartProtection(stopLoss: stopLoss, takeProfit: takeProfit, useMarketOrders: true);
 		}
 

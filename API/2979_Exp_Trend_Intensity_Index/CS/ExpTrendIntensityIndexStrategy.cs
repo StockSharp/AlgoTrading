@@ -281,8 +281,8 @@ public class ExpTrendIntensityIndexStrategy : Strategy
 
 	private void ConfigureProtection()
 	{
-		Unit takeProfitUnit = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.Price) : null;
-		Unit stopLossUnit = StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.Price) : null;
+		Unit takeProfitUnit = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.Absolute) : null;
+		Unit stopLossUnit = StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.Absolute) : null;
 
 		if (takeProfitUnit != null || stopLossUnit != null)
 		StartProtection(takeProfit: takeProfitUnit, stopLoss: stopLossUnit);

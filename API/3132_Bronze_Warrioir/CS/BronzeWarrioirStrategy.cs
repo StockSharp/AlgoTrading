@@ -272,10 +272,10 @@ public class BronzeWarrioirStrategy : Strategy
 		Unit takeProfitUnit = null;
 
 		if (_pipSize > 0m && StopLossPips > 0)
-			stopLossUnit = new Unit(StopLossPips * _pipSize, UnitTypes.Price);
+			stopLossUnit = new Unit(StopLossPips * _pipSize, UnitTypes.Absolute);
 
 		if (_pipSize > 0m && TakeProfitPips > 0)
-			takeProfitUnit = new Unit(TakeProfitPips * _pipSize, UnitTypes.Price);
+			takeProfitUnit = new Unit(TakeProfitPips * _pipSize, UnitTypes.Absolute);
 
 		if (stopLossUnit.HasValue || takeProfitUnit.HasValue)
 			StartProtection(stopLoss: stopLossUnit, takeProfit: takeProfitUnit);

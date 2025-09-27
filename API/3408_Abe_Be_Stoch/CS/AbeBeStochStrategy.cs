@@ -213,12 +213,12 @@ public class AbeBeStochStrategy : Strategy
 		{
 			if (TakeProfitPoints > 0m)
 			{
-				takeProfitUnit = new Unit(TakeProfitPoints * priceStep, UnitTypes.Price);
+				takeProfitUnit = new Unit(TakeProfitPoints * priceStep, UnitTypes.Absolute);
 			}
 
 			if (StopLossPoints > 0m)
 			{
-				stopLossUnit = new Unit(StopLossPoints * priceStep, UnitTypes.Price);
+				stopLossUnit = new Unit(StopLossPoints * priceStep, UnitTypes.Absolute);
 			}
 		}
 

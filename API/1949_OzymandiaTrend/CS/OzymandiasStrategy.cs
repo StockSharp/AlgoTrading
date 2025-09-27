@@ -154,7 +154,7 @@ public class OzymandiasStrategy : Strategy
 	.Bind(ProcessCandle)
 	.Start();
 	
-	StartProtection(new Unit(TakeProfitPoints, UnitTypes.Price), new Unit(StopLossPoints, UnitTypes.Price));
+	StartProtection(new Unit(TakeProfitPoints, UnitTypes.Absolute), new Unit(StopLossPoints, UnitTypes.Absolute));
 	
 	var area = CreateChartArea();
 	if (area != null)

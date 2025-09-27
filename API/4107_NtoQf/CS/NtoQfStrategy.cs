@@ -533,25 +533,25 @@ public class NtoQfStrategy : Strategy
 		var types = new HashSet<DataType> { CandleType };
 
 		if (UseRsi)
-		types.Add(ResolveTimeFrame(RsiTimeFrame));
+			types.Add(ResolveTimeFrame(RsiTimeFrame));
 
 		if (UseStochastic)
-		types.Add(ResolveTimeFrame(StochasticTimeFrame));
+			types.Add(ResolveTimeFrame(StochasticTimeFrame));
 
 		if (UseAdx)
-		types.Add(ResolveTimeFrame(AdxTimeFrame));
+			types.Add(ResolveTimeFrame(AdxTimeFrame));
 
 		if (UseAdxMain)
-		types.Add(ResolveTimeFrame(AdxMainTimeFrame));
+			types.Add(ResolveTimeFrame(AdxMainTimeFrame));
 
 		if (UseSar)
-		types.Add(ResolveTimeFrame(SarTimeFrame));
+			types.Add(ResolveTimeFrame(SarTimeFrame));
 
 		if (UseMa)
-		types.Add(ResolveTimeFrame(MaTimeFrame));
+			types.Add(ResolveTimeFrame(MaTimeFrame));
 
 		foreach (var type in types)
-		yield return (Security, type);
+			yield return (Security, type);
 	}
 
 	/// <inheritdoc />
@@ -579,7 +579,7 @@ public class NtoQfStrategy : Strategy
 		SetupBaseSubscription();
 
 		foreach (var subscription in _subscriptions.Values)
-		subscription.Start();
+			subscription.Start();
 	}
 
 	/// <inheritdoc />
@@ -622,7 +622,7 @@ public class NtoQfStrategy : Strategy
 	private void SetupRsi()
 	{
 		if (!UseRsi)
-		return;
+			return;
 
 		var timeframe = ResolveTimeFrame(RsiTimeFrame);
 		var buffer = CreateBuffer(_rsiBuffers, timeframe, GetRequiredCapacity());
@@ -632,7 +632,7 @@ public class NtoQfStrategy : Strategy
 		subscription.Bind(indicator, (candle, value) =>
 		{
 			if (candle.State != CandleStates.Finished)
-			return;
+				return;
 
 			buffer.Add(value);
 		});
@@ -641,7 +641,7 @@ public class NtoQfStrategy : Strategy
 	private void SetupStochastic()
 	{
 		if (!UseStochastic)
-		return;
+			return;
 
 		var timeframe = ResolveTimeFrame(StochasticTimeFrame);
 		var buffer = CreateBuffer(_stochasticBuffers, timeframe, GetRequiredCapacity());
@@ -657,7 +657,7 @@ public class NtoQfStrategy : Strategy
 		subscription.Bind(stochastic, (candle, main, signal) =>
 		{
 			if (candle.State != CandleStates.Finished)
-			return;
+				return;
 
 			buffer.Add(new StochasticSnapshot(main, signal));
 		});
@@ -666,7 +666,7 @@ public class NtoQfStrategy : Strategy
 	private void SetupAdx()
 	{
 		if (!UseAdx)
-		return;
+			return;
 
 		var timeframe = ResolveTimeFrame(AdxTimeFrame);
 		var buffer = CreateBuffer(_adxDirectionalBuffers, timeframe, GetRequiredCapacity());
@@ -676,11 +676,11 @@ public class NtoQfStrategy : Strategy
 		subscription.BindEx(adx, (candle, value) =>
 		{
 			if (candle.State != CandleStates.Finished || !value.IsFinal)
-			return;
+				return;
 
 			var data = (AverageDirectionalIndexValue)value;
 			if (data.Dx.Plus is not decimal plus || data.Dx.Minus is not decimal minus)
-			return;
+				return;
 
 			var main = data.MovingAverage is decimal adxMain ? adxMain : (decimal?)null;
 			buffer.Add(new AdxSnapshot(plus, minus, main));
@@ -690,12 +690,12 @@ public class NtoQfStrategy : Strategy
 	private void SetupAdxMain()
 	{
 		if (!UseAdxMain)
-		return;
+			return;
 
 		var strengthFrame = ResolveTimeFrame(AdxMainTimeFrame);
 
 		if (UseAdx && strengthFrame == ResolveTimeFrame(AdxTimeFrame))
-		return;
+			return;
 
 		var buffer = CreateBuffer(_adxMainBuffers, strengthFrame, GetRequiredCapacity());
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
@@ -704,11 +704,11 @@ public class NtoQfStrategy : Strategy
 		subscription.BindEx(adx, (candle, value) =>
 		{
 			if (candle.State != CandleStates.Finished || !value.IsFinal)
-			return;
+				return;
 
 			var data = (AverageDirectionalIndexValue)value;
 			if (data.MovingAverage is not decimal adxMain)
-			return;
+				return;
 
 			buffer.Add(adxMain);
 		});
@@ -717,7 +717,7 @@ public class NtoQfStrategy : Strategy
 	private void SetupSar()
 	{
 		if (!UseSar)
-		return;
+			return;
 
 		var timeframe = ResolveTimeFrame(SarTimeFrame);
 		var buffer = CreateBuffer(_sarBuffers, timeframe, GetRequiredCapacity());
@@ -731,7 +731,7 @@ public class NtoQfStrategy : Strategy
 		subscription.Bind(sar, (candle, value) =>
 		{
 			if (candle.State != CandleStates.Finished)
-			return;
+				return;
 
 			buffer.Add(value);
 		});
@@ -740,7 +740,7 @@ public class NtoQfStrategy : Strategy
 	private void SetupMa()
 	{
 		if (!UseMa)
-		return;
+			return;
 
 		var timeframe = ResolveTimeFrame(MaTimeFrame);
 		var buffer = CreateBuffer(_maBuffers, timeframe, GetRequiredCapacity(Math.Max(0, MaShift)));
@@ -750,7 +750,7 @@ public class NtoQfStrategy : Strategy
 		subscription.Bind(ma, (candle, value) =>
 		{
 			if (candle.State != CandleStates.Finished)
-			return;
+				return;
 
 			buffer.Add(value);
 		});
@@ -759,26 +759,26 @@ public class NtoQfStrategy : Strategy
 	private void ProcessBaseCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		_closeBuffer.Add(candle.ClosePrice);
 
 		if (ManagePosition(candle))
-		return;
+			return;
 
 		if (Position != 0m)
-		return;
+			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
 		var signal = GenerateSignal();
 		if (signal is null)
-		return;
+			return;
 
 		var volume = TradeVolume;
 		if (volume <= 0m)
-		return;
+			return;
 
 		if (signal == TrendDirections.Long)
 		{
@@ -795,7 +795,7 @@ public class NtoQfStrategy : Strategy
 	private bool ManagePosition(ICandleMessage candle)
 	{
 		if (Position == 0m)
-		return false;
+			return false;
 
 		var trailingDistance = TrailingStopPips * _pipSize;
 
@@ -864,49 +864,49 @@ public class NtoQfStrategy : Strategy
 		var directions = new List<TrendDirections>();
 
 		if (!TryGetRsiSignal(out var rsiDirection))
-		return null;
+			return null;
 		if (rsiDirection is TrendDirections rsi)
-		directions.Add(rsi);
+			directions.Add(rsi);
 		else if (UseRsi)
-		return null;
+			return null;
 
 		if (!TryGetStochasticSignal(out var stoDirection))
-		return null;
+			return null;
 		if (stoDirection is TrendDirections sto)
-		directions.Add(sto);
+			directions.Add(sto);
 		else if (UseStochastic)
-		return null;
+			return null;
 
 		if (!TryGetAdxDirection(out var adxDirection))
-		return null;
+			return null;
 		if (adxDirection is TrendDirections adx)
-		directions.Add(adx);
+			directions.Add(adx);
 
 		if (!IsAdxMainSatisfied())
-		return null;
+			return null;
 
 		if (!TryGetSarDirection(out var sarDirection))
-		return null;
+			return null;
 		if (sarDirection is TrendDirections sar)
-		directions.Add(sar);
+			directions.Add(sar);
 		else if (UseSar)
-		return null;
+			return null;
 
 		if (!TryGetMaDirection(out var maDirection))
-		return null;
+			return null;
 		if (maDirection is TrendDirections ma)
-		directions.Add(ma);
+			directions.Add(ma);
 		else if (UseMa)
-		return null;
+			return null;
 
 		if (directions.Count == 0)
-		return null;
+			return null;
 
 		var first = directions[0];
 		foreach (var direction in directions)
 		{
 			if (direction != first)
-			return null;
+				return null;
 		}
 
 		return first;
@@ -917,20 +917,20 @@ public class NtoQfStrategy : Strategy
 		direction = null;
 
 		if (!UseRsi)
-		return true;
+			return true;
 
 		var timeframe = ResolveTimeFrame(RsiTimeFrame);
 		if (!_rsiBuffers.TryGetValue(timeframe, out var buffer))
-		return false;
+			return false;
 
 		var shift = Math.Max(0, Shift);
 		if (!buffer.TryGet(shift, out var value))
-		return false;
+			return false;
 
 		if (value > RsiUpper)
-		direction = TrendDirections.Short;
+			direction = TrendDirections.Short;
 		else if (value < RsiLower)
-		direction = TrendDirections.Long;
+			direction = TrendDirections.Long;
 
 		return true;
 	}
@@ -940,22 +940,22 @@ public class NtoQfStrategy : Strategy
 		direction = null;
 
 		if (!UseStochastic)
-		return true;
+			return true;
 
 		var timeframe = ResolveTimeFrame(StochasticTimeFrame);
 		if (!_stochasticBuffers.TryGetValue(timeframe, out var buffer))
-		return false;
+			return false;
 
 		var shift = Math.Max(0, Shift);
 		if (!buffer.TryGet(shift, out var snapshot))
-		return false;
+			return false;
 
 		if (UseStochasticHighLow)
 		{
 			if (snapshot.Main > snapshot.Signal && snapshot.Main > StochasticHigh)
-			direction = TrendDirections.Long;
+				direction = TrendDirections.Long;
 			else if (snapshot.Main < snapshot.Signal && snapshot.Main < StochasticLow)
-			direction = TrendDirections.Short;
+				direction = TrendDirections.Short;
 		}
 		else
 		{
@@ -970,15 +970,15 @@ public class NtoQfStrategy : Strategy
 		direction = null;
 
 		if (!UseAdx)
-		return true;
+			return true;
 
 		var timeframe = ResolveTimeFrame(AdxTimeFrame);
 		if (!_adxDirectionalBuffers.TryGetValue(timeframe, out var buffer))
-		return false;
+			return false;
 
 		var shift = Math.Max(0, Shift);
 		if (!buffer.TryGet(shift, out var snapshot))
-		return false;
+			return false;
 
 		direction = snapshot.PlusDi > snapshot.MinusDi ? TrendDirections.Long : TrendDirections.Short;
 		return true;
@@ -989,18 +989,18 @@ public class NtoQfStrategy : Strategy
 		direction = null;
 
 		if (!UseSar)
-		return true;
+			return true;
 
 		var timeframe = ResolveTimeFrame(SarTimeFrame);
 		if (!_sarBuffers.TryGetValue(timeframe, out var buffer))
-		return false;
+			return false;
 
 		var shift = Math.Max(0, Shift);
 		if (!buffer.TryGet(shift, out var sarValue))
-		return false;
+			return false;
 
 		if (!TryGetClose(shift, out var close))
-		return false;
+			return false;
 
 		direction = sarValue > close ? TrendDirections.Long : TrendDirections.Short;
 		return true;
@@ -1011,18 +1011,18 @@ public class NtoQfStrategy : Strategy
 		direction = null;
 
 		if (!UseMa)
-		return true;
+			return true;
 
 		var timeframe = ResolveTimeFrame(MaTimeFrame);
 		if (!_maBuffers.TryGetValue(timeframe, out var buffer))
-		return false;
+			return false;
 
 		var shift = Math.Max(0, Shift + Math.Max(0, MaShift));
 		if (!buffer.TryGet(shift, out var maValue))
-		return false;
+			return false;
 
 		if (!TryGetClose(Math.Max(0, Shift), out var close))
-		return false;
+			return false;
 
 		direction = maValue < close ? TrendDirections.Long : TrendDirections.Short;
 		return true;
@@ -1031,7 +1031,7 @@ public class NtoQfStrategy : Strategy
 	private bool IsAdxMainSatisfied()
 	{
 		if (!UseAdxMain)
-		return true;
+			return true;
 
 		var shift = Math.Max(0, Shift);
 		var strengthFrame = ResolveTimeFrame(AdxMainTimeFrame);
@@ -1040,22 +1040,22 @@ public class NtoQfStrategy : Strategy
 		if (UseAdx && strengthFrame == adxFrame)
 		{
 			if (!_adxDirectionalBuffers.TryGetValue(strengthFrame, out var buffer))
-			return false;
+				return false;
 
 			if (!buffer.TryGet(shift, out var snapshot))
-			return false;
+				return false;
 
 			if (snapshot.AdxMain is not decimal adxMain)
-			return false;
+				return false;
 
 			return adxMain > AdxMainThreshold;
 		}
 
 		if (!_adxMainBuffers.TryGetValue(strengthFrame, out var mainBuffer))
-		return false;
+			return false;
 
 		if (!mainBuffer.TryGet(shift, out var value))
-		return false;
+			return false;
 
 		return value > AdxMainThreshold;
 	}
@@ -1133,7 +1133,7 @@ public class NtoQfStrategy : Strategy
 		var decimals = Security.Decimals ?? 0;
 
 		if (decimals >= 3)
-		return step * 10m;
+			return step * 10m;
 
 		return step > 0m ? step : 0.0001m;
 	}
@@ -1210,7 +1210,7 @@ public class NtoQfStrategy : Strategy
 		public void Add(T value)
 		{
 			if (_values.Count == _capacity)
-			_values.RemoveAt(_values.Count - 1);
+				_values.RemoveAt(_values.Count - 1);
 
 			_values.Insert(0, value);
 		}

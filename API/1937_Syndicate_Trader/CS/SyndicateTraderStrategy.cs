@@ -112,8 +112,8 @@ public class SyndicateTraderStrategy : Strategy
 		subscription.Bind(ProcessCandle).Start();
 		
 		StartProtection(
-		takeProfit: new Unit(TakeProfitPoints, UnitTypes.Price),
-		stopLoss: new Unit(StopLossPoints, UnitTypes.Price));
+		takeProfit: new Unit(TakeProfitPoints, UnitTypes.Absolute),
+		stopLoss: new Unit(StopLossPoints, UnitTypes.Absolute));
 		
 		var area = CreateChartArea();
 		if (area != null)

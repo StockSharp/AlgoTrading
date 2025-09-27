@@ -104,7 +104,7 @@ public class GridStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
 
-		StartProtection(new Unit(TakeProfitPoints * (Security.PriceStep ?? 1m), UnitTypes.Price));
+		StartProtection(new Unit(TakeProfitPoints * (Security.PriceStep ?? 1m), UnitTypes.Absolute));
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

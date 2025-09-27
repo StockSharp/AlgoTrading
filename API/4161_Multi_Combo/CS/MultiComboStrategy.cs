@@ -1265,7 +1265,7 @@ public class MultiComboStrategy : Strategy
 		};
 	}
 
-	private void TryDrawIndicators(CandleSeries subscription, params IIndicator[] indicators)
+	private void TryDrawIndicators<T>(ISubscriptionHandler<T> subscription, params IIndicator[] indicators)
 	{
 		var area = CreateChartArea();
 		if (area == null)

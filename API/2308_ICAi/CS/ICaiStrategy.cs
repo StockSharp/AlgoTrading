@@ -111,8 +111,8 @@ public class ICaiStrategy : Strategy
 		}
 
 		StartProtection(
-			takeProfit: new Unit(TakeProfit, UnitTypes.Price),
-			stopLoss: new Unit(StopLoss, UnitTypes.Price));
+			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
+			stopLoss: new Unit(StopLoss, UnitTypes.Absolute));
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue icaiValue)

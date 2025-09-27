@@ -350,8 +350,8 @@ public class AtRandomFullStrategy : Strategy
 		var trailingStopDistance = TrailingStopPoints * _priceStep;
 		var trailingStepDistance = TrailingStepPoints * _priceStep;
 
-		var takeUnit = _takeProfitDistance > 0m ? new Unit(_takeProfitDistance, UnitTypes.Price) : new Unit();
-		var stopUnit = _stopLossDistance > 0m ? new Unit(_stopLossDistance, UnitTypes.Price) : new Unit();
+		var takeUnit = _takeProfitDistance > 0m ? new Unit(_takeProfitDistance, UnitTypes.Absolute) : new Unit();
+		var stopUnit = _stopLossDistance > 0m ? new Unit(_stopLossDistance, UnitTypes.Absolute) : new Unit();
 
 		LogInfo($"Trailing parameters: activate {_trailingActivateDistance}, stop {trailingStopDistance}, step {trailingStepDistance}.");
 		StartProtection(takeProfit: takeUnit, stopLoss: stopUnit, isStopTrailing: trailingStopDistance > 0m);

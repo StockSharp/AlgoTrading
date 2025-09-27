@@ -503,16 +503,16 @@ private void ConfigureProtection()
 	if (!hasStop && !hasTake && !hasTrailing)
 	return;
 
-	var stopLoss = hasStop ? new Unit(StopLossPoints * _pipSize, UnitTypes.Price) : null;
-	var takeProfit = hasTake ? new Unit(TakeProfitPoints * _pipSize, UnitTypes.Price) : null;
+	var stopLoss = hasStop ? new Unit(StopLossPoints * _pipSize, UnitTypes.Absolute) : null;
+	var takeProfit = hasTake ? new Unit(TakeProfitPoints * _pipSize, UnitTypes.Absolute) : null;
 	Unit trailingStop = null;
 	Unit trailingStep = null;
 
 	if (hasTrailing)
 	{
-		trailingStop = new Unit(TrailingStopPoints * _pipSize, UnitTypes.Price);
+		trailingStop = new Unit(TrailingStopPoints * _pipSize, UnitTypes.Absolute);
 		if (TrailingStepPoints > 0m)
-		trailingStep = new Unit(TrailingStepPoints * _pipSize, UnitTypes.Price);
+		trailingStep = new Unit(TrailingStepPoints * _pipSize, UnitTypes.Absolute);
 	}
 
 		StartProtection(stopLoss: stopLoss, takeProfit: takeProfit, isTrailingStop: hasTrailing, trailingStop: trailingStop, trailingStopStep: trailingStep);

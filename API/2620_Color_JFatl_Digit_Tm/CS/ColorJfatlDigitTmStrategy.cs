@@ -358,10 +358,10 @@ public class ColorJfatlDigitTmStrategy : Strategy
 		Unit stopLossUnit = null;
 
 		if (TakeProfitPoints > 0 && priceStep > 0m)
-			takeProfitUnit = new Unit(TakeProfitPoints * priceStep, UnitTypes.Price);
+			takeProfitUnit = new Unit(TakeProfitPoints * priceStep, UnitTypes.Absolute);
 
 		if (StopLossPoints > 0 && priceStep > 0m)
-			stopLossUnit = new Unit(StopLossPoints * priceStep, UnitTypes.Price);
+			stopLossUnit = new Unit(StopLossPoints * priceStep, UnitTypes.Absolute);
 
 		StartProtection(takeProfit: takeProfitUnit, stopLoss: stopLossUnit);
 	}

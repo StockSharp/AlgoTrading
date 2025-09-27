@@ -241,8 +241,8 @@ public class BillyExpertStrategy : Strategy
 
 		_pipSize = CalculatePipSize();
 
-		var takeProfit = TakeProfitPips > 0 ? new Unit(TakeProfitPips * _pipSize, UnitTypes.Price) : null;
-		var stopLoss = StopLossPips > 0 ? new Unit(StopLossPips * _pipSize, UnitTypes.Price) : null;
+		var takeProfit = TakeProfitPips > 0 ? new Unit(TakeProfitPips * _pipSize, UnitTypes.Absolute) : null;
+		var stopLoss = StopLossPips > 0 ? new Unit(StopLossPips * _pipSize, UnitTypes.Absolute) : null;
 
 		if (takeProfit != null || stopLoss != null)
 		{

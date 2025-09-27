@@ -122,8 +122,8 @@ public class HawaiianTsunamiSurferStrategy : Strategy
 		// Configure protective stop-loss and take-profit
 		var priceStep = Security?.PriceStep ?? 1m;
 		StartProtection(
-		new Unit(TakeProfitPoints * priceStep, UnitTypes.Price),
-		new Unit(StopLossPoints * priceStep, UnitTypes.Price),
+		new Unit(TakeProfitPoints * priceStep, UnitTypes.Absolute),
+		new Unit(StopLossPoints * priceStep, UnitTypes.Absolute),
 		useMarketOrders: true);
 
 		// Setup chart

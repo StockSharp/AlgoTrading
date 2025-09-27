@@ -169,8 +169,8 @@ public class GenieStochRsiStrategy : Strategy
 		subscription.Bind(_rsi, _stochastic, ProcessCandle).Start();
 
 		StartProtection(
-			new Unit(TakeProfit, UnitTypes.Price),
-			new Unit(TrailingStop, UnitTypes.Price),
+			new Unit(TakeProfit, UnitTypes.Absolute),
+			new Unit(TrailingStop, UnitTypes.Absolute),
 			isStopTrailing: true);
 
 		var area = CreateChartArea();

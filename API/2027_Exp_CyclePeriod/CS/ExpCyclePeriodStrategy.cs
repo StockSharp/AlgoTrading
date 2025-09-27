@@ -164,7 +164,7 @@ public class ExpCyclePeriodStrategy : Strategy
 		base.OnStarted(time);
 
 		// Enable risk management with take profit and stop loss
-		StartProtection(new Unit(TakeProfit, UnitTypes.Price), new Unit(StopLoss, UnitTypes.Price));
+		StartProtection(new Unit(TakeProfit, UnitTypes.Absolute), new Unit(StopLoss, UnitTypes.Absolute));
 
 		var cyclePeriod = new CyclePeriod { Alpha = Alpha };
 

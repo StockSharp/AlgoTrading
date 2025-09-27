@@ -22,16 +22,27 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TwoMaFourLevelBandsStrategy : Strategy
 {
+	public enum CandlePrices
+	{
+		Open = 0,
+		High = 1,
+		Low = 2,
+		Close = 3,
+		Median = 4,
+		Typical = 5,
+		Weighted = 6
+	}
+
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<int> _calculationBar;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<MovingAverageMethods> _fastMethod;
-	private readonly StrategyParam<CandlePrice> _fastPrice;
+	private readonly StrategyParam<CandlePrices> _fastPrice;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<MovingAverageMethods> _slowMethod;
-	private readonly StrategyParam<CandlePrice> _slowPrice;
+	private readonly StrategyParam<CandlePrices> _slowPrice;
 	private readonly StrategyParam<int> _upperLevel1;
 	private readonly StrategyParam<int> _upperLevel2;
 	private readonly StrategyParam<int> _lowerLevel1;
@@ -77,7 +88,7 @@ public class TwoMaFourLevelBandsStrategy : Strategy
 		_fastMethod = Param(nameof(FastMethod), MovingAverageMethods.Smoothed)
 			.SetDisplay("Fast MA method", "Type of moving average used for the fast line.", "Indicators");
 
-		_fastPrice = Param(nameof(FastPrice), CandlePrice.Median)
+		_fastPrice = Param(nameof(FastPrice), CandlePrices.Median)
 			.SetDisplay("Fast MA price", "Applied price used by the fast moving average.", "Indicators");
 
 		_slowPeriod = Param(nameof(SlowPeriod), 180)
@@ -89,7 +100,7 @@ public class TwoMaFourLevelBandsStrategy : Strategy
 		_slowMethod = Param(nameof(SlowMethod), MovingAverageMethods.Smoothed)
 			.SetDisplay("Slow MA method", "Type of moving average used for the slow line.", "Indicators");
 
-		_slowPrice = Param(nameof(SlowPrice), CandlePrice.Median)
+		_slowPrice = Param(nameof(SlowPrice), CandlePrices.Median)
 			.SetDisplay("Slow MA price", "Applied price used by the slow moving average.", "Indicators");
 
 		_upperLevel1 = Param(nameof(UpperLevel1), 500)
@@ -177,7 +188,7 @@ public class TwoMaFourLevelBandsStrategy : Strategy
 	/// <summary>
 	/// Applied price for the fast moving average.
 	/// </summary>
-	public CandlePrice FastPrice
+	public CandlePrices FastPrice
 	{
 		get => _fastPrice.Value;
 		set => _fastPrice.Value = value;
@@ -204,7 +215,7 @@ public class TwoMaFourLevelBandsStrategy : Strategy
 	/// <summary>
 	/// Applied price for the slow moving average.
 	/// </summary>
-	public CandlePrice SlowPrice
+	public CandlePrices SlowPrice
 	{
 		get => _slowPrice.Value;
 		set => _slowPrice.Value = value;
@@ -287,8 +298,8 @@ public class TwoMaFourLevelBandsStrategy : Strategy
 			.Bind(fastMa, slowMa, ProcessCandle)
 			.Start();
 
-		var takeUnit = TakeProfitPips > 0 ? new Unit(TakeProfitPips * _pipSize, UnitTypes.Price) : null;
-		var stopUnit = StopLossPips > 0 ? new Unit(StopLossPips * _pipSize, UnitTypes.Price) : null;
+		var takeUnit = TakeProfitPips > 0 ? new Unit(TakeProfitPips * _pipSize, UnitTypes.Absolute) : null;
+		var stopUnit = StopLossPips > 0 ? new Unit(StopLossPips * _pipSize, UnitTypes.Absolute) : null;
 
 		if (takeUnit != null || stopUnit != null)
 		{
@@ -383,7 +394,7 @@ public class TwoMaFourLevelBandsStrategy : Strategy
 		return prevFast >= prevSlow && currentFast < currentSlow;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int period, CandlePrice price)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int period, CandlePrices price)
 	{
 		var indicator = method switch
 		{

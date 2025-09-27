@@ -127,8 +127,8 @@ public class PsiProcEmaMacdStrategy : Strategy
 			.Start();
 
 		StartProtection(
-			new Unit(TakeProfitPoints, UnitTypes.Price),
-			new Unit(TrailStopPoints, UnitTypes.Price),
+			new Unit(TakeProfitPoints, UnitTypes.Absolute),
+			new Unit(TrailStopPoints, UnitTypes.Absolute),
 			isStopTrailing: true);
 
 		var area = CreateChartArea();

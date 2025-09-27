@@ -358,6 +358,6 @@ public class CdcPlMfiStrategy : Strategy
 			return null;
 
 		var distance = pips * step.Value;
-		return new Unit(distance, UnitTypes.Price);
+		return new Unit(distance, UnitTypes.Absolute);
 	}
 }

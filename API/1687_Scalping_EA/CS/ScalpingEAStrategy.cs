@@ -63,7 +63,7 @@ public class ScalpingEAStrategy : Strategy
 		base.OnStarted(time);
 
 		var step = Security.PriceStep ?? 1m;
-		StartProtection(new Unit(ProfitTarget * step, UnitTypes.Price), new Unit(StopLoss * step, UnitTypes.Price));
+		StartProtection(new Unit(ProfitTarget * step, UnitTypes.Absolute), new Unit(StopLoss * step, UnitTypes.Absolute));
 
 		SubscribeTicks().Bind(ProcessTrade).Start();
 
