@@ -15,11 +15,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class XcciHistogramVolStrategy : Strategy
 {
-	private const int ColorExtremePositive = 0;
-	private const int ColorPositive = 1;
-	private const int ColorNeutral = 2;
-	private const int ColorNegative = 3;
-	private const int ColorExtremeNegative = 4;
 
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<int> _maLength;
@@ -40,6 +35,11 @@ public class XcciHistogramVolStrategy : Strategy
 	private readonly StrategyParam<bool> _useTakeProfit;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _colorExtremePositive;
+	private readonly StrategyParam<int> _colorPositive;
+	private readonly StrategyParam<int> _colorNeutral;
+	private readonly StrategyParam<int> _colorNegative;
+	private readonly StrategyParam<int> _colorExtremeNegative;
 
 	private CommodityChannelIndex _cci;
 	private LengthIndicator<decimal> _cciVolumeAverage;
@@ -88,6 +88,21 @@ public class XcciHistogramVolStrategy : Strategy
 		_signalBarOffset = Param(nameof(SignalBarOffset), 1)
 		.SetDisplay("Signal Offset", "Number of closed candles to wait before acting", "Trading")
 		.SetRange(0, 10);
+		_colorExtremePositive = Param(nameof(ColorExtremePositive), 0)
+			.SetDisplay("Extreme Positive Color", "Chart color index for the strongest bullish zone", "Visualization");
+
+		_colorPositive = Param(nameof(ColorPositive), 1)
+			.SetDisplay("Positive Color", "Chart color index for positive zone", "Visualization");
+
+		_colorNeutral = Param(nameof(ColorNeutral), 2)
+			.SetDisplay("Neutral Color", "Chart color index for neutral zone", "Visualization");
+
+		_colorNegative = Param(nameof(ColorNegative), 3)
+			.SetDisplay("Negative Color", "Chart color index for negative zone", "Visualization");
+
+		_colorExtremeNegative = Param(nameof(ColorExtremeNegative), 4)
+			.SetDisplay("Extreme Negative Color", "Chart color index for the strongest bearish zone", "Visualization");
+
 
 		_smoothingMethod = Param(nameof(Smoothing), SmoothingMethod.Simple)
 		.SetDisplay("Smoothing", "Moving average used to smooth indicator and volume", "Indicator");
@@ -200,6 +215,51 @@ public class XcciHistogramVolStrategy : Strategy
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
+	}
+
+	/// <summary>
+	/// Color index used when histogram is in the extreme positive zone.
+	/// </summary>
+	public int ColorExtremePositive
+	{
+		get => _colorExtremePositive.Value;
+		set => _colorExtremePositive.Value = value;
+	}
+
+	/// <summary>
+	/// Color index used when histogram is in the positive zone.
+	/// </summary>
+	public int ColorPositive
+	{
+		get => _colorPositive.Value;
+		set => _colorPositive.Value = value;
+	}
+
+	/// <summary>
+	/// Color index used when histogram is in the neutral zone.
+	/// </summary>
+	public int ColorNeutral
+	{
+		get => _colorNeutral.Value;
+		set => _colorNeutral.Value = value;
+	}
+
+	/// <summary>
+	/// Color index used when histogram is in the negative zone.
+	/// </summary>
+	public int ColorNegative
+	{
+		get => _colorNegative.Value;
+		set => _colorNegative.Value = value;
+	}
+
+	/// <summary>
+	/// Color index used when histogram is in the extreme negative zone.
+	/// </summary>
+	public int ColorExtremeNegative
+	{
+		get => _colorExtremeNegative.Value;
+		set => _colorExtremeNegative.Value = value;
 	}
 
 	/// <summary>

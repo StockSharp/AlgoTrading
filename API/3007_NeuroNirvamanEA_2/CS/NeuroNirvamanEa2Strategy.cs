@@ -14,8 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class NeuroNirvamanEa2Strategy : Strategy
 {
-	private const decimal LaguerreGamma = 0.764m;
-	private const int SilverTrendLength = 9;
 
 	private readonly StrategyParam<int> _risk1;
 	private readonly StrategyParam<int> _laguerre1Period;
@@ -39,6 +37,8 @@ public class NeuroNirvamanEa2Strategy : Strategy
 	private readonly StrategyParam<decimal> _laguerre4Distance;
 	private readonly StrategyParam<decimal> _x31;
 	private readonly StrategyParam<decimal> _x32;
+	private readonly StrategyParam<decimal> _laguerreGamma;
+	private readonly StrategyParam<int> _silverTrendLength;
 
 	private readonly StrategyParam<int> _pass;
 	private readonly StrategyParam<decimal> _tradeVolume;
@@ -243,6 +243,24 @@ public class NeuroNirvamanEa2Strategy : Strategy
 	}
 
 	/// <summary>
+	/// Laguerre smoothing coefficient shared across all filters.
+	/// </summary>
+	public decimal LaguerreGamma
+	{
+		get => _laguerreGamma.Value;
+		set => _laguerreGamma.Value = value;
+	}
+
+	/// <summary>
+	/// Lookback length for SilverTrend support and resistance calculations.
+	/// </summary>
+	public int SilverTrendLength
+	{
+		get => _silverTrendLength.Value;
+		set => _silverTrendLength.Value = value;
+	}
+
+	/// <summary>
 	/// Pass selection controlling which perceptrons are active.
 	/// 1 uses perceptron #1, 2 uses #2, 3 combines #2 and #3, while 4 disables trading.
 	/// </summary>
@@ -411,6 +429,16 @@ public class NeuroNirvamanEa2Strategy : Strategy
 			.SetDisplay("X32", "Weight for Laguerre #4 in perceptron #3", "Perceptron #3")
 			.SetCanOptimize(true);
 
+		_laguerreGamma = Param(nameof(LaguerreGamma), 0.764m)
+			.SetRange(0.1m, 1m)
+			.SetDisplay("Laguerre Gamma", "Smoothing coefficient used in all Laguerre filters", "Laguerre Filters")
+			.SetCanOptimize(true);
+
+		_silverTrendLength = Param(nameof(SilverTrendLength), 9)
+			.SetRange(1, 100)
+			.SetDisplay("SilverTrend Length", "Lookback length for SilverTrend calculations", "SilverTrend")
+			.SetCanOptimize(true);
+
 		_pass = Param(nameof(Pass), 4)
 			.SetRange(1, 4)
 			.SetDisplay("Pass", "Selects which perceptrons drive orders", "Logic")
@@ -470,13 +498,13 @@ public class NeuroNirvamanEa2Strategy : Strategy
 
 		Volume = TradeVolume;
 
-		_laguerre1State = new LaguerrePlusDiState(Laguerre1Period);
-		_laguerre2State = new LaguerrePlusDiState(Laguerre2Period);
-		_laguerre3State = new LaguerrePlusDiState(Laguerre3Period);
-		_laguerre4State = new LaguerrePlusDiState(Laguerre4Period);
+		_laguerre1State = new LaguerrePlusDiState(Laguerre1Period, LaguerreGamma);
+		_laguerre2State = new LaguerrePlusDiState(Laguerre2Period, LaguerreGamma);
+		_laguerre3State = new LaguerrePlusDiState(Laguerre3Period, LaguerreGamma);
+		_laguerre4State = new LaguerrePlusDiState(Laguerre4Period, LaguerreGamma);
 
-		_silverTrend1State = new SilverTrendState { Risk = Risk1 };
-		_silverTrend2State = new SilverTrendState { Risk = Risk2 };
+		_silverTrend1State = new SilverTrendState(SilverTrendLength) { Risk = Risk1 };
+		_silverTrend2State = new SilverTrendState(SilverTrendLength) { Risk = Risk2 };
 
 		_startTime = new TimeSpan(StartHour, StartMinute, 0);
 		_endTime = new TimeSpan(EndHour, EndMinute, 0);
@@ -732,9 +760,11 @@ public class NeuroNirvamanEa2Strategy : Strategy
 		private decimal _l2;
 		private decimal _l3;
 		private bool _initialized;
+		private readonly decimal _gamma;
 
-		public LaguerrePlusDiState(int period)
+		public LaguerrePlusDiState(int period, decimal gamma)
 		{
+			_gamma = gamma;
 			Indicator = new AverageDirectionalIndex { Length = period };
 		}
 
@@ -765,10 +795,10 @@ public class NeuroNirvamanEa2Strategy : Strategy
 			var prevL2 = _l2;
 			var prevL3 = _l3;
 
-			_l0 = (1m - LaguerreGamma) * input + LaguerreGamma * prevL0;
-			_l1 = -LaguerreGamma * _l0 + prevL0 + LaguerreGamma * prevL1;
-			_l2 = -LaguerreGamma * _l1 + prevL1 + LaguerreGamma * prevL2;
-			_l3 = -LaguerreGamma * _l2 + prevL2 + LaguerreGamma * prevL3;
+			_l0 = (1m - _gamma) * input + _gamma * prevL0;
+			_l1 = -_gamma * _l0 + prevL0 + _gamma * prevL1;
+			_l2 = -_gamma * _l1 + prevL1 + _gamma * prevL2;
+			_l3 = -_gamma * _l2 + prevL2 + _gamma * prevL3;
 
 			var cu = 0m;
 			var cd = 0m;
@@ -810,11 +840,11 @@ public class NeuroNirvamanEa2Strategy : Strategy
 		private readonly SimpleMovingAverage _rangeAverage;
 		private bool? _trend;
 
-		public SilverTrendState()
+		public SilverTrendState(int length)
 		{
-			_highest = new Highest { Length = SilverTrendLength };
-			_lowest = new Lowest { Length = SilverTrendLength };
-			_rangeAverage = new SimpleMovingAverage { Length = SilverTrendLength + 1 };
+			_highest = new Highest { Length = length };
+			_lowest = new Lowest { Length = length };
+			_rangeAverage = new SimpleMovingAverage { Length = length + 1 };
 		}
 
 		public int Risk { get; set; }
