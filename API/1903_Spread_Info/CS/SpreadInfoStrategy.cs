@@ -41,7 +41,7 @@ public class SpreadInfoStrategy : Strategy
 			.Start();
 	}
 
-	private void ProcessOrderBook(OrderBook orderBook)
+	private void ProcessOrderBook(IOrderBookMessage orderBook)
 	{
 		// Update best bid and ask from the order book.
 		_bestBidPrice = orderBook.GetBestBid()?.Price ?? _bestBidPrice;

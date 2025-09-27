@@ -8,12 +8,11 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-using StockSharp.Algo;
 
 /// <summary>
 /// Port of the "MA MACD Position averaging v2" MetaTrader expert advisor.
@@ -43,18 +42,18 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
 	private readonly StrategyParam<MovingAverageMethods> _maMethod;
-	private readonly StrategyParam<CandlePrice> _maPrice;
+	private readonly StrategyParam<CandlePrices> _maPrice;
 	private readonly StrategyParam<decimal> _maIndentPips;
 
 	private readonly StrategyParam<int> _macdFastPeriod;
 	private readonly StrategyParam<int> _macdSlowPeriod;
 	private readonly StrategyParam<int> _macdSignalPeriod;
-	private readonly StrategyParam<CandlePrice> _macdPrice;
+	private readonly StrategyParam<CandlePrices> _macdPrice;
 	private readonly StrategyParam<decimal> _macdRatio;
 
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverage _movingAverage = null!;
+	private LengthIndicator<decimal> _movingAverage = null!;
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 
 	private readonly Queue<decimal> _maBuffer = new();
@@ -133,7 +132,7 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Weighted)
 			.SetDisplay("MA Method", "Smoothing method for the moving average", "Moving Average");
 
-		_maPrice = Param(nameof(MaPrice), CandlePrice.Weighted)
+		_maPrice = Param(nameof(MaPrice), CandlePrices.Weighted)
 			.SetDisplay("MA Price", "Applied price used for the moving average", "Moving Average");
 
 		_maIndentPips = Param(nameof(MaIndentPips), 4m)
@@ -155,7 +154,7 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 			.SetDisplay("MACD Signal", "Signal EMA period for MACD", "MACD")
 			.SetCanOptimize(true);
 
-		_macdPrice = Param(nameof(MacdPrice), CandlePrice.Weighted)
+		_macdPrice = Param(nameof(MacdPrice), CandlePrices.Weighted)
 			.SetDisplay("MACD Price", "Applied price fed into MACD", "MACD");
 
 		_macdRatio = Param(nameof(MacdRatio), 0.9m)
@@ -278,7 +277,7 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 	/// <summary>
 	/// Price source used by the moving average.
 	/// </summary>
-	public CandlePrice MaPrice
+	public CandlePrices MaPrice
 	{
 		get => _maPrice.Value;
 		set => _maPrice.Value = value;
@@ -323,7 +322,7 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 	/// <summary>
 	/// Applied price fed into the MACD calculation.
 	/// </summary>
-	public CandlePrice MacdPrice
+	public CandlePrices MacdPrice
 	{
 		get => _macdPrice.Value;
 		set => _macdPrice.Value = value;
@@ -672,11 +671,11 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 		_shortLegs.Clear();
 	}
 
-	private MovingAverage CreateMovingAverage(MovingAverageMethods method, int period, CandlePrice price)
+	private LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int period, CandlePrices price)
 	{
 		var length = Math.Max(1, period);
 
-		MovingAverage indicator = method switch
+		LengthIndicator<decimal> indicator = method switch
 		{
 			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
 			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
@@ -783,6 +782,38 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 
 		/// <summary>
 		/// Linear weighted moving average.
+		/// </summary>
+		Weighted
+	}
+
+	public enum CandlePrices
+	{
+		/// <summary>
+		/// Open price.
+		/// </summary>
+		Open,
+		/// <summary>
+		/// High price.
+		/// </summary>
+		High,
+		/// <summary>
+		/// Low price.
+		/// </summary>
+		Low,
+		/// <summary>
+		/// Close price.
+		/// </summary>
+		Close,
+		/// <summary>
+		/// Median price (HL/2).
+		/// </summary>
+		Median,
+		/// <summary>
+		/// Typical price (HLC/3).
+		/// </summary>
+		Typical,
+		/// <summary>
+		/// Weighted price (HLCC/4).
 		/// </summary>
 		Weighted
 	}

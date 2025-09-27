@@ -18,18 +18,37 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class FiveEightMaCrossProtectStrategy : Strategy
 {
+	public enum MovingAverageMethods
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		LinearWeighted
+	}
+
+	public enum AppliedPrices
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted
+	}
+
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _trailingStopPips;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _fastShift;
-	private readonly StrategyParam<MovingAverageMethod> _fastMethod;
-	private readonly StrategyParam<AppliedPrice> _fastPrice;
+	private readonly StrategyParam<MovingAverageMethods> _fastMethod;
+	private readonly StrategyParam<AppliedPrices> _fastPrice;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _slowShift;
-	private readonly StrategyParam<MovingAverageMethod> _slowMethod;
-	private readonly StrategyParam<AppliedPrice> _slowPrice;
+	private readonly StrategyParam<MovingAverageMethods> _slowMethod;
+	private readonly StrategyParam<AppliedPrices> _slowPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly Queue<decimal> _fastValues = new();
@@ -84,10 +103,10 @@ public class FiveEightMaCrossProtectStrategy : Strategy
 			.SetDisplay("Fast Shift", "Bars to offset the fast moving average", "Indicators")
 			.SetCanOptimize(true);
 
-		_fastMethod = Param(nameof(FastMethod), MovingAverageMethod.Exponential)
+		_fastMethod = Param(nameof(FastMethod), MovingAverageMethods.Exponential)
 			.SetDisplay("Fast Method", "Smoothing method for the fast moving average", "Indicators");
 
-		_fastPrice = Param(nameof(FastPrice), AppliedPrice.Close)
+		_fastPrice = Param(nameof(FastPrice), AppliedPrices.Close)
 			.SetDisplay("Fast Price", "Applied price for the fast moving average", "Indicators");
 
 		_slowPeriod = Param(nameof(SlowPeriod), 8)
@@ -99,10 +118,10 @@ public class FiveEightMaCrossProtectStrategy : Strategy
 			.SetDisplay("Slow Shift", "Bars to offset the slow moving average", "Indicators")
 			.SetCanOptimize(true);
 
-		_slowMethod = Param(nameof(SlowMethod), MovingAverageMethod.Exponential)
+		_slowMethod = Param(nameof(SlowMethod), MovingAverageMethods.Exponential)
 			.SetDisplay("Slow Method", "Smoothing method for the slow moving average", "Indicators");
 
-		_slowPrice = Param(nameof(SlowPrice), AppliedPrice.Open)
+		_slowPrice = Param(nameof(SlowPrice), AppliedPrices.Open)
 			.SetDisplay("Slow Price", "Applied price for the slow moving average", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
@@ -172,7 +191,7 @@ public class FiveEightMaCrossProtectStrategy : Strategy
 	/// <summary>
 	/// Smoothing method for the fast moving average.
 	/// </summary>
-	public MovingAverageMethod FastMethod
+	public MovingAverageMethods FastMethod
 	{
 		get => _fastMethod.Value;
 		set => _fastMethod.Value = value;
@@ -181,7 +200,7 @@ public class FiveEightMaCrossProtectStrategy : Strategy
 	/// <summary>
 	/// Applied price for the fast moving average.
 	/// </summary>
-	public AppliedPrice FastPrice
+	public AppliedPrices FastPrice
 	{
 		get => _fastPrice.Value;
 		set => _fastPrice.Value = value;
@@ -208,7 +227,7 @@ public class FiveEightMaCrossProtectStrategy : Strategy
 	/// <summary>
 	/// Smoothing method for the slow moving average.
 	/// </summary>
-	public MovingAverageMethod SlowMethod
+	public MovingAverageMethods SlowMethod
 	{
 		get => _slowMethod.Value;
 		set => _slowMethod.Value = value;
@@ -217,7 +236,7 @@ public class FiveEightMaCrossProtectStrategy : Strategy
 	/// <summary>
 	/// Applied price for the slow moving average.
 	/// </summary>
-	public AppliedPrice SlowPrice
+	public AppliedPrices SlowPrice
 	{
 		get => _slowPrice.Value;
 		set => _slowPrice.Value = value;
@@ -560,14 +579,14 @@ public class FiveEightMaCrossProtectStrategy : Strategy
 		return pips * _pipSize;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethod method, int period, AppliedPrice price)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int period, AppliedPrices price)
 	{
-		var indicator = method switch
+		LengthIndicator<decimal> indicator = method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage(),
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage(),
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage(),
-			MovingAverageMethod.LinearWeighted => new WeightedMovingAverage(),
+			MovingAverageMethods.Simple => new SimpleMovingAverage(),
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage(),
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage(),
+			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage(),
 			_ => new SimpleMovingAverage(),
 		};
 
@@ -577,16 +596,16 @@ public class FiveEightMaCrossProtectStrategy : Strategy
 		return indicator;
 	}
 
-	private static CandlePrice ConvertAppliedPrice(AppliedPrice price)
+	private static CandlePrice ConvertAppliedPrice(AppliedPrices price)
 	{
 		return price switch
 		{
-			AppliedPrice.Open => CandlePrice.Open,
-			AppliedPrice.High => CandlePrice.High,
-			AppliedPrice.Low => CandlePrice.Low,
-			AppliedPrice.Median => CandlePrice.Median,
-			AppliedPrice.Typical => CandlePrice.Typical,
-			AppliedPrice.Weighted => CandlePrice.Weighted,
+			AppliedPrices.Open => CandlePrice.Open,
+			AppliedPrices.High => CandlePrice.High,
+			AppliedPrices.Low => CandlePrice.Low,
+			AppliedPrices.Median => CandlePrice.Median,
+			AppliedPrices.Typical => CandlePrice.Typical,
+			AppliedPrices.Weighted => CandlePrice.Weighted,
 			_ => CandlePrice.Close,
 		};
 	}

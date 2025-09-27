@@ -24,10 +24,21 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class DivergenceTraderClassicStrategy : Strategy
 {
+	public enum CandlePrices
+	{
+		Open,
+		Close,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted
+	}
+
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
-	private readonly StrategyParam<CandlePrice> _appliedPrice;
+	private readonly StrategyParam<CandlePrices> _appliedPrice;
 	private readonly StrategyParam<decimal> _buyThreshold;
 	private readonly StrategyParam<decimal> _stayOutThreshold;
 	private readonly StrategyParam<decimal> _takeProfitPips;
@@ -72,7 +83,7 @@ public class DivergenceTraderClassicStrategy : Strategy
 		.SetDisplay("Slow SMA", "Period for the slow simple moving average.", "Indicators")
 		.SetCanOptimize(true);
 
-		_appliedPrice = Param(nameof(AppliedPrice), CandlePrice.Open)
+		_appliedPrice = Param(nameof(AppliedPrice), CandlePrices.Open)
 		.SetDisplay("Applied Price", "Price component forwarded into the moving averages.", "Indicators");
 
 		_buyThreshold = Param(nameof(BuyThreshold), 0.0011m)
@@ -144,7 +155,7 @@ public class DivergenceTraderClassicStrategy : Strategy
 	/// <summary>
 	/// Price component forwarded into both moving averages.
 	/// </summary>
-	public CandlePrice AppliedPrice
+	public CandlePrices AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -261,323 +272,322 @@ public class DivergenceTraderClassicStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-	return [(Security, CandleType)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
-	base.OnReseted();
+		base.OnReseted();
 
-	_fastSma = null;
-	_slowSma = null;
-	_previousSpread = null;
-	_pipSize = 0m;
-	_maxBasketPnL = 0m;
-	_minBasketPnL = 0m;
-	_breakEvenPrice = null;
-	_trailingStopPrice = null;
-	_highestPrice = 0m;
-	_lowestPrice = 0m;
+		_fastSma = null;
+		_slowSma = null;
+		_previousSpread = null;
+		_pipSize = 0m;
+		_maxBasketPnL = 0m;
+		_minBasketPnL = 0m;
+		_breakEvenPrice = null;
+		_trailingStopPrice = null;
+		_highestPrice = 0m;
+		_lowestPrice = 0m;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
-	base.OnStarted(time);
+		base.OnStarted(time);
 
-	_pipSize = CalculatePipSize();
+		_pipSize = CalculatePipSize();
 
-	_fastSma = new SimpleMovingAverage
-	{
-	Length = FastPeriod,
-	CandlePrice = AppliedPrice
-	};
+		_fastSma = new SimpleMovingAverage
+		{
+			Length = FastPeriod,
+			CandlePrice = AppliedPrice
+		};
 
-	_slowSma = new SimpleMovingAverage
-	{
-	Length = SlowPeriod,
-	CandlePrice = AppliedPrice
-	};
+		_slowSma = new SimpleMovingAverage
+		{
+			Length = SlowPeriod,
+			CandlePrice = AppliedPrice
+		};
 
-	_previousSpread = null;
-	_breakEvenPrice = null;
-	_trailingStopPrice = null;
-	_highestPrice = 0m;
-	_lowestPrice = 0m;
+		_previousSpread = null;
+		_breakEvenPrice = null;
+		_trailingStopPrice = null;
+		_highestPrice = 0m;
+		_lowestPrice = 0m;
 
-	var subscription = SubscribeCandles(CandleType);
-	subscription
-	.Bind(_fastSma, _slowSma, ProcessCandle)
-	.Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+		.Bind(_fastSma, _slowSma, ProcessCandle)
+		.Start();
 
-	var area = CreateChartArea();
-	if (area != null)
-	{
-	DrawCandles(area, subscription);
-	DrawIndicator(area, _fastSma);
-	DrawIndicator(area, _slowSma);
-	DrawOwnTrades(area);
-	}
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, _fastSma);
+			DrawIndicator(area, _slowSma);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
 	{
-	// Work only with fully formed candles.
-	if (candle.State != CandleStates.Finished)
-	return;
+		// Work only with fully formed candles.
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	// Update trailing logic for existing positions before acting on new signals.
-	ManageOpenPosition(candle);
+		// Update trailing logic for existing positions before acting on new signals.
+		ManageOpenPosition(candle);
 
-	// Respect basket limits from the legacy EA.
-	if (EvaluateBasketPnL(candle.ClosePrice))
-	{
-	_previousSpread = fastValue - slowValue;
-	return;
-	}
+		// Respect basket limits from the legacy EA.
+		if (EvaluateBasketPnL(candle.ClosePrice))
+		{
+			_previousSpread = fastValue - slowValue;
+			return;
+		}
 
-	if (_fastSma == null || _slowSma == null)
-	return;
+		if (_fastSma == null || _slowSma == null)
+			return;
 
-	if (!_fastSma.IsFormed || !_slowSma.IsFormed)
-	{
-	_previousSpread = fastValue - slowValue;
-	return;
-	}
+		if (!_fastSma.IsFormed || !_slowSma.IsFormed)
+		{
+			_previousSpread = fastValue - slowValue;
+			return;
+		}
 
-	var currentSpread = fastValue - slowValue;
-	var divergence = _previousSpread.HasValue ? currentSpread - _previousSpread.Value : 0m;
-	_previousSpread = currentSpread;
+		var currentSpread = fastValue - slowValue;
+		var divergence = _previousSpread.HasValue ? currentSpread - _previousSpread.Value : 0m;
+		_previousSpread = currentSpread;
 
-	if (!IsFormedAndOnlineAndAllowTrading())
-	return;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-	if (!IsWithinTradingHours(candle.CloseTime))
-	return;
+		if (!IsWithinTradingHours(candle.CloseTime))
+			return;
 
-	if (OrderVolume <= 0m)
-	return;
+		if (OrderVolume <= 0m)
+			return;
 
-	// Avoid over-hedging: only reverse when the signal changes direction.
-	if (divergence >= BuyThreshold && divergence <= StayOutThreshold)
-	{
-	if (Position < 0m)
-	{
-	BuyMarket(Math.Abs(Position));
-	}
+		// Avoid over-hedging: only reverse when the signal changes direction.
+		if (divergence >= BuyThreshold && divergence <= StayOutThreshold)
+		{
+			if (Position < 0m)
+			{
+				BuyMarket(Math.Abs(Position));
+			}
 
-	if (Position <= 0m)
-	{
-	ResetPositionTracking();
-	BuyMarket(OrderVolume);
-	}
-	}
-	else if (divergence <= -BuyThreshold && divergence >= -StayOutThreshold)
-	{
-	if (Position > 0m)
-	{
-	SellMarket(Position);
-	}
+			if (Position <= 0m)
+			{
+				ResetPositionTracking();
+				BuyMarket(OrderVolume);
+			}
+		}
+		else if (divergence <= -BuyThreshold && divergence >= -StayOutThreshold)
+		{
+			if (Position > 0m)
+			{
+				SellMarket(Position);
+			}
 
-	if (Position >= 0m)
-	{
-	ResetPositionTracking();
-	SellMarket(OrderVolume);
-	}
-	}
+			if (Position >= 0m)
+			{
+				ResetPositionTracking();
+				SellMarket(OrderVolume);
+			}
+		}
 	}
 
 	private void ManageOpenPosition(ICandleMessage candle)
 	{
-	if (Position == 0m)
-	{
-	ResetPositionTracking();
-	return;
-	}
+		if (Position == 0m)
+		{
+			ResetPositionTracking();
+			return;
+		}
 
-	var entryPrice = PositionPrice;
-	if (entryPrice == 0m)
-	return;
+		var entryPrice = PositionPrice;
+		if (entryPrice == 0m)
+			return;
 
-	var pipSize = EnsurePipSize();
-	var takeProfitDistance = TakeProfitPips > 0m ? TakeProfitPips * pipSize : 0m;
-	var stopLossDistance = StopLossPips > 0m ? StopLossPips * pipSize : 0m;
-	var breakEvenDistance = BreakEvenPips > 0m && BreakEvenPips < 9000m ? BreakEvenPips * pipSize : 0m;
-	var breakEvenBuffer = BreakEvenBufferPips > 0m ? BreakEvenBufferPips * pipSize : 0m;
-	var trailingDistance = TrailingStopPips > 0m && TrailingStopPips < 9000m ? TrailingStopPips * pipSize : 0m;
-	var absPosition = Math.Abs(Position);
+		var pipSize = EnsurePipSize();
+		var takeProfitDistance = TakeProfitPips > 0m ? TakeProfitPips * pipSize : 0m;
+		var stopLossDistance = StopLossPips > 0m ? StopLossPips * pipSize : 0m;
+		var breakEvenDistance = BreakEvenPips > 0m && BreakEvenPips < 9000m ? BreakEvenPips * pipSize : 0m;
+		var breakEvenBuffer = BreakEvenBufferPips > 0m ? BreakEvenBufferPips * pipSize : 0m;
+		var trailingDistance = TrailingStopPips > 0m && TrailingStopPips < 9000m ? TrailingStopPips * pipSize : 0m;
+		var absPosition = Math.Abs(Position);
 
-	if (Position > 0m)
-	{
-	_highestPrice = Math.Max(_highestPrice == 0m ? entryPrice : _highestPrice, candle.HighPrice);
+		if (Position > 0m)
+		{
+			_highestPrice = Math.Max(_highestPrice == 0m ? entryPrice : _highestPrice, candle.HighPrice);
 
-	var profitDistance = candle.ClosePrice - entryPrice;
+			var profitDistance = candle.ClosePrice - entryPrice;
 
-	if (breakEvenDistance > 0m && profitDistance >= breakEvenDistance && _breakEvenPrice == null)
-	_breakEvenPrice = entryPrice + breakEvenBuffer;
+			if (breakEvenDistance > 0m && profitDistance >= breakEvenDistance && _breakEvenPrice == null)
+				_breakEvenPrice = entryPrice + breakEvenBuffer;
 
-	if (_breakEvenPrice is decimal bePrice && candle.LowPrice <= bePrice)
-	{
-	SellMarket(absPosition);
-	ResetPositionTracking();
-	return;
-	}
+			if (_breakEvenPrice is decimal bePrice && candle.LowPrice <= bePrice)
+			{
+				SellMarket(absPosition);
+				ResetPositionTracking();
+				return;
+			}
 
-	if (trailingDistance > 0m && profitDistance >= trailingDistance)
-	{
-	var candidate = _highestPrice - trailingDistance;
-	if (_trailingStopPrice == null || candidate > _trailingStopPrice)
-	_trailingStopPrice = candidate;
+			if (trailingDistance > 0m && profitDistance >= trailingDistance)
+			{
+				var candidate = _highestPrice - trailingDistance;
+				if (_trailingStopPrice == null || candidate > _trailingStopPrice)
+					_trailingStopPrice = candidate;
 
-	if (_trailingStopPrice is decimal trailing && candle.LowPrice <= trailing)
-	{
-	SellMarket(absPosition);
-	ResetPositionTracking();
-	return;
-	}
-	}
+				if (_trailingStopPrice is decimal trailing && candle.LowPrice <= trailing)
+				{
+					SellMarket(absPosition);
+					ResetPositionTracking();
+					return;
+				}
+			}
 
-	if (takeProfitDistance > 0m && profitDistance >= takeProfitDistance)
-	{
-	SellMarket(absPosition);
-	ResetPositionTracking();
-	return;
-	}
+			if (takeProfitDistance > 0m && profitDistance >= takeProfitDistance)
+			{
+				SellMarket(absPosition);
+				ResetPositionTracking();
+				return;
+			}
 
-	if (stopLossDistance > 0m && candle.LowPrice <= entryPrice - stopLossDistance)
-	{
-	SellMarket(absPosition);
-	ResetPositionTracking();
-	}
-	}
-	else if (Position < 0m)
-	{
-	_lowestPrice = Math.Min(_lowestPrice == 0m ? entryPrice : _lowestPrice, candle.LowPrice);
+			if (stopLossDistance > 0m && candle.LowPrice <= entryPrice - stopLossDistance)
+			{
+				SellMarket(absPosition);
+				ResetPositionTracking();
+			}
+		}
+		else if (Position < 0m)
+		{
+			_lowestPrice = Math.Min(_lowestPrice == 0m ? entryPrice : _lowestPrice, candle.LowPrice);
 
-	var profitDistance = entryPrice - candle.ClosePrice;
+			var profitDistance = entryPrice - candle.ClosePrice;
 
-	if (breakEvenDistance > 0m && profitDistance >= breakEvenDistance && _breakEvenPrice == null)
-	_breakEvenPrice = entryPrice - breakEvenBuffer;
+			if (breakEvenDistance > 0m && profitDistance >= breakEvenDistance && _breakEvenPrice == null)
+				_breakEvenPrice = entryPrice - breakEvenBuffer;
 
-	if (_breakEvenPrice is decimal bePrice && candle.HighPrice >= bePrice)
-	{
-	BuyMarket(absPosition);
-	ResetPositionTracking();
-	return;
-	}
+			if (_breakEvenPrice is decimal bePrice && candle.HighPrice >= bePrice)
+			{
+				BuyMarket(absPosition);
+				ResetPositionTracking();
+				return;
+			}
 
-	if (trailingDistance > 0m && profitDistance >= trailingDistance)
-	{
-	var candidate = _lowestPrice + trailingDistance;
-	if (_trailingStopPrice == null || candidate < _trailingStopPrice)
-	_trailingStopPrice = candidate;
+			if (trailingDistance > 0m && profitDistance >= trailingDistance)
+			{
+				var candidate = _lowestPrice + trailingDistance;
+				if (_trailingStopPrice == null || candidate < _trailingStopPrice)
+					_trailingStopPrice = candidate;
 
-	if (_trailingStopPrice is decimal trailing && candle.HighPrice >= trailing)
-	{
-	BuyMarket(absPosition);
-	ResetPositionTracking();
-	return;
-	}
-	}
+				if (_trailingStopPrice is decimal trailing && candle.HighPrice >= trailing)
+				{
+					BuyMarket(absPosition);
+					ResetPositionTracking();
+					return;
+				}
+			}
 
-	if (takeProfitDistance > 0m && profitDistance >= takeProfitDistance)
-	{
-	BuyMarket(absPosition);
-	ResetPositionTracking();
-	return;
-	}
+			if (takeProfitDistance > 0m && profitDistance >= takeProfitDistance)
+			{
+				BuyMarket(absPosition);
+				ResetPositionTracking();
+				return;
+			}
 
-	if (stopLossDistance > 0m && candle.HighPrice >= entryPrice + stopLossDistance)
-	{
-	BuyMarket(absPosition);
-	ResetPositionTracking();
-	}
-	}
+			if (stopLossDistance > 0m && candle.HighPrice >= entryPrice + stopLossDistance)
+			{
+				BuyMarket(absPosition);
+				ResetPositionTracking();
+			}
+		}
 	}
 
 	private bool EvaluateBasketPnL(decimal lastPrice)
 	{
-	if (BasketProfitCurrency <= 0m && BasketLossCurrency <= 0m)
-	return false;
+		if (BasketProfitCurrency <= 0m && BasketLossCurrency <= 0m)
+			return false;
 
-	if (Position == 0m)
-	return false;
+		if (Position == 0m)
+			return false;
 
-	var entryPrice = PositionPrice;
-	if (entryPrice == 0m)
-	return false;
+		var entryPrice = PositionPrice;
+		if (entryPrice == 0m)
+			return false;
 
-	var step = EnsurePipSize();
-	var stepValue = Security?.StepPrice ?? step;
+		var step = EnsurePipSize();
+		var stepValue = Security?.StepPrice ?? step;
 
-	var priceMove = Position > 0m ? lastPrice - entryPrice : entryPrice - lastPrice;
-	var pipMove = step > 0m ? priceMove / step : priceMove;
-	var currencyPnL = pipMove * stepValue * Math.Abs(Position);
+		var priceMove = Position > 0m ? lastPrice - entryPrice : entryPrice - lastPrice;
+		var pipMove = step > 0m ? priceMove / step : priceMove;
+		var currencyPnL = pipMove * stepValue * Math.Abs(Position);
 
-	_maxBasketPnL = Math.Max(_maxBasketPnL, currencyPnL);
-	_minBasketPnL = Math.Min(_minBasketPnL, currencyPnL);
+		_maxBasketPnL = Math.Max(_maxBasketPnL, currencyPnL);
+		_minBasketPnL = Math.Min(_minBasketPnL, currencyPnL);
 
-	var shouldCloseForProfit = BasketProfitCurrency > 0m && currencyPnL >= BasketProfitCurrency;
-	var shouldCloseForLoss = BasketLossCurrency > 0m && currencyPnL <= -BasketLossCurrency;
+		var shouldCloseForProfit = BasketProfitCurrency > 0m && currencyPnL >= BasketProfitCurrency;
+		var shouldCloseForLoss = BasketLossCurrency > 0m && currencyPnL <= -BasketLossCurrency;
 
-	if (shouldCloseForProfit || shouldCloseForLoss)
-	{
-	CloseAllPositions();
-	return true;
-	}
+		if (shouldCloseForProfit || shouldCloseForLoss)
+		{
+			CloseAllPositions();
+			return true;
+		}
 
-	return false;
+		return false;
 	}
 
 	private void CloseAllPositions()
 	{
-	if (Position > 0m)
-	{
-	SellMarket(Position);
-	}
-	else if (Position < 0m)
-	{
-	BuyMarket(Math.Abs(Position));
-	}
+		if (Position > 0m)
+		{
+			SellMarket(Position);
+		}
+		else if (Position < 0m)
+		{
+			BuyMarket(Math.Abs(Position));
+		}
 
-	ResetPositionTracking();
+		ResetPositionTracking();
 	}
 
 	private void ResetPositionTracking()
 	{
-	_breakEvenPrice = null;
-	_trailingStopPrice = null;
-	_highestPrice = 0m;
-	_lowestPrice = 0m;
+		_breakEvenPrice = null;
+		_trailingStopPrice = null;
+		_highestPrice = 0m;
+		_lowestPrice = 0m;
 	}
 
 	private bool IsWithinTradingHours(DateTimeOffset time)
 	{
-	var hour = time.LocalDateTime.Hour;
+		var hour = time.LocalDateTime.Hour;
 
-	if (StartHour == StopHour)
-	return true;
+		if (StartHour == StopHour)
+			return true;
 
-	if (StartHour < StopHour)
-	return hour >= StartHour && hour < StopHour;
+		if (StartHour < StopHour)
+			return hour >= StartHour && hour < StopHour;
 
-	// Overnight window that crosses midnight.
-	return hour >= StartHour || hour < StopHour;
+		// Overnight window that crosses midnight.
+		return hour >= StartHour || hour < StopHour;
 	}
 
 	private decimal CalculatePipSize()
 	{
-	var step = Security?.PriceStep ?? 0m;
-	return step > 0m ? step : 0.0001m;
+		var step = Security?.PriceStep ?? 0m;
+		return step > 0m ? step : 0.0001m;
 	}
 
 	private decimal EnsurePipSize()
 	{
-	if (_pipSize <= 0m)
-	_pipSize = CalculatePipSize();
+		if (_pipSize <= 0m)
+			_pipSize = CalculatePipSize();
 
-	return _pipSize;
+		return _pipSize;
 	}
 }
-

@@ -6,12 +6,11 @@ using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -22,17 +21,36 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class VrBuchStrategy : Strategy
 {
+	public enum MovingAverageMethods
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		Weighted
+	}
+
+	public enum CandlePrices
+	{
+		Open,
+		High,
+		Low,
+		Close,
+		Median,
+		Typical,
+		Weighted
+	}
+
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _fastShift;
-	private readonly StrategyParam<CandlePrice> _fastPrice;
-	private readonly StrategyParam<MovingAverageMethod> _fastMethod;
+	private readonly StrategyParam<CandlePrices> _fastPrice;
+	private readonly StrategyParam<MovingAverageMethods> _fastMethod;
 
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _slowShift;
-	private readonly StrategyParam<CandlePrice> _slowPrice;
-	private readonly StrategyParam<MovingAverageMethod> _slowMethod;
+	private readonly StrategyParam<CandlePrices> _slowPrice;
+	private readonly StrategyParam<MovingAverageMethods> _slowMethod;
 
-	private readonly StrategyParam<CandlePrice> _signalPrice;
+	private readonly StrategyParam<CandlePrices> _signalPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private MovingAverage _fastMa = null!;
@@ -59,10 +77,10 @@ public class VrBuchStrategy : Strategy
 			.SetRange(0, 1000)
 			.SetDisplay("Fast Shift", "Number of candles to shift the fast MA value", "Fast MA");
 
-		_fastPrice = Param(nameof(FastPrice), CandlePrice.Weighted)
+		_fastPrice = Param(nameof(FastPrice), CandlePrices.Weighted)
 			.SetDisplay("Fast Price", "Price source for the fast MA", "Fast MA");
 
-		_fastMethod = Param(nameof(FastMethod), MovingAverageMethod.Simple)
+		_fastMethod = Param(nameof(FastMethod), MovingAverageMethods.Simple)
 			.SetDisplay("Fast Method", "Smoothing method for the fast MA", "Fast MA");
 
 		_slowPeriod = Param(nameof(SlowPeriod), 90)
@@ -73,13 +91,13 @@ public class VrBuchStrategy : Strategy
 			.SetRange(0, 1000)
 			.SetDisplay("Slow Shift", "Number of candles to shift the slow MA value", "Slow MA");
 
-		_slowPrice = Param(nameof(SlowPrice), CandlePrice.Weighted)
+		_slowPrice = Param(nameof(SlowPrice), CandlePrices.Weighted)
 			.SetDisplay("Slow Price", "Price source for the slow MA", "Slow MA");
 
-		_slowMethod = Param(nameof(SlowMethod), MovingAverageMethod.Simple)
+		_slowMethod = Param(nameof(SlowMethod), MovingAverageMethods.Simple)
 			.SetDisplay("Slow Method", "Smoothing method for the slow MA", "Slow MA");
 
-		_signalPrice = Param(nameof(SignalPrice), CandlePrice.Close)
+		_signalPrice = Param(nameof(SignalPrice), CandlePrices.Close)
 			.SetDisplay("Signal Price", "Price source used for confirmations", "Signals");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -111,7 +129,7 @@ public class VrBuchStrategy : Strategy
 	/// <summary>
 	/// Price source for the fast moving average.
 	/// </summary>
-	public CandlePrice FastPrice
+	public CandlePrices FastPrice
 	{
 		get => _fastPrice.Value;
 		set => _fastPrice.Value = value;
@@ -120,7 +138,7 @@ public class VrBuchStrategy : Strategy
 	/// <summary>
 	/// Smoothing method for the fast moving average.
 	/// </summary>
-	public MovingAverageMethod FastMethod
+	public MovingAverageMethods FastMethod
 	{
 		get => _fastMethod.Value;
 		set => _fastMethod.Value = value;
@@ -147,7 +165,7 @@ public class VrBuchStrategy : Strategy
 	/// <summary>
 	/// Price source for the slow moving average.
 	/// </summary>
-	public CandlePrice SlowPrice
+	public CandlePrices SlowPrice
 	{
 		get => _slowPrice.Value;
 		set => _slowPrice.Value = value;
@@ -156,7 +174,7 @@ public class VrBuchStrategy : Strategy
 	/// <summary>
 	/// Smoothing method for the slow moving average.
 	/// </summary>
-	public MovingAverageMethod SlowMethod
+	public MovingAverageMethods SlowMethod
 	{
 		get => _slowMethod.Value;
 		set => _slowMethod.Value = value;
@@ -165,7 +183,7 @@ public class VrBuchStrategy : Strategy
 	/// <summary>
 	/// Price source used for the price confirmation.
 	/// </summary>
-	public CandlePrice SignalPrice
+	public CandlePrices SignalPrice
 	{
 		get => _signalPrice.Value;
 		set => _signalPrice.Value = value;
@@ -312,16 +330,16 @@ public class VrBuchStrategy : Strategy
 		return true;
 	}
 
-	private static MovingAverage CreateMovingAverage(MovingAverageMethod method, int period, CandlePrice price)
+	private static MovingAverage CreateMovingAverage(MovingAverageMethods method, int period, CandlePrices price)
 	{
 		var length = Math.Max(1, period);
 
 		MovingAverage indicator = method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 
@@ -330,17 +348,17 @@ public class VrBuchStrategy : Strategy
 		return indicator;
 	}
 
-	private static decimal GetPrice(ICandleMessage candle, CandlePrice price)
+	private static decimal GetPrice(ICandleMessage candle, CandlePrices price)
 	{
 		return price switch
 		{
-			CandlePrice.Open => candle.OpenPrice,
-			CandlePrice.High => candle.HighPrice,
-			CandlePrice.Low => candle.LowPrice,
-			CandlePrice.Close => candle.ClosePrice,
-			CandlePrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			CandlePrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			CandlePrice.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			CandlePrices.Open => candle.OpenPrice,
+			CandlePrices.High => candle.HighPrice,
+			CandlePrices.Low => candle.LowPrice,
+			CandlePrices.Close => candle.ClosePrice,
+			CandlePrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			CandlePrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			CandlePrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}

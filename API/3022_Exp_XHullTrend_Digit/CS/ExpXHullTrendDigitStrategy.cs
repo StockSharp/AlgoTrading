@@ -30,7 +30,7 @@ public class ExpXHullTrendDigitStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _baseLength;
 	private readonly StrategyParam<int> _signalLength;
-	private readonly StrategyParam<CandlePrice> _priceSource;
+	private readonly StrategyParam<CandlePrices> _priceSource;
 	private readonly StrategyParam<SmoothMethods> _smoothMethod;
 	private readonly StrategyParam<int> _phase;
 	private readonly StrategyParam<int> _roundDigits;
@@ -132,7 +132,7 @@ public class ExpXHullTrendDigitStrategy : Strategy
 	/// <summary>
 	/// Price source taken from each candle.
 	/// </summary>
-	public CandlePrice PriceSource
+	public CandlePrices PriceSource
 	{
 		get => _priceSource.Value;
 		set => _priceSource.Value = value;
@@ -141,7 +141,7 @@ public class ExpXHullTrendDigitStrategy : Strategy
 	/// <summary>
 	/// Smoothing method used by the internal moving averages.
 	/// </summary>
-	public SmoothMethods SmoothMethods
+	public SmoothMethods SmoothMethod
 	{
 		get => _smoothMethod.Value;
 		set => _smoothMethod.Value = value;
@@ -214,7 +214,7 @@ public class ExpXHullTrendDigitStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Hull Length", "Length of the Hull smoothing", "Indicator");
 
-		_priceSource = Param(nameof(PriceSource), CandlePrice.Close)
+		_priceSource = Param(nameof(PriceSource), CandlePrices.Close)
 			.SetDisplay("Price Source", "Candle price used in calculations", "Indicator");
 
 		_smoothMethod = Param(nameof(SmoothMethods), SmoothMethods.Weighted)
@@ -255,7 +255,7 @@ public class ExpXHullTrendDigitStrategy : Strategy
 			BaseLength = BaseLength,
 			SignalLength = SignalLength,
 			PriceType = PriceSource,
-			Method = SmoothMethods,
+			Method = SmoothMethod,
 			Phase = Phase,
 			RoundingDigits = RoundingDigits,
 			PriceStep = Security?.PriceStep ?? 0.0001m
@@ -368,6 +368,18 @@ public class ExpXHullTrendDigitStrategy : Strategy
 		Weighted
 	}
 
+	public enum CandlePrices
+	{
+		Open,
+		High,
+		Low,
+		Close,
+		Median,
+		Typical,
+		Weighted,
+		Average
+	}
+
 	/// <summary>
 	/// Indicator reproducing the logic of the XHullTrend Digit MQL5 indicator.
 	/// </summary>
@@ -380,7 +392,7 @@ public class ExpXHullTrendDigitStrategy : Strategy
 
 		public int BaseLength { get; set; } = 20;
 		public int SignalLength { get; set; } = 5;
-		public CandlePrice PriceType { get; set; } = CandlePrice.Close;
+		public CandlePrices PriceType { get; set; } = CandlePrices.Close;
 		public SmoothMethods Method { get; set; } = SmoothMethods.Weighted;
 		public int Phase { get; set; }
 		public int RoundingDigits { get; set; } = 2;
@@ -467,13 +479,13 @@ public class ExpXHullTrendDigitStrategy : Strategy
 		{
 			return PriceType switch
 			{
-				CandlePrice.Open => candle.OpenPrice,
-				CandlePrice.High => candle.HighPrice,
-				CandlePrice.Low => candle.LowPrice,
-				CandlePrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-				CandlePrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-				CandlePrice.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
-				CandlePrice.Average => (candle.OpenPrice + candle.ClosePrice) / 2m,
+				CandlePrices.Open => candle.OpenPrice,
+				CandlePrices.High => candle.HighPrice,
+				CandlePrices.Low => candle.LowPrice,
+				CandlePrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+				CandlePrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+				CandlePrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+				CandlePrices.Average => (candle.OpenPrice + candle.ClosePrice) / 2m,
 				_ => candle.ClosePrice,
 			};
 		}

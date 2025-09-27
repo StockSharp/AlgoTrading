@@ -19,6 +19,17 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ColorSchaffJjrsxMmrecDuplexStrategy : Strategy
 {
+	public enum AppliedPrices
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted
+	}
+
 	private readonly StrategyParam<decimal> _factor;
 
 	private readonly StrategyParam<DataType> _longCandleType;
@@ -33,7 +44,7 @@ public class ColorSchaffJjrsxMmrecDuplexStrategy : Strategy
 	private readonly StrategyParam<int> _longSmooth;
 	private readonly StrategyParam<int> _longCycle;
 	private readonly StrategyParam<int> _longSignalBar;
-	private readonly StrategyParam<AppliedPrice> _longPriceType;
+	private readonly StrategyParam<AppliedPrices> _longPriceType;
 
 	private readonly StrategyParam<DataType> _shortCandleType;
 	private readonly StrategyParam<int> _shortTotalTrigger;
@@ -47,7 +58,7 @@ public class ColorSchaffJjrsxMmrecDuplexStrategy : Strategy
 	private readonly StrategyParam<int> _shortSmooth;
 	private readonly StrategyParam<int> _shortCycle;
 	private readonly StrategyParam<int> _shortSignalBar;
-	private readonly StrategyParam<AppliedPrice> _shortPriceType;
+	private readonly StrategyParam<AppliedPrices> _shortPriceType;
 
 	private ColorSchaffJjrsxTrendCycleIndicator _longIndicator;
 	private ColorSchaffJjrsxTrendCycleIndicator _shortIndicator;
@@ -129,7 +140,7 @@ public class ColorSchaffJjrsxMmrecDuplexStrategy : Strategy
 			.SetRange(0, 5)
 			.SetCanOptimize(true);
 
-		_longPriceType = Param(nameof(LongAppliedPrice), AppliedPrice.Close)
+		_longPriceType = Param(nameof(LongAppliedPrice), AppliedPrices.Close)
 			.SetDisplay("Long Applied Price", "Price source for the long indicator", "Long");
 
 		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromHours(8).TimeFrame())
@@ -187,7 +198,7 @@ public class ColorSchaffJjrsxMmrecDuplexStrategy : Strategy
 			.SetRange(0, 5)
 			.SetCanOptimize(true);
 
-		_shortPriceType = Param(nameof(ShortAppliedPrice), AppliedPrice.Close)
+		_shortPriceType = Param(nameof(ShortAppliedPrice), AppliedPrices.Close)
 			.SetDisplay("Short Applied Price", "Price source for the short indicator", "Short");
 	}
 
@@ -311,7 +322,7 @@ public class ColorSchaffJjrsxMmrecDuplexStrategy : Strategy
 	/// <summary>
 	/// Price source used by the long indicator.
 	/// </summary>
-	public AppliedPrice LongAppliedPrice
+	public AppliedPrices LongAppliedPrice
 	{
 		get => _longPriceType.Value;
 		set => _longPriceType.Value = value;
@@ -428,7 +439,7 @@ public class ColorSchaffJjrsxMmrecDuplexStrategy : Strategy
 	/// <summary>
 	/// Price source used by the short indicator.
 	/// </summary>
-	public AppliedPrice ShortAppliedPrice
+	public AppliedPrices ShortAppliedPrice
 	{
 		get => _shortPriceType.Value;
 		set => _shortPriceType.Value = value;

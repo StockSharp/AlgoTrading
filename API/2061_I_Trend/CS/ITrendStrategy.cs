@@ -28,11 +28,28 @@ public class ITrendStrategy : Strategy
 		Lower,
 		Middle
 	}
+
+	public enum AppliedPrices
+	{
+		PriceOpen,
+		PriceHigh,
+		PriceLow,
+		PriceClose,
+		PriceMedian,
+		PriceTypical,
+		PriceWeighted,
+		PriceSimple,
+		PriceQuarter,
+		PriceTrendFollow0,
+		PriceTrendFollow1,
+		PriceDeMark
+	}
+
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _bbPeriod;
 	private readonly StrategyParam<decimal> _bbDeviation;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<AppliedPrice> _priceType;
+	private readonly StrategyParam<AppliedPrices> _priceType;
 	private readonly StrategyParam<BandModes> _bbMode;
 	
 	private decimal _prevInd;
@@ -78,7 +95,7 @@ public class ITrendStrategy : Strategy
 	/// <summary>
 	/// Price type for iTrend calculation.
 	/// </summary>
-	public AppliedPrice PriceType
+	public AppliedPrices PriceType
 	{
 		get => _priceType.Value;
 		set => _priceType.Value = value;
@@ -116,7 +133,7 @@ public class ITrendStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(1.0m, 3.0m, 0.5m);
 		
-		_priceType = Param(nameof(PriceType), AppliedPrice.PriceClose)
+		_priceType = Param(nameof(PriceType), AppliedPrices.PriceClose)
 		.SetDisplay("Price Type", "Applied price for iTrend", "General");
 		
 		_bbMode = Param(nameof(BbMode), BandModes.Upper)
@@ -217,23 +234,23 @@ public class ITrendStrategy : Strategy
 		_prevSign = sign;
 	}
 	
-	private static decimal GetPrice(ICandleMessage candle, AppliedPrice type)
+	private static decimal GetPrice(ICandleMessage candle, AppliedPrices type)
 	{
 		return type switch
 		{
-			AppliedPrice.PriceOpen => candle.OpenPrice,
-			AppliedPrice.PriceHigh => candle.HighPrice,
-			AppliedPrice.PriceLow => candle.LowPrice,
-			AppliedPrice.PriceMedian => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.PriceTypical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.PriceWeighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.PriceSimple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			AppliedPrice.PriceQuarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.PriceTrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice :
+			AppliedPrices.PriceOpen => candle.OpenPrice,
+			AppliedPrices.PriceHigh => candle.HighPrice,
+			AppliedPrices.PriceLow => candle.LowPrice,
+			AppliedPrices.PriceMedian => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.PriceTypical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.PriceWeighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.PriceSimple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			AppliedPrices.PriceQuarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.PriceTrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice :
 			candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
-			AppliedPrice.PriceTrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m :
+			AppliedPrices.PriceTrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m :
 			candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
-			AppliedPrice.PriceDeMark => CalculateDeMarkPrice(candle),
+			AppliedPrices.PriceDeMark => CalculateDeMarkPrice(candle),
 			_ => candle.ClosePrice,
 		};
 	}

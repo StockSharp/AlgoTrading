@@ -8,10 +8,9 @@ using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.Algo.Candles;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-using StockSharp.Algo.Candles;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -20,11 +19,22 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class DivergenceTraderBasketStrategy : Strategy
 {
+	public enum CandlePrices
+	{
+		Open,
+		Close,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted
+	}
+
 	private readonly StrategyParam<decimal> _lotSize;
 	private readonly StrategyParam<int> _fastPeriod;
-	private readonly StrategyParam<CandlePrice> _fastPriceType;
+	private readonly StrategyParam<CandlePrices> _fastPriceType;
 	private readonly StrategyParam<int> _slowPeriod;
-	private readonly StrategyParam<CandlePrice> _slowPriceType;
+	private readonly StrategyParam<CandlePrices> _slowPriceType;
 	private readonly StrategyParam<decimal> _buyThreshold;
 	private readonly StrategyParam<decimal> _stayOutThreshold;
 	private readonly StrategyParam<decimal> _takeProfitPips;
@@ -62,7 +72,7 @@ public class DivergenceTraderBasketStrategy : Strategy
 			.SetDisplay("Fast SMA Period", "Length of the fast simple moving average.", "Indicators")
 			.SetCanOptimize(true);
 
-		_fastPriceType = Param(nameof(FastPriceType), CandlePrice.Open)
+		_fastPriceType = Param(nameof(FastPriceType), CandlePrices.Open)
 			.SetDisplay("Fast SMA Price", "Applied price for the fast moving average.", "Indicators");
 
 		_slowPeriod = Param(nameof(SlowPeriod), 88)
@@ -70,7 +80,7 @@ public class DivergenceTraderBasketStrategy : Strategy
 			.SetDisplay("Slow SMA Period", "Length of the slow simple moving average.", "Indicators")
 			.SetCanOptimize(true);
 
-		_slowPriceType = Param(nameof(SlowPriceType), CandlePrice.Open)
+		_slowPriceType = Param(nameof(SlowPriceType), CandlePrices.Open)
 			.SetDisplay("Slow SMA Price", "Applied price for the slow moving average.", "Indicators");
 
 		_buyThreshold = Param(nameof(BuyThreshold), 0.0011m)
@@ -124,7 +134,7 @@ public class DivergenceTraderBasketStrategy : Strategy
 		set => _fastPeriod.Value = value;
 	}
 
-	public CandlePrice FastPriceType
+	public CandlePrices FastPriceType
 	{
 		get => _fastPriceType.Value;
 		set => _fastPriceType.Value = value;
@@ -136,7 +146,7 @@ public class DivergenceTraderBasketStrategy : Strategy
 		set => _slowPeriod.Value = value;
 	}
 
-	public CandlePrice SlowPriceType
+	public CandlePrices SlowPriceType
 	{
 		get => _slowPriceType.Value;
 		set => _slowPriceType.Value = value;
