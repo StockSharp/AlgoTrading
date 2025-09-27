@@ -302,23 +302,3 @@ public class SimpleTradingSystemStrategy : Strategy
 		};
 	}
 }
-
-public enum MovingAverageTypeEnum
-{
-	SMA,
-	EMA,
-	DEMA,
-	TEMA,
-	WMA,
-	VWMA
-}
-
-public enum PriceTypeEnum
-{
-	Close,
-	High,
-	Open,
-	Low,
-	Typical,
-	Center
-}

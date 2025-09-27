@@ -13,14 +13,6 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-using System;
-using System.Collections.Generic;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
 /// <summary>
 /// Stochastic-based strategy with level and crossover modes.
 /// Generates contrarian signals when the oscillator leaves extreme zones or crosses its signal line.
@@ -231,20 +223,4 @@ public class StochasticHistogramStrategy : Strategy
 		_prevK = k;
 		_prevD = d;
 	}
-}
-
-/// <summary>
-/// Modes of signal generation for the Stochastic strategy.
-/// </summary>
-public enum TrendMode
-{
-	/// <summary>
-	/// Signals are generated when %K leaves extreme levels.
-	/// </summary>
-	Levels,
-
-	/// <summary>
-	/// Signals are generated on crossovers between %K and %D.
-	/// </summary>
-	Cross
 }

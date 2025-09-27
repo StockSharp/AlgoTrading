@@ -13,14 +13,6 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-using System;
-using System.Collections.Generic;
-
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
-
 /// <summary>
 /// Strategy placing limit orders on Bollinger Bands.
 /// Buys at the lower band and sells at the upper band.

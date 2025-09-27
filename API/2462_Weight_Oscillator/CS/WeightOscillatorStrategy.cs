@@ -19,7 +19,23 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class WeightOscillatorStrategy : Strategy
 {
-    private readonly StrategyParam<int> _rsiPeriod;
+	/// <summary>
+	/// Trade direction modes.
+	/// </summary>
+	public enum TrendMode
+	{
+		/// <summary>
+		/// Trade in the direction of oscillator signals.
+		/// </summary>
+		Direct,
+
+		/// <summary>
+		/// Trade against oscillator signals.
+		/// </summary>
+		Against
+	}
+
+	private readonly StrategyParam<int> _rsiPeriod;
     private readonly StrategyParam<decimal> _rsiWeight;
     private readonly StrategyParam<int> _mfiPeriod;
     private readonly StrategyParam<decimal> _mfiWeight;
@@ -194,22 +210,6 @@ public class WeightOscillatorStrategy : Strategy
             }
         }
     }
-}
-
-/// <summary>
-/// Trade direction modes.
-/// </summary>
-public enum TrendMode
-{
-    /// <summary>
-    /// Trade in the direction of oscillator signals.
-    /// </summary>
-    Direct,
-
-    /// <summary>
-    /// Trade against oscillator signals.
-    /// </summary>
-    Against
 }
 
 /// <summary>

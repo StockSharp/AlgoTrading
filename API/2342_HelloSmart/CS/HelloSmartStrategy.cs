@@ -154,9 +154,3 @@ public class HelloSmartStrategy : Strategy
 			BuyMarket(-Position);
 	}
 }
-
-public enum TradeMode
-{
-	Buy = 1,
-	Sell = 2
-}

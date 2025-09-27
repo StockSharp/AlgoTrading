@@ -836,28 +836,3 @@ public class MaEnvelopesStrategy : Strategy
 	}
 }
 
-/// <summary>
-/// Moving average calculation modes supported by the strategy.
-/// </summary>
-public enum MaMethod
-{
-	Simple,
-	Exponential,
-	Smoothed,
-	LinearWeighted
-}
-
-/// <summary>
-/// Available price sources for indicator calculations.
-/// </summary>
-public enum AppliedPriceType
-{
-	Close,
-	Open,
-	High,
-	Low,
-	Median,
-	Typical,
-	Weighted
-}
-

@@ -730,28 +730,3 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 	}
 }
 
-/// <summary>
-/// Moving average methods supported by the strategy.
-/// </summary>
-public enum MaMethod
-{
-	Simple,
-	Exponential,
-	Smoothed,
-	LinearWeighted
-}
-
-/// <summary>
-/// Price sources replicating MetaTrader applied price options.
-/// </summary>
-public enum AppliedPriceType
-{
-	Close,
-	Open,
-	High,
-	Low,
-	Median,
-	Typical,
-	Weighted
-}
-

@@ -16,12 +16,6 @@ using StockSharp.Algo.Candles;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum TrendMode
-{
-	Direct,
-	NotDirect
-}
-
 /// <summary>
 /// Strategy based on the Waddah Attar Trend indicator.
 /// Opens a long position when the trend color changes from down to up and

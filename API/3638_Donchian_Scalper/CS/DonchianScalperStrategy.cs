@@ -649,15 +649,15 @@ public class DonchianScalperStrategy : Strategy
 	{
 		base.OnOrderChanged(order);
 
-		if (order == _buyStopOrder && IsFinal(order.State))
+		if (order == _buyStopOrder && order.State.IsFinal())
 		{
 			_buyStopOrder = null;
 		}
-		else if (order == _sellStopOrder && IsFinal(order.State))
+		else if (order == _sellStopOrder && order.State.IsFinal())
 		{
 			_sellStopOrder = null;
 		}
-		else if (order == _stopOrder && IsFinal(order.State))
+		else if (order == _stopOrder && order.State.IsFinal())
 		{
 			_stopOrder = null;
 			_stopPrice = null;
@@ -686,11 +686,6 @@ public class DonchianScalperStrategy : Strategy
 		}
 
 		EnsureProtectiveStop();
-	}
-
-	private static bool IsFinal(OrderStates state)
-	{
-		return state is OrderStates.Done or OrderStates.Failed or OrderStates.Canceled or OrderStates.Stopped or OrderStates.Rejected;
 	}
 
 	private readonly record struct Snapshot(decimal Open, decimal High, decimal Low, decimal Close, decimal Upper, decimal Lower, decimal Middle, decimal Ema);

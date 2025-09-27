@@ -254,22 +254,3 @@ public class LittleEaStrategy : Strategy
 	}
 }
 
-public enum MovingAverageType
-{
-	Simple,
-	Exponential,
-	Smoothed,
-	Weighted
-}
-
-public enum AppliedPriceType
-{
-	Close,
-	Open,
-	High,
-	Low,
-	Median,
-	Typical,
-	Weighted
-}
-

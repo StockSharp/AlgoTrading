@@ -604,17 +604,3 @@ public class StraddleTrailStrategy : Strategy
 		PendingShort
 	}
 }
-
-internal static class OrderStateExtensions
-{
-	public static bool IsFinal(this OrderStates state)
-	{
-		return state switch
-		{
-			OrderStates.Done => true,
-			OrderStates.Failed => true,
-			OrderStates.Canceled => true,
-			_ => false
-		};
-	}
-}

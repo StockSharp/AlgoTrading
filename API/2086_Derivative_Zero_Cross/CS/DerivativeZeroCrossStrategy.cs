@@ -245,17 +245,3 @@ public class DerivativeZeroCrossStrategy : Strategy
 		};
 	}
 }
-
-/// <summary>
-/// Price type used for derivative calculation.
-/// </summary>
-public enum PriceTypeEnum
-{
-	Close,
-	Open,
-	High,
-	Low,
-	Median,
-	Typical,
-	Weighted
-}

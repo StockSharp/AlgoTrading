@@ -13,12 +13,6 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum TrendMode
-{
-	Direct,
-	Against,
-}
-
 /// <summary>
 /// Simple RSI threshold strategy converted from MQL/16855.
 /// Buys or sells when RSI crosses predefined levels.

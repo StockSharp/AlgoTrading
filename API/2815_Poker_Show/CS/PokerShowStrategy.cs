@@ -27,6 +27,73 @@ using StockSharp.Messages;
 /// </summary>
 public class PokerShowStrategy : Strategy
 {
+	/// <summary>
+	/// Moving average smoothing methods supported by the strategy.
+	/// </summary>
+	public enum MovingAverageMethod
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Sma = 0,
+
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Ema = 1,
+
+		/// <summary>
+		/// Smoothed moving average.
+		/// </summary>
+		Smma = 2,
+
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		Lwma = 3
+	}
+
+	/// <summary>
+	/// Price sources emulating MetaTrader applied price options.
+	/// </summary>
+	public enum AppliedPrices
+	{
+		/// <summary>
+		/// Use close price.
+		/// </summary>
+		Close = 0,
+
+		/// <summary>
+		/// Use open price.
+		/// </summary>
+		Open = 1,
+
+		/// <summary>
+		/// Use high price.
+		/// </summary>
+		High = 2,
+
+		/// <summary>
+		/// Use low price.
+		/// </summary>
+		Low = 3,
+
+		/// <summary>
+		/// Use median price (high + low) / 2.
+		/// </summary>
+		Median = 4,
+
+		/// <summary>
+		/// Use typical price (high + low + close) / 3.
+		/// </summary>
+		Typical = 5,
+
+		/// <summary>
+		/// Use weighted price (high + low + 2 * close) / 4.
+		/// </summary>
+		Weighted = 6
+	}
+
 	private readonly StrategyParam<PokerCombination> _combination;
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<int> _stopLossPoints;
@@ -142,7 +209,7 @@ public class PokerShowStrategy : Strategy
 	/// <summary>
 	/// Price source for moving average calculations.
 	/// </summary>
-	public AppliedPrice AppliedPrice
+	public AppliedPrices AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -203,7 +270,7 @@ public class PokerShowStrategy : Strategy
 		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.Ema)
 		.SetDisplay("MA Method", "Moving average smoothing type", "Moving Average");
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPrice.Close)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPrices.Close)
 		.SetDisplay("Applied Price", "Price input for the moving average", "Moving Average");
 
 		_reverseSignal = Param(nameof(ReverseSignal), false)
@@ -395,13 +462,13 @@ public class PokerShowStrategy : Strategy
 	{
 		return AppliedPrice switch
 		{
-			AppliedPrice.Close => candle.ClosePrice,
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			AppliedPrices.Close => candle.ClosePrice,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}
@@ -463,71 +530,4 @@ public enum PokerCombination
 	/// One pair probability threshold.
 	/// </summary>
 	Couple = 16383
-}
-
-/// <summary>
-/// Moving average smoothing methods supported by the strategy.
-/// </summary>
-public enum MovingAverageMethod
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Sma = 0,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Ema = 1,
-
-	/// <summary>
-	/// Smoothed moving average.
-	/// </summary>
-	Smma = 2,
-
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	Lwma = 3
-}
-
-/// <summary>
-/// Price sources emulating MetaTrader applied price options.
-/// </summary>
-public enum AppliedPrice
-{
-	/// <summary>
-	/// Use close price.
-	/// </summary>
-	Close = 0,
-
-	/// <summary>
-	/// Use open price.
-	/// </summary>
-	Open = 1,
-
-	/// <summary>
-	/// Use high price.
-	/// </summary>
-	High = 2,
-
-	/// <summary>
-	/// Use low price.
-	/// </summary>
-	Low = 3,
-
-	/// <summary>
-	/// Use median price (high + low) / 2.
-	/// </summary>
-	Median = 4,
-
-	/// <summary>
-	/// Use typical price (high + low + close) / 3.
-	/// </summary>
-	Typical = 5,
-
-	/// <summary>
-	/// Use weighted price (high + low + 2 * close) / 4.
-	/// </summary>
-	Weighted = 6
 }

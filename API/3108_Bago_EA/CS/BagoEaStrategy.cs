@@ -180,989 +180,922 @@ public class BagoEaStrategy : Strategy
 		.SetDisplay("History Limit", "Maximum stored bars for signal validation", "Advanced");
 	}
 
-/// <summary>
-/// Executed order volume.
-/// </summary>
-public decimal TradeVolume
-{
-	get => _tradeVolume.Value;
-	set => _tradeVolume.Value = value;
-}
-
-/// <summary>
-/// Initial stop-loss in pips.
-/// </summary>
-public decimal StopLossPips
-{
-	get => _stopLossPips.Value;
-	set => _stopLossPips.Value = value;
-}
-
-/// <summary>
-/// Extra buffer applied when parking stops around the Vegas tunnel.
-/// </summary>
-public decimal StopLossToFiboPips
-{
-	get => _stopLossToFiboPips.Value;
-	set => _stopLossToFiboPips.Value = value;
-}
-
-/// <summary>
-/// Trailing stop distance in pips.
-/// </summary>
-public decimal TrailingStopPips
-{
-	get => _trailingStopPips.Value;
-	set => _trailingStopPips.Value = value;
-}
-
-/// <summary>
-/// First trailing layer distance in pips.
-/// </summary>
-public decimal TrailingStep1Pips
-{
-	get => _trailingStep1Pips.Value;
-	set => _trailingStep1Pips.Value = value;
-}
-
-/// <summary>
-/// Second trailing layer distance in pips.
-/// </summary>
-public decimal TrailingStep2Pips
-{
-	get => _trailingStep2Pips.Value;
-	set => _trailingStep2Pips.Value = value;
-}
-
-/// <summary>
-/// Third trailing layer distance in pips.
-/// </summary>
-public decimal TrailingStep3Pips
-{
-	get => _trailingStep3Pips.Value;
-	set => _trailingStep3Pips.Value = value;
-}
-
-/// <summary>
-/// Volume closed at the first trailing layer.
-/// </summary>
-public decimal PartialClose1Volume
-{
-	get => _partialClose1Volume.Value;
-	set => _partialClose1Volume.Value = value;
-}
-
-/// <summary>
-/// Volume closed at the second trailing layer.
-/// </summary>
-public decimal PartialClose2Volume
-{
-	get => _partialClose2Volume.Value;
-	set => _partialClose2Volume.Value = value;
-}
-
-/// <summary>
-/// Number of bars for which EMA/RSI crosses stay valid.
-/// </summary>
-public int CrossEffectiveBars
-{
-	get => _crossEffectiveBars.Value;
-	set => _crossEffectiveBars.Value = value;
-}
-
-/// <summary>
-/// Neutral band around the Vegas tunnel.
-/// </summary>
-public decimal TunnelBandWidthPips
-{
-	get => _tunnelBandWidthPips.Value;
-	set => _tunnelBandWidthPips.Value = value;
-}
-
-/// <summary>
-/// Maximum allowed distance above the tunnel for long entries.
-/// </summary>
-public decimal TunnelSafeZonePips
-{
-	get => _tunnelSafeZonePips.Value;
-	set => _tunnelSafeZonePips.Value = value;
-}
-
-/// <summary>
-/// Enables trading during the London session.
-/// </summary>
-public bool EnableLondonSession
-{
-	get => _enableLondonSession.Value;
-	set => _enableLondonSession.Value = value;
-}
-
-/// <summary>
-/// Enables trading during the New York session.
-/// </summary>
-public bool EnableNewYorkSession
-{
-	get => _enableNewYorkSession.Value;
-	set => _enableNewYorkSession.Value = value;
-}
-
-/// <summary>
-/// Enables trading during the Tokyo session.
-/// </summary>
-public bool EnableTokyoSession
-{
-	get => _enableTokyoSession.Value;
-	set => _enableTokyoSession.Value = value;
-}
-
-/// <summary>
-/// Fast EMA period.
-/// </summary>
-public int FastPeriod
-{
-	get => _fastPeriod.Value;
-	set => _fastPeriod.Value = value;
-}
-
-/// <summary>
-/// Slow EMA period.
-/// </summary>
-public int SlowPeriod
-{
-	get => _slowPeriod.Value;
-	set => _slowPeriod.Value = value;
-}
-
-/// <summary>
-/// Horizontal shift applied to the moving averages.
-/// </summary>
-public int MaShift
-{
-	get => _maShift.Value;
-	set => _maShift.Value = value;
-}
-
-/// <summary>
-/// Moving average calculation method.
-/// </summary>
-public MovingAverageType MaMethod
-{
-	get => _maMethod.Value;
-	set => _maMethod.Value = value;
-}
-
-/// <summary>
-/// Applied price for the moving averages.
-/// </summary>
-public AppliedPriceType MaAppliedPrice
-{
-	get => _maAppliedPrice.Value;
-	set => _maAppliedPrice.Value = value;
-}
-
-/// <summary>
-/// RSI averaging period.
-/// </summary>
-public int RsiPeriod
-{
-	get => _rsiPeriod.Value;
-	set => _rsiPeriod.Value = value;
-}
-
-/// <summary>
-/// Applied price for the RSI indicator.
-/// </summary>
-public AppliedPriceType RsiAppliedPrice
-{
-	get => _rsiAppliedPrice.Value;
-	set => _rsiAppliedPrice.Value = value;
-}
-
-/// <summary>
-/// Neutral RSI threshold defining the bullish/bearish boundary.
-/// </summary>
-public decimal FiftyLevel
-{
-	get => _fiftyLevel.Value;
-	set => _fiftyLevel.Value = value;
-}
-
-/// <summary>
-/// Candle data type used for calculations.
-/// </summary>
-public DataType CandleType
-{
-	get => _candleType.Value;
-	set => _candleType.Value = value;
-}
-
-/// <summary>
-/// Maximum number of historical bars cached for indicator comparisons.
-/// </summary>
-public int HistoryLimit
-{
-	get => _historyLimit.Value;
-	set => _historyLimit.Value = value;
-}
-
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-	return [(Security, CandleType)];
-}
-
-/// <inheritdoc />
-protected override void OnReseted()
-{
-	base.OnReseted();
-
-	_fastHistory.Clear();
-	_slowHistory.Clear();
-	_vegasFastHistory.Clear();
-	_vegasSlowHistory.Clear();
-	_rsiHistory.Clear();
-	_candleHistory.Clear();
-
-	_emaCrossedUp = false;
-	_emaCrossedDown = false;
-	_rsiCrossedUp = false;
-	_rsiCrossedDown = false;
-	_tunnelCrossedUp = false;
-	_tunnelCrossedDown = false;
-	_emaCrossUpTimer = 0;
-	_emaCrossDownTimer = 0;
-	_rsiCrossUpTimer = 0;
-	_rsiCrossDownTimer = 0;
-
-	_longEntryPrice = 0m;
-	_shortEntryPrice = 0m;
-	_longPartial1Done = false;
-	_longPartial2Done = false;
-	_shortPartial1Done = false;
-	_shortPartial2Done = false;
-
-	CancelLongStop();
-	CancelShortStop();
-}
-
-/// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
-{
-	base.OnStarted(time);
-
-	InitializeIndicators();
-	InitializePipSettings();
-
-	var subscription = SubscribeCandles(CandleType);
-	subscription.Bind(ProcessCandle).Start();
-
-	StartProtection();
-}
-
-private void InitializeIndicators()
-{
-	_fastMa = CreateMovingAverage(MaMethod, FastPeriod);
-	_slowMa = CreateMovingAverage(MaMethod, SlowPeriod);
-	_vegasFastMa = CreateMovingAverage(MaMethod, 144);
-	_vegasSlowMa = CreateMovingAverage(MaMethod, 169);
-	_rsi = new RelativeStrengthIndex
+	/// <summary>
+	/// Executed order volume.
+	/// </summary>
+	public decimal TradeVolume
 	{
-		Length = RsiPeriod
-	};
-}
-
-private void InitializePipSettings()
-{
-	if (Security == null)
-	{
-		_pipSize = 0m;
-		return;
+		get => _tradeVolume.Value;
+		set => _tradeVolume.Value = value;
 	}
 
-_pipSize = Security.PriceStep ?? 0m;
-if (_pipSize <= 0m)
-_pipSize = 1m;
-
-var decimals = Security.Decimals;
-if (decimals == 3 || decimals == 5)
-_pipSize *= 10m;
-
-_stopLossDistance = StopLossPips * _pipSize;
-_stopLossToFiboDistance = StopLossToFiboPips * _pipSize;
-_trailingStopDistance = TrailingStopPips * _pipSize;
-_trailingStep1Distance = TrailingStep1Pips * _pipSize;
-_trailingStep2Distance = TrailingStep2Pips * _pipSize;
-_trailingStep3Distance = TrailingStep3Pips * _pipSize;
-_tunnelBandWidthDistance = TunnelBandWidthPips * _pipSize;
-_tunnelSafeZoneDistance = TunnelSafeZonePips * _pipSize;
-}
-
-private void ProcessCandle(ICandleMessage candle)
-{
-	if (candle.State != CandleStates.Finished)
-	return;
-
-	InitializePipSettings();
-
-	var maInput = GetAppliedPrice(candle, MaAppliedPrice);
-	var rsiInput = GetAppliedPrice(candle, RsiAppliedPrice);
-	var time = candle.OpenTime;
-
-	var fastValue = _fastMa.Process(maInput, time, true).ToDecimal();
-	var slowValue = _slowMa.Process(maInput, time, true).ToDecimal();
-	var vegasFastValue = _vegasFastMa.Process(maInput, time, true).ToDecimal();
-	var vegasSlowValue = _vegasSlowMa.Process(maInput, time, true).ToDecimal();
-	var rsiValue = _rsi.Process(rsiInput, time, true).ToDecimal();
-
-	AddToHistory(_fastHistory, fastValue);
-	AddToHistory(_slowHistory, slowValue);
-	AddToHistory(_vegasFastHistory, vegasFastValue);
-	AddToHistory(_vegasSlowHistory, vegasSlowValue);
-	AddToHistory(_rsiHistory, rsiValue);
-	AddCandleToHistory(new CandleSnapshot(candle.OpenPrice, candle.HighPrice, candle.LowPrice, candle.ClosePrice));
-
-	if (!_fastMa.IsFormed || !_slowMa.IsFormed || !_vegasFastMa.IsFormed || !_vegasSlowMa.IsFormed || !_rsi.IsFormed)
-	return;
-
-	UpdateCrossStates();
-
-	var closeTime = candle.CloseTime;
-	if (!IsTradingSession(closeTime) || !IsFormedAndOnlineAndAllowTrading())
+	/// <summary>
+	/// Initial stop-loss in pips.
+	/// </summary>
+	public decimal StopLossPips
 	{
-		ManagePositions(candle);
-		return;
+		get => _stopLossPips.Value;
+		set => _stopLossPips.Value = value;
 	}
 
-if (TryEnterLong(candle))
-return;
-
-if (TryEnterShort(candle))
-return;
-
-ManagePositions(candle);
-}
-
-private void ManagePositions(ICandleMessage candle)
-{
-	if (Position > 0m)
+	/// <summary>
+	/// Extra buffer applied when parking stops around the Vegas tunnel.
+	/// </summary>
+	public decimal StopLossToFiboPips
 	{
-		ManageLongPosition(candle);
-	}
-else if (Position < 0m)
-{
-	ManageShortPosition(candle);
-}
-else
-{
-	ResetLongState();
-	ResetShortState();
-}
-}
-
-private void ManageLongPosition(ICandleMessage candle)
-{
-	if (_emaCrossedDown || _rsiCrossedDown)
-	{
-		ClosePosition();
-		ResetLongState();
-		return;
+		get => _stopLossToFiboPips.Value;
+		set => _stopLossToFiboPips.Value = value;
 	}
 
-var vegasSlow = GetMaValue(_vegasSlowHistory, 0);
-if (!vegasSlow.HasValue)
-return;
-
-var close = candle.ClosePrice;
-var basePrice = vegasSlow.Value;
-
-if (_tunnelCrossedUp)
-{
-	if (_trailingStep3Distance > 0m && close >= basePrice + _trailingStep3Distance)
+	/// <summary>
+	/// Trailing stop distance in pips.
+	/// </summary>
+	public decimal TrailingStopPips
 	{
-		UpdateLongStop(close - _trailingStopDistance);
-		return;
+		get => _trailingStopPips.Value;
+		set => _trailingStopPips.Value = value;
 	}
 
-if (_trailingStep2Distance > 0m && close >= basePrice + _trailingStep2Distance)
-{
-	TryCloseLongPartial(PartialClose2Volume, basePrice + _trailingStep2Distance, ref _longPartial2Done);
-	UpdateLongStop(close - _trailingStopDistance);
-	return;
-}
-
-if (_trailingStep1Distance > 0m && close >= basePrice + _trailingStep1Distance)
-{
-	TryCloseLongPartial(PartialClose1Volume, basePrice + _trailingStep1Distance, ref _longPartial1Done);
-	UpdateLongStop(close - _trailingStopDistance);
-	return;
-}
-
-if (_trailingStopDistance > 0m)
-UpdateLongStop(close - _trailingStopDistance);
-}
-else
-{
-	if (_trailingStep1Distance > 0m && close >= basePrice - _trailingStep1Distance)
+	/// <summary>
+	/// First trailing layer distance in pips.
+	/// </summary>
+	public decimal TrailingStep1Pips
 	{
-		var newStop = basePrice - (_trailingStep1Distance + _stopLossToFiboDistance);
-		UpdateLongStop(newStop);
-		return;
+		get => _trailingStep1Pips.Value;
+		set => _trailingStep1Pips.Value = value;
 	}
 
-if (_trailingStep2Distance > 0m && close >= basePrice - _trailingStep2Distance)
-{
-	var newStop = basePrice - (_trailingStep2Distance + _stopLossToFiboDistance);
-	UpdateLongStop(newStop);
-	return;
-}
-
-if (_trailingStep3Distance > 0m && close >= basePrice - _trailingStep3Distance)
-{
-	var newStop = basePrice - (_trailingStep3Distance + _stopLossToFiboDistance);
-	UpdateLongStop(newStop);
-}
-}
-}
-
-private void ManageShortPosition(ICandleMessage candle)
-{
-	if (_emaCrossedUp || _rsiCrossedUp)
+	/// <summary>
+	/// Second trailing layer distance in pips.
+	/// </summary>
+	public decimal TrailingStep2Pips
 	{
-		ClosePosition();
-		ResetShortState();
-		return;
+		get => _trailingStep2Pips.Value;
+		set => _trailingStep2Pips.Value = value;
 	}
 
-var vegasSlow = GetMaValue(_vegasSlowHistory, 0);
-if (!vegasSlow.HasValue)
-return;
-
-var close = candle.ClosePrice;
-var basePrice = vegasSlow.Value;
-
-if (_tunnelCrossedDown)
-{
-	if (_trailingStep3Distance > 0m && close <= basePrice - _trailingStep3Distance)
+	/// <summary>
+	/// Third trailing layer distance in pips.
+	/// </summary>
+	public decimal TrailingStep3Pips
 	{
-		UpdateShortStop(close + _trailingStopDistance);
-		return;
+		get => _trailingStep3Pips.Value;
+		set => _trailingStep3Pips.Value = value;
 	}
 
-if (_trailingStep2Distance > 0m && close <= basePrice - _trailingStep2Distance)
-{
-	TryCloseShortPartial(PartialClose2Volume, basePrice - _trailingStep2Distance, ref _shortPartial2Done);
-	UpdateShortStop(close + _trailingStopDistance);
-	return;
-}
-
-if (_trailingStep1Distance > 0m && close <= basePrice - _trailingStep1Distance)
-{
-	TryCloseShortPartial(PartialClose1Volume, basePrice - _trailingStep1Distance, ref _shortPartial1Done);
-	UpdateShortStop(close + _trailingStopDistance);
-	return;
-}
-
-if (_trailingStopDistance > 0m)
-UpdateShortStop(close + _trailingStopDistance);
-}
-else
-{
-	if (_trailingStep1Distance > 0m && close <= basePrice + _trailingStep1Distance)
+	/// <summary>
+	/// Volume closed at the first trailing layer.
+	/// </summary>
+	public decimal PartialClose1Volume
 	{
-		var newStop = basePrice + (_trailingStep1Distance + _stopLossToFiboDistance);
-		UpdateShortStop(newStop);
-		return;
+		get => _partialClose1Volume.Value;
+		set => _partialClose1Volume.Value = value;
 	}
 
-if (_trailingStep2Distance > 0m && close <= basePrice + _trailingStep2Distance)
-{
-	var newStop = basePrice + (_trailingStep2Distance + _stopLossToFiboDistance);
-	UpdateShortStop(newStop);
-	return;
-}
-
-if (_trailingStep3Distance > 0m && close <= basePrice + _trailingStep3Distance)
-{
-	var newStop = basePrice + (_trailingStep3Distance + _stopLossToFiboDistance);
-	UpdateShortStop(newStop);
-}
-}
-}
-
-private void TryCloseLongPartial(decimal volume, decimal referenceLevel, ref bool flag)
-{
-	if (flag || volume <= 0m)
-	return;
-
-	if (Math.Abs(Position) <= volume)
-	return;
-
-	if (_longEntryPrice >= referenceLevel)
-	return;
-
-	SellMarket(volume);
-	flag = true;
-}
-
-private void TryCloseShortPartial(decimal volume, decimal referenceLevel, ref bool flag)
-{
-	if (flag || volume <= 0m)
-	return;
-
-	if (Math.Abs(Position) <= volume)
-	return;
-
-	if (_shortEntryPrice <= referenceLevel)
-	return;
-
-	BuyMarket(volume);
-	flag = true;
-}
-
-private void UpdateLongStop(decimal newStopPrice)
-{
-	if (newStopPrice <= 0m || Math.Abs(Position) <= 0m)
-	return;
-
-	if (_longStopOrder != null)
+	/// <summary>
+	/// Volume closed at the second trailing layer.
+	/// </summary>
+	public decimal PartialClose2Volume
 	{
-		var minMove = GetMinimalStopMove();
-		if (newStopPrice <= _longStopPrice + minMove)
-		return;
+		get => _partialClose2Volume.Value;
+		set => _partialClose2Volume.Value = value;
+	}
+
+	/// <summary>
+	/// Number of bars for which EMA/RSI crosses stay valid.
+	/// </summary>
+	public int CrossEffectiveBars
+	{
+		get => _crossEffectiveBars.Value;
+		set => _crossEffectiveBars.Value = value;
+	}
+
+	/// <summary>
+	/// Neutral band around the Vegas tunnel.
+	/// </summary>
+	public decimal TunnelBandWidthPips
+	{
+		get => _tunnelBandWidthPips.Value;
+		set => _tunnelBandWidthPips.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum allowed distance above the tunnel for long entries.
+	/// </summary>
+	public decimal TunnelSafeZonePips
+	{
+		get => _tunnelSafeZonePips.Value;
+		set => _tunnelSafeZonePips.Value = value;
+	}
+
+	/// <summary>
+	/// Enables trading during the London session.
+	/// </summary>
+	public bool EnableLondonSession
+	{
+		get => _enableLondonSession.Value;
+		set => _enableLondonSession.Value = value;
+	}
+
+	/// <summary>
+	/// Enables trading during the New York session.
+	/// </summary>
+	public bool EnableNewYorkSession
+	{
+		get => _enableNewYorkSession.Value;
+		set => _enableNewYorkSession.Value = value;
+	}
+
+	/// <summary>
+	/// Enables trading during the Tokyo session.
+	/// </summary>
+	public bool EnableTokyoSession
+	{
+		get => _enableTokyoSession.Value;
+		set => _enableTokyoSession.Value = value;
+	}
+
+	/// <summary>
+	/// Fast EMA period.
+	/// </summary>
+	public int FastPeriod
+	{
+		get => _fastPeriod.Value;
+		set => _fastPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Slow EMA period.
+	/// </summary>
+	public int SlowPeriod
+	{
+		get => _slowPeriod.Value;
+		set => _slowPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Horizontal shift applied to the moving averages.
+	/// </summary>
+	public int MaShift
+	{
+		get => _maShift.Value;
+		set => _maShift.Value = value;
+	}
+
+	/// <summary>
+	/// Moving average calculation method.
+	/// </summary>
+	public MovingAverageType MaMethod
+	{
+		get => _maMethod.Value;
+		set => _maMethod.Value = value;
+	}
+
+	/// <summary>
+	/// Applied price for the moving averages.
+	/// </summary>
+	public AppliedPriceType MaAppliedPrice
+	{
+		get => _maAppliedPrice.Value;
+		set => _maAppliedPrice.Value = value;
+	}
+
+	/// <summary>
+	/// RSI averaging period.
+	/// </summary>
+	public int RsiPeriod
+	{
+		get => _rsiPeriod.Value;
+		set => _rsiPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Applied price for the RSI indicator.
+	/// </summary>
+	public AppliedPriceType RsiAppliedPrice
+	{
+		get => _rsiAppliedPrice.Value;
+		set => _rsiAppliedPrice.Value = value;
+	}
+
+	/// <summary>
+	/// Neutral RSI threshold defining the bullish/bearish boundary.
+	/// </summary>
+	public decimal FiftyLevel
+	{
+		get => _fiftyLevel.Value;
+		set => _fiftyLevel.Value = value;
+	}
+
+	/// <summary>
+	/// Candle data type used for calculations.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum number of historical bars cached for indicator comparisons.
+	/// </summary>
+	public int HistoryLimit
+	{
+		get => _historyLimit.Value;
+		set => _historyLimit.Value = value;
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_fastHistory.Clear();
+		_slowHistory.Clear();
+		_vegasFastHistory.Clear();
+		_vegasSlowHistory.Clear();
+		_rsiHistory.Clear();
+		_candleHistory.Clear();
+
+		_emaCrossedUp = false;
+		_emaCrossedDown = false;
+		_rsiCrossedUp = false;
+		_rsiCrossedDown = false;
+		_tunnelCrossedUp = false;
+		_tunnelCrossedDown = false;
+		_emaCrossUpTimer = 0;
+		_emaCrossDownTimer = 0;
+		_rsiCrossUpTimer = 0;
+		_rsiCrossDownTimer = 0;
+
+		_longEntryPrice = 0m;
+		_shortEntryPrice = 0m;
+		_longPartial1Done = false;
+		_longPartial2Done = false;
+		_shortPartial1Done = false;
+		_shortPartial2Done = false;
 
 		CancelLongStop();
-	}
-
-_longStopOrder = SellStop(Math.Abs(Position), newStopPrice);
-_longStopPrice = newStopPrice;
-}
-
-private void UpdateShortStop(decimal newStopPrice)
-{
-	if (newStopPrice <= 0m || Math.Abs(Position) <= 0m)
-	return;
-
-	if (_shortStopOrder != null)
-	{
-		var minMove = GetMinimalStopMove();
-		if (newStopPrice >= _shortStopPrice - minMove)
-		return;
-
 		CancelShortStop();
 	}
 
-_shortStopOrder = BuyStop(Math.Abs(Position), newStopPrice);
-_shortStopPrice = newStopPrice;
-}
-
-private void CancelLongStop()
-{
-	if (_longStopOrder != null)
+	/// <inheritdoc />
+	protected override void OnStarted(DateTimeOffset time)
 	{
-		CancelOrder(_longStopOrder);
-		_longStopOrder = null;
-		_longStopPrice = 0m;
-	}
-}
+		base.OnStarted(time);
 
-private void CancelShortStop()
-{
-	if (_shortStopOrder != null)
-	{
-		CancelOrder(_shortStopOrder);
-		_shortStopOrder = null;
-		_shortStopPrice = 0m;
-	}
-}
+		InitializeIndicators();
+		InitializePipSettings();
 
-private void ResetLongState()
-{
-	_longPartial1Done = false;
-	_longPartial2Done = false;
-	_longEntryPrice = 0m;
-	CancelLongStop();
-}
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(ProcessCandle).Start();
 
-private void ResetShortState()
-{
-	_shortPartial1Done = false;
-	_shortPartial2Done = false;
-	_shortEntryPrice = 0m;
-	CancelShortStop();
-}
-
-private bool TryEnterLong(ICandleMessage candle)
-{
-	if (!_emaCrossedUp || !_rsiCrossedUp)
-	return false;
-
-	var currentCandle = GetCandle(0);
-	var previousCandle = GetCandle(1);
-	var vegasSlow = GetMaValue(_vegasSlowHistory, 0);
-
-	if (currentCandle == null || previousCandle == null || !vegasSlow.HasValue)
-	return false;
-
-	var basePrice = vegasSlow.Value;
-	var bullishBreak = currentCandle.Close >= basePrice + _tunnelBandWidthDistance &&
-	currentCandle.Close <= basePrice + _tunnelSafeZoneDistance &&
-	currentCandle.Open < currentCandle.Close;
-
-	var pullbackBreak = currentCandle.Close <= basePrice - _tunnelBandWidthDistance;
-
-	if (!bullishBreak && !pullbackBreak)
-	return false;
-
-	if (Position < 0m)
-	{
-		ClosePosition();
-		ResetShortState();
-		return true;
+		StartProtection();
 	}
 
-if (Position > 0m || TradeVolume <= 0m)
-return false;
-
-BuyMarket(TradeVolume);
-_longEntryPrice = candle.ClosePrice;
-ResetShortState();
-
-if (_stopLossDistance > 0m)
-UpdateLongStop(candle.ClosePrice - _stopLossDistance);
-
-return true;
-}
-
-private bool TryEnterShort(ICandleMessage candle)
-{
-	if (!_emaCrossedDown || !_rsiCrossedDown)
-	return false;
-
-	var currentCandle = GetCandle(0);
-	var previousCandle = GetCandle(1);
-	var vegasSlow = GetMaValue(_vegasSlowHistory, 0);
-
-	if (currentCandle == null || previousCandle == null || !vegasSlow.HasValue)
-	return false;
-
-	var basePrice = vegasSlow.Value;
-	var bearishBreak = currentCandle.Close <= basePrice - _tunnelBandWidthDistance &&
-	currentCandle.Close >= basePrice - _tunnelSafeZoneDistance &&
-	currentCandle.Open > currentCandle.Close;
-
-	var pushDownBreak = currentCandle.Close >= basePrice + _tunnelBandWidthDistance;
-
-	if (!bearishBreak && !pushDownBreak)
-	return false;
-
-	if (Position > 0m)
+	private void InitializeIndicators()
 	{
-		ClosePosition();
-		ResetLongState();
-		return true;
-	}
-
-if (Position < 0m || TradeVolume <= 0m)
-return false;
-
-SellMarket(TradeVolume);
-_shortEntryPrice = candle.ClosePrice;
-ResetLongState();
-
-if (_stopLossDistance > 0m)
-UpdateShortStop(candle.ClosePrice + _stopLossDistance);
-
-return true;
-}
-
-private void UpdateCrossStates()
-{
-	var fastCurrent = GetMaValue(_fastHistory, 0);
-	var fastPrev = GetMaValue(_fastHistory, 1);
-	var slowCurrent = GetMaValue(_slowHistory, 0);
-	var slowPrev = GetMaValue(_slowHistory, 1);
-
-	if (fastCurrent.HasValue && fastPrev.HasValue && slowCurrent.HasValue && slowPrev.HasValue)
-	{
-		if (fastCurrent.Value > slowCurrent.Value && fastPrev.Value < slowPrev.Value)
+		_fastMa = CreateMovingAverage(MaMethod, FastPeriod);
+		_slowMa = CreateMovingAverage(MaMethod, SlowPeriod);
+		_vegasFastMa = CreateMovingAverage(MaMethod, 144);
+		_vegasSlowMa = CreateMovingAverage(MaMethod, 169);
+		_rsi = new RelativeStrengthIndex
 		{
-			_emaCrossedUp = true;
-			_emaCrossedDown = false;
+			Length = RsiPeriod
+		};
+	}
+
+	private void InitializePipSettings()
+	{
+		if (Security == null)
+		{
+			_pipSize = 0m;
+			return;
 		}
-	else if (fastCurrent.Value < slowCurrent.Value && fastPrev.Value > slowPrev.Value)
-	{
-		_emaCrossedUp = false;
-		_emaCrossedDown = true;
-	}
-}
 
-if (_emaCrossedUp)
-{
-	_emaCrossUpTimer++;
-	if (_emaCrossUpTimer >= CrossEffectiveBars)
-	{
-		_emaCrossedUp = false;
-		_emaCrossUpTimer = 0;
-	}
-}
-else
-{
-	_emaCrossUpTimer = 0;
-}
+		_pipSize = Security.PriceStep ?? 0m;
+		if (_pipSize <= 0m)
+			_pipSize = 1m;
 
-if (_emaCrossedDown)
-{
-	_emaCrossDownTimer++;
-	if (_emaCrossDownTimer >= CrossEffectiveBars)
-	{
-		_emaCrossedDown = false;
-		_emaCrossDownTimer = 0;
-	}
-}
-else
-{
-	_emaCrossDownTimer = 0;
-}
+		var decimals = Security.Decimals;
+		if (decimals == 3 || decimals == 5)
+			_pipSize *= 10m;
 
-var rsiCurrent = GetSeriesValue(_rsiHistory, 0);
-var rsiPrev = GetSeriesValue(_rsiHistory, 1);
-
-if (rsiCurrent.HasValue && rsiPrev.HasValue)
-{
-	if (rsiCurrent.Value > FiftyLevel && rsiPrev.Value < FiftyLevel)
-	{
-		_rsiCrossedUp = true;
-		_rsiCrossedDown = false;
-	}
-else if (rsiCurrent.Value < FiftyLevel && rsiPrev.Value > FiftyLevel)
-{
-	_rsiCrossedUp = false;
-	_rsiCrossedDown = true;
-}
-}
-
-if (_rsiCrossedUp)
-{
-	_rsiCrossUpTimer++;
-	if (_rsiCrossUpTimer >= CrossEffectiveBars)
-	{
-		_rsiCrossedUp = false;
-		_rsiCrossUpTimer = 0;
-	}
-}
-else
-{
-	_rsiCrossUpTimer = 0;
-}
-
-if (_rsiCrossedDown)
-{
-	_rsiCrossDownTimer++;
-	if (_rsiCrossDownTimer >= CrossEffectiveBars)
-	{
-		_rsiCrossedDown = false;
-		_rsiCrossDownTimer = 0;
-	}
-}
-else
-{
-	_rsiCrossDownTimer = 0;
-}
-
-var currentCandle = GetCandle(0);
-var previousCandle = GetCandle(1);
-var vegasFast = GetMaValue(_vegasFastHistory, 0);
-var vegasSlow = GetMaValue(_vegasSlowHistory, 0);
-
-if (currentCandle != null && previousCandle != null && vegasFast.HasValue && vegasSlow.HasValue)
-{
-	var aboveTunnel = currentCandle.Close > vegasFast.Value && currentCandle.Close > vegasSlow.Value;
-	var belowTunnel = currentCandle.Close < vegasFast.Value && currentCandle.Close < vegasSlow.Value;
-	var prevAbove = previousCandle.Close > vegasFast.Value || previousCandle.Close > vegasSlow.Value;
-	var prevBelow = previousCandle.Close < vegasFast.Value || previousCandle.Close < vegasSlow.Value;
-
-	if (aboveTunnel && prevBelow)
-	{
-		_tunnelCrossedUp = true;
-		_tunnelCrossedDown = false;
-	}
-else if (belowTunnel && prevAbove)
-{
-	_tunnelCrossedUp = false;
-	_tunnelCrossedDown = true;
-}
-}
-}
-
-private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceType type)
-{
-	return type switch
-	{
-		AppliedPriceType.Open => candle.OpenPrice,
-		AppliedPriceType.High => candle.HighPrice,
-		AppliedPriceType.Low => candle.LowPrice,
-		AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-		AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-		AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
-		_ => candle.ClosePrice,
-	};
-}
-
-private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageType type, int length)
-{
-	return type switch
-	{
-		MovingAverageType.Simple => new SimpleMovingAverage { Length = length },
-		MovingAverageType.Smoothed => new SmoothedMovingAverage { Length = length },
-		MovingAverageType.LinearWeighted => new WeightedMovingAverage { Length = length },
-		_ => new ExponentialMovingAverage { Length = length },
-	};
-}
-
-private void AddToHistory(List<decimal> history, decimal value)
-{
-	history.Add(value);
-	if (history.Count > HistoryLimit)
-	history.RemoveAt(0);
-}
-
-private void AddCandleToHistory(CandleSnapshot snapshot)
-{
-	_candleHistory.Add(snapshot);
-	if (_candleHistory.Count > HistoryLimit)
-	_candleHistory.RemoveAt(0);
-}
-
-private decimal? GetSeriesValue(List<decimal> values, int offset)
-{
-	var index = values.Count - 1 - offset;
-	if (index < 0)
-	return null;
-
-	return values[index];
-}
-
-private decimal? GetMaValue(List<decimal> values, int offset)
-{
-	var shift = Math.Max(0, MaShift);
-	var index = values.Count - 1 - shift - offset;
-	if (index < 0)
-	return null;
-
-	return values[index];
-}
-
-private CandleSnapshot? GetCandle(int offset)
-{
-	var index = _candleHistory.Count - 1 - offset;
-	if (index < 0)
-	return null;
-
-	return _candleHistory[index];
-}
-
-private bool IsTradingSession(DateTimeOffset time)
-{
-	var hour = time.Hour;
-
-	var london = EnableLondonSession && hour >= 7 && hour <= 16;
-	var newYork = EnableNewYorkSession && hour >= 12 && hour <= 21;
-	var tokyo = EnableTokyoSession && hour >= 0 && hour <= 8;
-	var lateHour = hour >= 23;
-
-	return london || newYork || tokyo || lateHour;
-}
-
-private decimal GetMinimalStopMove()
-{
-	var step = Security?.PriceStep ?? 0m;
-	if (step > 0m)
-	return step;
-
-	return _pipSize > 0m ? _pipSize / 10m : 0.00001m;
-}
-
-private readonly struct CandleSnapshot
-{
-	public CandleSnapshot(decimal open, decimal high, decimal low, decimal close)
-	{
-		Open = open;
-		High = high;
-		Low = low;
-		Close = close;
+		_stopLossDistance = StopLossPips * _pipSize;
+		_stopLossToFiboDistance = StopLossToFiboPips * _pipSize;
+		_trailingStopDistance = TrailingStopPips * _pipSize;
+		_trailingStep1Distance = TrailingStep1Pips * _pipSize;
+		_trailingStep2Distance = TrailingStep2Pips * _pipSize;
+		_trailingStep3Distance = TrailingStep3Pips * _pipSize;
+		_tunnelBandWidthDistance = TunnelBandWidthPips * _pipSize;
+		_tunnelSafeZoneDistance = TunnelSafeZonePips * _pipSize;
 	}
 
-public decimal Open { get; }
-public decimal High { get; }
-public decimal Low { get; }
-public decimal Close { get; }
-}
-}
+	private void ProcessCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-/// <summary>
-/// Moving average calculation options supported by the strategy.
-/// </summary>
-public enum MovingAverageType
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Simple,
+		InitializePipSettings();
 
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Exponential,
+		var maInput = GetAppliedPrice(candle, MaAppliedPrice);
+		var rsiInput = GetAppliedPrice(candle, RsiAppliedPrice);
+		var time = candle.OpenTime;
 
-	/// <summary>
-	/// Smoothed moving average.
-	/// </summary>
-	Smoothed,
+		var fastValue = _fastMa.Process(maInput, time, true).ToDecimal();
+		var slowValue = _slowMa.Process(maInput, time, true).ToDecimal();
+		var vegasFastValue = _vegasFastMa.Process(maInput, time, true).ToDecimal();
+		var vegasSlowValue = _vegasSlowMa.Process(maInput, time, true).ToDecimal();
+		var rsiValue = _rsi.Process(rsiInput, time, true).ToDecimal();
 
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	LinearWeighted
-}
+		AddToHistory(_fastHistory, fastValue);
+		AddToHistory(_slowHistory, slowValue);
+		AddToHistory(_vegasFastHistory, vegasFastValue);
+		AddToHistory(_vegasSlowHistory, vegasSlowValue);
+		AddToHistory(_rsiHistory, rsiValue);
+		AddCandleToHistory(new CandleSnapshot(candle.OpenPrice, candle.HighPrice, candle.LowPrice, candle.ClosePrice));
 
-/// <summary>
-/// Price extraction modes replicated from MetaTrader.
-/// </summary>
-public enum AppliedPriceType
-{
-	/// <summary>
-	/// Closing price.
-	/// </summary>
-	Close,
+		if (!_fastMa.IsFormed || !_slowMa.IsFormed || !_vegasFastMa.IsFormed || !_vegasSlowMa.IsFormed || !_rsi.IsFormed)
+			return;
 
-	/// <summary>
-	/// Opening price.
-	/// </summary>
-	Open,
+		UpdateCrossStates();
 
-	/// <summary>
-	/// Highest price.
-	/// </summary>
-	High,
+		var closeTime = candle.CloseTime;
+		if (!IsTradingSession(closeTime) || !IsFormedAndOnlineAndAllowTrading())
+		{
+			ManagePositions(candle);
+			return;
+		}
 
-	/// <summary>
-	/// Lowest price.
-	/// </summary>
-	Low,
+		if (TryEnterLong(candle))
+			return;
 
-	/// <summary>
-	/// Median price (high + low) / 2.
-	/// </summary>
-	Median,
+		if (TryEnterShort(candle))
+			return;
 
-	/// <summary>
-	/// Typical price (high + low + close) / 3.
-	/// </summary>
-	Typical,
+		ManagePositions(candle);
+	}
 
-	/// <summary>
-	/// Weighted price (high + low + 2 * close) / 4.
-	/// </summary>
-	Weighted
+	private void ManagePositions(ICandleMessage candle)
+	{
+		if (Position > 0m)
+		{
+			ManageLongPosition(candle);
+		}
+		else if (Position < 0m)
+		{
+			ManageShortPosition(candle);
+		}
+		else
+		{
+			ResetLongState();
+			ResetShortState();
+		}
+	}
+
+	private void ManageLongPosition(ICandleMessage candle)
+	{
+		if (_emaCrossedDown || _rsiCrossedDown)
+		{
+			ClosePosition();
+			ResetLongState();
+			return;
+		}
+
+		var vegasSlow = GetMaValue(_vegasSlowHistory, 0);
+		if (!vegasSlow.HasValue)
+			return;
+
+		var close = candle.ClosePrice;
+		var basePrice = vegasSlow.Value;
+
+		if (_tunnelCrossedUp)
+		{
+			if (_trailingStep3Distance > 0m && close >= basePrice + _trailingStep3Distance)
+			{
+				UpdateLongStop(close - _trailingStopDistance);
+				return;
+			}
+
+			if (_trailingStep2Distance > 0m && close >= basePrice + _trailingStep2Distance)
+			{
+				TryCloseLongPartial(PartialClose2Volume, basePrice + _trailingStep2Distance, ref _longPartial2Done);
+				UpdateLongStop(close - _trailingStopDistance);
+				return;
+			}
+
+			if (_trailingStep1Distance > 0m && close >= basePrice + _trailingStep1Distance)
+			{
+				TryCloseLongPartial(PartialClose1Volume, basePrice + _trailingStep1Distance, ref _longPartial1Done);
+				UpdateLongStop(close - _trailingStopDistance);
+				return;
+			}
+
+			if (_trailingStopDistance > 0m)
+				UpdateLongStop(close - _trailingStopDistance);
+		}
+		else
+		{
+			if (_trailingStep1Distance > 0m && close >= basePrice - _trailingStep1Distance)
+			{
+				var newStop = basePrice - (_trailingStep1Distance + _stopLossToFiboDistance);
+				UpdateLongStop(newStop);
+				return;
+			}
+
+			if (_trailingStep2Distance > 0m && close >= basePrice - _trailingStep2Distance)
+			{
+				var newStop = basePrice - (_trailingStep2Distance + _stopLossToFiboDistance);
+				UpdateLongStop(newStop);
+				return;
+			}
+
+			if (_trailingStep3Distance > 0m && close >= basePrice - _trailingStep3Distance)
+			{
+				var newStop = basePrice - (_trailingStep3Distance + _stopLossToFiboDistance);
+				UpdateLongStop(newStop);
+			}
+		}
+	}
+
+	private void ManageShortPosition(ICandleMessage candle)
+	{
+		if (_emaCrossedUp || _rsiCrossedUp)
+		{
+			ClosePosition();
+			ResetShortState();
+			return;
+		}
+
+		var vegasSlow = GetMaValue(_vegasSlowHistory, 0);
+		if (!vegasSlow.HasValue)
+			return;
+
+		var close = candle.ClosePrice;
+		var basePrice = vegasSlow.Value;
+
+		if (_tunnelCrossedDown)
+		{
+			if (_trailingStep3Distance > 0m && close <= basePrice - _trailingStep3Distance)
+			{
+				UpdateShortStop(close + _trailingStopDistance);
+				return;
+			}
+
+			if (_trailingStep2Distance > 0m && close <= basePrice - _trailingStep2Distance)
+			{
+				TryCloseShortPartial(PartialClose2Volume, basePrice - _trailingStep2Distance, ref _shortPartial2Done);
+				UpdateShortStop(close + _trailingStopDistance);
+				return;
+			}
+
+			if (_trailingStep1Distance > 0m && close <= basePrice - _trailingStep1Distance)
+			{
+				TryCloseShortPartial(PartialClose1Volume, basePrice - _trailingStep1Distance, ref _shortPartial1Done);
+				UpdateShortStop(close + _trailingStopDistance);
+				return;
+			}
+
+			if (_trailingStopDistance > 0m)
+				UpdateShortStop(close + _trailingStopDistance);
+		}
+		else
+		{
+			if (_trailingStep1Distance > 0m && close <= basePrice + _trailingStep1Distance)
+			{
+				var newStop = basePrice + (_trailingStep1Distance + _stopLossToFiboDistance);
+				UpdateShortStop(newStop);
+				return;
+			}
+
+			if (_trailingStep2Distance > 0m && close <= basePrice + _trailingStep2Distance)
+			{
+				var newStop = basePrice + (_trailingStep2Distance + _stopLossToFiboDistance);
+				UpdateShortStop(newStop);
+				return;
+			}
+
+			if (_trailingStep3Distance > 0m && close <= basePrice + _trailingStep3Distance)
+			{
+				var newStop = basePrice + (_trailingStep3Distance + _stopLossToFiboDistance);
+				UpdateShortStop(newStop);
+			}
+		}
+	}
+
+	private void TryCloseLongPartial(decimal volume, decimal referenceLevel, ref bool flag)
+	{
+		if (flag || volume <= 0m)
+			return;
+
+		if (Math.Abs(Position) <= volume)
+			return;
+
+		if (_longEntryPrice >= referenceLevel)
+			return;
+
+		SellMarket(volume);
+		flag = true;
+	}
+
+	private void TryCloseShortPartial(decimal volume, decimal referenceLevel, ref bool flag)
+	{
+		if (flag || volume <= 0m)
+			return;
+
+		if (Math.Abs(Position) <= volume)
+			return;
+
+		if (_shortEntryPrice <= referenceLevel)
+			return;
+
+		BuyMarket(volume);
+		flag = true;
+	}
+
+	private void UpdateLongStop(decimal newStopPrice)
+	{
+		if (newStopPrice <= 0m || Math.Abs(Position) <= 0m)
+			return;
+
+		if (_longStopOrder != null)
+		{
+			var minMove = GetMinimalStopMove();
+			if (newStopPrice <= _longStopPrice + minMove)
+				return;
+
+			CancelLongStop();
+		}
+
+		_longStopOrder = SellStop(Math.Abs(Position), newStopPrice);
+		_longStopPrice = newStopPrice;
+	}
+
+	private void UpdateShortStop(decimal newStopPrice)
+	{
+		if (newStopPrice <= 0m || Math.Abs(Position) <= 0m)
+			return;
+
+		if (_shortStopOrder != null)
+		{
+			var minMove = GetMinimalStopMove();
+			if (newStopPrice >= _shortStopPrice - minMove)
+				return;
+
+			CancelShortStop();
+		}
+
+		_shortStopOrder = BuyStop(Math.Abs(Position), newStopPrice);
+		_shortStopPrice = newStopPrice;
+	}
+
+	private void CancelLongStop()
+	{
+		if (_longStopOrder != null)
+		{
+			CancelOrder(_longStopOrder);
+			_longStopOrder = null;
+			_longStopPrice = 0m;
+		}
+	}
+
+	private void CancelShortStop()
+	{
+		if (_shortStopOrder != null)
+		{
+			CancelOrder(_shortStopOrder);
+			_shortStopOrder = null;
+			_shortStopPrice = 0m;
+		}
+	}
+
+	private void ResetLongState()
+	{
+		_longPartial1Done = false;
+		_longPartial2Done = false;
+		_longEntryPrice = 0m;
+		CancelLongStop();
+	}
+
+	private void ResetShortState()
+	{
+		_shortPartial1Done = false;
+		_shortPartial2Done = false;
+		_shortEntryPrice = 0m;
+		CancelShortStop();
+	}
+
+	private bool TryEnterLong(ICandleMessage candle)
+	{
+		if (!_emaCrossedUp || !_rsiCrossedUp)
+			return false;
+
+		var currentCandle = GetCandle(0);
+		var previousCandle = GetCandle(1);
+		var vegasSlow = GetMaValue(_vegasSlowHistory, 0);
+
+		if (currentCandle == null || previousCandle == null || !vegasSlow.HasValue)
+			return false;
+
+		var basePrice = vegasSlow.Value;
+		var bullishBreak = currentCandle.Close >= basePrice + _tunnelBandWidthDistance &&
+		currentCandle.Close <= basePrice + _tunnelSafeZoneDistance &&
+		currentCandle.Open < currentCandle.Close;
+
+		var pullbackBreak = currentCandle.Close <= basePrice - _tunnelBandWidthDistance;
+
+		if (!bullishBreak && !pullbackBreak)
+			return false;
+
+		if (Position < 0m)
+		{
+			ClosePosition();
+			ResetShortState();
+			return true;
+		}
+
+		if (Position > 0m || TradeVolume <= 0m)
+			return false;
+
+		BuyMarket(TradeVolume);
+		_longEntryPrice = candle.ClosePrice;
+		ResetShortState();
+
+		if (_stopLossDistance > 0m)
+			UpdateLongStop(candle.ClosePrice - _stopLossDistance);
+
+		return true;
+	}
+
+	private bool TryEnterShort(ICandleMessage candle)
+	{
+		if (!_emaCrossedDown || !_rsiCrossedDown)
+			return false;
+
+		var currentCandle = GetCandle(0);
+		var previousCandle = GetCandle(1);
+		var vegasSlow = GetMaValue(_vegasSlowHistory, 0);
+
+		if (currentCandle == null || previousCandle == null || !vegasSlow.HasValue)
+			return false;
+
+		var basePrice = vegasSlow.Value;
+		var bearishBreak = currentCandle.Close <= basePrice - _tunnelBandWidthDistance &&
+		currentCandle.Close >= basePrice - _tunnelSafeZoneDistance &&
+		currentCandle.Open > currentCandle.Close;
+
+		var pushDownBreak = currentCandle.Close >= basePrice + _tunnelBandWidthDistance;
+
+		if (!bearishBreak && !pushDownBreak)
+			return false;
+
+		if (Position > 0m)
+		{
+			ClosePosition();
+			ResetLongState();
+			return true;
+		}
+
+		if (Position < 0m || TradeVolume <= 0m)
+			return false;
+
+		SellMarket(TradeVolume);
+		_shortEntryPrice = candle.ClosePrice;
+		ResetLongState();
+
+		if (_stopLossDistance > 0m)
+			UpdateShortStop(candle.ClosePrice + _stopLossDistance);
+
+		return true;
+	}
+
+	private void UpdateCrossStates()
+	{
+		var fastCurrent = GetMaValue(_fastHistory, 0);
+		var fastPrev = GetMaValue(_fastHistory, 1);
+		var slowCurrent = GetMaValue(_slowHistory, 0);
+		var slowPrev = GetMaValue(_slowHistory, 1);
+
+		if (fastCurrent.HasValue && fastPrev.HasValue && slowCurrent.HasValue && slowPrev.HasValue)
+		{
+			if (fastCurrent.Value > slowCurrent.Value && fastPrev.Value < slowPrev.Value)
+			{
+				_emaCrossedUp = true;
+				_emaCrossedDown = false;
+			}
+			else if (fastCurrent.Value < slowCurrent.Value && fastPrev.Value > slowPrev.Value)
+			{
+				_emaCrossedUp = false;
+				_emaCrossedDown = true;
+			}
+		}
+
+		if (_emaCrossedUp)
+		{
+			_emaCrossUpTimer++;
+			if (_emaCrossUpTimer >= CrossEffectiveBars)
+			{
+				_emaCrossedUp = false;
+				_emaCrossUpTimer = 0;
+			}
+		}
+		else
+		{
+			_emaCrossUpTimer = 0;
+		}
+
+		if (_emaCrossedDown)
+		{
+			_emaCrossDownTimer++;
+			if (_emaCrossDownTimer >= CrossEffectiveBars)
+			{
+				_emaCrossedDown = false;
+				_emaCrossDownTimer = 0;
+			}
+		}
+		else
+		{
+			_emaCrossDownTimer = 0;
+		}
+
+		var rsiCurrent = GetSeriesValue(_rsiHistory, 0);
+		var rsiPrev = GetSeriesValue(_rsiHistory, 1);
+
+		if (rsiCurrent.HasValue && rsiPrev.HasValue)
+		{
+			if (rsiCurrent.Value > FiftyLevel && rsiPrev.Value < FiftyLevel)
+			{
+				_rsiCrossedUp = true;
+				_rsiCrossedDown = false;
+			}
+			else if (rsiCurrent.Value < FiftyLevel && rsiPrev.Value > FiftyLevel)
+			{
+				_rsiCrossedUp = false;
+				_rsiCrossedDown = true;
+			}
+		}
+
+		if (_rsiCrossedUp)
+		{
+			_rsiCrossUpTimer++;
+			if (_rsiCrossUpTimer >= CrossEffectiveBars)
+			{
+				_rsiCrossedUp = false;
+				_rsiCrossUpTimer = 0;
+			}
+		}
+		else
+		{
+			_rsiCrossUpTimer = 0;
+		}
+
+		if (_rsiCrossedDown)
+		{
+			_rsiCrossDownTimer++;
+			if (_rsiCrossDownTimer >= CrossEffectiveBars)
+			{
+				_rsiCrossedDown = false;
+				_rsiCrossDownTimer = 0;
+			}
+		}
+		else
+		{
+			_rsiCrossDownTimer = 0;
+		}
+
+		var currentCandle = GetCandle(0);
+		var previousCandle = GetCandle(1);
+		var vegasFast = GetMaValue(_vegasFastHistory, 0);
+		var vegasSlow = GetMaValue(_vegasSlowHistory, 0);
+
+		if (currentCandle != null && previousCandle != null && vegasFast.HasValue && vegasSlow.HasValue)
+		{
+			var aboveTunnel = currentCandle.Close > vegasFast.Value && currentCandle.Close > vegasSlow.Value;
+			var belowTunnel = currentCandle.Close < vegasFast.Value && currentCandle.Close < vegasSlow.Value;
+			var prevAbove = previousCandle.Close > vegasFast.Value || previousCandle.Close > vegasSlow.Value;
+			var prevBelow = previousCandle.Close < vegasFast.Value || previousCandle.Close < vegasSlow.Value;
+
+			if (aboveTunnel && prevBelow)
+			{
+				_tunnelCrossedUp = true;
+				_tunnelCrossedDown = false;
+			}
+			else if (belowTunnel && prevAbove)
+			{
+				_tunnelCrossedUp = false;
+				_tunnelCrossedDown = true;
+			}
+		}
+	}
+
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceType type)
+	{
+		return type switch
+		{
+			AppliedPriceType.Open => candle.OpenPrice,
+			AppliedPriceType.High => candle.HighPrice,
+			AppliedPriceType.Low => candle.LowPrice,
+			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			_ => candle.ClosePrice,
+		};
+	}
+
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageType type, int length)
+	{
+		return type switch
+		{
+			MovingAverageType.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageType.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageType.LinearWeighted => new WeightedMovingAverage { Length = length },
+			_ => new ExponentialMovingAverage { Length = length },
+		};
+	}
+
+	private void AddToHistory(List<decimal> history, decimal value)
+	{
+		history.Add(value);
+		if (history.Count > HistoryLimit)
+			history.RemoveAt(0);
+	}
+
+	private void AddCandleToHistory(CandleSnapshot snapshot)
+	{
+		_candleHistory.Add(snapshot);
+		if (_candleHistory.Count > HistoryLimit)
+			_candleHistory.RemoveAt(0);
+	}
+
+	private decimal? GetSeriesValue(List<decimal> values, int offset)
+	{
+		var index = values.Count - 1 - offset;
+		if (index < 0)
+			return null;
+
+		return values[index];
+	}
+
+	private decimal? GetMaValue(List<decimal> values, int offset)
+	{
+		var shift = Math.Max(0, MaShift);
+		var index = values.Count - 1 - shift - offset;
+		if (index < 0)
+			return null;
+
+		return values[index];
+	}
+
+	private CandleSnapshot? GetCandle(int offset)
+	{
+		var index = _candleHistory.Count - 1 - offset;
+		if (index < 0)
+			return null;
+
+		return _candleHistory[index];
+	}
+
+	private bool IsTradingSession(DateTimeOffset time)
+	{
+		var hour = time.Hour;
+
+		var london = EnableLondonSession && hour >= 7 && hour <= 16;
+		var newYork = EnableNewYorkSession && hour >= 12 && hour <= 21;
+		var tokyo = EnableTokyoSession && hour >= 0 && hour <= 8;
+		var lateHour = hour >= 23;
+
+		return london || newYork || tokyo || lateHour;
+	}
+
+	private decimal GetMinimalStopMove()
+	{
+		var step = Security?.PriceStep ?? 0m;
+		if (step > 0m)
+			return step;
+
+		return _pipSize > 0m ? _pipSize / 10m : 0.00001m;
+	}
+
+	private readonly struct CandleSnapshot
+	{
+		public CandleSnapshot(decimal open, decimal high, decimal low, decimal close)
+		{
+			Open = open;
+			High = high;
+			Low = low;
+			Close = close;
+		}
+
+		public decimal Open { get; }
+		public decimal High { get; }
+		public decimal Low { get; }
+		public decimal Close { get; }
+	}
 }
 

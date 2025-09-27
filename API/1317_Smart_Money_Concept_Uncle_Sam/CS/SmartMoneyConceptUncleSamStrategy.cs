@@ -235,13 +235,3 @@ public class SmartMoneyConceptUncleSamStrategy : Strategy
 		}
 	}
 }
-
-public enum MovingAverageTypeEnum
-{
-	SMA,
-	EMA,
-	DEMA,
-	TEMA,
-	WMA,
-	VWMA
-}

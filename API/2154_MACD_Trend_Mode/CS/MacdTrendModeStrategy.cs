@@ -21,9 +21,9 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-	/// <summary>
-	/// MACD strategy with selectable trend detection modes.
-	/// </summary>
+/// <summary>
+/// MACD strategy with selectable trend detection modes.
+/// </summary>
 public class MacdTrendModeStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastLength;
@@ -73,174 +73,155 @@ public class MacdTrendModeStrategy : Strategy
 	/// Initializes <see cref="MacdTrendModeStrategy"/>.
 	/// </summary>
 	public MacdTrendModeStrategy()
-{
-	_fastLength = Param(nameof(FastLength), 12)
-	.SetGreaterThanZero()
-	.SetDisplay("Fast Length", "Fast EMA period", "MACD");
+	{
+		_fastLength = Param(nameof(FastLength), 12)
+		.SetGreaterThanZero()
+		.SetDisplay("Fast Length", "Fast EMA period", "MACD");
 
-	_slowLength = Param(nameof(SlowLength), 26)
-	.SetGreaterThanZero()
-	.SetDisplay("Slow Length", "Slow EMA period", "MACD");
+		_slowLength = Param(nameof(SlowLength), 26)
+		.SetGreaterThanZero()
+		.SetDisplay("Slow Length", "Slow EMA period", "MACD");
 
-	_signalLength = Param(nameof(SignalLength), 9)
-	.SetGreaterThanZero()
-	.SetDisplay("Signal Length", "Signal line period", "MACD");
+		_signalLength = Param(nameof(SignalLength), 9)
+		.SetGreaterThanZero()
+		.SetDisplay("Signal Length", "Signal line period", "MACD");
 
-	_trendMode = Param(nameof(TrendMode), TrendMode.Cloud)
-	.SetDisplay("Trend Mode", "Trend detection mode", "General");
+		_trendMode = Param(nameof(TrendMode), Strategies.TrendMode.Cloud)
+		.SetDisplay("Trend Mode", "Trend detection mode", "General");
 
 
-	_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-	.SetDisplay("Candle Type", "Type of candles", "General");
-}
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		.SetDisplay("Candle Type", "Type of candles", "General");
+	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-	return [(Security, CandleType)];
-}
+	{
+		return [(Security, CandleType)];
+	}
 
 	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
-{
-	base.OnStarted(time);
+	{
+		base.OnStarted(time);
 
-	var macd = new MovingAverageConvergenceDivergenceSignal
-{
-	Macd =
+		var macd = new MovingAverageConvergenceDivergenceSignal
+		{
+			Macd =
 {
 	ShortMa = { Length = FastLength },
 	LongMa = { Length = SlowLength },
 },
-	SignalMa = { Length = SignalLength }
-};
+			SignalMa = { Length = SignalLength }
+		};
 
-	var subscription = SubscribeCandles(CandleType);
-	subscription
-	.BindEx(macd, ProcessCandle)
-	.Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+		.BindEx(macd, ProcessCandle)
+		.Start();
 
-	var area = CreateChartArea();
-	if (area != null)
-{
-	DrawCandles(area, subscription);
-	DrawIndicator(area, macd);
-	DrawOwnTrades(area);
-}
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, macd);
+			DrawOwnTrades(area);
+		}
 
-	StartProtection();
-}
+		StartProtection();
+	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
-{
-	if (candle.State != CandleStates.Finished)
-	return;
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-	var macd = macdTyped.Macd;
-	var signal = macdTyped.Signal;
-	var hist = macd - signal;
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+		var macd = macdTyped.Macd;
+		var signal = macdTyped.Signal;
+		var hist = macd - signal;
 
-	var buyOpen = false;
-	var sellOpen = false;
-	var buyClose = false;
-	var sellClose = false;
+		var buyOpen = false;
+		var sellOpen = false;
+		var buyClose = false;
+		var sellClose = false;
 
-	switch (TrendMode)
-{
-	case Strategies.TrendMode.Histogram:
-	if (_hasPrevHist)
-{
-	if (_hasPrevPrevHist)
-{
-	if (_prevHist < _prevPrevHist)
-{
-	if (hist > _prevHist)
-	buyOpen = true;
-	sellClose = true;
-}
-	if (_prevHist > _prevPrevHist)
-{
-	if (hist < _prevHist)
-	sellOpen = true;
-	buyClose = true;
-}
-}
-	_prevPrevHist = _prevHist;
-}
-	_prevHist = hist;
-	_hasPrevHist = true;
-	break;
+		switch (TrendMode)
+		{
+			case Strategies.TrendMode.Histogram:
+				if (_hasPrevHist)
+				{
+					if (_hasPrevPrevHist)
+					{
+						if (_prevHist < _prevPrevHist)
+						{
+							if (hist > _prevHist)
+								buyOpen = true;
+							sellClose = true;
+						}
+						if (_prevHist > _prevPrevHist)
+						{
+							if (hist < _prevHist)
+								sellOpen = true;
+							buyClose = true;
+						}
+					}
+					_prevPrevHist = _prevHist;
+				}
+				_prevHist = hist;
+				_hasPrevHist = true;
+				break;
 
-	case Strategies.TrendMode.Cloud:
-	if (_hasPrevLines)
-{
-	if (_prevMacd > _prevSignal)
-{
-	if (macd < signal)
-	buyOpen = true;
-	sellClose = true;
-}
-	else if (_prevMacd < _prevSignal)
-{
-	if (macd > signal)
-	sellOpen = true;
-	buyClose = true;
-}
-}
-	_prevMacd = macd;
-	_prevSignal = signal;
-	_hasPrevLines = true;
-	break;
+			case Strategies.TrendMode.Cloud:
+				if (_hasPrevLines)
+				{
+					if (_prevMacd > _prevSignal)
+					{
+						if (macd < signal)
+							buyOpen = true;
+						sellClose = true;
+					}
+					else if (_prevMacd < _prevSignal)
+					{
+						if (macd > signal)
+							sellOpen = true;
+						buyClose = true;
+					}
+				}
+				_prevMacd = macd;
+				_prevSignal = signal;
+				_hasPrevLines = true;
+				break;
 
-	case Strategies.TrendMode.Zero:
-	if (_hasPrevZeroHist)
-{
-	if (_prevZeroHist > 0m)
-{
-	if (hist <= 0m)
-	buyOpen = true;
-	sellClose = true;
-}
-	else if (_prevZeroHist < 0m)
-{
-	if (hist >= 0m)
-	sellOpen = true;
-	buyClose = true;
-}
-}
-	_prevZeroHist = hist;
-	_hasPrevZeroHist = true;
-	break;
-}
+			case Strategies.TrendMode.Zero:
+				if (_hasPrevZeroHist)
+				{
+					if (_prevZeroHist > 0m)
+					{
+						if (hist <= 0m)
+							buyOpen = true;
+						sellClose = true;
+					}
+					else if (_prevZeroHist < 0m)
+					{
+						if (hist >= 0m)
+							sellOpen = true;
+						buyClose = true;
+					}
+				}
+				_prevZeroHist = hist;
+				_hasPrevZeroHist = true;
+				break;
+		}
 
-	if (sellClose && Position < 0)
-	BuyMarket(-Position);
-	if (buyClose && Position > 0)
-	SellMarket(Position);
+		if (sellClose && Position < 0)
+			BuyMarket(-Position);
+		if (buyClose && Position > 0)
+			SellMarket(Position);
 
-	if (buyOpen && Position <= 0)
-	BuyMarket(Volume + Math.Abs(Position));
-	if (sellOpen && Position >= 0)
-	SellMarket(Volume + Position);
-}
-}
-
-	/// <summary>
-	/// Available trend detection modes.
-	/// </summary>
-public enum TrendMode
-{
-	/// <summary>
-	/// Use MACD histogram slope reversals.
-	/// </summary>
-	Histogram = 1,
-	/// <summary>
-	/// Use MACD line and signal line cloud crossover.
-	/// </summary>
-	Cloud,
-	/// <summary>
-	/// Use MACD histogram zero line cross.
-	/// </summary>
-	Zero
+		if (buyOpen && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		if (sellOpen && Position >= 0)
+			SellMarket(Volume + Position);
+	}
 }

@@ -587,6 +587,6 @@ public class CmPanelStrategy : Strategy
 	}
 
 	private static bool IsFinal(Order order)
-	=> order.State == OrderStates.Done || order.State == OrderStates.Failed || order.State == OrderStates.Canceled || order.State == OrderStates.Stopped;
+		=> order.State.IsFinal();
 }
 

@@ -345,29 +345,3 @@ public class VrBuchStrategy : Strategy
 		};
 	}
 }
-
-/// <summary>
-/// Moving average smoothing methods mirroring the MetaTrader options.
-/// </summary>
-public enum MovingAverageMethod
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Exponential,
-
-	/// <summary>
-	/// Smoothed (RMA/SMMA) moving average.
-	/// </summary>
-	Smoothed,
-
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	Weighted
-}

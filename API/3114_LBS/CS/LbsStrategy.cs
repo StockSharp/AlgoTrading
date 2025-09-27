@@ -190,11 +190,11 @@ public class LbsStrategy : Strategy
 		base.OnStarted(time);
 
 		if (TrailingStopPips > 0 && TrailingStepPips <= 0)
-		throw new InvalidOperationException("Trailing step must be positive when trailing stop is enabled.");
+			throw new InvalidOperationException("Trailing step must be positive when trailing stop is enabled.");
 
 		_pipSize = CalculatePipSize();
 		if (_pipSize <= 0m)
-		_pipSize = Security?.PriceStep ?? 1m;
+			_pipSize = Security?.PriceStep ?? 1m;
 
 		var candleSubscription = SubscribeCandles(CandleType);
 		candleSubscription.Bind(ProcessCandle).Start();
@@ -208,30 +208,30 @@ public class LbsStrategy : Strategy
 		{
 			var bid = (decimal)bidValue;
 			if (bid > 0m)
-			_bestBid = bid;
+				_bestBid = bid;
 		}
 
 		if (message.Changes.TryGetValue(Level1Fields.BestAskPrice, out var askValue))
 		{
 			var ask = (decimal)askValue;
 			if (ask > 0m)
-			_bestAsk = ask;
+				_bestAsk = ask;
 		}
 
 		EnsureInitialStop();
 
 		if (TrailingStopPips <= 0)
-		return;
+			return;
 
 		decimal? price = null;
 
 		if (Position > 0 && _bestBid is decimal bid)
-		price = bid;
+			price = bid;
 		else if (Position < 0 && _bestAsk is decimal ask)
-		price = ask;
+			price = ask;
 
 		if (price is decimal validPrice && validPrice > 0m)
-		ApplyTrailing(validPrice);
+			ApplyTrailing(validPrice);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -239,19 +239,19 @@ public class LbsStrategy : Strategy
 		EnsureInitialStop();
 
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
 		EnsureInitialStop();
 
 		if (Position != 0m)
-		return;
+			return;
 
 		var hour = candle.CloseTime.Hour;
 		if (!IsTradingHour(hour))
-		return;
+			return;
 
 		var ask = _bestAsk ?? candle.ClosePrice;
 		var bid = _bestBid ?? candle.ClosePrice;
@@ -330,7 +330,7 @@ public class LbsStrategy : Strategy
 		}
 
 		if (_stopOrder != null)
-		return;
+			return;
 
 		if (Position > 0 && _pendingLongStopPrice is decimal longStop && longStop > 0m)
 		{
@@ -359,40 +359,40 @@ public class LbsStrategy : Strategy
 		var trailingStep = TrailingStepPips * _pipSize;
 
 		if (trailingStop <= 0m || trailingStep <= 0m)
-		return;
+			return;
 
 		if (Position > 0)
 		{
 			var profit = marketPrice - PositionPrice;
 			if (profit <= trailingStop + trailingStep)
-			return;
+				return;
 
 			var targetPrice = AlignPrice(marketPrice - trailingStop, false);
 			if (targetPrice <= 0m)
-			return;
+				return;
 
 			if (_stopOrder == null || !_stopForLong || _stopPrice is null || targetPrice > _stopPrice.Value + _pipSize / 2m)
-			PlaceProtectiveStop(Sides.Sell, targetPrice, positionVolume, true);
+				PlaceProtectiveStop(Sides.Sell, targetPrice, positionVolume, true);
 		}
 		else
 		{
 			var profit = PositionPrice - marketPrice;
 			if (profit <= trailingStop + trailingStep)
-			return;
+				return;
 
 			var targetPrice = AlignPrice(marketPrice + trailingStop, true);
 			if (targetPrice <= 0m)
-			return;
+				return;
 
 			if (_stopOrder == null || _stopForLong || _stopPrice is null || targetPrice < _stopPrice.Value - _pipSize / 2m)
-			PlaceProtectiveStop(Sides.Buy, targetPrice, positionVolume, false);
+				PlaceProtectiveStop(Sides.Buy, targetPrice, positionVolume, false);
 		}
 	}
 
 	private void PlaceProtectiveStop(Sides side, decimal price, decimal volume, bool forLong)
 	{
 		if (price <= 0m || volume <= 0m)
-		return;
+			return;
 
 		CancelOrderIfActive(_stopOrder);
 
@@ -407,11 +407,11 @@ public class LbsStrategy : Strategy
 	private decimal? GetStopPriceForLong(decimal entryPrice, decimal stopLevel)
 	{
 		if (StopLossPips <= 0)
-		return null;
+			return null;
 
 		var stopDistance = StopLossPips * _pipSize;
 		if (stopDistance <= 0m)
-		return null;
+			return null;
 
 		var distance = Math.Max(stopDistance, stopLevel);
 		var price = entryPrice - distance;
@@ -422,11 +422,11 @@ public class LbsStrategy : Strategy
 	private decimal? GetStopPriceForShort(decimal entryPrice, decimal stopLevel)
 	{
 		if (StopLossPips <= 0)
-		return null;
+			return null;
 
 		var stopDistance = StopLossPips * _pipSize;
 		if (stopDistance <= 0m)
-		return null;
+			return null;
 
 		var distance = Math.Max(stopDistance, stopLevel);
 		var price = entryPrice + distance;
@@ -437,7 +437,7 @@ public class LbsStrategy : Strategy
 	private decimal CalculateOrderVolume(decimal entryPrice, decimal? stopPrice)
 	{
 		if (entryPrice <= 0m)
-		return 0m;
+			return 0m;
 
 		return MoneyMode switch
 		{
@@ -450,36 +450,36 @@ public class LbsStrategy : Strategy
 	private decimal CalculateRiskVolume(decimal entryPrice, decimal? stopPrice)
 	{
 		if (stopPrice is null)
-		return 0m;
+			return 0m;
 
 		var riskPercent = VolumeOrRisk;
 		if (riskPercent <= 0m)
-		return 0m;
+			return 0m;
 
 		var portfolioValue = GetPortfolioValue();
 		if (portfolioValue <= 0m)
-		return 0m;
+			return 0m;
 
 		var riskAmount = portfolioValue * riskPercent / 100m;
 		if (riskAmount <= 0m)
-		return 0m;
+			return 0m;
 
 		var stopDistance = Math.Abs(entryPrice - stopPrice.Value);
 		if (stopDistance <= 0m)
-		return 0m;
+			return 0m;
 
 		var priceStep = Security?.PriceStep ?? 0m;
 		if (priceStep <= 0m)
-		priceStep = 1m;
+			priceStep = 1m;
 
 		var stepPrice = Security?.StepPrice ?? priceStep;
 		var steps = stopDistance / priceStep;
 		if (steps <= 0m)
-		return 0m;
+			return 0m;
 
 		var riskPerVolume = steps * stepPrice;
 		if (riskPerVolume <= 0m)
-		return 0m;
+			return 0m;
 
 		var rawVolume = riskAmount / riskPerVolume;
 		return NormalizeVolume(rawVolume);
@@ -488,7 +488,7 @@ public class LbsStrategy : Strategy
 	private decimal NormalizeVolume(decimal volume)
 	{
 		if (volume <= 0m)
-		return 0m;
+			return 0m;
 
 		if (Security?.VolumeStep is decimal step && step > 0m)
 		{
@@ -497,10 +497,10 @@ public class LbsStrategy : Strategy
 		}
 
 		if (Security?.VolumeMin is decimal min && min > 0m && volume < min)
-		volume = min;
+			volume = min;
 
 		if (Security?.VolumeMax is decimal max && max > 0m && volume > max)
-		volume = max;
+			volume = max;
 
 		return volume;
 	}
@@ -509,7 +509,7 @@ public class LbsStrategy : Strategy
 	{
 		var current = Portfolio?.CurrentValue ?? 0m;
 		if (current > 0m)
-		return current;
+			return current;
 
 		var begin = Portfolio?.BeginValue ?? 0m;
 		return begin > 0m ? begin : current;
@@ -519,7 +519,7 @@ public class LbsStrategy : Strategy
 	{
 		var step = Security?.PriceStep ?? 0m;
 		if (step <= 0m)
-		return 1m;
+			return 1m;
 
 		var decimals = Security?.Decimals ?? 0;
 		return decimals is 3 or 5 ? step * 10m : step;
@@ -529,7 +529,7 @@ public class LbsStrategy : Strategy
 	{
 		var step = Security?.PriceStep ?? 0m;
 		if (step <= 0m)
-		return price;
+			return price;
 
 		var ratio = price / step;
 		var rounded = roundUp ? Math.Ceiling(ratio) : Math.Floor(ratio);
@@ -539,13 +539,13 @@ public class LbsStrategy : Strategy
 	private bool IsTradingHour(int hour)
 	{
 		if (Hour1 > 0 && hour == Hour1)
-		return true;
+			return true;
 
 		if (Hour2 > 0 && hour == Hour2)
-		return true;
+			return true;
 
 		if (Hour3 > 0 && hour == Hour3)
-		return true;
+			return true;
 
 		return false;
 	}
@@ -553,10 +553,10 @@ public class LbsStrategy : Strategy
 	private void CancelOrderIfActive(Order order)
 	{
 		if (order is null)
-		return;
+			return;
 
 		if (order.State == OrderStates.Active)
-		CancelOrder(order);
+			CancelOrder(order);
 	}
 
 	private void ResetStop()
@@ -578,7 +578,7 @@ public class LbsStrategy : Strategy
 
 		var order = trade.Order;
 		if (order is null)
-		return;
+			return;
 
 		if (order == _buyStopOrder)
 		{
@@ -599,27 +599,16 @@ public class LbsStrategy : Strategy
 	{
 		base.OnOrderChanged(order);
 
-		if (order == _buyStopOrder && IsFinal(order.State))
-		_buyStopOrder = null;
-		else if (order == _sellStopOrder && IsFinal(order.State))
-		_sellStopOrder = null;
-		else if (order == _stopOrder && IsFinal(order.State))
+		if (order == _buyStopOrder && order.State.IsFinal())
+			_buyStopOrder = null;
+		else if (order == _sellStopOrder && order.State.IsFinal())
+			_sellStopOrder = null;
+		else if (order == _stopOrder && order.State.IsFinal())
 		{
 			_stopOrder = null;
 			_stopPrice = null;
 			_stopForLong = false;
 		}
-	}
-
-	private static bool IsFinal(OrderStates state)
-	{
-		return state switch
-		{
-			OrderStates.Done => true,
-			OrderStates.Failed => true,
-			OrderStates.Canceled => true,
-			_ => false
-		};
 	}
 }
 
