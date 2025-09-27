@@ -15,7 +15,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ChampionStrategy : Strategy
 {
-	private const int PendingOrderCount = 3;
+	private readonly StrategyParam<int> _pendingOrderCount;
 
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<int> _stopLossPoints;
@@ -78,6 +78,10 @@ public class ChampionStrategy : Strategy
 		_repriceDistancePoints = Param(nameof(RepriceDistancePoints), 20m)
 		.SetGreaterThanZero()
 		.SetDisplay("Reprice Distance (points)", "Distance that triggers stop order repricing when the spread widens.", "Orders");
+
+		_pendingOrderCount = Param(nameof(PendingOrderCount), 3)
+		.SetGreaterThanZero()
+		.SetDisplay("Pending Orders", "Number of stop entries placed after each signal.", "Orders");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Time-frame used to calculate the RSI signal.", "Data");
@@ -159,6 +163,15 @@ public class ChampionStrategy : Strategy
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Number of stop entries placed after each RSI signal.
+	/// </summary>
+	public int PendingOrderCount
+	{
+		get => _pendingOrderCount.Value;
+		set => _pendingOrderCount.Value = value;
 	}
 
 	/// <inheritdoc />
