@@ -11,7 +11,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ESmartTrallingStrategy : Strategy
 {
-	private const decimal DefaultPartialStep = 0.1m;
+	private readonly StrategyParam<decimal> _defaultPartialStep;
 
 	private readonly StrategyParam<bool> _useCloseOneThird;
 	private readonly StrategyParam<decimal> _levelProfit1;
@@ -73,6 +73,10 @@ public class ESmartTrallingStrategy : Strategy
 		_trailingStep = Param(nameof(TrailingStep), 5m)
 		.SetDisplay("Trailing Step (points)", "Additional favorable movement required before moving the trailing stop again", "Trailing")
 		.SetCanOptimize(true);
+
+		_defaultPartialStep = Param(nameof(DefaultPartialStep), 0.1m)
+		.SetGreaterThanZero()
+		.SetDisplay("Default Volume Step", "Fallback volume increment used when the security lacks a volume step", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Candle type providing price updates for the trailing logic", "General");
@@ -157,6 +161,15 @@ public class ESmartTrallingStrategy : Strategy
 	{
 		get => _trailingStep.Value;
 		set => _trailingStep.Value = value;
+	}
+
+	/// <summary>
+	/// Default volume step used when the security does not define one.
+	/// </summary>
+	public decimal DefaultPartialStep
+	{
+		get => _defaultPartialStep.Value;
+		set => _defaultPartialStep.Value = value;
 	}
 
 	/// <summary>

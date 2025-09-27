@@ -15,7 +15,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class VeryBlondieSystemStrategy : Strategy
 {
-	private const int GridOrderCount = 4;
+	private readonly StrategyParam<int> _gridOrderCount;
 
 	private readonly StrategyParam<int> _periodLength;
 	private readonly StrategyParam<decimal> _limitPoints;
@@ -60,6 +60,10 @@ public class VeryBlondieSystemStrategy : Strategy
 		.SetDisplay("Grid Step", "Distance in points between consecutive limit orders", "Orders")
 		.SetRange(0m, 100_000m)
 		.SetCanOptimize(true);
+
+		_gridOrderCount = Param(nameof(GridOrderCount), 4)
+		.SetGreaterThanZero()
+		.SetDisplay("Grid Orders", "Number of layered limit orders per side", "Orders");
 
 		_profitTarget = Param(nameof(ProfitTarget), 40m)
 		.SetDisplay("Profit Target", "Floating profit target in account currency", "Risk")
@@ -131,6 +135,15 @@ public class VeryBlondieSystemStrategy : Strategy
 	{
 		get => _pointValue.Value;
 		set => _pointValue.Value = value;
+	}
+
+	/// <summary>
+	/// Number of grid orders placed on each side of the market.
+	/// </summary>
+	public int GridOrderCount
+	{
+		get => _gridOrderCount.Value;
+		set => _gridOrderCount.Value = value;
 	}
 
 	/// <summary>
