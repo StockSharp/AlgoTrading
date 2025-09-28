@@ -19,9 +19,9 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class FiveMaMultiTimeframeStrategy : Strategy
 {
-private readonly StrategyParam<decimal> _weight;
+	private readonly StrategyParam<decimal> _weight;
 
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<DataType> _higherTimeframe1;
 	private readonly StrategyParam<DataType> _higherTimeframe2;
 	private readonly StrategyParam<int> _firstPeriod;
@@ -30,7 +30,7 @@ private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _fourthPeriod;
 	private readonly StrategyParam<int> _fifthPeriod;
 	private readonly StrategyParam<int> _openLevel;
-private readonly StrategyParam<int> _closeLevel;
+	private readonly StrategyParam<int> _closeLevel;
 
 	private readonly TimeframeState _primaryState = new(true);
 	private readonly TimeframeState _secondaryState = new(false);
@@ -47,14 +47,14 @@ private readonly StrategyParam<int> _closeLevel;
 	/// <summary>
 	/// Initializes a new instance of <see cref="FiveMaMultiTimeframeStrategy"/>.
 	/// </summary>
-public FiveMaMultiTimeframeStrategy()
-{
-_weight = Param(nameof(Weight), 12.5m)
-.SetGreaterThanZero()
-.SetDisplay("Weight", "Multiplier applied to the aggregated timeframe score.", "Signals");
+	public FiveMaMultiTimeframeStrategy()
+	{
+		_weight = Param(nameof(Weight), 12.5m)
+		.SetGreaterThanZero()
+		.SetDisplay("Weight", "Multiplier applied to the aggregated timeframe score.", "Signals");
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Primary TF", "Primary candle timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+					.SetDisplay("Primary TF", "Primary candle timeframe", "General");
 
 		_higherTimeframe1 = Param(nameof(HigherTimeframe1), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Higher TF1", "First higher candle timeframe", "General");
@@ -89,19 +89,19 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Close Level", "Signal grade required to close opposite trades", "Trading");
 	}
 
-/// <summary>
-/// Scaling multiplier applied to the aggregated score.
-/// </summary>
-public decimal Weight
-{
-get => _weight.Value;
-set => _weight.Value = value;
-}
+	/// <summary>
+	/// Scaling multiplier applied to the aggregated score.
+	/// </summary>
+	public decimal Weight
+	{
+		get => _weight.Value;
+		set => _weight.Value = value;
+	}
 
-/// <summary>
-/// Primary candle type used for signals.
-/// </summary>
-public DataType CandleType
+	/// <summary>
+	/// Primary candle type used for signals.
+	/// </summary>
+	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;

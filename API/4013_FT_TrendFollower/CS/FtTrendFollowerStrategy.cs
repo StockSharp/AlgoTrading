@@ -44,7 +44,7 @@ public class FtTrendFollowerStrategy : Strategy
 	private decimal?[] _gmmaPreviousValues = Array.Empty<decimal?>();
 	private ExponentialMovingAverage _emaFast = null!;
 	private ExponentialMovingAverage _emaSlow = null!;
-	private LaguerreFilter _laguerre = null!;
+	private AdaptiveLaguerreFilter _laguerre = null!;
 	private MovingAverageConvergenceDivergence _macd = null!;
 	private HullMovingAverage _hma = null!;
 	private SimpleMovingAverage _channelHigh = null!;
@@ -372,7 +372,7 @@ public class FtTrendFollowerStrategy : Strategy
 		_gmmaPreviousValues = new decimal?[_gmmaIndicators.Length];
 		_emaFast = new ExponentialMovingAverage { Length = FastSignalLength };
 		_emaSlow = new ExponentialMovingAverage { Length = SlowSignalLength };
-		_laguerre = new LaguerreFilter { Gamma = LaguerreGamma };
+		_laguerre = new AdaptiveLaguerreFilter { Gamma = LaguerreGamma };
 		_macd = new MovingAverageConvergenceDivergence
 		{
 			ShortMa = { Length = 5 },

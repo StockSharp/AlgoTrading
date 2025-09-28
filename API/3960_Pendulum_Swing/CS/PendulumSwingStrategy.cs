@@ -43,8 +43,8 @@ public class PendulumSwingStrategy : Strategy
 	private decimal _initialEquity;
 	private decimal _takeProfitMoney;
 	private decimal _stopLossMoney;
-	private IMarketDataSubscription _tradingSubscription;
-	private IMarketDataSubscription _dailySubscription;
+	private ISubscriptionHandler<ICandleMessage> _tradingSubscription;
+	private ISubscriptionHandler<ICandleMessage> _dailySubscription;
 
 	/// <summary>
 	/// Initializes a new instance of the strategy.
@@ -280,11 +280,6 @@ public class PendulumSwingStrategy : Strategy
 		base.OnStopped();
 
 		CancelPendingOrders();
-
-		_tradingSubscription?.Stop();
-		_tradingSubscription = null;
-		_dailySubscription?.Stop();
-		_dailySubscription = null;
 	}
 
 	/// <inheritdoc />
@@ -478,11 +473,6 @@ public class PendulumSwingStrategy : Strategy
 		}
 
 		CancelPendingOrders();
-
-		_tradingSubscription?.Stop();
-		_tradingSubscription = null;
-		_dailySubscription?.Stop();
-		_dailySubscription = null;
 	}
 
 	private void CancelPendingOrders()

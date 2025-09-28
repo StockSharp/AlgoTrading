@@ -48,7 +48,7 @@ public class TrendFollowerRainbowStrategy : Strategy
 	private ExponentialMovingAverage _emaFast = null!;
 	private ExponentialMovingAverage _emaSlow = null!;
 	private MovingAverageConvergenceDivergence _macd = null!;
-	private LaguerreFilter _laguerre = null!;
+	private AdaptiveLaguerreFilter _laguerre = null!;
 	private MoneyFlowIndex _mfi = null!;
 	private ExponentialMovingAverage[][] _rainbowGroups = null!;
 
@@ -409,7 +409,7 @@ public class TrendFollowerRainbowStrategy : Strategy
 			LongMa = { Length = MacdSlowLength },
 			SignalMa = { Length = MacdSignalLength }
 		};
-		_laguerre = new LaguerreFilter { Gamma = LaguerreGamma };
+		_laguerre = new AdaptiveLaguerreFilter { Gamma = LaguerreGamma };
 		_mfi = new MoneyFlowIndex { Length = MfiPeriod };
 		_rainbowGroups = BuildRainbowGroups();
 

@@ -12,6 +12,7 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 using StockSharp.Algo;
+using StockSharp.Charting;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -30,7 +31,7 @@ public class LoongClockStrategy : Strategy
 	private readonly StrategyParam<decimal> _minutePriceRadius;
 	private readonly StrategyParam<decimal> _secondPriceRadius;
 
-	private IChartArea? _area;
+	private IChartArea _area;
 	private DateTimeOffset? _anchorTime;
 	private decimal? _anchorPrice;
 

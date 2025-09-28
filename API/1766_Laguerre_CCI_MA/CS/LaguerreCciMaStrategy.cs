@@ -26,7 +26,7 @@ public class LaguerreCciMaStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
 
-	private LaguerreFilter _laguerre;
+	private AdaptiveLaguerreFilter _laguerre;
 	private CommodityChannelIndex _cci;
 	private ExponentialMovingAverage _ma;
 	private decimal _prevMa;
@@ -153,7 +153,7 @@ public class LaguerreCciMaStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_laguerre = new LaguerreFilter { Gamma = LagGamma };
+		_laguerre = new AdaptiveLaguerreFilter { Gamma = LagGamma };
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 		_ma = new ExponentialMovingAverage { Length = MaPeriod };
 

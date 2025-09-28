@@ -20,12 +20,31 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class UniversalMaCrossV4Strategy : Strategy
 {
+	public enum MovingAverageMethods
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		LinearWeighted
+	}
+
+	public enum AppliedPrices
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted
+	}
+
 	private readonly StrategyParam<int> _fastMaPeriod;
 	private readonly StrategyParam<int> _slowMaPeriod;
-	private readonly StrategyParam<MovingAverageMethod> _fastMaType;
-	private readonly StrategyParam<MovingAverageMethod> _slowMaType;
-	private readonly StrategyParam<AppliedPrice> _fastPriceType;
-	private readonly StrategyParam<AppliedPrice> _slowPriceType;
+	private readonly StrategyParam<MovingAverageMethods> _fastMaType;
+	private readonly StrategyParam<MovingAverageMethods> _slowMaType;
+	private readonly StrategyParam<AppliedPrices> _fastPriceType;
+	private readonly StrategyParam<AppliedPrices> _slowPriceType;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _trailingStopPoints;
@@ -77,7 +96,7 @@ public class UniversalMaCrossV4Strategy : Strategy
 	/// <summary>
 	/// Method applied to the fast moving average.
 	/// </summary>
-	public MovingAverageMethod FastMaType
+	public MovingAverageMethods FastMaType
 	{
 		get => _fastMaType.Value;
 		set => _fastMaType.Value = value;
@@ -86,7 +105,7 @@ public class UniversalMaCrossV4Strategy : Strategy
 	/// <summary>
 	/// Method applied to the slow moving average.
 	/// </summary>
-	public MovingAverageMethod SlowMaType
+	public MovingAverageMethods SlowMaType
 	{
 		get => _slowMaType.Value;
 		set => _slowMaType.Value = value;
@@ -95,7 +114,7 @@ public class UniversalMaCrossV4Strategy : Strategy
 	/// <summary>
 	/// Price source for the fast moving average.
 	/// </summary>
-	public AppliedPrice FastPriceType
+	public AppliedPrices FastPriceType
 	{
 		get => _fastPriceType.Value;
 		set => _fastPriceType.Value = value;
@@ -104,7 +123,7 @@ public class UniversalMaCrossV4Strategy : Strategy
 	/// <summary>
 	/// Price source for the slow moving average.
 	/// </summary>
-	public AppliedPrice SlowPriceType
+	public AppliedPrices SlowPriceType
 	{
 		get => _slowPriceType.Value;
 		set => _slowPriceType.Value = value;
@@ -253,16 +272,16 @@ public class UniversalMaCrossV4Strategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(30, 200, 5);
 
-		_fastMaType = Param(nameof(FastMaType), MovingAverageMethod.Exponential)
+		_fastMaType = Param(nameof(FastMaType), MovingAverageMethods.Exponential)
 			.SetDisplay("Fast MA Method", "Smoothing method applied to the fast moving average", "Indicators");
 
-		_slowMaType = Param(nameof(SlowMaType), MovingAverageMethod.Exponential)
+		_slowMaType = Param(nameof(SlowMaType), MovingAverageMethods.Exponential)
 			.SetDisplay("Slow MA Method", "Smoothing method applied to the slow moving average", "Indicators");
 
-		_fastPriceType = Param(nameof(FastPriceType), AppliedPrice.Close)
+		_fastPriceType = Param(nameof(FastPriceType), AppliedPrices.Close)
 			.SetDisplay("Fast MA Price", "Price source injected into the fast moving average", "Indicators");
 
-		_slowPriceType = Param(nameof(SlowPriceType), AppliedPrice.Close)
+		_slowPriceType = Param(nameof(SlowPriceType), AppliedPrices.Close)
 			.SetDisplay("Slow MA Price", "Price source injected into the slow moving average", "Indicators");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 100m)
@@ -563,28 +582,28 @@ public class UniversalMaCrossV4Strategy : Strategy
 		return hour >= start || hour <= end;
 	}
 
-	private static IIndicator CreateMovingAverage(MovingAverageMethod method, int period)
+	private static IIndicator CreateMovingAverage(MovingAverageMethods method, int period)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = period },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = period },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = period },
-			MovingAverageMethod.LinearWeighted => new WeightedMovingAverage { Length = period },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = period },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = period },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = period },
+			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = period },
 			_ => new SimpleMovingAverage { Length = period }
 		};
 	}
 
-	private static decimal GetPrice(ICandleMessage candle, AppliedPrice priceType)
+	private static decimal GetPrice(ICandleMessage candle, AppliedPrices priceType)
 	{
 		return priceType switch
 		{
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}

@@ -89,7 +89,7 @@ public class LaguerreFilterStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		var laguerre = new LaguerreFilter { Gamma = Gamma };
+		var laguerre = new AdaptiveLaguerreFilter { Gamma = Gamma };
 		var fir = new WeightedMovingAverage { Length = 4 };
 
 		var subscription = SubscribeCandles(CandleType);

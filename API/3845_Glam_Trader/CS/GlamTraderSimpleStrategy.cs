@@ -238,7 +238,7 @@ public class GlamTraderSimpleStrategy : Strategy
 		base.OnStarted(time);
 
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
-		var laguerre = new LaguerreFilter { Gamma = LaguerreGamma };
+		var laguerre = new AdaptiveLaguerreFilter { Gamma = LaguerreGamma };
 		var awesome = new AwesomeOscillator();
 
 		var primarySubscription = SubscribeCandles(PrimaryCandleType);
