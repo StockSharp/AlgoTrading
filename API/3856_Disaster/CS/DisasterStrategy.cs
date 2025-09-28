@@ -177,15 +177,15 @@ public class DisasterStrategy : Strategy
 	{
 		base.OnOrderReceived(order);
 
-		if (ReferenceEquals(order, _buyStopOrder))
+		if (order == _buyStopOrder)
 		{
 			HandleEntryOrderUpdate(order, Sides.Buy);
 		}
-		else if (ReferenceEquals(order, _sellStopOrder))
+		else if (order == _sellStopOrder)
 		{
 			HandleEntryOrderUpdate(order, Sides.Sell);
 		}
-		else if (ReferenceEquals(order, _stopLossOrder) || ReferenceEquals(order, _takeProfitOrder))
+		else if (order == _stopLossOrder || order == _takeProfitOrder)
 		{
 			HandleProtectionOrderUpdate(order);
 		}
@@ -202,19 +202,19 @@ public class DisasterStrategy : Strategy
 	private void ProcessLevel1(Level1ChangeMessage message)
 	{
 		if (message.Changes.TryGetValue(Level1Fields.BestBidPrice, out var bidValue) && bidValue is decimal bid)
-		_lastBid = bid;
+			_lastBid = bid;
 
 		if (message.Changes.TryGetValue(Level1Fields.BestAskPrice, out var askValue) && askValue is decimal ask)
-		_lastAsk = ask;
+			_lastAsk = ask;
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		if (!_sma.IsFormed)
-		return;
+			return;
 
 		var bid = _lastBid ?? candle.ClosePrice;
 		var ask = _lastAsk ?? candle.ClosePrice;
@@ -222,7 +222,7 @@ public class DisasterStrategy : Strategy
 		UpdatePendingOrders(smaValue, bid, ask);
 
 		if (Position != 0m)
-		return;
+			return;
 
 		PlaceNewEntriesIfNeeded(smaValue, bid, ask);
 	}
@@ -244,11 +244,11 @@ public class DisasterStrategy : Strategy
 	{
 		var volume = AlignVolume(Volume);
 		if (volume <= 0m)
-		return;
+			return;
 
 		var triggerDistance = TriggerDistancePips * _pipSize;
 		if (triggerDistance <= 0m)
-		return;
+			return;
 
 		var spread = Math.Abs(ask - bid);
 
@@ -276,9 +276,9 @@ public class DisasterStrategy : Strategy
 		if (order.State == OrderStates.Done || order.State == OrderStates.Failed || order.State == OrderStates.Canceled)
 		{
 			if (isBuy)
-			_buyStopOrder = null;
+				_buyStopOrder = null;
 			else
-			_sellStopOrder = null;
+				_sellStopOrder = null;
 			return;
 		}
 
@@ -286,10 +286,10 @@ public class DisasterStrategy : Strategy
 		var desiredPrice = isBuy ? NormalizePrice(smaValue + spread) : NormalizePrice(smaValue);
 
 		if (desiredPrice <= 0m)
-		return;
+			return;
 
 		if (order.Price != desiredPrice)
-		ReRegisterOrder(order, desiredPrice, order.Volume ?? Volume);
+			ReRegisterOrder(order, desiredPrice, order.Volume ?? Volume);
 	}
 
 	private void HandleEntryOrderUpdate(Order order, Sides side)
@@ -298,12 +298,12 @@ public class DisasterStrategy : Strategy
 		{
 			var fillPrice = order.AveragePrice ?? order.Price ?? 0m;
 			if (fillPrice <= 0m)
-			return;
+				return;
 
 			if (side == Sides.Buy)
-			_buyStopOrder = null;
+				_buyStopOrder = null;
 			else
-			_sellStopOrder = null;
+				_sellStopOrder = null;
 
 			_entrySide = side;
 			_entryPrice = fillPrice;
@@ -313,9 +313,9 @@ public class DisasterStrategy : Strategy
 		else if (order.State is OrderStates.Failed or OrderStates.Canceled)
 		{
 			if (side == Sides.Buy)
-			_buyStopOrder = null;
+				_buyStopOrder = null;
 			else
-			_sellStopOrder = null;
+				_sellStopOrder = null;
 		}
 	}
 
@@ -327,7 +327,7 @@ public class DisasterStrategy : Strategy
 		var takeDistance = GetAdaptiveTakeProfitDistance(side) * _pipSize;
 
 		if (stopDistance <= 0m && takeDistance <= 0m)
-		return;
+			return;
 
 		var isLong = side == Sides.Buy;
 
@@ -336,7 +336,7 @@ public class DisasterStrategy : Strategy
 			var stopPrice = isLong ? entryPrice - stopDistance : entryPrice + stopDistance;
 			stopPrice = NormalizePrice(stopPrice);
 			if (stopPrice > 0m)
-			_stopLossOrder = isLong ? SellStop(volume, stopPrice) : BuyStop(volume, stopPrice);
+				_stopLossOrder = isLong ? SellStop(volume, stopPrice) : BuyStop(volume, stopPrice);
 		}
 
 		if (takeDistance > 0m)
@@ -344,7 +344,7 @@ public class DisasterStrategy : Strategy
 			var takePrice = isLong ? entryPrice + takeDistance : entryPrice - takeDistance;
 			takePrice = NormalizePrice(takePrice);
 			if (takePrice > 0m)
-			_takeProfitOrder = isLong ? SellLimit(volume, takePrice) : BuyLimit(volume, takePrice);
+				_takeProfitOrder = isLong ? SellLimit(volume, takePrice) : BuyLimit(volume, takePrice);
 		}
 	}
 
@@ -354,27 +354,27 @@ public class DisasterStrategy : Strategy
 		{
 			if (order.State is OrderStates.Failed or OrderStates.Canceled)
 			{
-				if (ReferenceEquals(order, _stopLossOrder))
-				_stopLossOrder = null;
-				else if (ReferenceEquals(order, _takeProfitOrder))
-				_takeProfitOrder = null;
+				if (order == _stopLossOrder)
+					_stopLossOrder = null;
+				else if (order == _takeProfitOrder)
+					_takeProfitOrder = null;
 			}
 			return;
 		}
 
-		if (ReferenceEquals(order, _stopLossOrder))
+		if (order == _stopLossOrder)
 		{
 			if (_entrySide == Sides.Buy)
-			_lastBuyWasLoss = true;
+				_lastBuyWasLoss = true;
 			else if (_entrySide == Sides.Sell)
-			_lastSellWasLoss = true;
+				_lastSellWasLoss = true;
 		}
-		else if (ReferenceEquals(order, _takeProfitOrder))
+		else if (order == _takeProfitOrder)
 		{
 			if (_entrySide == Sides.Buy)
-			_lastBuyWasLoss = false;
+				_lastBuyWasLoss = false;
 			else if (_entrySide == Sides.Sell)
-			_lastSellWasLoss = false;
+				_lastSellWasLoss = false;
 		}
 
 		_stopLossOrder = null;
@@ -387,7 +387,7 @@ public class DisasterStrategy : Strategy
 	{
 		var baseDistance = TakeProfitPips;
 		if (baseDistance <= 0m)
-		return 0m;
+			return 0m;
 
 		return side == Sides.Buy && _lastBuyWasLoss
 		? baseDistance * 0.5m
@@ -399,11 +399,11 @@ public class DisasterStrategy : Strategy
 	private void CancelPendingOrders()
 	{
 		if (_buyStopOrder != null && _buyStopOrder.State == OrderStates.Active)
-		CancelOrder(_buyStopOrder);
+			CancelOrder(_buyStopOrder);
 		_buyStopOrder = null;
 
 		if (_sellStopOrder != null && _sellStopOrder.State == OrderStates.Active)
-		CancelOrder(_sellStopOrder);
+			CancelOrder(_sellStopOrder);
 		_sellStopOrder = null;
 
 		CancelProtectionOrders();
@@ -412,10 +412,10 @@ public class DisasterStrategy : Strategy
 	private void CancelProtectionOrders()
 	{
 		if (_stopLossOrder != null && _stopLossOrder.State == OrderStates.Active)
-		CancelOrder(_stopLossOrder);
+			CancelOrder(_stopLossOrder);
 
 		if (_takeProfitOrder != null && _takeProfitOrder.State == OrderStates.Active)
-		CancelOrder(_takeProfitOrder);
+			CancelOrder(_takeProfitOrder);
 
 		_stopLossOrder = null;
 		_takeProfitOrder = null;
@@ -427,7 +427,7 @@ public class DisasterStrategy : Strategy
 	{
 		var security = Security;
 		if (security == null)
-		return volume;
+			return volume;
 
 		var step = security.VolumeStep ?? 0m;
 		if (step > 0m)
@@ -438,11 +438,11 @@ public class DisasterStrategy : Strategy
 
 		var minVolume = security.MinVolume ?? 0m;
 		if (minVolume > 0m && volume < minVolume)
-		volume = minVolume;
+			volume = minVolume;
 
 		var maxVolume = security.MaxVolume ?? 0m;
 		if (maxVolume > 0m && volume > maxVolume)
-		volume = maxVolume;
+			volume = maxVolume;
 
 		return volume;
 	}
@@ -451,7 +451,7 @@ public class DisasterStrategy : Strategy
 	{
 		var security = Security;
 		if (security == null)
-		return 0.0001m;
+			return 0.0001m;
 
 		var step = security.PriceStep ?? security.MinPriceStep ?? 0m;
 		if (step <= 0m)
@@ -464,11 +464,11 @@ public class DisasterStrategy : Strategy
 		}
 
 		if (step <= 0m)
-		step = 0.0001m;
+			step = 0.0001m;
 
 		var digits = security.Decimals;
 		if (digits != null && (digits.Value == 3 || digits.Value == 5))
-		step *= 10m;
+			step *= 10m;
 
 		return step;
 	}
@@ -477,14 +477,14 @@ public class DisasterStrategy : Strategy
 	{
 		var security = Security;
 		if (security == null)
-		return 0m;
+			return 0m;
 
 		var step = security.PriceStep ?? security.MinPriceStep ?? 0m;
 		if (step <= 0m)
 		{
 			var decimals = security.Decimals;
 			if (decimals != null && decimals.Value > 0)
-			step = (decimal)Math.Pow(10, -decimals.Value);
+				step = (decimal)Math.Pow(10, -decimals.Value);
 		}
 
 		return step;
@@ -493,10 +493,9 @@ public class DisasterStrategy : Strategy
 	private decimal NormalizePrice(decimal price)
 	{
 		if (_priceStep <= 0m)
-		return price;
+			return price;
 
 		var steps = Math.Round(price / _priceStep, MidpointRounding.AwayFromZero);
 		return steps * _priceStep;
 	}
 }
-

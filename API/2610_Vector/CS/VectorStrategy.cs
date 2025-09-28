@@ -271,7 +271,7 @@ public class VectorStrategy : Strategy
 			var subscription = SubscribeCandles(CandleType, security: pair.Security);
 			subscription.Bind(candle => ProcessPairCandle(pair, candle)).Start();
 
-			if (area != null && ReferenceEquals(pair.Security, eur))
+			if (area != null && pair.Security == eur)
 			{
 				DrawCandles(area, subscription);
 				DrawIndicator(area, pair.FastMa);

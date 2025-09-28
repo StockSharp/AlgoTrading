@@ -155,7 +155,7 @@ public class GridRebalanceStrategy : Strategy
 		if (order == null)
 		return;
 
-		if (_pendingOrder != null && ReferenceEquals(order, _pendingOrder) && IsFinalState(order))
+		if (_pendingOrder != null && order == _pendingOrder && IsFinalState(order))
 		{
 			_pendingOrder = null;
 		}

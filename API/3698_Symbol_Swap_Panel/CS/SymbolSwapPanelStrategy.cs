@@ -124,7 +124,7 @@ public class SymbolSwapPanelStrategy : Strategy
 
 	private void SubscribeToSecurity(Security security)
 	{
-		if (!ReferenceEquals(Security, security))
+		if (Security != security)
 			Security = security;
 
 		var candleSubscription = SubscribeCandles(CandleType, security: security);

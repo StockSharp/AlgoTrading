@@ -279,7 +279,7 @@ public class FiboPivotMultiValStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-	return [(Security, CandleType)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -319,42 +319,42 @@ public class FiboPivotMultiValStrategy : Strategy
 		base.OnOrderReceived(order);
 
 		if (!_orderZoneMap.TryGetValue(order, out var zoneId) || !_zones.TryGetValue(zoneId, out var zone))
-		return;
+			return;
 
 		switch (order.State)
 		{
-		case OrderStates.Done when order.Balance == 0m:
-		{
-			if (ReferenceEquals(zone.EntryOrder, order))
+			case OrderStates.Done when order.Balance == 0m:
 			{
-				zone.EntryOrder = null;
-				_orderZoneMap.Remove(order);
-				zone.ActiveEntryPrice = order.Price;
-				zone.ActiveVolume = order.Volume;
-				RegisterExitOrders(zoneId, zone);
+				if (zone.EntryOrder == order)
+				{
+					zone.EntryOrder = null;
+					_orderZoneMap.Remove(order);
+					zone.ActiveEntryPrice = order.Price;
+					zone.ActiveVolume = order.Volume;
+					RegisterExitOrders(zoneId, zone);
+				}
+				else if (zone.TargetOrder == order || zone.StopOrder == order)
+				{
+					_orderZoneMap.Remove(order);
+					FinalizeZoneTrade(zoneId, zone, order.Price);
+				}
+
+				break;
 			}
-			else if (ReferenceEquals(zone.TargetOrder, order) || ReferenceEquals(zone.StopOrder, order))
+			case OrderStates.Done when order.Balance > 0m:
 			{
+				if (zone.EntryOrder == order)
+					zone.EntryOrder = null;
+
+				if (zone.TargetOrder == order)
+					zone.TargetOrder = null;
+
+				if (zone.StopOrder == order)
+					zone.StopOrder = null;
+
 				_orderZoneMap.Remove(order);
-				FinalizeZoneTrade(zoneId, zone, order.Price);
+				break;
 			}
-
-			break;
-		}
-		case OrderStates.Canceled or OrderStates.Failed:
-		{
-			if (ReferenceEquals(zone.EntryOrder, order))
-			zone.EntryOrder = null;
-
-			if (ReferenceEquals(zone.TargetOrder, order))
-			zone.TargetOrder = null;
-
-			if (ReferenceEquals(zone.StopOrder, order))
-			zone.StopOrder = null;
-
-			_orderZoneMap.Remove(order);
-			break;
-		}
 		}
 	}
 
@@ -365,10 +365,10 @@ public class FiboPivotMultiValStrategy : Strategy
 
 		// Keep statistics for daily trade counts.
 		if (trade.Order == null)
-		return;
+			return;
 
 		if (_orderZoneMap.ContainsKey(trade.Order))
-		return;
+			return;
 
 		// Only count fills that are not linked to pending zone orders (handled in FinalizeZoneTrade).
 		_dailyTrades++;
@@ -379,531 +379,531 @@ public class FiboPivotMultiValStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		UpdateDailyStatistics(candle);
 
 		if (_activeLevels is not PivotLevels levels || _activeLevelsDate == null)
-		return;
+			return;
 
-	var currentDate = candle.OpenTime.Date;
-	if (_activeLevelsDate.Value.Date != currentDate)
-	return;
+		var currentDate = candle.OpenTime.Date;
+		if (_activeLevelsDate.Value.Date != currentDate)
+			return;
 
-	var timeOfDay = candle.CloseTime.TimeOfDay;
+		var timeOfDay = candle.CloseTime.TimeOfDay;
 
-	if (timeOfDay < StartTime)
-	{
-	ResetSessionState();
-	return;
-	}
+		if (timeOfDay < StartTime)
+		{
+			ResetSessionState();
+			return;
+		}
 
-	if (timeOfDay >= CloseAllTime)
-	{
-	FlattenPosition();
-	DisableAllZones();
-	_allowTrading = true;
-	return;
-	}
+		if (timeOfDay >= CloseAllTime)
+		{
+			FlattenPosition();
+			DisableAllZones();
+			_allowTrading = true;
+			return;
+		}
 
-	if (timeOfDay >= FinishTime)
-	{
-	_allowTrading = false;
-	CancelEntryOrders();
-	return;
-	}
+		if (timeOfDay >= FinishTime)
+		{
+			_allowTrading = false;
+			CancelEntryOrders();
+			return;
+		}
 
-	if (!_allowTrading || OrderVolume <= 0m)
-	{
-	CancelEntryOrders();
-	return;
-	}
+		if (!_allowTrading || OrderVolume <= 0m)
+		{
+			CancelEntryOrders();
+			return;
+		}
 
-	EvaluateZones(levels, candle.ClosePrice, levels.Range);
+		EvaluateZones(levels, candle.ClosePrice, levels.Range);
 	}
 
 	private void EvaluateZones(PivotLevels levels, decimal price, decimal dailyRange)
 	{
-	var pivot = levels.Pivot;
-	var limitOut = _limitOutDistance;
-	var limitIn = _limitInDistance;
+		var pivot = levels.Pivot;
+		var limitOut = _limitOutDistance;
+		var limitIn = _limitInDistance;
 
-	bool priceIn(decimal lower, decimal upper) => price > lower && price < upper;
+		bool priceIn(decimal lower, decimal upper) => price > lower && price < upper;
 
-	if (priceIn(levels.R2, levels.R3))
-	{
-	EnsureZoneOrder("R2R3_Long", Sides.Buy, levels.R2R3Lower,
-	SelectTarget(levels.R2R3Upper, levels.R3Extension, pivot, dailyRange, limitOut, limitIn), null);
+		if (priceIn(levels.R2, levels.R3))
+		{
+			EnsureZoneOrder("R2R3_Long", Sides.Buy, levels.R2R3Lower,
+			SelectTarget(levels.R2R3Upper, levels.R3Extension, pivot, dailyRange, limitOut, limitIn), null);
 
-	EnsureZoneOrder("R2R3_Short", Sides.Sell, levels.R2R3Upper,
-	SelectTarget(levels.R2R3Lower, pivot, pivot, dailyRange, limitOut, limitIn), null);
-	}
-	else
-	{
-	DisableZone("R2R3_Long");
-	DisableZone("R2R3_Short");
-	}
+			EnsureZoneOrder("R2R3_Short", Sides.Sell, levels.R2R3Upper,
+			SelectTarget(levels.R2R3Lower, pivot, pivot, dailyRange, limitOut, limitIn), null);
+		}
+		else
+		{
+			DisableZone("R2R3_Long");
+			DisableZone("R2R3_Short");
+		}
 
-	if (priceIn(levels.R1, levels.R2))
-	{
-	if (AllowMidZoneBuys)
-	{
-	EnsureZoneOrder("R1R2_Long", Sides.Buy, levels.R1R2Intermediate,
-	SelectTarget(levels.R2, levels.R3Extension, pivot, dailyRange, limitOut, limitIn), null);
-	}
-	else
-	{
-	DisableZone("R1R2_Long");
-	}
+		if (priceIn(levels.R1, levels.R2))
+		{
+			if (AllowMidZoneBuys)
+			{
+				EnsureZoneOrder("R1R2_Long", Sides.Buy, levels.R1R2Intermediate,
+				SelectTarget(levels.R2, levels.R3Extension, pivot, dailyRange, limitOut, limitIn), null);
+			}
+			else
+			{
+				DisableZone("R1R2_Long");
+			}
 
-	if (AllowMidZoneSells)
-	{
-	EnsureZoneOrder("R1R2_Short", Sides.Sell, levels.R1R2Intermediate,
-	SelectTarget(levels.R1, pivot, pivot, dailyRange, limitOut, limitIn), null);
-	}
-	else
-	{
-	DisableZone("R1R2_Short");
-	}
-	}
-	else
-	{
-	DisableZone("R1R2_Long");
-	DisableZone("R1R2_Short");
-	}
+			if (AllowMidZoneSells)
+			{
+				EnsureZoneOrder("R1R2_Short", Sides.Sell, levels.R1R2Intermediate,
+				SelectTarget(levels.R1, pivot, pivot, dailyRange, limitOut, limitIn), null);
+			}
+			else
+			{
+				DisableZone("R1R2_Short");
+			}
+		}
+		else
+		{
+			DisableZone("R1R2_Long");
+			DisableZone("R1R2_Short");
+		}
 
-	if (priceIn(pivot, levels.R1))
-	{
-	EnsureZoneOrder("P_R1_Long", Sides.Buy, levels.PR1Lower,
-	SelectTarget(levels.PR1Upper, levels.R3Extension, pivot, dailyRange, limitOut, limitIn), null);
+		if (priceIn(pivot, levels.R1))
+		{
+			EnsureZoneOrder("P_R1_Long", Sides.Buy, levels.PR1Lower,
+			SelectTarget(levels.PR1Upper, levels.R3Extension, pivot, dailyRange, limitOut, limitIn), null);
 
-	EnsureZoneOrder("P_R1_Short", Sides.Sell, levels.PR1Upper,
-	SelectTarget(levels.PR1Lower, pivot, pivot, dailyRange, limitOut, limitIn), null);
-	}
-	else
-	{
-	DisableZone("P_R1_Long");
-	DisableZone("P_R1_Short");
-	}
+			EnsureZoneOrder("P_R1_Short", Sides.Sell, levels.PR1Upper,
+			SelectTarget(levels.PR1Lower, pivot, pivot, dailyRange, limitOut, limitIn), null);
+		}
+		else
+		{
+			DisableZone("P_R1_Long");
+			DisableZone("P_R1_Short");
+		}
 
-	if (priceIn(levels.S1, pivot))
-	{
-	EnsureZoneOrder("P_S1_Long", Sides.Buy, levels.PS1Upper,
-	SelectTarget(levels.PS1Lower, pivot, pivot, dailyRange, limitOut, limitIn), null);
+		if (priceIn(levels.S1, pivot))
+		{
+			EnsureZoneOrder("P_S1_Long", Sides.Buy, levels.PS1Upper,
+			SelectTarget(levels.PS1Lower, pivot, pivot, dailyRange, limitOut, limitIn), null);
 
-	EnsureZoneOrder("P_S1_Short", Sides.Sell, levels.PS1Lower,
-	SelectTarget(levels.PS1Upper, levels.S3Extension, pivot, dailyRange, limitOut, limitIn), null);
-	}
-	else
-	{
-	DisableZone("P_S1_Long");
-	DisableZone("P_S1_Short");
-	}
+			EnsureZoneOrder("P_S1_Short", Sides.Sell, levels.PS1Lower,
+			SelectTarget(levels.PS1Upper, levels.S3Extension, pivot, dailyRange, limitOut, limitIn), null);
+		}
+		else
+		{
+			DisableZone("P_S1_Long");
+			DisableZone("P_S1_Short");
+		}
 
-	if (priceIn(levels.S2, levels.S1))
-	{
-	if (AllowMidZoneSells)
-	{
-	EnsureZoneOrder("S1S2_Short", Sides.Sell, levels.S1S2Intermediate,
-	SelectTarget(levels.S2, levels.S3Extension, pivot, dailyRange, limitOut, limitIn), null);
-	}
-	else
-	{
-	DisableZone("S1S2_Short");
-	}
+		if (priceIn(levels.S2, levels.S1))
+		{
+			if (AllowMidZoneSells)
+			{
+				EnsureZoneOrder("S1S2_Short", Sides.Sell, levels.S1S2Intermediate,
+				SelectTarget(levels.S2, levels.S3Extension, pivot, dailyRange, limitOut, limitIn), null);
+			}
+			else
+			{
+				DisableZone("S1S2_Short");
+			}
 
-	if (AllowMidZoneBuys)
-	{
-	EnsureZoneOrder("S1S2_Long", Sides.Buy, levels.S1S2Intermediate,
-	SelectTarget(levels.S1, pivot, pivot, dailyRange, limitOut, limitIn), null);
-	}
-	else
-	{
-	DisableZone("S1S2_Long");
-	}
-	}
-	else
-	{
-	DisableZone("S1S2_Short");
-	DisableZone("S1S2_Long");
-	}
+			if (AllowMidZoneBuys)
+			{
+				EnsureZoneOrder("S1S2_Long", Sides.Buy, levels.S1S2Intermediate,
+				SelectTarget(levels.S1, pivot, pivot, dailyRange, limitOut, limitIn), null);
+			}
+			else
+			{
+				DisableZone("S1S2_Long");
+			}
+		}
+		else
+		{
+			DisableZone("S1S2_Short");
+			DisableZone("S1S2_Long");
+		}
 
-	if (priceIn(levels.S3, levels.S2))
-	{
-	EnsureZoneOrder("S2S3_Short", Sides.Sell, levels.S2S3Upper,
-	SelectTarget(levels.S2S3Lower, pivot, pivot, dailyRange, limitOut, limitIn), null);
+		if (priceIn(levels.S3, levels.S2))
+		{
+			EnsureZoneOrder("S2S3_Short", Sides.Sell, levels.S2S3Upper,
+			SelectTarget(levels.S2S3Lower, pivot, pivot, dailyRange, limitOut, limitIn), null);
 
-	EnsureZoneOrder("S2S3_Long", Sides.Buy, levels.S2S3Lower,
-	SelectTarget(levels.S2S3Upper, pivot, pivot, dailyRange, limitOut, limitIn), null);
-	}
-	else
-	{
-	DisableZone("S2S3_Short");
-	DisableZone("S2S3_Long");
-	}
+			EnsureZoneOrder("S2S3_Long", Sides.Buy, levels.S2S3Lower,
+			SelectTarget(levels.S2S3Upper, pivot, pivot, dailyRange, limitOut, limitIn), null);
+		}
+		else
+		{
+			DisableZone("S2S3_Short");
+			DisableZone("S2S3_Long");
+		}
 
-	if (price >= levels.R3)
-	{
-	EnsureZoneOrder("AboveR3", Sides.Buy, levels.R3Extension,
-	SelectTarget(levels.R3Extension, levels.R3Extension, pivot, dailyRange, limitOut, limitIn), null);
-	_allowTrading = false;
-	}
-	else
-	{
-	DisableZone("AboveR3");
-	}
+		if (price >= levels.R3)
+		{
+			EnsureZoneOrder("AboveR3", Sides.Buy, levels.R3Extension,
+			SelectTarget(levels.R3Extension, levels.R3Extension, pivot, dailyRange, limitOut, limitIn), null);
+			_allowTrading = false;
+		}
+		else
+		{
+			DisableZone("AboveR3");
+		}
 
-	if (price <= levels.S3)
-	{
-	EnsureZoneOrder("BelowS3", Sides.Sell, levels.S3Extension,
-	SelectTarget(levels.S3Extension, levels.S3Extension, pivot, dailyRange, limitOut, limitIn), null);
-	_allowTrading = false;
-	}
-	else
-	{
-	DisableZone("BelowS3");
-	}
+		if (price <= levels.S3)
+		{
+			EnsureZoneOrder("BelowS3", Sides.Sell, levels.S3Extension,
+			SelectTarget(levels.S3Extension, levels.S3Extension, pivot, dailyRange, limitOut, limitIn), null);
+			_allowTrading = false;
+		}
+		else
+		{
+			DisableZone("BelowS3");
+		}
 	}
 
 	private void UpdateDailyStatistics(ICandleMessage candle)
 	{
-	var candleDate = candle.OpenTime.Date;
+		var candleDate = candle.OpenTime.Date;
 
-	if (_currentDay == null || _currentDay.Date != candleDate)
-	{
-	if (_currentDay != null)
-	_previousDay = _currentDay;
+		if (_currentDay == null || _currentDay.Date != candleDate)
+		{
+			if (_currentDay != null)
+				_previousDay = _currentDay;
 
-	_currentDay = new DailyStats(candleDate);
-	}
+			_currentDay = new DailyStats(candleDate);
+		}
 
-	_currentDay.Update(candle);
+		_currentDay.Update(candle);
 
-	if (_previousDay != null && _activeLevelsDate?.Date != candleDate)
-	{
-	_activeLevels = CalculatePivotLevels(_previousDay, LevelPf1, LevelF1F2, LevelF2F3, LevelF3Out);
-	_activeLevelsDate = candleDate;
-	_limitInDistance = ConvertPoints(LimitPointIn);
-	_limitOutDistance = ConvertPoints(LimitPointOut);
-	ResetSessionState();
-	LogInfo(FormattableString.Invariant($"Pivot levels for {candleDate:yyyy-MM-dd}: P={FormatPrice(_activeLevels.Pivot)}, R1={FormatPrice(_activeLevels.R1)}, R2={FormatPrice(_activeLevels.R2)}, R3={FormatPrice(_activeLevels.R3)}, S1={FormatPrice(_activeLevels.S1)}, S2={FormatPrice(_activeLevels.S2)}, S3={FormatPrice(_activeLevels.S3)}"));
-	}
+		if (_previousDay != null && _activeLevelsDate?.Date != candleDate)
+		{
+			_activeLevels = CalculatePivotLevels(_previousDay, LevelPf1, LevelF1F2, LevelF2F3, LevelF3Out);
+			_activeLevelsDate = candleDate;
+			_limitInDistance = ConvertPoints(LimitPointIn);
+			_limitOutDistance = ConvertPoints(LimitPointOut);
+			ResetSessionState();
+			LogInfo(FormattableString.Invariant($"Pivot levels for {candleDate:yyyy-MM-dd}: P={FormatPrice(_activeLevels.Pivot)}, R1={FormatPrice(_activeLevels.R1)}, R2={FormatPrice(_activeLevels.R2)}, R3={FormatPrice(_activeLevels.R3)}, S1={FormatPrice(_activeLevels.S1)}, S2={FormatPrice(_activeLevels.S2)}, S3={FormatPrice(_activeLevels.S3)}"));
+		}
 	}
 
 	private void ResetSessionState()
 	{
-	_allowTrading = true;
-	_dailyProfitPoints = 0m;
-	_dailyTrades = 0;
-	_symbolProfitPoints = 0m;
-	_symbolTrades = 0;
-	DisableAllZones();
+		_allowTrading = true;
+		_dailyProfitPoints = 0m;
+		_dailyTrades = 0;
+		_symbolProfitPoints = 0m;
+		_symbolTrades = 0;
+		DisableAllZones();
 	}
 
 	private void FlattenPosition()
 	{
-	var volume = Math.Abs(Position);
-	if (volume <= 0m)
-	return;
+		var volume = Math.Abs(Position);
+		if (volume <= 0m)
+			return;
 
-	if (Position > 0m)
-	SellMarket(volume);
-	else
-	BuyMarket(volume);
+		if (Position > 0m)
+			SellMarket(volume);
+		else
+			BuyMarket(volume);
 	}
 
 	private void RegisterExitOrders(string zoneId, ZoneState zone)
 	{
-	CancelOrderIfActive(zone.TargetOrder);
-	CancelOrderIfActive(zone.StopOrder);
-	zone.TargetOrder = null;
-	zone.StopOrder = null;
+		CancelOrderIfActive(zone.TargetOrder);
+		CancelOrderIfActive(zone.StopOrder);
+		zone.TargetOrder = null;
+		zone.StopOrder = null;
 
-	if (zone.ActiveVolume <= 0m)
-	zone.ActiveVolume = OrderVolume;
+		if (zone.ActiveVolume <= 0m)
+			zone.ActiveVolume = OrderVolume;
 
-	if (zone.ActiveVolume <= 0m)
-	return;
+		if (zone.ActiveVolume <= 0m)
+			return;
 
-	if (zone.TargetPrice is decimal target)
-	{
-	var order = zone.Side == Sides.Buy
-	? SellLimit(zone.ActiveVolume, target)
-	: BuyLimit(zone.ActiveVolume, target);
+		if (zone.TargetPrice is decimal target)
+		{
+			var order = zone.Side == Sides.Buy
+			? SellLimit(zone.ActiveVolume, target)
+			: BuyLimit(zone.ActiveVolume, target);
 
-	zone.TargetOrder = order;
-	_orderZoneMap[order] = zoneId;
-	}
+			zone.TargetOrder = order;
+			_orderZoneMap[order] = zoneId;
+		}
 
-	if (zone.StopPrice is decimal stop && stop > 0m)
-	{
-	var order = zone.Side == Sides.Buy
-	? SellStop(zone.ActiveVolume, stop)
-	: BuyStop(zone.ActiveVolume, stop);
+		if (zone.StopPrice is decimal stop && stop > 0m)
+		{
+			var order = zone.Side == Sides.Buy
+			? SellStop(zone.ActiveVolume, stop)
+			: BuyStop(zone.ActiveVolume, stop);
 
-	zone.StopOrder = order;
-	_orderZoneMap[order] = zoneId;
-	}
+			zone.StopOrder = order;
+			_orderZoneMap[order] = zoneId;
+		}
 	}
 
 	private void FinalizeZoneTrade(string zoneId, ZoneState zone, decimal exitPrice)
 	{
-	if (zone.ActiveEntryPrice is not decimal entryPrice || zone.ActiveVolume <= 0m)
-	{
-	DisableZone(zoneId);
-	return;
-	}
+		if (zone.ActiveEntryPrice is not decimal entryPrice || zone.ActiveVolume <= 0m)
+		{
+			DisableZone(zoneId);
+			return;
+		}
 
-	var direction = zone.Side == Sides.Buy ? 1m : -1m;
-	var profitPoints = (exitPrice - entryPrice) / _pipSize * direction;
+		var direction = zone.Side == Sides.Buy ? 1m : -1m;
+		var profitPoints = (exitPrice - entryPrice) / _pipSize * direction;
 
-	_dailyProfitPoints += profitPoints;
-	_symbolProfitPoints += profitPoints;
-	_dailyTrades++;
-	_symbolTrades++;
+		_dailyProfitPoints += profitPoints;
+		_symbolProfitPoints += profitPoints;
+		_dailyTrades++;
+		_symbolTrades++;
 
-	zone.ActiveEntryPrice = null;
-	zone.ActiveVolume = 0m;
+		zone.ActiveEntryPrice = null;
+		zone.ActiveVolume = 0m;
 
-	DisableZone(zoneId);
-	CheckDailyLimits();
+		DisableZone(zoneId);
+		CheckDailyLimits();
 	}
 
 	private void CheckDailyLimits()
 	{
-	var dailyLimitHit = (_dailyProfitTarget.Value > 0 && _dailyProfitPoints >= _dailyProfitTarget.Value)
-	|| (_dailyTradeTarget.Value > 0 && _dailyTrades >= _dailyTradeTarget.Value);
+		var dailyLimitHit = (_dailyProfitTarget.Value > 0 && _dailyProfitPoints >= _dailyProfitTarget.Value)
+		|| (_dailyTradeTarget.Value > 0 && _dailyTrades >= _dailyTradeTarget.Value);
 
-	var symbolLimitHit = (_symbolProfitTarget.Value > 0 && _symbolProfitPoints >= _symbolProfitTarget.Value)
-	|| (_symbolTradeTarget.Value > 0 && _symbolTrades >= _symbolTradeTarget.Value);
+		var symbolLimitHit = (_symbolProfitTarget.Value > 0 && _symbolProfitPoints >= _symbolProfitTarget.Value)
+		|| (_symbolTradeTarget.Value > 0 && _symbolTrades >= _symbolTradeTarget.Value);
 
-	if (dailyLimitHit || symbolLimitHit)
-	{
-	_allowTrading = false;
-	CancelEntryOrders();
-	}
+		if (dailyLimitHit || symbolLimitHit)
+		{
+			_allowTrading = false;
+			CancelEntryOrders();
+		}
 	}
 
 	private void EnsureZoneOrder(string zoneId, Sides side, decimal entryPrice, decimal? targetPrice, decimal? stopPrice)
 	{
-	if (!_zones.TryGetValue(zoneId, out var zone))
-	{
-	zone = new ZoneState();
-	_zones[zoneId] = zone;
-	}
+		if (!_zones.TryGetValue(zoneId, out var zone))
+		{
+			zone = new ZoneState();
+			_zones[zoneId] = zone;
+		}
 
-	zone.Side = side;
-	zone.TargetPrice = targetPrice;
-	zone.StopPrice = stopPrice;
+		zone.Side = side;
+		zone.TargetPrice = targetPrice;
+		zone.StopPrice = stopPrice;
 
-	if (zone.EntryOrder is Order order && IsOrderAlive(order) && order.Price == entryPrice && zone.ActiveEntryPrice == null)
-	return;
+		if (zone.EntryOrder is Order order && IsOrderAlive(order) && order.Price == entryPrice && zone.ActiveEntryPrice == null)
+			return;
 
-	CancelOrderIfActive(zone.EntryOrder);
-	zone.EntryOrder = null;
+		CancelOrderIfActive(zone.EntryOrder);
+		zone.EntryOrder = null;
 
-	if (OrderVolume <= 0m)
-	return;
+		if (OrderVolume <= 0m)
+			return;
 
-	var newOrder = side == Sides.Buy
-	? BuyLimit(OrderVolume, entryPrice)
-	: SellLimit(OrderVolume, entryPrice);
+		var newOrder = side == Sides.Buy
+		? BuyLimit(OrderVolume, entryPrice)
+		: SellLimit(OrderVolume, entryPrice);
 
-	zone.EntryOrder = newOrder;
-	zone.ActiveEntryPrice = null;
-	zone.ActiveVolume = 0m;
-	_orderZoneMap[newOrder] = zoneId;
+		zone.EntryOrder = newOrder;
+		zone.ActiveEntryPrice = null;
+		zone.ActiveVolume = 0m;
+		_orderZoneMap[newOrder] = zoneId;
 	}
 
 	private void DisableZone(string zoneId)
 	{
-	if (!_zones.TryGetValue(zoneId, out var zone))
-	return;
+		if (!_zones.TryGetValue(zoneId, out var zone))
+			return;
 
-	CancelZoneOrders(zoneId, zone);
+		CancelZoneOrders(zoneId, zone);
 	}
 
 	private void DisableAllZones()
 	{
-	foreach (var (zoneId, zone) in _zones)
-	CancelZoneOrders(zoneId, zone);
+		foreach (var (zoneId, zone) in _zones)
+			CancelZoneOrders(zoneId, zone);
 	}
 
 	private void CancelEntryOrders()
 	{
-	foreach (var (zoneId, zone) in _zones)
-	{
-	if (zone.EntryOrder != null)
-	CancelZoneOrders(zoneId, zone, cancelEntryOnly: true);
-	}
+		foreach (var (zoneId, zone) in _zones)
+		{
+			if (zone.EntryOrder != null)
+				CancelZoneOrders(zoneId, zone, cancelEntryOnly: true);
+		}
 	}
 
 	private void CancelZoneOrders(string zoneId, ZoneState zone, bool cancelEntryOnly = false)
 	{
-	void Cancel(Order order)
-	{
-	if (order == null)
-	return;
+		void Cancel(Order order)
+		{
+			if (order == null)
+				return;
 
-	_orderZoneMap.Remove(order);
-	if (IsOrderAlive(order))
-	CancelOrder(order);
-	}
+			_orderZoneMap.Remove(order);
+			if (IsOrderAlive(order))
+				CancelOrder(order);
+		}
 
-	Cancel(zone.EntryOrder);
-	zone.EntryOrder = null;
+		Cancel(zone.EntryOrder);
+		zone.EntryOrder = null;
 
-	if (cancelEntryOnly)
-	return;
+		if (cancelEntryOnly)
+			return;
 
-	Cancel(zone.TargetOrder);
-	zone.TargetOrder = null;
+		Cancel(zone.TargetOrder);
+		zone.TargetOrder = null;
 
-	Cancel(zone.StopOrder);
-	zone.StopOrder = null;
+		Cancel(zone.StopOrder);
+		zone.StopOrder = null;
 
-	zone.ActiveEntryPrice = null;
-	zone.ActiveVolume = 0m;
+		zone.ActiveEntryPrice = null;
+		zone.ActiveVolume = 0m;
 	}
 
 	private decimal? SelectTarget(decimal defaultTarget, decimal breakoutTarget, decimal meanReversionTarget, decimal range, decimal limitOut, decimal limitIn)
 	{
-	if (UseReversalTargets)
-	return defaultTarget;
+		if (UseReversalTargets)
+			return defaultTarget;
 
-	if (limitOut > 0m && range <= limitOut)
-	return breakoutTarget;
+		if (limitOut > 0m && range <= limitOut)
+			return breakoutTarget;
 
-	if (limitIn > 0m && range >= limitIn)
-	return meanReversionTarget;
+		if (limitIn > 0m && range >= limitIn)
+			return meanReversionTarget;
 
-	return defaultTarget;
+		return defaultTarget;
 	}
 
 	private void CancelOrderIfActive(Order order)
 	{
-	if (order == null)
-	return;
+		if (order == null)
+			return;
 
-	_orderZoneMap.Remove(order);
-	if (IsOrderAlive(order))
-	CancelOrder(order);
+		_orderZoneMap.Remove(order);
+		if (IsOrderAlive(order))
+			CancelOrder(order);
 	}
 
 	private static bool IsOrderAlive(Order order)
 	{
-	return order != null && order.State is OrderStates.Active or OrderStates.Pending;
+		return order != null && order.State is OrderStates.Active or OrderStates.Pending;
 	}
 
 	private decimal ConvertPoints(int points)
 	{
-	if (points <= 0 || _pipSize <= 0m)
-	return 0m;
+		if (points <= 0 || _pipSize <= 0m)
+			return 0m;
 
-	return points * _pipSize;
+		return points * _pipSize;
 	}
 
 	private decimal GetPriceStep()
 	{
-	var security = Security;
-	if (security == null)
-	return 0.0001m;
+		var security = Security;
+		if (security == null)
+			return 0.0001m;
 
-	var step = security.PriceStep ?? security.MinPriceStep ?? 0m;
-	return step > 0m ? step : 0.0001m;
+		var step = security.PriceStep ?? security.MinPriceStep ?? 0m;
+		return step > 0m ? step : 0.0001m;
 	}
 
 	private static string NormalizeMidZoneMode(string value)
 	{
-	if (value.IsEmptyOrWhiteSpace())
-	return "bs";
+		if (value.IsEmptyOrWhiteSpace())
+			return "bs";
 
-	var normalized = value.Trim().ToLowerInvariant();
-	return normalized is "b" or "s" or "bs" ? normalized : "bs";
+		var normalized = value.Trim().ToLowerInvariant();
+		return normalized is "b" or "s" or "bs" ? normalized : "bs";
 	}
 
 	private string FormatPrice(decimal price)
 	{
-	var security = Security;
-	if (security?.Decimals is int decimals && decimals > 0)
-	return price.ToString("F" + decimals, CultureInfo.InvariantCulture);
+		var security = Security;
+		if (security?.Decimals is int decimals && decimals > 0)
+			return price.ToString("F" + decimals, CultureInfo.InvariantCulture);
 
-	return price.ToString(CultureInfo.InvariantCulture);
+		return price.ToString(CultureInfo.InvariantCulture);
 	}
 
 	private static PivotLevels CalculatePivotLevels(DailyStats stats, decimal levelPf1, decimal levelF1F2, decimal levelF2F3, decimal levelF3Out)
 	{
-	var high = stats.High;
-	var low = stats.Low;
-	var close = stats.Close;
-	var range = high - low;
-	var pivot = (high + low + close) / 3m;
+		var high = stats.High;
+		var low = stats.Low;
+		var close = stats.Close;
+		var range = high - low;
+		var pivot = (high + low + close) / 3m;
 
-	var r1 = pivot + range * 0.38m;
-	var r2 = pivot + range * 0.62m;
-	var r3 = pivot + range * 0.99m;
-	var s1 = pivot - range * 0.38m;
-	var s2 = pivot - range * 0.62m;
-	var s3 = pivot - range * 0.99m;
+		var r1 = pivot + range * 0.38m;
+		var r2 = pivot + range * 0.62m;
+		var r3 = pivot + range * 0.99m;
+		var s1 = pivot - range * 0.38m;
+		var s2 = pivot - range * 0.62m;
+		var s3 = pivot - range * 0.99m;
 
-	var pr1Lower = pivot + (r1 - pivot) * (levelPf1 / 100m);
-	var pr1Upper = r1 - (r1 - pivot) * (levelPf1 / 100m);
+		var pr1Lower = pivot + (r1 - pivot) * (levelPf1 / 100m);
+		var pr1Upper = r1 - (r1 - pivot) * (levelPf1 / 100m);
 
-	var r1r2Intermediate = r1 + (r2 - r1) * (levelF1F2 / 100m);
-	var r2r3Lower = r2 + (r3 - r2) * (levelF2F3 / 100m);
-	var r2r3Upper = r3 - (r3 - r2) * (levelF2F3 / 100m);
+		var r1r2Intermediate = r1 + (r2 - r1) * (levelF1F2 / 100m);
+		var r2r3Lower = r2 + (r3 - r2) * (levelF2F3 / 100m);
+		var r2r3Upper = r3 - (r3 - r2) * (levelF2F3 / 100m);
 
-	var ps1Lower = pivot - (pivot - s1) * (levelPf1 / 100m);
-	var ps1Upper = s1 + (pivot - s1) * (levelPf1 / 100m);
-	var s1s2Intermediate = s1 - (s1 - s2) * (levelF1F2 / 100m);
-	var s2s3Upper = s2 - (s2 - s3) * (levelF2F3 / 100m);
-	var s2s3Lower = s3 + (s2 - s3) * (levelF2F3 / 100m);
+		var ps1Lower = pivot - (pivot - s1) * (levelPf1 / 100m);
+		var ps1Upper = s1 + (pivot - s1) * (levelPf1 / 100m);
+		var s1s2Intermediate = s1 - (s1 - s2) * (levelF1F2 / 100m);
+		var s2s3Upper = s2 - (s2 - s3) * (levelF2F3 / 100m);
+		var s2s3Lower = s3 + (s2 - s3) * (levelF2F3 / 100m);
 
-	var r3Extension = r3 + (r3 - r2) * (levelF3Out / 100m);
-	var s3Extension = s3 - (s2 - s3) * (levelF3Out / 100m);
+		var r3Extension = r3 + (r3 - r2) * (levelF3Out / 100m);
+		var s3Extension = s3 - (s2 - s3) * (levelF3Out / 100m);
 
-	return new PivotLevels(pivot, r1, r2, r3, s1, s2, s3,
-	pr1Lower, pr1Upper, r1r2Intermediate, r2r3Lower, r2r3Upper,
-	ps1Lower, ps1Upper, s1s2Intermediate, s2s3Upper, s2s3Lower,
-	r3Extension, s3Extension, range);
+		return new PivotLevels(pivot, r1, r2, r3, s1, s2, s3,
+		pr1Lower, pr1Upper, r1r2Intermediate, r2r3Lower, r2r3Upper,
+		ps1Lower, ps1Upper, s1s2Intermediate, s2s3Upper, s2s3Lower,
+		r3Extension, s3Extension, range);
 	}
 
 	private sealed class ZoneState
 	{
-	public Sides Side { get; set; }
-	public Order EntryOrder { get; set; }
-	public Order TargetOrder { get; set; }
-	public Order StopOrder { get; set; }
-	public decimal? TargetPrice { get; set; }
-	public decimal? StopPrice { get; set; }
-	public decimal? ActiveEntryPrice { get; set; }
-	public decimal ActiveVolume { get; set; }
+		public Sides Side { get; set; }
+		public Order EntryOrder { get; set; }
+		public Order TargetOrder { get; set; }
+		public Order StopOrder { get; set; }
+		public decimal? TargetPrice { get; set; }
+		public decimal? StopPrice { get; set; }
+		public decimal? ActiveEntryPrice { get; set; }
+		public decimal ActiveVolume { get; set; }
 	}
 
 	private sealed class DailyStats
 	{
-	public DailyStats(DateTime date)
-	{
-	Date = date;
-	High = decimal.MinValue;
-	Low = decimal.MaxValue;
-	}
+		public DailyStats(DateTime date)
+		{
+			Date = date;
+			High = decimal.MinValue;
+			Low = decimal.MaxValue;
+		}
 
-	public DateTime Date { get; }
-	public decimal High { get; private set; }
-	public decimal Low { get; private set; }
-	public decimal Close { get; private set; }
+		public DateTime Date { get; }
+		public decimal High { get; private set; }
+		public decimal Low { get; private set; }
+		public decimal Close { get; private set; }
 
-	public void Update(ICandleMessage candle)
-	{
-	if (candle.HighPrice > High)
-	High = candle.HighPrice;
+		public void Update(ICandleMessage candle)
+		{
+			if (candle.HighPrice > High)
+				High = candle.HighPrice;
 
-	if (candle.LowPrice < Low)
-	Low = candle.LowPrice;
+			if (candle.LowPrice < Low)
+				Low = candle.LowPrice;
 
-	Close = candle.ClosePrice;
-	}
+			Close = candle.ClosePrice;
+		}
 	}
 
 	private readonly record struct PivotLevels(
@@ -928,4 +928,3 @@ public class FiboPivotMultiValStrategy : Strategy
 	decimal S3Extension,
 	decimal Range);
 }
-

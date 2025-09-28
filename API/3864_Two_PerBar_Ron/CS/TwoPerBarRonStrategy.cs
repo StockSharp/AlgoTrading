@@ -330,13 +330,13 @@ public class TwoPerBarRonStrategy : Strategy
 		{
 			var leg = _legs[i];
 
-			if (ReferenceEquals(order, leg.EntryOrder))
+			if (order == leg.EntryOrder)
 			{
 				UpdateEntry(leg, price, volume);
 				return;
 			}
 
-			if (ReferenceEquals(order, leg.ExitOrder))
+			if (order == leg.ExitOrder)
 			{
 				_legs.RemoveAt(i);
 				return;

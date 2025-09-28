@@ -212,9 +212,9 @@ public class FuturesPortfolioControlExpirationStrategy : Strategy
 	{
 		var subscription = SubscribeCandles(MonitoringCandleType, true, security);
 
-		subscription.WhenNew(candle =>
+		subscription.Bind(candle =>
 		{
-			if (!ReferenceEquals(leg.CurrentSecurity, security))
+			if (leg.CurrentSecurity != security)
 				return;
 
 			if (candle.State != CandleStates.Finished)

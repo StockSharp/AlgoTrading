@@ -140,16 +140,16 @@ public class TradingPanelStrategy : Strategy
 		base.OnOrderReceived(order);
 
 		// Drop references once a protective order is no longer active.
-		if (_longStopOrder != null && ReferenceEquals(order, _longStopOrder) && !order.State.IsActive())
+		if (_longStopOrder != null && order == _longStopOrder && order.State.IsFinal())
 			_longStopOrder = null;
 
-		if (_longTargetOrder != null && ReferenceEquals(order, _longTargetOrder) && !order.State.IsActive())
+		if (_longTargetOrder != null && order == _longTargetOrder && order.State.IsFinal())
 			_longTargetOrder = null;
 
-		if (_shortStopOrder != null && ReferenceEquals(order, _shortStopOrder) && !order.State.IsActive())
+		if (_shortStopOrder != null && order == _shortStopOrder && order.State.IsFinal())
 			_shortStopOrder = null;
 
-		if (_shortTargetOrder != null && ReferenceEquals(order, _shortTargetOrder) && !order.State.IsActive())
+		if (_shortTargetOrder != null && order == _shortTargetOrder && order.State.IsFinal())
 			_shortTargetOrder = null;
 	}
 

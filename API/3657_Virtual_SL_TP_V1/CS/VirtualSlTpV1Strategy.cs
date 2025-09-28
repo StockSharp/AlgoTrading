@@ -166,7 +166,7 @@ public class VirtualSlTpV1Strategy : Strategy
 	{
 		base.OnOrderReceived(order);
 
-		if (_pendingOrder != null && ReferenceEquals(order, _pendingOrder) && order.State != OrderStates.Active)
+		if (_pendingOrder != null && order == _pendingOrder && order.State != OrderStates.Active)
 		{
 			_pendingOrder = null;
 		}

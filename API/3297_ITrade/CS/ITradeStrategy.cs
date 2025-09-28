@@ -374,7 +374,7 @@ public class ITradeStrategy : Strategy
 			{
 				_openTrades.Remove(target);
 
-				if (_closingQueue.Count > 0 && ReferenceEquals(_closingQueue.Peek(), target))
+				if (_closingQueue.Count > 0 && _closingQueue.Peek() == target)
 					_closingQueue.Dequeue();
 			}
 		}
@@ -422,7 +422,7 @@ public class ITradeStrategy : Strategy
 
 		RequestClose(best);
 
-		if (!ReferenceEquals(best, worst))
+		if (best != worst)
 			RequestClose(worst);
 	}
 
