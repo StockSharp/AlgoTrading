@@ -31,7 +31,7 @@ public class SimpleStrategy : Strategy
 	private readonly StrategyParam<bool> _enableTrading;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LinearWeightedMovingAverage _fastMa;
+	private WeightedMovingAverage _fastMa;
 	private SMA _slowMa;
 
 	private decimal? _fastPrev;
@@ -229,7 +229,7 @@ public class SimpleStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_fastMa = new LinearWeightedMovingAverage { Length = FastLength };
+		_fastMa = new WeightedMovingAverage { Length = FastLength };
 		_slowMa = new SMA { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);

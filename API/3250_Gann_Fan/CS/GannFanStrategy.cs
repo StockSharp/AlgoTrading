@@ -47,8 +47,8 @@ public class GannFanStrategy : Strategy
 	private readonly StrategyParam<bool> _forceExit;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LinearWeightedMovingAverage _fastMa = null!;
-	private LinearWeightedMovingAverage _slowMa = null!;
+	private WeightedMovingAverage _fastMa = null!;
+	private WeightedMovingAverage _slowMa = null!;
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 
 	private readonly Queue<decimal> _closeBuffer = new();
@@ -443,8 +443,8 @@ public class GannFanStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_fastMa = new LinearWeightedMovingAverage { Length = FastMaLength };
-		_slowMa = new LinearWeightedMovingAverage { Length = SlowMaLength };
+		_fastMa = new WeightedMovingAverage { Length = FastMaLength };
+		_slowMa = new WeightedMovingAverage { Length = SlowMaLength };
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =

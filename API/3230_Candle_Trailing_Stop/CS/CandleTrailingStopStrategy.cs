@@ -54,12 +54,12 @@ private readonly StrategyParam<DataType> _currentCandleType;
 private readonly StrategyParam<DataType> _higherCandleType;
 private readonly StrategyParam<DataType> _macdCandleType;
 
-private LinearWeightedMovingAverage _currentFast = null!;
-private LinearWeightedMovingAverage _currentMiddle = null!;
-private LinearWeightedMovingAverage _currentSlow = null!;
-private LinearWeightedMovingAverage _higherFast = null!;
-private LinearWeightedMovingAverage _higherMiddle = null!;
-private LinearWeightedMovingAverage _higherSlow = null!;
+private WeightedMovingAverage _currentFast = null!;
+private WeightedMovingAverage _currentMiddle = null!;
+private WeightedMovingAverage _currentSlow = null!;
+private WeightedMovingAverage _higherFast = null!;
+private WeightedMovingAverage _higherMiddle = null!;
+private WeightedMovingAverage _higherSlow = null!;
 private Momentum _momentum = null!;
 private MovingAverageConvergenceDivergenceSignal _macd = null!;
 
@@ -586,13 +586,13 @@ base.OnStarted(time);
 
 _tickSize = Security?.PriceStep ?? 0.0001m;
 
-_currentFast = new LinearWeightedMovingAverage { Length = FastCurrentLength };
-_currentMiddle = new LinearWeightedMovingAverage { Length = MiddleCurrentLength };
-_currentSlow = new LinearWeightedMovingAverage { Length = SlowCurrentLength };
+_currentFast = new WeightedMovingAverage { Length = FastCurrentLength };
+_currentMiddle = new WeightedMovingAverage { Length = MiddleCurrentLength };
+_currentSlow = new WeightedMovingAverage { Length = SlowCurrentLength };
 
-_higherFast = new LinearWeightedMovingAverage { Length = FastHigherLength };
-_higherMiddle = new LinearWeightedMovingAverage { Length = MiddleHigherLength };
-_higherSlow = new LinearWeightedMovingAverage { Length = SlowHigherLength };
+_higherFast = new WeightedMovingAverage { Length = FastHigherLength };
+_higherMiddle = new WeightedMovingAverage { Length = MiddleHigherLength };
+_higherSlow = new WeightedMovingAverage { Length = SlowHigherLength };
 
 _momentum = new Momentum { Length = MomentumPeriod };
 

@@ -441,7 +441,7 @@ public class MaRsiWizardStrategy : Strategy
 			MaMethods.Simple => new SimpleMovingAverage { Length = period },
 			MaMethods.Exponential => new ExponentialMovingAverage { Length = period },
 			MaMethods.Smoothed => new SmoothedMovingAverage { Length = period },
-			MaMethods.LinearWeighted => new LinearWeightedMovingAverage { Length = period },
+			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = period },
 			_ => new SimpleMovingAverage { Length = period }
 		};
 	}

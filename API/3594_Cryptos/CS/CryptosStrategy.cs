@@ -38,7 +38,7 @@ public class CryptosStrategy : Strategy
 	private readonly StrategyParam<bool> _skipBuys;
 	private readonly StrategyParam<bool> _skipSells;
 
-	private LinearWeightedMovingAverage _lwma = null!;
+	private WeightedMovingAverage _lwma = null!;
 	private BollingerBands _bollinger = null!;
 	private Highest _highest = null!;
 	private Lowest _lowest = null!;
@@ -268,7 +268,7 @@ public class CryptosStrategy : Strategy
 		base.OnStarted(time);
 
 		// Prepare indicators for Bollinger Bands, WMA, and swing detection.
-		_lwma = new LinearWeightedMovingAverage { Length = MaPeriod };
+		_lwma = new WeightedMovingAverage { Length = MaPeriod };
 		_bollinger = new BollingerBands
 		{
 			Length = BollingerPeriod,

@@ -43,10 +43,10 @@ public class OneHBollingerBandsStrategy : Strategy
 	private readonly StrategyParam<decimal> _breakEvenTriggerPips;
 	private readonly StrategyParam<decimal> _breakEvenOffsetPips;
 
-	private LinearWeightedMovingAverage _fastMa = null!;
-	private LinearWeightedMovingAverage _slowMa = null!;
-	private LinearWeightedMovingAverage _trendFastMa = null!;
-	private LinearWeightedMovingAverage _trendSlowMa = null!;
+	private WeightedMovingAverage _fastMa = null!;
+	private WeightedMovingAverage _slowMa = null!;
+	private WeightedMovingAverage _trendFastMa = null!;
+	private WeightedMovingAverage _trendSlowMa = null!;
 	private BollingerBands _bollinger = null!;
 	private Momentum _momentum = null!;
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
@@ -377,10 +377,10 @@ public class OneHBollingerBandsStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_fastMa = new LinearWeightedMovingAverage { Length = FastMaPeriod };
-		_slowMa = new LinearWeightedMovingAverage { Length = SlowMaPeriod };
-		_trendFastMa = new LinearWeightedMovingAverage { Length = TrendFastPeriod };
-		_trendSlowMa = new LinearWeightedMovingAverage { Length = TrendSlowPeriod };
+		_fastMa = new WeightedMovingAverage { Length = FastMaPeriod };
+		_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod };
+		_trendFastMa = new WeightedMovingAverage { Length = TrendFastPeriod };
+		_trendSlowMa = new WeightedMovingAverage { Length = TrendSlowPeriod };
 		_bollinger = new BollingerBands { Length = BollingerPeriod, Width = BollingerWidth };
 		_momentum = new Momentum { Length = MomentumPeriod };
 		_macd = new MovingAverageConvergenceDivergenceSignal

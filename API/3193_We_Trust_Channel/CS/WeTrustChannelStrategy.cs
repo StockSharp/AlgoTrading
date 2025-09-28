@@ -69,7 +69,7 @@ public class WeTrustChannelStrategy : Strategy
 	private readonly StrategyParam<CandlePrices> _appliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LinearWeightedMovingAverage _movingAverage;
+	private WeightedMovingAverage _movingAverage;
 	private StandardDeviation _standardDeviation;
 	private readonly List<decimal> _maHistory = new();
 	private readonly List<decimal> _stdDevHistory = new();
@@ -295,7 +295,7 @@ public class WeTrustChannelStrategy : Strategy
 
 		Volume = OrderVolume;
 
-		_movingAverage = new LinearWeightedMovingAverage { Length = MaPeriod };
+		_movingAverage = new WeightedMovingAverage { Length = MaPeriod };
 		_standardDeviation = new StandardDeviation { Length = StdDevPeriod };
 
 		_maHistory.Clear();

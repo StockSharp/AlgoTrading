@@ -27,7 +27,7 @@ public class ExpBrainTrend2AbsolutelyNoLagLwmaX2MACandleMmrecStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitAtrMultiplier;
 
 	private AverageTrueRange _atr;
-	private LinearWeightedMovingAverage _lwma;
+	private WeightedMovingAverage _lwma;
 	private ExponentialMovingAverage _fastEma;
 	private ExponentialMovingAverage _slowEma;
 
@@ -171,7 +171,7 @@ public class ExpBrainTrend2AbsolutelyNoLagLwmaX2MACandleMmrecStrategy : Strategy
 			Length = AtrPeriod
 		};
 
-		_lwma = new LinearWeightedMovingAverage
+		_lwma = new WeightedMovingAverage
 		{
 			Length = LwmaLength
 		};

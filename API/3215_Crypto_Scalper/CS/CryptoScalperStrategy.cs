@@ -206,14 +206,14 @@ public class CryptoScalperStrategy : Strategy
 
 		_pipSize = GetPipSize();
 
-		var primaryMa = new LinearWeightedMovingAverage { Length = FastMaPeriod };
+		var primaryMa = new WeightedMovingAverage { Length = FastMaPeriod };
 		var primarySubscription = SubscribeCandles(CandleType);
 		primarySubscription
 			.Bind(primaryMa, ProcessPrimaryCandle)
 			.Start();
 
-		var higherFast = new LinearWeightedMovingAverage { Length = HigherFastPeriod };
-		var higherSlow = new LinearWeightedMovingAverage { Length = HigherSlowPeriod };
+		var higherFast = new WeightedMovingAverage { Length = HigherFastPeriod };
+		var higherSlow = new WeightedMovingAverage { Length = HigherSlowPeriod };
 		var higherMomentum = new Momentum { Length = MomentumPeriod };
 		var higherMacd = new Macd
 		{

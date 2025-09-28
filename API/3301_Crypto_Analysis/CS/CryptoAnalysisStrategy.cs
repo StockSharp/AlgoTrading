@@ -50,8 +50,8 @@ public class CryptoAnalysisStrategy : Strategy
 	private readonly StrategyParam<DataType> _macdCandleType;
 
 	private BollingerBands _bollinger = null!;
-	private LinearWeightedMovingAverage _fastMa = null!;
-	private LinearWeightedMovingAverage _slowMa = null!;
+	private WeightedMovingAverage _fastMa = null!;
+	private WeightedMovingAverage _slowMa = null!;
 	private RelativeStrengthIndex _rsi = null!;
 	private Momentum _momentumIndicator = null!;
 	private MovingAverageConvergenceDivergence _macdIndicator = null!;
@@ -482,13 +482,13 @@ public class CryptoAnalysisStrategy : Strategy
 			Width = 2m
 		};
 
-		_fastMa = new LinearWeightedMovingAverage
+		_fastMa = new WeightedMovingAverage
 		{
 			Length = FastMaPeriod,
 			CandlePrice = CandlePrice.Typical
 		};
 
-		_slowMa = new LinearWeightedMovingAverage
+		_slowMa = new WeightedMovingAverage
 		{
 			Length = SlowMaPeriod,
 			CandlePrice = CandlePrice.Typical

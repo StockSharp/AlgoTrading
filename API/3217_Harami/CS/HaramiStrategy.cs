@@ -29,7 +29,7 @@ public class HaramiStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 
-	private LinearWeightedMovingAverage _fastMa = null!;
+	private WeightedMovingAverage _fastMa = null!;
 	private ExponentialMovingAverage _slowMa = null!;
 	private Momentum _higherMomentum = null!;
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
@@ -206,7 +206,7 @@ public class HaramiStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_fastMa = new LinearWeightedMovingAverage { Length = FastMaLength };
+		_fastMa = new WeightedMovingAverage { Length = FastMaLength };
 		_slowMa = new ExponentialMovingAverage { Length = SlowMaLength };
 		_higherMomentum = new Momentum { Length = MomentumPeriod };
 		_macd = new MovingAverageConvergenceDivergenceSignal

@@ -39,8 +39,8 @@ public class Simple2MaIStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingPaddingPoints;
 	private readonly StrategyParam<int> _maxNetVolume;
 
-	private LinearWeightedMovingAverage _fastMa = null!;
-	private LinearWeightedMovingAverage _slowMa = null!;
+	private WeightedMovingAverage _fastMa = null!;
+	private WeightedMovingAverage _slowMa = null!;
 	private RateOfChange _momentum = null!;
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 
@@ -286,13 +286,13 @@ public class Simple2MaIStrategy : Strategy
 
 		_point = Security.PriceStep ?? 1m;
 
-		_fastMa = new LinearWeightedMovingAverage
+		_fastMa = new WeightedMovingAverage
 		{
 			Length = FastMaLength,
 			CandlePrice = CandlePrice.Typical,
 		};
 
-		_slowMa = new LinearWeightedMovingAverage
+		_slowMa = new WeightedMovingAverage
 		{
 			Length = SlowMaLength,
 			CandlePrice = CandlePrice.Typical,

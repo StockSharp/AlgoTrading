@@ -50,8 +50,8 @@ private readonly StrategyParam<DataType> _candleType;
 private readonly StrategyParam<DataType> _momentumCandleType;
 private readonly StrategyParam<DataType> _macdCandleType;
 
-private LinearWeightedMovingAverage _fastMa = null!;
-private LinearWeightedMovingAverage _slowMa = null!;
+private WeightedMovingAverage _fastMa = null!;
+private WeightedMovingAverage _slowMa = null!;
 private Momentum _momentumIndicator = null!;
 private MovingAverageConvergenceDivergenceSignal _macdIndicator = null!;
 private Lowest _lowestIndicator = null!;
@@ -424,8 +424,8 @@ _initialEquity = GetPortfolioValue();
 _equityPeak = _initialEquity;
 _moneyTrailPeak = 0m;
 
-_fastMa = new LinearWeightedMovingAverage { Length = FastMaPeriod, CandlePrice = CandlePrice.Typical };
-_slowMa = new LinearWeightedMovingAverage { Length = SlowMaPeriod, CandlePrice = CandlePrice.Typical };
+_fastMa = new WeightedMovingAverage { Length = FastMaPeriod, CandlePrice = CandlePrice.Typical };
+_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod, CandlePrice = CandlePrice.Typical };
 _momentumIndicator = new Momentum { Length = MomentumPeriod };
 _macdIndicator = new MovingAverageConvergenceDivergenceSignal
 {

@@ -29,7 +29,7 @@ public class AwesomeFxTraderStrategy : Strategy
 
 	private EMA _fastEma;
 	private EMA _slowEma;
-	private LinearWeightedMovingAverage _trendLwma;
+	private WeightedMovingAverage _trendLwma;
 	private SimpleMovingAverage _trendSmoother;
 
 	private decimal _previousAo;
@@ -141,7 +141,7 @@ public class AwesomeFxTraderStrategy : Strategy
 
 		_fastEma = new EMA { Length = FastEmaPeriod };
 		_slowEma = new EMA { Length = SlowEmaPeriod };
-		_trendLwma = new LinearWeightedMovingAverage { Length = TrendLwmaPeriod };
+		_trendLwma = new WeightedMovingAverage { Length = TrendLwmaPeriod };
 		_trendSmoother = new SimpleMovingAverage { Length = TrendSmoothingPeriod };
 
 		var subscription = SubscribeCandles(CandleType);

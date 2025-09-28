@@ -405,7 +405,7 @@ public class ExpXrsiHistogramVolStrategy : Strategy
 			XrsiSmoothingMethods.Sma => new SimpleMovingAverage { Length = effectiveLength },
 			XrsiSmoothingMethods.Ema => new ExponentialMovingAverage { Length = effectiveLength },
 			XrsiSmoothingMethods.Smma => new SmoothedMovingAverage { Length = effectiveLength },
-			XrsiSmoothingMethods.Lwma => new LinearWeightedMovingAverage { Length = effectiveLength },
+			XrsiSmoothingMethods.Lwma => new WeightedMovingAverage { Length = effectiveLength },
 			XrsiSmoothingMethods.Jurik => new JurikMovingAverage { Length = effectiveLength },
 			_ => new SimpleMovingAverage { Length = effectiveLength },
 		};

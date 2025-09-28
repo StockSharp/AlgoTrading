@@ -1334,7 +1334,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = period },
 			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = period },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = period },
-			MovingAverageMethods.LinearWeighted => new LinearWeightedMovingAverage { Length = period },
+			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = period },
 			_ => new SimpleMovingAverage { Length = period }
 		};
 	}

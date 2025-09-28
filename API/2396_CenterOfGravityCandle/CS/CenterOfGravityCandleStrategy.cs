@@ -510,10 +510,10 @@ public class CenterOfGravityCandleIndicator : BaseIndicator<CenterOfGravityCandl
 	private SimpleMovingAverage _highSma;
 	private SimpleMovingAverage _lowSma;
 	private SimpleMovingAverage _closeSma;
-	private LinearWeightedMovingAverage _openLwma;
-	private LinearWeightedMovingAverage _highLwma;
-	private LinearWeightedMovingAverage _lowLwma;
-	private LinearWeightedMovingAverage _closeLwma;
+	private WeightedMovingAverage _openLwma;
+	private WeightedMovingAverage _highLwma;
+	private WeightedMovingAverage _lowLwma;
+	private WeightedMovingAverage _closeLwma;
 	private LengthIndicator<decimal> _openSmooth;
 	private LengthIndicator<decimal> _highSmooth;
 	private LengthIndicator<decimal> _lowSmooth;
@@ -624,10 +624,10 @@ public class CenterOfGravityCandleIndicator : BaseIndicator<CenterOfGravityCandl
 		_highSma ??= new SimpleMovingAverage();
 		_lowSma ??= new SimpleMovingAverage();
 		_closeSma ??= new SimpleMovingAverage();
-		_openLwma ??= new LinearWeightedMovingAverage();
-		_highLwma ??= new LinearWeightedMovingAverage();
-		_lowLwma ??= new LinearWeightedMovingAverage();
-		_closeLwma ??= new LinearWeightedMovingAverage();
+		_openLwma ??= new WeightedMovingAverage();
+		_highLwma ??= new WeightedMovingAverage();
+		_lowLwma ??= new WeightedMovingAverage();
+		_closeLwma ??= new WeightedMovingAverage();
 
 		_openSma.Length = length;
 		_highSma.Length = length;
@@ -662,7 +662,7 @@ public class CenterOfGravityCandleIndicator : BaseIndicator<CenterOfGravityCandl
 		{
 			CenterOfGravityMaMethods.Exponential => new ExponentialMovingAverage { Length = SmoothLength },
 			CenterOfGravityMaMethods.Smoothed => new SmoothedMovingAverage { Length = SmoothLength },
-			CenterOfGravityMaMethods.LinearWeighted => new LinearWeightedMovingAverage { Length = SmoothLength },
+			CenterOfGravityMaMethods.LinearWeighted => new WeightedMovingAverage { Length = SmoothLength },
 			_ => new SimpleMovingAverage { Length = SmoothLength },
 		};
 	}

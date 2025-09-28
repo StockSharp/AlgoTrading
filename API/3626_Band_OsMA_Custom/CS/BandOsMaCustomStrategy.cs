@@ -477,7 +477,7 @@ public class BandOsMaCustomStrategy : Strategy
 			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
 			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
 			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethods.LinearWeighted => new LinearWeightedMovingAverage { Length = length },
+			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}

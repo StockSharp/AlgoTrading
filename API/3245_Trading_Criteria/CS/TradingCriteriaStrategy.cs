@@ -35,8 +35,8 @@ public class TradingCriteriaStrategy : Strategy
 	private readonly StrategyParam<decimal> _breakEvenTriggerPoints;
 	private readonly StrategyParam<decimal> _breakEvenOffsetPoints;
 
-	private LinearWeightedMovingAverage _fastMa = null!;
-	private LinearWeightedMovingAverage _slowMa = null!;
+	private WeightedMovingAverage _fastMa = null!;
+	private WeightedMovingAverage _slowMa = null!;
 	private Momentum _trendMomentum = null!;
 	private MovingAverageConvergenceDivergenceSignal _trendMacd = null!;
 	private MovingAverageConvergenceDivergenceSignal _monthlyMacd = null!;
@@ -327,8 +327,8 @@ public class TradingCriteriaStrategy : Strategy
 		_pipSize = step;
 		// Normalize price step to align with the original pip handling.
 
-		_fastMa = new LinearWeightedMovingAverage { Length = FastMaPeriod };
-		_slowMa = new LinearWeightedMovingAverage { Length = SlowMaPeriod };
+		_fastMa = new WeightedMovingAverage { Length = FastMaPeriod };
+		_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod };
 		_trendMomentum = new Momentum { Length = MomentumPeriod };
 		_trendMacd = new MovingAverageConvergenceDivergenceSignal
 		{

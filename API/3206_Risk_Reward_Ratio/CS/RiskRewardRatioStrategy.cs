@@ -36,8 +36,8 @@ public class RiskRewardRatioStrategy : Strategy
 	private readonly StrategyParam<decimal> _breakEvenOffsetPips;
 	private readonly StrategyParam<bool> _exitSwitch;
 
-	private LinearWeightedMovingAverage _fastMa = null!;
-	private LinearWeightedMovingAverage _slowMa = null!;
+	private WeightedMovingAverage _fastMa = null!;
+	private WeightedMovingAverage _slowMa = null!;
 	private StochasticOscillator _fastStochastic = null!;
 	private StochasticOscillator _slowStochastic = null!;
 	private RelativeStrengthIndex _rsi = null!;
@@ -260,8 +260,8 @@ public class RiskRewardRatioStrategy : Strategy
 		Volume = _tradeVolume.Value;
 		_pointValue = GetPointValue();
 
-		_fastMa = new LinearWeightedMovingAverage { Length = FastMaPeriod };
-		_slowMa = new LinearWeightedMovingAverage { Length = SlowMaPeriod };
+		_fastMa = new WeightedMovingAverage { Length = FastMaPeriod };
+		_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod };
 
 		_fastStochastic = new StochasticOscillator
 		{

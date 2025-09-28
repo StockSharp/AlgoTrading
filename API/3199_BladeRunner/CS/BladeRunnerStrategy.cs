@@ -34,9 +34,9 @@ public class BladeRunnerStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitSteps;
 	private readonly StrategyParam<int> _stopLossSteps;
 
-	private LinearWeightedMovingAverage _fastMa = null!;
-	private LinearWeightedMovingAverage _slowMa = null!;
-	private LinearWeightedMovingAverage _filterMa = null!;
+	private WeightedMovingAverage _fastMa = null!;
+	private WeightedMovingAverage _slowMa = null!;
+	private WeightedMovingAverage _filterMa = null!;
 	private Momentum _momentum = null!;
 	private MovingAverageConvergenceDivergence _macd = null!;
 
@@ -241,9 +241,9 @@ public class BladeRunnerStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_fastMa = new LinearWeightedMovingAverage { Length = FastMaPeriod, CandlePrice = CandlePrice.Typical };
-		_slowMa = new LinearWeightedMovingAverage { Length = SlowMaPeriod, CandlePrice = CandlePrice.Typical };
-		_filterMa = new LinearWeightedMovingAverage { Length = FilterMaPeriod, CandlePrice = CandlePrice.Typical };
+		_fastMa = new WeightedMovingAverage { Length = FastMaPeriod, CandlePrice = CandlePrice.Typical };
+		_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod, CandlePrice = CandlePrice.Typical };
+		_filterMa = new WeightedMovingAverage { Length = FilterMaPeriod, CandlePrice = CandlePrice.Typical };
 		_momentum = new Momentum { Length = MomentumPeriod };
 		_macd = new MovingAverageConvergenceDivergence
 		{

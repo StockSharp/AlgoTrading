@@ -400,7 +400,7 @@ public class CronexRsiStrategy : Strategy
 		{
 			CronexSmoothingMethods.Exponential => new ExponentialMovingAverage { Length = length },
 			CronexSmoothingMethods.Smoothed => new SmoothedMovingAverage { Length = length },
-			CronexSmoothingMethods.LinearWeighted => new LinearWeightedMovingAverage { Length = length },
+			CronexSmoothingMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 			CronexSmoothingMethods.VolumeWeighted => new VolumeWeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};

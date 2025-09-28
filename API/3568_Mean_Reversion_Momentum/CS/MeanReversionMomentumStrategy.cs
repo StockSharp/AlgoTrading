@@ -41,8 +41,8 @@ public class MeanReversionMomentumStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStopPips;
 	private readonly StrategyParam<decimal> _trailingStepPips;
 
-	private LinearWeightedMovingAverage _fastMa = null!;
-	private LinearWeightedMovingAverage _slowMa = null!;
+	private WeightedMovingAverage _fastMa = null!;
+	private WeightedMovingAverage _slowMa = null!;
 	private Momentum _momentum = null!;
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 
@@ -354,13 +354,13 @@ public class MeanReversionMomentumStrategy : Strategy
 		_useBaseForMomentum = _momentumType == CandleType;
 		_useBaseForMacd = _macdType == CandleType;
 
-		_fastMa = new LinearWeightedMovingAverage
+		_fastMa = new WeightedMovingAverage
 		{
 			Length = FastMaLength,
 			CandlePrice = CandlePrice.Typical
 		};
 
-		_slowMa = new LinearWeightedMovingAverage
+		_slowMa = new WeightedMovingAverage
 		{
 			Length = SlowMaLength,
 			CandlePrice = CandlePrice.Typical

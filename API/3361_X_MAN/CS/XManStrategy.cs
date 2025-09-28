@@ -241,8 +241,8 @@ public class XManStrategy : Strategy
 		base.OnStarted(time);
 
 		// Create the indicators used by the trading rules.
-		var fastMa = new LinearWeightedMovingAverage { Length = FastMaPeriod, CandlePrice = CandlePrice.Typical };
-		var slowMa = new LinearWeightedMovingAverage { Length = SlowMaPeriod, CandlePrice = CandlePrice.Typical };
+		var fastMa = new WeightedMovingAverage { Length = FastMaPeriod, CandlePrice = CandlePrice.Typical };
+		var slowMa = new WeightedMovingAverage { Length = SlowMaPeriod, CandlePrice = CandlePrice.Typical };
 		var momentum = new Momentum { Length = MomentumPeriod };
 		var macd = new MovingAverageConvergenceDivergence
 		{

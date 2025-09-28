@@ -32,7 +32,7 @@ public class TemplateM5EnvelopesStrategy : Strategy
 	private readonly StrategyParam<decimal> _slippagePoints;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly LinearWeightedMovingAverage _envelopeMa = new();
+	private readonly WeightedMovingAverage _envelopeMa = new();
 
 	private decimal _point;
 	private decimal _bestBid;

@@ -762,7 +762,7 @@ public class BandsPendingBreakoutStrategy : Strategy
 			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = length },
 			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = length },
 			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.LinearWeighted => new LinearWeightedMovingAverage { Length = length },
+			MovingAverageMethod.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}

@@ -43,8 +43,8 @@ public class TenPipsMomentumStrategy : Strategy
 	private readonly StrategyParam<decimal> _equityRiskPercent;
 	private readonly StrategyParam<bool> _useMacdExit;
 
-	private LinearWeightedMovingAverage _fastMa = null!;
-	private LinearWeightedMovingAverage _slowMa = null!;
+	private WeightedMovingAverage _fastMa = null!;
+	private WeightedMovingAverage _slowMa = null!;
 	private Momentum _momentum = null!;
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 
@@ -440,8 +440,8 @@ public TenPipsMomentumStrategy()
 		if (_tickSize == 0.00001m || _tickSize == 0.001m)
 		_pipSize = _tickSize * 10m;
 
-		_fastMa = new LinearWeightedMovingAverage { Length = FastMaPeriod };
-		_slowMa = new LinearWeightedMovingAverage { Length = SlowMaPeriod };
+		_fastMa = new WeightedMovingAverage { Length = FastMaPeriod };
+		_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod };
 		_momentum = new Momentum { Length = MomentumPeriod };
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{

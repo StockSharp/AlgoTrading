@@ -30,8 +30,8 @@ public class IchimokuRetracementStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _stopLossPips;
 
-	private LinearWeightedMovingAverage _fastMa = null!;
-	private LinearWeightedMovingAverage _slowMa = null!;
+	private WeightedMovingAverage _fastMa = null!;
+	private WeightedMovingAverage _slowMa = null!;
 	private Ichimoku _ichimoku = null!;
 	private MovingAverageConvergenceDivergenceSignal _monthlyMacd = null!;
 
@@ -251,8 +251,8 @@ public class IchimokuRetracementStrategy : Strategy
 		// Derive the pip size from the security definition or fall back to a default.
 		_pipSize = Security?.PriceStep ?? 0.0001m;
 
-		_fastMa = new LinearWeightedMovingAverage { Length = FastMaPeriod };
-		_slowMa = new LinearWeightedMovingAverage { Length = SlowMaPeriod };
+		_fastMa = new WeightedMovingAverage { Length = FastMaPeriod };
+		_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod };
 
 		_ichimoku = new Ichimoku
 		{

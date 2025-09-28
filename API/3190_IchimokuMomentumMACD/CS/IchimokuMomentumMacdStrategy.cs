@@ -302,8 +302,8 @@ public class IchimokuMomentumMacdStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		var fastMa = new LinearWeightedMovingAverage { Length = FastMaPeriod };
-		var slowMa = new LinearWeightedMovingAverage { Length = SlowMaPeriod };
+		var fastMa = new WeightedMovingAverage { Length = FastMaPeriod };
+		var slowMa = new WeightedMovingAverage { Length = SlowMaPeriod };
 		var momentum = new Momentum { Length = MomentumPeriod };
 		var macd = new MovingAverageConvergenceDivergence
 		{

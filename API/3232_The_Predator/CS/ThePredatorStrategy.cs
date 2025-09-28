@@ -41,8 +41,8 @@ public class ThePredatorStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStopPips;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LinearWeightedMovingAverage _fastMa = null!;
-	private LinearWeightedMovingAverage _slowMa = null!;
+	private WeightedMovingAverage _fastMa = null!;
+	private WeightedMovingAverage _slowMa = null!;
 	private DirectionalIndex _directionalIndex = null!;
 	private AverageDirectionalIndex _adx = null!;
 	private Momentum _momentum = null!;
@@ -368,8 +368,8 @@ public class ThePredatorStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_fastMa = new LinearWeightedMovingAverage { Length = FastMaLength };
-		_slowMa = new LinearWeightedMovingAverage { Length = SlowMaLength };
+		_fastMa = new WeightedMovingAverage { Length = FastMaLength };
+		_slowMa = new WeightedMovingAverage { Length = SlowMaLength };
 		_directionalIndex = new DirectionalIndex { Length = DmiPeriod };
 		_adx = new AverageDirectionalIndex { Length = AdxSmoothing };
 		_momentum = new Momentum { Length = MomentumPeriod };

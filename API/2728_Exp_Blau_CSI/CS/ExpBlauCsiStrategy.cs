@@ -788,7 +788,7 @@ public class BlauCsiIndicator : BaseIndicator<decimal>
 		{
 			BlauCsiSmoothMethods.Simple => new SimpleMovingAverage { Length = length },
 			BlauCsiSmoothMethods.Smoothed => new SmoothedMovingAverage { Length = length },
-			BlauCsiSmoothMethods.LinearWeighted => new LinearWeightedMovingAverage { Length = length },
+			BlauCsiSmoothMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 			BlauCsiSmoothMethods.Jurik => new JurikMovingAverage { Length = length, Phase = Phase },
 			_ => new ExponentialMovingAverage { Length = length }
 		};

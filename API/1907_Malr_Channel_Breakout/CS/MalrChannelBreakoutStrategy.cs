@@ -25,7 +25,7 @@ private readonly StrategyParam<decimal> _channelBreakout;
 private readonly StrategyParam<DataType> _candleType;
 
 private SimpleMovingAverage _sma;
-private LinearWeightedMovingAverage _lwma;
+private WeightedMovingAverage _lwma;
 private StandardDeviation _stdDev;
 
 private decimal? _prevUpper;
@@ -107,7 +107,7 @@ protected override void OnStarted(DateTimeOffset time)
 base.OnStarted(time);
 
 _sma = new SimpleMovingAverage { Length = MaPeriod };
-_lwma = new LinearWeightedMovingAverage { Length = MaPeriod };
+_lwma = new WeightedMovingAverage { Length = MaPeriod };
 _stdDev = new StandardDeviation { Length = MaPeriod };
 
 var subscription = SubscribeCandles(CandleType);

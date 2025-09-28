@@ -37,7 +37,7 @@ public class TrendIsYourFriendStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingDistancePips;
 
 	private ExponentialMovingAverage _fastMa = null!;
-	private LinearWeightedMovingAverage _slowMa = null!;
+	private WeightedMovingAverage _slowMa = null!;
 	private BollingerBands _bollinger = null!;
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 
@@ -268,7 +268,7 @@ public class TrendIsYourFriendStrategy : Strategy
 		StartProtection();
 
 		_fastMa = new ExponentialMovingAverage { Length = FastMaLength };
-	_slowMa = new LinearWeightedMovingAverage { Length = SlowMaLength };
+	_slowMa = new WeightedMovingAverage { Length = SlowMaLength };
 _bollinger = new BollingerBands
 {
 	Length = BollingerLength,

@@ -478,7 +478,7 @@ public sealed class XFisherOrgIndicator : Indicator<ICandleMessage>
 			XfisherSmoothingMethods.Sma => new SimpleMovingAverage { Length = length },
 			XfisherSmoothingMethods.Ema => new ExponentialMovingAverage { Length = length },
 			XfisherSmoothingMethods.Smma => new SmoothedMovingAverage { Length = length },
-			XfisherSmoothingMethods.Lwma => new LinearWeightedMovingAverage { Length = length },
+			XfisherSmoothingMethods.Lwma => new WeightedMovingAverage { Length = length },
 			XfisherSmoothingMethods.Jjma or XfisherSmoothingMethods.Jurx or XfisherSmoothingMethods.T3 => CreateJurik(length),
 			XfisherSmoothingMethods.Vidya or XfisherSmoothingMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = length },
 			XfisherSmoothingMethods.Parabolic => new ExponentialMovingAverage { Length = length },

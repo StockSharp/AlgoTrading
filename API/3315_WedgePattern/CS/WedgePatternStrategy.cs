@@ -40,8 +40,8 @@ public class WedgePatternStrategy : Strategy
 	private readonly StrategyParam<int> _breakoutBufferPips;
 	private readonly StrategyParam<int> _maxStoredCandles;
 
-	private LinearWeightedMovingAverage _fastMa = null!;
-	private LinearWeightedMovingAverage _slowMa = null!;
+	private WeightedMovingAverage _fastMa = null!;
+	private WeightedMovingAverage _slowMa = null!;
 	private Momentum _momentum = null!;
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 
@@ -361,13 +361,13 @@ public class WedgePatternStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_fastMa = new LinearWeightedMovingAverage
+		_fastMa = new WeightedMovingAverage
 		{
 			Length = FastMaPeriod,
 			CandlePrice = CandlePrice.Typical
 		};
 
-		_slowMa = new LinearWeightedMovingAverage
+		_slowMa = new WeightedMovingAverage
 		{
 			Length = SlowMaPeriod,
 			CandlePrice = CandlePrice.Typical

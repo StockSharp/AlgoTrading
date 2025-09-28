@@ -26,9 +26,9 @@ public class Breadandbutter2Strategy : Strategy
 	private readonly StrategyParam<decimal> _crossFilter;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LinearWeightedMovingAverage _wma5 = null!;
-	private LinearWeightedMovingAverage _wma10 = null!;
-	private LinearWeightedMovingAverage _wma15 = null!;
+	private WeightedMovingAverage _wma5 = null!;
+	private WeightedMovingAverage _wma10 = null!;
+	private WeightedMovingAverage _wma15 = null!;
 
 	private decimal? _previousWma5;
 	private decimal? _previousWma10;
@@ -138,19 +138,19 @@ public class Breadandbutter2Strategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_wma5 = new LinearWeightedMovingAverage
+		_wma5 = new WeightedMovingAverage
 		{
 			Length = 5,
 			CandlePrice = CandlePrice.Open,
 		};
 
-		_wma10 = new LinearWeightedMovingAverage
+		_wma10 = new WeightedMovingAverage
 		{
 			Length = 10,
 			CandlePrice = CandlePrice.Open,
 		};
 
-		_wma15 = new LinearWeightedMovingAverage
+		_wma15 = new WeightedMovingAverage
 		{
 			Length = 15,
 			CandlePrice = CandlePrice.Open,

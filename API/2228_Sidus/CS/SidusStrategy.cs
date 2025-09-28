@@ -30,8 +30,8 @@ public class SidusStrategy : Strategy
 	
 	private ExponentialMovingAverage _fastEmaIndicator;
 	private ExponentialMovingAverage _slowEmaIndicator;
-	private LinearWeightedMovingAverage _fastLwmaIndicator;
-	private LinearWeightedMovingAverage _slowLwmaIndicator;
+	private WeightedMovingAverage _fastLwmaIndicator;
+	private WeightedMovingAverage _slowLwmaIndicator;
 	
 	private decimal _prevFastLwma;
 	private decimal _prevSlowLwma;
@@ -167,8 +167,8 @@ public class SidusStrategy : Strategy
 	{
 		_fastEmaIndicator = new ExponentialMovingAverage { Length = FastEma };
 		_slowEmaIndicator = new ExponentialMovingAverage { Length = SlowEma };
-		_fastLwmaIndicator = new LinearWeightedMovingAverage { Length = FastLwma };
-		_slowLwmaIndicator = new LinearWeightedMovingAverage { Length = SlowLwma };
+		_fastLwmaIndicator = new WeightedMovingAverage { Length = FastLwma };
+		_slowLwmaIndicator = new WeightedMovingAverage { Length = SlowLwma };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription

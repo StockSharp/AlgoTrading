@@ -29,8 +29,8 @@ public class ThreeMaBunnyCrossStrategy : Strategy
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 
-	private LinearWeightedMovingAverage _fastMa = null!;
-	private LinearWeightedMovingAverage _slowMa = null!;
+	private WeightedMovingAverage _fastMa = null!;
+	private WeightedMovingAverage _slowMa = null!;
 
 	private bool _hasPrevious;
 	private decimal _prevFast;
@@ -82,13 +82,13 @@ public class ThreeMaBunnyCrossStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_fastMa = new LinearWeightedMovingAverage
+		_fastMa = new WeightedMovingAverage
 		{
 			Length = FastPeriod,
 			CandlePrice = CandlePrice.Close,
 		};
 
-		_slowMa = new LinearWeightedMovingAverage
+		_slowMa = new WeightedMovingAverage
 		{
 			Length = SlowPeriod,
 			CandlePrice = CandlePrice.Close,

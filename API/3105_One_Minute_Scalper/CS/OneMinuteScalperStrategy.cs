@@ -45,21 +45,21 @@ public class OneMinuteScalperStrategy : Strategy
 	private readonly StrategyParam<DataType> _momentumCandleType;
 	private readonly StrategyParam<DataType> _macdCandleType;
 
-	private LinearWeightedMovingAverage _lwma3;
-	private LinearWeightedMovingAverage _lwma5;
-	private LinearWeightedMovingAverage _lwma8;
-	private LinearWeightedMovingAverage _lwma10;
-	private LinearWeightedMovingAverage _lwma12;
-	private LinearWeightedMovingAverage _lwma15;
-	private LinearWeightedMovingAverage _lwma30;
-	private LinearWeightedMovingAverage _lwma35;
-	private LinearWeightedMovingAverage _lwma40;
-	private LinearWeightedMovingAverage _lwma45;
-	private LinearWeightedMovingAverage _lwma50;
-	private LinearWeightedMovingAverage _lwma55;
-	private LinearWeightedMovingAverage _lwma200;
-	private LinearWeightedMovingAverage _fastTrendMa;
-	private LinearWeightedMovingAverage _slowTrendMa;
+	private WeightedMovingAverage _lwma3;
+	private WeightedMovingAverage _lwma5;
+	private WeightedMovingAverage _lwma8;
+	private WeightedMovingAverage _lwma10;
+	private WeightedMovingAverage _lwma12;
+	private WeightedMovingAverage _lwma15;
+	private WeightedMovingAverage _lwma30;
+	private WeightedMovingAverage _lwma35;
+	private WeightedMovingAverage _lwma40;
+	private WeightedMovingAverage _lwma45;
+	private WeightedMovingAverage _lwma50;
+	private WeightedMovingAverage _lwma55;
+	private WeightedMovingAverage _lwma200;
+	private WeightedMovingAverage _fastTrendMa;
+	private WeightedMovingAverage _slowTrendMa;
 	private Momentum _momentumIndicator;
 	private MovingAverageConvergenceDivergence _macdIndicator;
 
@@ -456,21 +456,21 @@ public class OneMinuteScalperStrategy : Strategy
 
 		_tickSize = Security?.PriceStep ?? 0m;
 
-		_lwma3 = new LinearWeightedMovingAverage { Length = 3 };
-		_lwma5 = new LinearWeightedMovingAverage { Length = 5 };
-		_lwma8 = new LinearWeightedMovingAverage { Length = 8 };
-		_lwma10 = new LinearWeightedMovingAverage { Length = 10 };
-		_lwma12 = new LinearWeightedMovingAverage { Length = 12 };
-		_lwma15 = new LinearWeightedMovingAverage { Length = 15 };
-		_lwma30 = new LinearWeightedMovingAverage { Length = 30 };
-		_lwma35 = new LinearWeightedMovingAverage { Length = 35 };
-		_lwma40 = new LinearWeightedMovingAverage { Length = 40 };
-		_lwma45 = new LinearWeightedMovingAverage { Length = 45 };
-		_lwma50 = new LinearWeightedMovingAverage { Length = 50 };
-		_lwma55 = new LinearWeightedMovingAverage { Length = 55 };
-		_lwma200 = new LinearWeightedMovingAverage { Length = 200 };
-		_fastTrendMa = new LinearWeightedMovingAverage { Length = FastMaPeriod };
-		_slowTrendMa = new LinearWeightedMovingAverage { Length = SlowMaPeriod };
+		_lwma3 = new WeightedMovingAverage { Length = 3 };
+		_lwma5 = new WeightedMovingAverage { Length = 5 };
+		_lwma8 = new WeightedMovingAverage { Length = 8 };
+		_lwma10 = new WeightedMovingAverage { Length = 10 };
+		_lwma12 = new WeightedMovingAverage { Length = 12 };
+		_lwma15 = new WeightedMovingAverage { Length = 15 };
+		_lwma30 = new WeightedMovingAverage { Length = 30 };
+		_lwma35 = new WeightedMovingAverage { Length = 35 };
+		_lwma40 = new WeightedMovingAverage { Length = 40 };
+		_lwma45 = new WeightedMovingAverage { Length = 45 };
+		_lwma50 = new WeightedMovingAverage { Length = 50 };
+		_lwma55 = new WeightedMovingAverage { Length = 55 };
+		_lwma200 = new WeightedMovingAverage { Length = 200 };
+		_fastTrendMa = new WeightedMovingAverage { Length = FastMaPeriod };
+		_slowTrendMa = new WeightedMovingAverage { Length = SlowMaPeriod };
 		_momentumIndicator = new Momentum { Length = MomentumPeriod };
 		_macdIndicator = new MovingAverageConvergenceDivergence
 		{
@@ -610,7 +610,7 @@ public class OneMinuteScalperStrategy : Strategy
 		return _fastTrendMa.IsFormed && _slowTrendMa.IsFormed && _momentumReady && _macdReady;
 	}
 
-	private IEnumerable<LinearWeightedMovingAverage> GetTrendIndicators()
+	private IEnumerable<WeightedMovingAverage> GetTrendIndicators()
 	{
 		yield return _lwma3;
 		yield return _lwma5;

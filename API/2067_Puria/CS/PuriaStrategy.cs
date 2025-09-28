@@ -28,8 +28,8 @@ private readonly StrategyParam<int> _ma2Period;
 private readonly StrategyParam<int> _ma3Period;
 private readonly StrategyParam<DataType> _candleType;
 
-private LinearWeightedMovingAverage _ma75;
-private LinearWeightedMovingAverage _ma85;
+private WeightedMovingAverage _ma75;
+private WeightedMovingAverage _ma85;
 private ExponentialMovingAverage _ma5;
 private MovingAverageConvergenceDivergence _macd;
 
@@ -161,13 +161,13 @@ takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
 stopLoss: new Unit(StopLoss, UnitTypes.Absolute)
 );
 
-_ma75 = new LinearWeightedMovingAverage
+_ma75 = new WeightedMovingAverage
 {
 Length = Ma1Period,
 CandlePrice = CandlePrice.Low
 };
 
-_ma85 = new LinearWeightedMovingAverage
+_ma85 = new WeightedMovingAverage
 {
 Length = Ma2Period,
 CandlePrice = CandlePrice.Low

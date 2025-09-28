@@ -257,7 +257,7 @@ public class MovingAveragePositionSystemStrategy : Strategy
 		{
 			MovingAverageModes.Exponential => new ExponentialMovingAverage { Length = MaPeriod },
 			MovingAverageModes.Smoothed => new SmoothedMovingAverage { Length = MaPeriod },
-			MovingAverageModes.LinearWeighted => new LinearWeightedMovingAverage { Length = MaPeriod },
+			MovingAverageModes.LinearWeighted => new WeightedMovingAverage { Length = MaPeriod },
 			_ => new SimpleMovingAverage { Length = MaPeriod },
 		};
 	}

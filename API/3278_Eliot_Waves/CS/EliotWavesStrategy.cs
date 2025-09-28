@@ -38,8 +38,8 @@ public class EliotWavesStrategy : Strategy
 	private readonly StrategyParam<int> _maxPositions;
 	private readonly StrategyParam<bool> _enableExitStrategy;
 
-	private LinearWeightedMovingAverage _fastMa = null!;
-	private LinearWeightedMovingAverage _slowMa = null!;
+	private WeightedMovingAverage _fastMa = null!;
+	private WeightedMovingAverage _slowMa = null!;
 	private Momentum _momentum = null!;
 	private BollingerBands _bollinger = null!;
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
@@ -288,13 +288,13 @@ public class EliotWavesStrategy : Strategy
 		_pipSize = CalculatePipSize();
 		_pointValue = GetPointValue();
 
-		_fastMa = new LinearWeightedMovingAverage
+		_fastMa = new WeightedMovingAverage
 		{
 			Length = FastMaPeriod,
 			CandlePrice = CandlePrice.Typical
 		};
 
-		_slowMa = new LinearWeightedMovingAverage
+		_slowMa = new WeightedMovingAverage
 		{
 			Length = SlowMaPeriod,
 			CandlePrice = CandlePrice.Typical

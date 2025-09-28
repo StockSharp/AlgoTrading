@@ -44,11 +44,11 @@ public class FiveMinScalpingStrategy : Strategy
 	private readonly StrategyParam<decimal> _breakEvenOffsetPips;
 	private readonly StrategyParam<decimal> _tradeVolume;
 
-	private LinearWeightedMovingAverage _fastLwma = null!;
-	private LinearWeightedMovingAverage _slowLwma = null!;
-	private LinearWeightedMovingAverage _trendMa8 = null!;
-	private LinearWeightedMovingAverage _trendMa13 = null!;
-	private LinearWeightedMovingAverage _trendMa21 = null!;
+	private WeightedMovingAverage _fastLwma = null!;
+	private WeightedMovingAverage _slowLwma = null!;
+	private WeightedMovingAverage _trendMa8 = null!;
+	private WeightedMovingAverage _trendMa13 = null!;
+	private WeightedMovingAverage _trendMa21 = null!;
 	private Momentum _momentumIndicator = null!;
 	private MovingAverageConvergenceDivergenceSignal _macroMacdIndicator = null!;
 
@@ -400,11 +400,11 @@ public class FiveMinScalpingStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_fastLwma = new LinearWeightedMovingAverage { Length = FastMaLength };
-		_slowLwma = new LinearWeightedMovingAverage { Length = SlowMaLength };
-		_trendMa8 = new LinearWeightedMovingAverage { Length = FastTrendLength };
-		_trendMa13 = new LinearWeightedMovingAverage { Length = MiddleTrendLength };
-		_trendMa21 = new LinearWeightedMovingAverage { Length = SlowTrendLength };
+		_fastLwma = new WeightedMovingAverage { Length = FastMaLength };
+		_slowLwma = new WeightedMovingAverage { Length = SlowMaLength };
+		_trendMa8 = new WeightedMovingAverage { Length = FastTrendLength };
+		_trendMa13 = new WeightedMovingAverage { Length = MiddleTrendLength };
+		_trendMa21 = new WeightedMovingAverage { Length = SlowTrendLength };
 		_momentumIndicator = new Momentum { Length = MomentumLength };
 		_macroMacdIndicator = new MovingAverageConvergenceDivergenceSignal
 		{

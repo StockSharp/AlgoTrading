@@ -30,7 +30,7 @@ public class RsiTraderAlignedAveragesStrategy : Strategy
 	private SimpleMovingAverage _shortRsiMa;
 	private SimpleMovingAverage _longRsiMa;
 	private SimpleMovingAverage _shortPriceMa;
-	private LinearWeightedMovingAverage _longPriceMa;
+	private WeightedMovingAverage _longPriceMa;
 
 	/// <summary>
 	/// RSI calculation period.
@@ -148,7 +148,7 @@ public RsiTraderAlignedAveragesStrategy()
 		_shortRsiMa = new SimpleMovingAverage { Length = ShortRsiMaPeriod };
 		_longRsiMa = new SimpleMovingAverage { Length = LongRsiMaPeriod };
 		_shortPriceMa = new SimpleMovingAverage { Length = ShortPriceMaPeriod };
-		_longPriceMa = new LinearWeightedMovingAverage { Length = LongPriceMaPeriod };
+		_longPriceMa = new WeightedMovingAverage { Length = LongPriceMaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

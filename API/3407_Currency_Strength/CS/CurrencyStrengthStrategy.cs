@@ -73,8 +73,8 @@ public class CurrencyStrengthStrategy : Strategy
 	private readonly StrategyParam<int> _macdSlowLength;
 	private readonly StrategyParam<int> _macdSignalLength;
 
-	private LinearWeightedMovingAverage _fastMa = null!;
-	private LinearWeightedMovingAverage _slowMa = null!;
+	private WeightedMovingAverage _fastMa = null!;
+	private WeightedMovingAverage _slowMa = null!;
 	private Momentum _momentumIndicator = null!;
 	private MovingAverageConvergenceDivergence _macdIndicator = null!;
 
@@ -235,8 +235,8 @@ public class CurrencyStrengthStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_fastMa = new LinearWeightedMovingAverage { Length = FastMaLength };
-		_slowMa = new LinearWeightedMovingAverage { Length = SlowMaLength };
+		_fastMa = new WeightedMovingAverage { Length = FastMaLength };
+		_slowMa = new WeightedMovingAverage { Length = SlowMaLength };
 		_momentumIndicator = new Momentum { Length = MomentumLength };
 		_macdIndicator = new MovingAverageConvergenceDivergence
 		{

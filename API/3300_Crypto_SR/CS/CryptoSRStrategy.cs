@@ -40,8 +40,8 @@ public class CryptoSrStrategy : Strategy
 	private readonly StrategyParam<DataType> _higherCandleType;
 	private readonly StrategyParam<DataType> _longTermCandleType;
 
-	private LinearWeightedMovingAverage _fastMa = null!;
-	private LinearWeightedMovingAverage _slowMa = null!;
+	private WeightedMovingAverage _fastMa = null!;
+	private WeightedMovingAverage _slowMa = null!;
 	private Momentum _momentum = null!;
 	private MovingAverageConvergenceDivergenceSignal _longTermMacd = null!;
 
@@ -384,8 +384,8 @@ public class CryptoSrStrategy : Strategy
 		Volume = TradeVolume;
 		StartProtection();
 
-		_fastMa = new LinearWeightedMovingAverage { Length = FastMaPeriod };
-		_slowMa = new LinearWeightedMovingAverage { Length = SlowMaPeriod };
+		_fastMa = new WeightedMovingAverage { Length = FastMaPeriod };
+		_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod };
 		_momentum = new Momentum { Length = MomentumPeriod };
 		_longTermMacd = new MovingAverageConvergenceDivergenceSignal
 		{

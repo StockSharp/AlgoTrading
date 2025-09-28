@@ -33,8 +33,8 @@ public class MacdSecretsStrategy : Strategy
 	private readonly StrategyParam<DataType> _trendCandleType;
 	private readonly StrategyParam<DataType> _monthlyCandleType;
 
-	private LinearWeightedMovingAverage _fastMa = null!;
-	private LinearWeightedMovingAverage _slowMa = null!;
+	private WeightedMovingAverage _fastMa = null!;
+	private WeightedMovingAverage _slowMa = null!;
 	private MovingAverageConvergenceDivergenceSignal _primaryMacd = null!;
 	private MovingAverageConvergenceDivergenceSignal _trendMacd = null!;
 	private MovingAverageConvergenceDivergenceSignal _monthlyMacd = null!;
@@ -246,8 +246,8 @@ public class MacdSecretsStrategy : Strategy
 	{
 	base.OnStarted(time);
 
-	_fastMa = new LinearWeightedMovingAverage { Length = FastMaPeriod };
-	_slowMa = new LinearWeightedMovingAverage { Length = SlowMaPeriod };
+	_fastMa = new WeightedMovingAverage { Length = FastMaPeriod };
+	_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod };
 	_primaryMacd = CreateMacd();
 	_trendMacd = CreateMacd();
 	_monthlyMacd = CreateMacd();

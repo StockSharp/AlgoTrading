@@ -177,7 +177,7 @@ public class SpasmStrategy : Strategy
 	private LengthIndicator<decimal> CreateVolatilityIndicator()
 	{
 		return UseWeightedVolatility
-			? new LinearWeightedMovingAverage { Length = VolatilityPeriod }
+			? new WeightedMovingAverage { Length = VolatilityPeriod }
 			: new SimpleMovingAverage { Length = VolatilityPeriod };
 	}
 

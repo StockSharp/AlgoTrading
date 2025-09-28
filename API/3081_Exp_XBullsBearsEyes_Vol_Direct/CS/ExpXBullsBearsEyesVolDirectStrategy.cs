@@ -511,7 +511,7 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 			SmoothingMethods.Sma => new SimpleMovingAverage { Length = effectiveLength },
 			SmoothingMethods.Ema => new ExponentialMovingAverage { Length = effectiveLength },
 			SmoothingMethods.Smma => new SmoothedMovingAverage { Length = effectiveLength },
-			SmoothingMethods.Lwma => new LinearWeightedMovingAverage { Length = effectiveLength },
+			SmoothingMethods.Lwma => new WeightedMovingAverage { Length = effectiveLength },
 			SmoothingMethods.Jurik => CreateJurik(effectiveLength, phase),
 			_ => new SimpleMovingAverage { Length = effectiveLength },
 		};

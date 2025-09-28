@@ -52,8 +52,8 @@ public class AdxEaStrategy : Strategy
 	private readonly StrategyParam<bool> _useEquityStop;
 	private readonly StrategyParam<decimal> _totalEquityRisk;
 
-	private LinearWeightedMovingAverage _fastMa = null!;
-	private LinearWeightedMovingAverage _slowMa = null!;
+	private WeightedMovingAverage _fastMa = null!;
+	private WeightedMovingAverage _slowMa = null!;
 	private AverageDirectionalIndex _adx = null!;
 	private Momentum _momentum = null!;
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
@@ -471,8 +471,8 @@ public class AdxEaStrategy : Strategy
 
 		Volume = TradeVolume;
 
-		_fastMa = new LinearWeightedMovingAverage { Length = FastMaPeriod };
-		_slowMa = new LinearWeightedMovingAverage { Length = SlowMaPeriod };
+		_fastMa = new WeightedMovingAverage { Length = FastMaPeriod };
+		_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod };
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
 		_momentum = new Momentum { Length = MomentumPeriod };
 		_macd = new MovingAverageConvergenceDivergenceSignal

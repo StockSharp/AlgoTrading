@@ -453,7 +453,7 @@ public class IbsRsiCciV4Strategy : Strategy
 		{
 			MovingAverageKinds.Exponential => new ExponentialMovingAverage { Length = length },
 			MovingAverageKinds.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageKinds.LinearWeighted => new LinearWeightedMovingAverage { Length = length },
+			MovingAverageKinds.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length },
 		};
 	}

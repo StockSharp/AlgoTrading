@@ -43,8 +43,8 @@ public class StochasticMomentumFilterStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<DataType> _higherTimeframe;
 
-	private LinearWeightedMovingAverage _fastMa = null!;
-	private LinearWeightedMovingAverage _slowMa = null!;
+	private WeightedMovingAverage _fastMa = null!;
+	private WeightedMovingAverage _slowMa = null!;
 	private StochasticOscillator _fastStochastic = null!;
 	private StochasticOscillator _slowStochastic = null!;
 	private Momentum _momentum = null!;
@@ -400,8 +400,8 @@ public class StochasticMomentumFilterStrategy : Strategy
 		base.OnStarted(time);
 
 		// Instantiate indicators using the most recent parameter values.
-		_fastMa = new LinearWeightedMovingAverage { Length = FastMaPeriod };
-		_slowMa = new LinearWeightedMovingAverage { Length = SlowMaPeriod };
+		_fastMa = new WeightedMovingAverage { Length = FastMaPeriod };
+		_slowMa = new WeightedMovingAverage { Length = SlowMaPeriod };
 
 		_fastStochastic = new StochasticOscillator
 		{

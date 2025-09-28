@@ -41,8 +41,8 @@ public class GannGridStrategy : Strategy
 	private readonly StrategyParam<int> _macdSlowPeriod;
 	private readonly StrategyParam<int> _macdSignalPeriod;
 
-	private LinearWeightedMovingAverage _fastMa = null!;
-	private LinearWeightedMovingAverage _slowMa = null!;
+	private WeightedMovingAverage _fastMa = null!;
+	private WeightedMovingAverage _slowMa = null!;
 	private Momentum _momentum = null!;
 	private Highest _highest = null!;
 	private Lowest _lowest = null!;
@@ -376,8 +376,8 @@ public class GannGridStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_fastMa = new LinearWeightedMovingAverage { Length = Math.Max(1, FastMaPeriod), CandlePrice = CandlePrice.Typical };
-		_slowMa = new LinearWeightedMovingAverage { Length = Math.Max(1, SlowMaPeriod), CandlePrice = CandlePrice.Typical };
+		_fastMa = new WeightedMovingAverage { Length = Math.Max(1, FastMaPeriod), CandlePrice = CandlePrice.Typical };
+		_slowMa = new WeightedMovingAverage { Length = Math.Max(1, SlowMaPeriod), CandlePrice = CandlePrice.Typical };
 		_momentum = new Momentum { Length = Math.Max(1, MomentumPeriod) };
 		_highest = new Highest { Length = Math.Max(1, AnchorPeriod) };
 		_lowest = new Lowest { Length = Math.Max(1, AnchorPeriod) };

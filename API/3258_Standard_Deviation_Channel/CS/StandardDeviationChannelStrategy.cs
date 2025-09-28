@@ -39,10 +39,10 @@ public class StandardDeviationChannelStrategy : Strategy
 	private readonly StrategyParam<int> _macdSignalPeriod;
 	private readonly StrategyParam<decimal> _maxPositionUnits;
 
-	private LinearWeightedMovingAverage _channelBasis = null!;
+	private WeightedMovingAverage _channelBasis = null!;
 	private StandardDeviation _channelDeviation = null!;
-	private LinearWeightedMovingAverage _fastTrend = null!;
-	private LinearWeightedMovingAverage _slowTrend = null!;
+	private WeightedMovingAverage _fastTrend = null!;
+	private WeightedMovingAverage _slowTrend = null!;
 	private Momentum _momentum = null!;
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 
@@ -329,7 +329,7 @@ public class StandardDeviationChannelStrategy : Strategy
 
 		_priceStep = Security?.PriceStep;
 
-		_channelBasis = new LinearWeightedMovingAverage
+		_channelBasis = new WeightedMovingAverage
 		{
 			Length = TrendLength,
 			CandlePrice = CandlePrice.Typical,
@@ -341,13 +341,13 @@ public class StandardDeviationChannelStrategy : Strategy
 			CandlePrice = CandlePrice.Typical,
 		};
 
-		_fastTrend = new LinearWeightedMovingAverage
+		_fastTrend = new WeightedMovingAverage
 		{
 			Length = FastMaLength,
 			CandlePrice = CandlePrice.Typical,
 		};
 
-		_slowTrend = new LinearWeightedMovingAverage
+		_slowTrend = new WeightedMovingAverage
 		{
 			Length = SlowMaLength,
 			CandlePrice = CandlePrice.Typical,

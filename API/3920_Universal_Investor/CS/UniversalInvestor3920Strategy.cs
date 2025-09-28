@@ -117,7 +117,7 @@ public class UniversalInvestor3920Strategy : Strategy
 		base.OnStarted(time);
 
 		var ema = new ExponentialMovingAverage { Length = MovingPeriod };
-		var lwma = new LinearWeightedMovingAverage { Length = MovingPeriod };
+		var lwma = new WeightedMovingAverage { Length = MovingPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

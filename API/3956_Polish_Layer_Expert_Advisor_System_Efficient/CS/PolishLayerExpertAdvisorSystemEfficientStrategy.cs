@@ -40,7 +40,7 @@ private readonly StrategyParam<decimal> _stopLossPips;
 private readonly StrategyParam<decimal> _takeProfitPips;
 
 private SimpleMovingAverage _shortPriceMa = null!;
-private LinearWeightedMovingAverage _longPriceMa = null!;
+private WeightedMovingAverage _longPriceMa = null!;
 private RelativeStrengthIndex _rsi = null!;
 private SimpleMovingAverage _shortRsiAverage = null!;
 private SimpleMovingAverage _longRsiAverage = null!;
@@ -343,7 +343,7 @@ StartProtection();
 _priceStep = Security?.PriceStep ?? 0m;
 
 _shortPriceMa = new SimpleMovingAverage { Length = ShortPricePeriod };
-_longPriceMa = new LinearWeightedMovingAverage { Length = LongPricePeriod };
+_longPriceMa = new WeightedMovingAverage { Length = LongPricePeriod };
 _rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 _shortRsiAverage = new SimpleMovingAverage { Length = ShortRsiPeriod };
 _longRsiAverage = new SimpleMovingAverage { Length = LongRsiPeriod };

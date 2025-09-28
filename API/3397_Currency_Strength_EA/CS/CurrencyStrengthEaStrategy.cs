@@ -479,7 +479,7 @@ public class CurrencyStrengthEaStrategy : Strategy
 		return null;
 
 		return TriangularWeighting
-		? new IndicatorSmoother(new LinearWeightedMovingAverage { Length = NumberOfCandles })
+		? new IndicatorSmoother(new WeightedMovingAverage { Length = NumberOfCandles })
 		: new IndicatorSmoother(new SimpleMovingAverage { Length = NumberOfCandles });
 	}
 

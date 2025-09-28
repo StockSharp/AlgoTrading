@@ -37,8 +37,8 @@ public class AcceleratorTrailingTPSLStrategy : Strategy
 	private readonly StrategyParam<DataType> _momentumCandleType;
 	private readonly StrategyParam<DataType> _macdCandleType;
 
-	private readonly LinearWeightedMovingAverage _fastMa = new();
-	private readonly LinearWeightedMovingAverage _slowMa = new();
+	private readonly WeightedMovingAverage _fastMa = new();
+	private readonly WeightedMovingAverage _slowMa = new();
 	private readonly AcceleratorOscillator _accelerator = new();
 	private readonly Momentum _momentum = new() { Length = 14 };
 	private readonly Macd _macd = new() { Fast = 12, Slow = 26, Signal = 9 };

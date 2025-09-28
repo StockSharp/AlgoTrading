@@ -37,8 +37,8 @@ public class BroadeningTopStrategy : Strategy
 	private readonly StrategyParam<bool> _enableLongs;
 	private readonly StrategyParam<bool> _enableShorts;
 
-	private LinearWeightedMovingAverage _fastMa;
-	private LinearWeightedMovingAverage _slowMa;
+	private WeightedMovingAverage _fastMa;
+	private WeightedMovingAverage _slowMa;
 	private Momentum _momentum;
 	private MovingAverageConvergenceDivergenceSignal _macd;
 
@@ -288,8 +288,8 @@ public class BroadeningTopStrategy : Strategy
 
 		Volume = OrderVolume;
 
-		_fastMa = new LinearWeightedMovingAverage { Length = FastMaLength };
-		_slowMa = new LinearWeightedMovingAverage { Length = SlowMaLength };
+		_fastMa = new WeightedMovingAverage { Length = FastMaLength };
+		_slowMa = new WeightedMovingAverage { Length = SlowMaLength };
 		_momentum = new Momentum { Length = MomentumPeriod };
 		_macd = new MovingAverageConvergenceDivergenceSignal
 		{

@@ -576,7 +576,7 @@ public class IMAIStochasticCustomStrategy : Strategy
 		{
 			MaMethods.Simple => new SimpleMovingAverage { Length = period },
 			MaMethods.Exponential => new ExponentialMovingAverage { Length = period },
-			MaMethods.LinearWeighted => new LinearWeightedMovingAverage { Length = period },
+			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = period },
 			_ => new SmoothedMovingAverage { Length = period }
 		};
 	}
