@@ -153,9 +153,10 @@ public class TriMonthlyBtcSwingStrategy : Strategy
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, _ema);
-			var osc = CreateChartArea("Oscillators");
+			var osc = CreateChartArea();
 			if (osc != null)
 			{
+				osc.Title = "Oscillators";
 				DrawIndicator(osc, _macd);
 				DrawIndicator(osc, _rsi);
 			}

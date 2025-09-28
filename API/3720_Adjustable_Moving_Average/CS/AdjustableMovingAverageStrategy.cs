@@ -20,7 +20,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class AdjustableMovingAverageStrategy : Strategy
 {
-	private readonly StrategyParam<TimeFrame> _candleType;
+	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<MovingAverageMethods> _maMethod;
@@ -128,7 +128,7 @@ public class AdjustableMovingAverageStrategy : Strategy
 	/// <summary>
 	/// Candle type used for indicator calculations.
 	/// </summary>
-	public TimeFrame CandleType
+	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;

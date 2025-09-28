@@ -39,8 +39,8 @@ public class FiveMaMultiTimeframeStrategy : Strategy
 	private SimpleMovingAverage[] _primarySma = Array.Empty<SimpleMovingAverage>();
 	private SimpleMovingAverage[] _secondarySma = Array.Empty<SimpleMovingAverage>();
 	private SimpleMovingAverage[] _tertiarySma = Array.Empty<SimpleMovingAverage>();
-	private AcceleratorOscillator? _primaryAccelerator;
-	private AcceleratorOscillator? _tertiaryAccelerator;
+	private Acceleration _primaryAccelerator;
+	private Acceleration _tertiaryAccelerator;
 
 	private int _currentSignal;
 
@@ -222,8 +222,8 @@ public class FiveMaMultiTimeframeStrategy : Strategy
 		_secondarySma = CreateSmaSet();
 		_tertiarySma = CreateSmaSet();
 
-		_primaryAccelerator = new AcceleratorOscillator();
-		_tertiaryAccelerator = new AcceleratorOscillator();
+		_primaryAccelerator = new Acceleration();
+		_tertiaryAccelerator = new Acceleration();
 
 		var primarySubscription = SubscribeCandles(CandleType);
 		// Bind the primary timeframe with all required indicators.

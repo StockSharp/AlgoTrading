@@ -12,6 +12,7 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 using StockSharp.Algo;
+using StockSharp.Charting;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -27,7 +28,7 @@ public class ProfitLabelsStrategy : Strategy
 	private readonly StrategyParam<bool> _placingTrade;
 	private readonly StrategyParam<decimal> _labelOffset;
 
-	private IChartArea? _chartArea;
+	private IChartArea _chartArea;
 	private DateTimeOffset? _lastSignalTime;
 	private bool _previousTradeBuy;
 	private bool _previousTradeSell;

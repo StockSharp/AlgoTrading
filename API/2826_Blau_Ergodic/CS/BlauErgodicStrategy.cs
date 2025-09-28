@@ -123,7 +123,7 @@ public class BlauErgodicStrategy : Strategy
 	/// <summary>
 	/// Price source used inside the indicator.
 	/// </summary>
-	public AppliedPrices AppliedPrices
+	public AppliedPrices AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -282,7 +282,7 @@ public class BlauErgodicStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		// Store price history for momentum calculation.
 		var price = GetAppliedPrice(candle);
@@ -290,11 +290,11 @@ public class BlauErgodicStrategy : Strategy
 		TrimHistory(_priceHistory, MomentumLength + SignalBar + 10);
 
 		if (MomentumLength <= 0)
-		return;
+			return;
 
 		var backShift = MomentumLength - 1;
 		if (_priceHistory.Count <= backShift)
-		return;
+			return;
 
 		var referenceIndex = _priceHistory.Count - 1 - backShift;
 		var referencePrice = _priceHistory[referenceIndex];
@@ -308,19 +308,19 @@ public class BlauErgodicStrategy : Strategy
 		var abs1 = _absMomEma1.Process(absMomentum, time);
 
 		if (!mom1.IsFormed || !abs1.IsFormed)
-		return;
+			return;
 
 		var mom2 = _momEma2.Process(mom1.ToDecimal(), time);
 		var abs2 = _absMomEma2.Process(abs1.ToDecimal(), time);
 
 		if (!mom2.IsFormed || !abs2.IsFormed)
-		return;
+			return;
 
 		var mom3 = _momEma3.Process(mom2.ToDecimal(), time);
 		var abs3 = _absMomEma3.Process(abs2.ToDecimal(), time);
 
 		if (!mom3.IsFormed || !abs3.IsFormed)
-		return;
+			return;
 
 		var smoothedMomentum = mom3.ToDecimal();
 		var smoothedAbsMomentum = abs3.ToDecimal();
@@ -330,7 +330,7 @@ public class BlauErgodicStrategy : Strategy
 		var signalValue = _signal.Process(main, time);
 		decimal? signal = null;
 		if (signalValue.IsFormed)
-		signal = signalValue.ToDecimal();
+			signal = signalValue.ToDecimal();
 
 		AppendIndicatorHistory(main, signal);
 
@@ -340,14 +340,14 @@ public class BlauErgodicStrategy : Strategy
 	private void EvaluateSignals(ICandleMessage candle)
 	{
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
 		var currentIndex = SignalBar - 1;
 		if (currentIndex < 0)
-		return;
+			return;
 
 		if (!TryGetMainValue(currentIndex, out var currentMain))
-		return;
+			return;
 
 		var buyOpen = false;
 		var sellOpen = false;
@@ -359,20 +359,20 @@ public class BlauErgodicStrategy : Strategy
 			case BlauErgodicModes.Breakdown:
 			{
 				if (!TryGetMainValue(currentIndex + 1, out var previousMain))
-				return;
+					return;
 
 				// Close shorts when histogram stays above zero and longs when it stays below zero.
 				if (AllowSellExit && currentMain > 0m)
-				sellClose = true;
+					sellClose = true;
 
 				if (AllowBuyExit && currentMain < 0m)
-				buyClose = true;
+					buyClose = true;
 
 				if (AllowBuyEntry && previousMain <= 0m && currentMain > 0m)
-				buyOpen = true;
+					buyOpen = true;
 
 				if (AllowSellEntry && previousMain >= 0m && currentMain < 0m)
-				sellOpen = true;
+					sellOpen = true;
 
 				break;
 			}
@@ -380,20 +380,20 @@ public class BlauErgodicStrategy : Strategy
 			{
 				if (!TryGetMainValue(currentIndex + 1, out var previousMain) ||
 				!TryGetMainValue(currentIndex + 2, out var olderMain))
-				return;
+					return;
 
 				// Detect turning points by comparing slope changes.
 				if (AllowSellExit && previousMain < currentMain)
-				sellClose = true;
+					sellClose = true;
 
 				if (AllowBuyExit && previousMain > currentMain)
-				buyClose = true;
+					buyClose = true;
 
 				if (AllowBuyEntry && olderMain > previousMain && previousMain < currentMain)
-				buyOpen = true;
+					buyOpen = true;
 
 				if (AllowSellEntry && olderMain < previousMain && previousMain > currentMain)
-				sellOpen = true;
+					sellOpen = true;
 
 				break;
 			}
@@ -402,20 +402,20 @@ public class BlauErgodicStrategy : Strategy
 				if (!TryGetMainValue(currentIndex + 1, out var previousMain) ||
 				!TryGetSignalValue(currentIndex, out var currentSignal) ||
 				!TryGetSignalValue(currentIndex + 1, out var previousSignal))
-				return;
+					return;
 
 				// Close when main line crosses the signal line.
 				if (AllowSellExit && currentMain > currentSignal)
-				sellClose = true;
+					sellClose = true;
 
 				if (AllowBuyExit && currentMain < currentSignal)
-				buyClose = true;
+					buyClose = true;
 
 				if (AllowBuyEntry && previousMain <= previousSignal && currentMain > currentSignal)
-				buyOpen = true;
+					buyOpen = true;
 
 				if (AllowSellEntry && previousMain >= previousSignal && currentMain < currentSignal)
-				sellOpen = true;
+					sellOpen = true;
 
 				break;
 			}
@@ -427,10 +427,10 @@ public class BlauErgodicStrategy : Strategy
 		var forceSellClose = closeShortByStops;
 
 		if (closeLongByStops)
-		buyClose = true;
+			buyClose = true;
 
 		if (closeShortByStops)
-		sellClose = true;
+			sellClose = true;
 
 		ExecuteOrders(candle, buyOpen, sellOpen, buyClose, sellClose, forceBuyClose, forceSellClose);
 	}
@@ -448,18 +448,18 @@ public class BlauErgodicStrategy : Strategy
 		if (Position > 0)
 		{
 			if (stopLossDistance > 0m && candle.LowPrice <= _entryPrice - stopLossDistance)
-			closeLong = true;
+				closeLong = true;
 
 			if (takeProfitDistance > 0m && candle.HighPrice >= _entryPrice + takeProfitDistance)
-			closeLong = true;
+				closeLong = true;
 		}
 		else if (Position < 0)
 		{
 			if (stopLossDistance > 0m && candle.HighPrice >= _entryPrice + stopLossDistance)
-			closeShort = true;
+				closeShort = true;
 
 			if (takeProfitDistance > 0m && candle.LowPrice <= _entryPrice - takeProfitDistance)
-			closeShort = true;
+				closeShort = true;
 		}
 
 		return (closeLong, closeShort);
@@ -500,7 +500,7 @@ public class BlauErgodicStrategy : Strategy
 
 	private decimal GetAppliedPrice(ICandleMessage candle)
 	{
-		return AppliedPrices switch
+		return AppliedPrice switch
 		{
 			AppliedPrices.Open => candle.OpenPrice,
 			AppliedPrices.High => candle.HighPrice,
@@ -527,7 +527,7 @@ public class BlauErgodicStrategy : Strategy
 	private static void TrimHistory<T>(IList<T> values, int maxSize)
 	{
 		while (values.Count > maxSize)
-		values.RemoveAt(0);
+			values.RemoveAt(0);
 	}
 
 	private bool TryGetMainValue(int shift, out decimal value)
@@ -535,7 +535,7 @@ public class BlauErgodicStrategy : Strategy
 		value = default;
 		var index = _mainHistory.Count - 1 - shift;
 		if (index < 0 || index >= _mainHistory.Count)
-		return false;
+			return false;
 
 		value = _mainHistory[index];
 		return true;
@@ -546,11 +546,11 @@ public class BlauErgodicStrategy : Strategy
 		value = default;
 		var index = _signalHistory.Count - 1 - shift;
 		if (index < 0 || index >= _signalHistory.Count)
-		return false;
+			return false;
 
 		var raw = _signalHistory[index];
 		if (raw is null)
-		return false;
+			return false;
 
 		value = raw.Value;
 		return true;

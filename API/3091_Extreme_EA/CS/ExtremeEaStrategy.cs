@@ -212,7 +212,7 @@ public class ExtremeEaStrategy : Strategy
 	/// <summary>
 	/// Moving average smoothing method.
 	/// </summary>
-	public MaMethods MaMethods
+	public MaMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -273,8 +273,8 @@ public class ExtremeEaStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_fastMa = CreateMovingAverage(MaMethods, FastMaPeriod);
-		_slowMa = CreateMovingAverage(MaMethods, SlowMaPeriod);
+		_fastMa = CreateMovingAverage(MaMethod, FastMaPeriod);
+		_slowMa = CreateMovingAverage(MaMethod, SlowMaPeriod);
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
 
 		var maSubscription = SubscribeCandles(MaCandleType);

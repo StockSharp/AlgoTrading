@@ -26,8 +26,8 @@ public class SymbolSwapStrategy : Strategy
 	private readonly StrategyParam<string> _watchedSecurityId;
 	private readonly StrategyParam<PanelOutputModes> _outputMode;
 
-	private ISubscription _candleSubscription;
-	private ISubscription _level1Subscription;
+	private ISubscriptionHandler<ICandleMessage> _candleSubscription;
+	private ISubscriptionHandler<Level1ChangeMessage> _level1Subscription;
 	private IChartArea _chartArea;
 
 	private Security _trackedSecurity;

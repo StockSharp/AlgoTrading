@@ -685,7 +685,7 @@ public class TestinatorStrategy : Strategy
 	StochasticOscillatorValue stochastic,
 	decimal williams,
 	MovingAverageConvergenceDivergenceSignalValue macd,
-	IchimokuKinkoHyoValue ichimoku,
+	IchimokuValue ichimoku,
 	decimal rsiEntry,
 	decimal? previousRsiEntry,
 	ICandleMessage previousCandle1,

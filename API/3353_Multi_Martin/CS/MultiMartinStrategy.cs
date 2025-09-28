@@ -179,7 +179,7 @@ public class MultiMartinStrategy : Strategy
 	/// <summary>
 	/// Trailing stop behaviour applied while a position is open.
 	/// </summary>
-	public TrailModes TrailModes
+	public TrailModes TrailMode
 	{
 		get => _trailMode.Value;
 		set => _trailMode.Value = value;
@@ -343,7 +343,7 @@ public class MultiMartinStrategy : Strategy
 
 	private void UpdateTrailingForLong(decimal currentClose, decimal stopDistance)
 	{
-		if (TrailModes == TrailModes.None || stopDistance <= 0m || _entryPrice == null)
+		if (TrailMode == TrailModes.None || stopDistance <= 0m || _entryPrice == null)
 		{
 			if (stopDistance > 0m && _entryPrice != null)
 				_trailingStopPrice = _entryPrice.Value - stopDistance;
@@ -353,7 +353,7 @@ public class MultiMartinStrategy : Strategy
 		var entry = _entryPrice.Value;
 		var baseStop = entry - stopDistance;
 
-		if (TrailModes == TrailModes.Breakeven)
+		if (TrailMode == TrailModes.Breakeven)
 		{
 			var profit = currentClose - entry;
 			var newStop = profit >= stopDistance ? entry : baseStop;
@@ -361,7 +361,7 @@ public class MultiMartinStrategy : Strategy
 			return;
 		}
 
-		if (TrailModes == TrailModes.Straight)
+		if (TrailMode == TrailModes.Straight)
 		{
 			var candidate = Math.Max(baseStop, currentClose - stopDistance);
 			_trailingStopPrice = _trailingStopPrice == null ? candidate : Math.Max(_trailingStopPrice.Value, candidate);
@@ -370,7 +370,7 @@ public class MultiMartinStrategy : Strategy
 
 	private void UpdateTrailingForShort(decimal currentClose, decimal stopDistance)
 	{
-		if (TrailModes == TrailModes.None || stopDistance <= 0m || _entryPrice == null)
+		if (TrailMode == TrailModes.None || stopDistance <= 0m || _entryPrice == null)
 		{
 			if (stopDistance > 0m && _entryPrice != null)
 				_trailingStopPrice = _entryPrice.Value + stopDistance;
@@ -380,7 +380,7 @@ public class MultiMartinStrategy : Strategy
 		var entry = _entryPrice.Value;
 		var baseStop = entry + stopDistance;
 
-		if (TrailModes == TrailModes.Breakeven)
+		if (TrailMode == TrailModes.Breakeven)
 		{
 			var profit = entry - currentClose;
 			var newStop = profit >= stopDistance ? entry : baseStop;
@@ -388,7 +388,7 @@ public class MultiMartinStrategy : Strategy
 			return;
 		}
 
-		if (TrailModes == TrailModes.Straight)
+		if (TrailMode == TrailModes.Straight)
 		{
 			var candidate = Math.Min(baseStop, currentClose + stopDistance);
 			_trailingStopPrice = _trailingStopPrice == null ? candidate : Math.Min(_trailingStopPrice.Value, candidate);
@@ -431,17 +431,17 @@ public class MultiMartinStrategy : Strategy
 		if (trade.Order == null)
 			return;
 
-		var tradeVolume = trade.Volume ?? 0m;
+		var tradeVolume = trade.Trade.Volume;
 		if (tradeVolume <= 0m)
 			return;
 
 		if (trade.Order.Side == Sides.Buy)
 		{
-			HandleBuyTrade(trade.Price, tradeVolume);
+			HandleBuyTrade(trade.Trade.Price, tradeVolume);
 		}
 		else if (trade.Order.Side == Sides.Sell)
 		{
-			HandleSellTrade(trade.Price, tradeVolume);
+			HandleSellTrade(trade.Trade.Price, tradeVolume);
 		}
 	}
 
@@ -509,6 +509,8 @@ public class MultiMartinStrategy : Strategy
 	protected override void OnOrderRegisterFailed(OrderFail fail, bool calcRisk)
 	{
 		base.OnOrderRegisterFailed(fail, calcRisk);
+
+		var order = fail.Order;
 
 		if (_entryRequested && order.Type == OrderTypes.Market)
 		{

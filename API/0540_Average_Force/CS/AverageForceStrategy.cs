@@ -111,9 +111,14 @@ public class AverageForceStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			var indArea = CreateChartArea("AverageForce");
-			DrawIndicator(indArea, _sma);
 			DrawOwnTrades(area);
+		
+			var indArea = CreateChartArea();
+			if (indArea is not null)
+			{
+				indArea.Title = "Average Force";
+				DrawIndicator(indArea, _sma);
+			}
 		}
 	}
 

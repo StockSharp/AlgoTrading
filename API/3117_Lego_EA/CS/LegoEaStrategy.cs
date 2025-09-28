@@ -66,7 +66,7 @@ public class LegoEaStrategy : Strategy
 	private LengthIndicator<decimal> _maFast = null!;
 	private LengthIndicator<decimal> _maSlow = null!;
 	private StochasticOscillator _stochastic = null!;
-	private AcceleratorOscillator _accelerator = null!;
+	private Acceleration _accelerator = null!;
 	private DeMarker _deMarker = null!;
 	private AwesomeOscillator _awesome = null!;
 
@@ -504,7 +504,7 @@ public class LegoEaStrategy : Strategy
 			Smooth = Math.Max(1, StochasticSlow)
 		};
 
-		_accelerator = new AcceleratorOscillator();
+		_accelerator = new Acceleration();
 		_deMarker = new DeMarker { Length = Math.Max(1, DemarkerPeriod) };
 		_awesome = new AwesomeOscillator();
 

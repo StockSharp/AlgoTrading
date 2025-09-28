@@ -175,7 +175,7 @@ public class CronexAcStrategy : Strategy
 		_fastHistory = new decimal?[bufferSize];
 		_slowHistory = new decimal?[bufferSize];
 
-		var accelerator = new AcceleratorOscillator();
+		var accelerator = new Acceleration();
 		var fastMa = CreateMovingAverage(SmoothingType, FastPeriod);
 		var slowMa = CreateMovingAverage(SmoothingType, SlowPeriod);
 

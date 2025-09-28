@@ -220,7 +220,7 @@ public class MaRsiWizardStrategy : Strategy
 	/// <summary>
 	/// Moving average calculation method.
 	/// </summary>
-	public MaMethods MaMethods
+	public MaMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -298,7 +298,7 @@ public class MaRsiWizardStrategy : Strategy
 		_lastLongEntryBar = null;
 		_lastShortEntryBar = null;
 
-		_ma = CreateMovingAverage(MaMethods, MaPeriod);
+		_ma = CreateMovingAverage(MaMethod, MaPeriod);
 		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -329,9 +329,10 @@ public class MaRsiWizardStrategy : Strategy
 			DrawOwnTrades(priceArea);
 		}
 
-		var rsiArea = CreateChartArea("RSI");
+		var rsiArea = CreateChartArea();
 		if (rsiArea != null)
 		{
+			rsiArea.Title = "RSI";
 			DrawIndicator(rsiArea, _rsi);
 		}
 	}

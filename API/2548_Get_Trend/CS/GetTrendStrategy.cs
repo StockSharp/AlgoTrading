@@ -249,9 +249,10 @@ public class GetTrendStrategy : Strategy
 			DrawIndicator(priceArea, _maM15);
 			DrawOwnTrades(priceArea);
 
-			var oscillatorArea = CreateChartArea("Stochastic");
+			var oscillatorArea = CreateChartArea();
 			if (oscillatorArea != null)
 			{
+				oscillatorArea.Title = "Stochastic";
 				DrawIndicator(oscillatorArea, _stochastic);
 			}
 		}

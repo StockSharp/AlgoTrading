@@ -39,9 +39,17 @@ public class AcceleratorTrailingTPSLStrategy : Strategy
 
 	private readonly WeightedMovingAverage _fastMa = new();
 	private readonly WeightedMovingAverage _slowMa = new();
-	private readonly AcceleratorOscillator _accelerator = new();
+	private readonly Acceleration _accelerator = new();
 	private readonly Momentum _momentum = new() { Length = 14 };
-	private readonly Macd _macd = new() { Fast = 12, Slow = 26, Signal = 9 };
+	private readonly MovingAverageConvergenceDivergenceSignal _macd = new()
+	{
+		Macd =
+		{
+			ShortMa = { Length = 12 },
+			LongMa = { Length = 26 },
+		},
+		SignalMa = { Length = 9 }
+	};
 
 	private decimal? _momentumAbs1;
 	private decimal? _momentumAbs2;

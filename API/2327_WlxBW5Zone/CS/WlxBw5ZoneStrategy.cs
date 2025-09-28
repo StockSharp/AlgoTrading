@@ -24,7 +24,7 @@ public class WlxBw5ZoneStrategy : Strategy
 	private readonly StrategyParam<int> _signalBar;
 
 	private AwesomeOscillator _ao;
-	private AcceleratorOscillator _ac;
+	private Acceleration _ac;
 
 	private decimal? _ao0, _ao1, _ao2, _ao3, _ao4;
 	private decimal? _ac0, _ac1, _ac2, _ac3, _ac4;
@@ -85,7 +85,7 @@ public class WlxBw5ZoneStrategy : Strategy
 		base.OnStarted(time);
 
 		_ao = new AwesomeOscillator();
-		_ac = new AcceleratorOscillator();
+		_ac = new Acceleration();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_ao, _ac, ProcessCandle).Start();

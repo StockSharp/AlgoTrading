@@ -25,7 +25,7 @@ public class ExecuterAcStrategy : Strategy
 	private readonly StrategyParam<int> _trailingStepPips;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly AcceleratorOscillator _ac = new();
+	private readonly Acceleration _ac = new();
 	private readonly decimal[] _acHistory = new decimal[4];
 	private int _acCount;
 

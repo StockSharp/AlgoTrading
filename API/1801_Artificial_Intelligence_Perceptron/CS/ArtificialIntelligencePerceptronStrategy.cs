@@ -67,7 +67,7 @@ public class ArtificialIntelligencePerceptronStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		var ac = new AcceleratorOscillator();
+		var ac = new Acceleration();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ac, ProcessCandle).Start();

@@ -20,6 +20,17 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class FTBillWillamsTraderStrategy : Strategy
 {
+	public enum CandlePrices
+	{
+		Open,
+		Close,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted,
+	}
+
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<int> _fractalPeriod;
 	private readonly StrategyParam<int> _indentPoints;
@@ -42,7 +53,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 	private readonly StrategyParam<int> _lipsPeriod;
 	private readonly StrategyParam<int> _lipsShift;
 	private readonly StrategyParam<MovingAverageMethods> _maMethod;
-	private readonly StrategyParam<CandlePrice> _appliedPrice;
+	private readonly StrategyParam<CandlePrices> _appliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private LengthIndicator<decimal> _jaw = null!;
@@ -278,7 +289,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 	/// <summary>
 	/// Price source supplied to the moving averages.
 	/// </summary>
-	public CandlePrice AppliedPrice
+	public CandlePrices AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -379,7 +390,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Simple)
 		.SetDisplay("MA Method", "Moving-average type used for Alligator lines", "Alligator");
 
-		_appliedPrice = Param(nameof(AppliedPrice), CandlePrice.Median)
+		_appliedPrice = Param(nameof(AppliedPrice), CandlePrices.Median)
 		.SetDisplay("Applied Price", "Price source for the moving averages", "Alligator");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -424,7 +435,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 
 		_point = Security?.PriceStep ?? 0m;
 		if (_point <= 0m)
-		_point = 1m;
+			_point = 1m;
 
 		_indentDistance = IndentPoints * _point;
 		_maxDistance = MaxDistancePoints * _point;
@@ -507,7 +518,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		UpdateFractalBuffers(candle);
 
@@ -597,12 +608,12 @@ public class FTBillWillamsTraderStrategy : Strategy
 					decimal? desiredStop = null;
 
 					if (lipsSlope > smaSlope)
-					desiredStop = lipsPrev;
+						desiredStop = lipsPrev;
 					else if (hasTeeth)
-					desiredStop = teethPrev;
+						desiredStop = teethPrev;
 
 					if (desiredStop is decimal target && (_longStopPrice is not decimal current || target > current))
-					_longStopPrice = target;
+						_longStopPrice = target;
 				}
 			}
 
@@ -647,12 +658,12 @@ public class FTBillWillamsTraderStrategy : Strategy
 					decimal? desiredStop = null;
 
 					if (lipsSlope > smaSlope)
-					desiredStop = lipsPrev;
+						desiredStop = lipsPrev;
 					else if (hasTeeth)
-					desiredStop = teethPrev;
+						desiredStop = teethPrev;
 
 					if (desiredStop is decimal target && (_shortStopPrice is not decimal current || target < current))
-					_shortStopPrice = target;
+						_shortStopPrice = target;
 				}
 			}
 
@@ -668,16 +679,16 @@ public class FTBillWillamsTraderStrategy : Strategy
 	private void TryEnterLong(ICandleMessage candle)
 	{
 		if (_pendingBuyLevel is not decimal buyLevel)
-		return;
+			return;
 
 		if (_triggeredBuyLevel is decimal triggered && AreClose(triggered, buyLevel))
-		return;
+			return;
 
 		if (!TryGetShiftedValue(_lipsHistory, LipsShift, 1, out var lipsPrev))
-		return;
+			return;
 
 		if (MaxDistancePoints > 0 && Math.Abs(buyLevel - lipsPrev) > _maxDistance)
-		return;
+			return;
 
 		var breakout = EntryConfirmation switch
 		{
@@ -687,26 +698,26 @@ public class FTBillWillamsTraderStrategy : Strategy
 		};
 
 		if (!breakout)
-		return;
+			return;
 
 		if (UseTeethFilter)
 		{
 			if (!TryGetShiftedValue(_teethHistory, TeethShift, 1, out var teethPrev))
-			return;
+				return;
 
 			if (!(_previousClose is decimal prevClose && prevClose > teethPrev))
-			return;
+				return;
 		}
 
 		if (UseTrendAlignment)
 		{
 			if (!TryGetShiftedValue(_teethHistory, TeethShift, 1, out var teethPrev) ||
 			!TryGetShiftedValue(_jawHistory, JawShift, 1, out var jawPrev))
-			return;
+				return;
 
 			if (!(lipsPrev - teethPrev > TeethLipsDistancePoints * _point &&
 			teethPrev - jawPrev > JawTeethDistancePoints * _point))
-			return;
+				return;
 		}
 
 		if (Position < 0 && ReverseExit == ReverseExitModes.OppositePosition)
@@ -715,10 +726,10 @@ public class FTBillWillamsTraderStrategy : Strategy
 		}
 
 		if (Position > 0)
-		return;
+			return;
 
 		if (OrderVolume <= 0m)
-		return;
+			return;
 
 		BuyMarket(OrderVolume);
 		_triggeredBuyLevel = buyLevel;
@@ -727,16 +738,16 @@ public class FTBillWillamsTraderStrategy : Strategy
 	private void TryEnterShort(ICandleMessage candle)
 	{
 		if (_pendingSellLevel is not decimal sellLevel)
-		return;
+			return;
 
 		if (_triggeredSellLevel is decimal triggered && AreClose(triggered, sellLevel))
-		return;
+			return;
 
 		if (!TryGetShiftedValue(_lipsHistory, LipsShift, 1, out var lipsPrev))
-		return;
+			return;
 
 		if (MaxDistancePoints > 0 && Math.Abs(sellLevel - lipsPrev) > _maxDistance)
-		return;
+			return;
 
 		var breakout = EntryConfirmation switch
 		{
@@ -746,26 +757,26 @@ public class FTBillWillamsTraderStrategy : Strategy
 		};
 
 		if (!breakout)
-		return;
+			return;
 
 		if (UseTeethFilter)
 		{
 			if (!TryGetShiftedValue(_teethHistory, TeethShift, 1, out var teethPrev))
-			return;
+				return;
 
 			if (!(_previousClose is decimal prevClose && prevClose < teethPrev))
-			return;
+				return;
 		}
 
 		if (UseTrendAlignment)
 		{
 			if (!TryGetShiftedValue(_teethHistory, TeethShift, 1, out var teethPrev) ||
 			!TryGetShiftedValue(_jawHistory, JawShift, 1, out var jawPrev))
-			return;
+				return;
 
 			if (!(teethPrev - lipsPrev > TeethLipsDistancePoints * _point &&
 			jawPrev - teethPrev > JawTeethDistancePoints * _point))
-			return;
+				return;
 		}
 
 		if (Position > 0 && ReverseExit == ReverseExitModes.OppositePosition)
@@ -774,10 +785,10 @@ public class FTBillWillamsTraderStrategy : Strategy
 		}
 
 		if (Position < 0)
-		return;
+			return;
 
 		if (OrderVolume <= 0m)
-		return;
+			return;
 
 		SellMarket(OrderVolume);
 		_triggeredSellLevel = sellLevel;
@@ -806,7 +817,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 		}
 
 		if (_highBuffer.Length < 3)
-		return;
+			return;
 
 		var wing = (_highBuffer.Length - 1) / 2;
 		var centerIndex = _highBuffer.Length - 1 - wing;
@@ -816,7 +827,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 		for (var i = 0; i < _highBuffer.Length; i++)
 		{
 			if (i == centerIndex)
-			continue;
+				continue;
 
 			if (!(centerHigh > _highBuffer[i]))
 			{
@@ -841,7 +852,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 		for (var i = 0; i < _lowBuffer.Length; i++)
 		{
 			if (i == centerIndex)
-			continue;
+				continue;
 
 			if (!(centerLow < _lowBuffer[i]))
 			{
@@ -865,7 +876,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 	private void CloseLong()
 	{
 		if (Position <= 0)
-		return;
+			return;
 
 		SellMarket(Position);
 		_longStopPrice = null;
@@ -875,7 +886,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 	private void CloseShort()
 	{
 		if (Position >= 0)
-		return;
+			return;
 
 		BuyMarket(Math.Abs(Position));
 		_shortStopPrice = null;
@@ -886,13 +897,13 @@ public class FTBillWillamsTraderStrategy : Strategy
 	{
 		return AppliedPrice switch
 		{
-			CandlePrice.Open => candle.OpenPrice,
-			CandlePrice.High => candle.HighPrice,
-			CandlePrice.Low => candle.LowPrice,
-			CandlePrice.Close => candle.ClosePrice,
-			CandlePrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			CandlePrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			CandlePrice.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			CandlePrices.Open => candle.OpenPrice,
+			CandlePrices.High => candle.HighPrice,
+			CandlePrices.Low => candle.LowPrice,
+			CandlePrices.Close => candle.ClosePrice,
+			CandlePrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			CandlePrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			CandlePrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
@@ -900,7 +911,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 	private static void ShiftBuffer(decimal[] buffer, decimal value)
 	{
 		if (buffer.Length == 0)
-		return;
+			return;
 
 		Array.Copy(buffer, 1, buffer, 0, buffer.Length - 1);
 		buffer[^1] = value;
@@ -909,7 +920,7 @@ public class FTBillWillamsTraderStrategy : Strategy
 	private static void UpdateHistory(decimal?[] buffer, decimal value)
 	{
 		if (buffer.Length == 0)
-		return;
+			return;
 
 		Array.Copy(buffer, 1, buffer, 0, buffer.Length - 1);
 		buffer[^1] = value;
@@ -931,14 +942,14 @@ public class FTBillWillamsTraderStrategy : Strategy
 	{
 		value = 0m;
 		if (buffer.Length == 0)
-		return false;
+			return false;
 
 		var index = buffer.Length - 1 - barsAgo;
 		if (index < 0 || index >= buffer.Length)
-		return false;
+			return false;
 
 		if (buffer[index] is not decimal stored)
-		return false;
+			return false;
 
 		value = stored;
 		return true;

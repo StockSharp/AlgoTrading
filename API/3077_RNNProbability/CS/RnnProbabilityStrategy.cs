@@ -22,9 +22,20 @@ using StockSharp.Algo;
 /// </summary>
 public class RnnProbabilityStrategy : Strategy
 {
+	public enum AppliedPriceTypes
+	{
+		Open,
+		High,
+		Low,
+		Close,
+		Median,
+		Typical,
+		Weighted
+	}
+
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<AppliedPriceType> _appliedPrice;
+	private readonly StrategyParam<AppliedPriceTypes> _appliedPrice;
 	private readonly StrategyParam<decimal> _stopLossTakeProfitPips;
 	private readonly StrategyParam<decimal> _weight0;
 	private readonly StrategyParam<decimal> _weight1;
@@ -61,7 +72,7 @@ public class RnnProbabilityStrategy : Strategy
 	/// <summary>
 	/// Price source forwarded to the RSI indicator.
 	/// </summary>
-	public AppliedPriceType AppliedPrice
+	public AppliedPriceTypes AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -172,7 +183,7 @@ public class RnnProbabilityStrategy : Strategy
 			.SetRange(2, 200)
 			.SetCanOptimize(true);
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceType.Open)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Open)
 			.SetDisplay("Applied Price", "Price type forwarded to the RSI indicator.", "Indicator");
 
 		_stopLossTakeProfitPips = Param(nameof(StopLossTakeProfitPips), 100m)

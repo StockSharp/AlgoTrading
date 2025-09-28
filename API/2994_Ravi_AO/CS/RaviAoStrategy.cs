@@ -147,7 +147,7 @@ public class RaviAoStrategy : Strategy
 		set => _slowLength.Value = value;
 	}
 
-	public AppliedPrices AppliedPrices
+	public AppliedPrices AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -187,8 +187,8 @@ public class RaviAoStrategy : Strategy
 		_slowAverage = CreateMovingAverage(SlowMethod, SlowLength);
 		_ao = new AwesomeOscillator
 		{
-			ShortPeriod = AoShortPeriod,
-			LongPeriod = AoLongPeriod
+			ShortMa = { Length = AoShortPeriod },
+			LongMa = { Length = AoLongPeriod },
 		};
 
 		_pipSize = CalculatePipSize();
@@ -216,7 +216,7 @@ public class RaviAoStrategy : Strategy
 		if (CheckExit(candle))
 			return;
 
-		var price = GetPrice(candle, AppliedPrices);
+		var price = GetPrice(candle, AppliedPrice);
 
 		var fastValue = _fastAverage.Process(price, candle.OpenTime, true);
 		var slowValue = _slowAverage.Process(price, candle.OpenTime, true);

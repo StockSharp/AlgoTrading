@@ -258,471 +258,472 @@ public class MaShiftPuriaMethodStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-	return [(Security, CandleType)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
-	base.OnReseted();
+		base.OnReseted();
 
-	_fastPrev1 = null;
-	_fastPrev2 = null;
-	_fastPrev3 = null;
-	_slowPrev1 = null;
-	_slowPrev2 = null;
-	_slowPrev3 = null;
-	_macdPrev1 = null;
-	_macdPrev2 = null;
-	_macdPrev3 = null;
+		_fastPrev1 = null;
+		_fastPrev2 = null;
+		_fastPrev3 = null;
+		_slowPrev1 = null;
+		_slowPrev2 = null;
+		_slowPrev3 = null;
+		_macdPrev1 = null;
+		_macdPrev2 = null;
+		_macdPrev3 = null;
 
-	ResetLongState();
-	ResetShortState();
+		ResetLongState();
+		ResetShortState();
 
-	Array.Clear(_highWindow, 0, _highWindow.Length);
-	Array.Clear(_lowWindow, 0, _lowWindow.Length);
-	_fractalCount = 0;
-	_lastUpperFractal = null;
-	_lastLowerFractal = null;
+		Array.Clear(_highWindow, 0, _highWindow.Length);
+		Array.Clear(_lowWindow, 0, _lowWindow.Length);
+		_fractalCount = 0;
+		_lastUpperFractal = null;
+		_lastLowerFractal = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
-	base.OnStarted(time);
+		base.OnStarted(time);
 
-	_fastEma = new ExponentialMovingAverage { Length = FastLength };
-	_slowEma = new ExponentialMovingAverage { Length = SlowLength };
-	_macd = new MovingAverageConvergenceDivergence
-	{
-	Fast = MacdFast,
-	Slow = MacdSlow,
-	Signal = 9
-	};
+		_fastEma = new ExponentialMovingAverage { Length = FastLength };
+		_slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		_macd = new MovingAverageConvergenceDivergence
+		{
+			Fast = MacdFast,
+			Slow = MacdSlow,
+			Signal = 9
+		};
 
-	Volume = ManualVolume;
+		Volume = ManualVolume;
 
-	var subscription = SubscribeCandles(CandleType);
-	subscription
-	.Bind(_fastEma, _slowEma, _macd, ProcessCandle)
-	.Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+		.Bind(_fastEma, _slowEma, _macd, ProcessCandle)
+		.Start();
 
-	StartProtection();
+		StartProtection();
 
-	var priceArea = CreateChartArea();
-	if (priceArea != null)
-	{
-	DrawCandles(priceArea, subscription);
-	DrawIndicator(priceArea, _fastEma);
-	DrawIndicator(priceArea, _slowEma);
+		var priceArea = CreateChartArea();
+		if (priceArea != null)
+		{
+			DrawCandles(priceArea, subscription);
+			DrawIndicator(priceArea, _fastEma);
+			DrawIndicator(priceArea, _slowEma);
 
-	var macdArea = CreateChartArea("MACD");
-	if (macdArea != null)
-	{
-	DrawIndicator(macdArea, _macd);
-	}
+			var macdArea = CreateChartArea();
+			if (macdArea != null)
+			{
+				macdArea.Title = "MACD";
+				DrawIndicator(macdArea, _macd);
+			}
 
-	DrawOwnTrades(priceArea);
-	}
+			DrawOwnTrades(priceArea);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal macdMain, decimal macdSignal, decimal macdHistogram)
 	{
-	if (candle.State != CandleStates.Finished)
-	return;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	// Silence unused parameters from MACD binding.
-	_ = macdSignal;
-	_ = macdHistogram;
+		// Silence unused parameters from MACD binding.
+		_ = macdSignal;
+		_ = macdHistogram;
 
-	var pip = GetPipSize();
+		var pip = GetPipSize();
 
-	UpdateFractals(candle);
+		UpdateFractals(candle);
 
-	var prevFast1 = _fastPrev1;
-	var prevFast2 = _fastPrev2;
-	var prevFast3 = _fastPrev3;
-	var prevSlow1 = _slowPrev1;
-	var prevSlow3 = _slowPrev3;
-	var prevMacd1 = _macdPrev1;
-	var prevMacd3 = _macdPrev3;
+		var prevFast1 = _fastPrev1;
+		var prevFast2 = _fastPrev2;
+		var prevFast3 = _fastPrev3;
+		var prevSlow1 = _slowPrev1;
+		var prevSlow3 = _slowPrev3;
+		var prevMacd1 = _macdPrev1;
+		var prevMacd3 = _macdPrev3;
 
-	UpdateHistory(fast, slow, macdMain);
+		UpdateHistory(fast, slow, macdMain);
 
-	ManageLongPosition(candle, pip);
-	ManageShortPosition(candle, pip);
+		ManageLongPosition(candle, pip);
+		ManageShortPosition(candle, pip);
 
-	if (!prevFast1.HasValue || !prevFast2.HasValue || !prevFast3.HasValue ||
-	!prevSlow1.HasValue || !prevSlow3.HasValue || !prevMacd1.HasValue || !prevMacd3.HasValue)
-	{
-	return;
-	}
+		if (!prevFast1.HasValue || !prevFast2.HasValue || !prevFast3.HasValue ||
+		!prevSlow1.HasValue || !prevSlow3.HasValue || !prevMacd1.HasValue || !prevMacd3.HasValue)
+		{
+			return;
+		}
 
-	if (!IsFormedAndOnlineAndAllowTrading())
-	return;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-	var fast1 = prevFast1.Value;
-	var fast2 = prevFast2.Value;
-	var fast3 = prevFast3.Value;
-	var slow1 = prevSlow1.Value;
-	var slow3 = prevSlow3.Value;
-	var macd1 = prevMacd1.Value;
-	var macd3 = prevMacd3.Value;
+		var fast1 = prevFast1.Value;
+		var fast2 = prevFast2.Value;
+		var fast3 = prevFast3.Value;
+		var slow1 = prevSlow1.Value;
+		var slow3 = prevSlow3.Value;
+		var macd1 = prevMacd1.Value;
+		var macd3 = prevMacd3.Value;
 
-	if (pip <= 0m)
-	pip = 0.0001m;
+		if (pip <= 0m)
+			pip = 0.0001m;
 
-	var x1Long = (fast1 - fast2) / pip;
-	var x2Long = (fast2 - fast3) / pip;
+		var x1Long = (fast1 - fast2) / pip;
+		var x2Long = (fast2 - fast3) / pip;
 
-	var x1Short = (fast2 - fast1) / pip;
-	var x2Short = (fast3 - fast2) / pip;
+		var x1Short = (fast2 - fast1) / pip;
+		var x2Short = (fast3 - fast2) / pip;
 
-	var shiftRequirement = ShiftMinPips;
+		var shiftRequirement = ShiftMinPips;
 
-	var buySignal = fast1 > slow1 &&
-	slow1 > slow3 &&
-	fast1 > fast2 &&
-	macd1 > 0m &&
-	macd3 < 0m &&
-	x1Long > shiftRequirement &&
-	(x1Long >= x2Long || x2Long <= 0m);
+		var buySignal = fast1 > slow1 &&
+		slow1 > slow3 &&
+		fast1 > fast2 &&
+		macd1 > 0m &&
+		macd3 < 0m &&
+		x1Long > shiftRequirement &&
+		(x1Long >= x2Long || x2Long <= 0m);
 
-	var sellSignal = fast1 < slow1 &&
-	slow1 < slow3 &&
-	fast1 < fast2 &&
-	macd1 < 0m &&
-	macd3 > 0m &&
-	x1Short > shiftRequirement &&
-	(x1Short >= x2Short || x2Short <= 0m);
+		var sellSignal = fast1 < slow1 &&
+		slow1 < slow3 &&
+		fast1 < fast2 &&
+		macd1 < 0m &&
+		macd3 > 0m &&
+		x1Short > shiftRequirement &&
+		(x1Short >= x2Short || x2Short <= 0m);
 
-	if (buySignal)
-	{
-	TryEnterLong(candle, pip);
-	}
-	else if (sellSignal)
-	{
-	TryEnterShort(candle, pip);
-	}
+		if (buySignal)
+		{
+			TryEnterLong(candle, pip);
+		}
+		else if (sellSignal)
+		{
+			TryEnterShort(candle, pip);
+		}
 	}
 
 	private void TryEnterLong(ICandleMessage candle, decimal pip)
 	{
-	var stopDistance = StopLossPips > 0 ? StopLossPips * pip : 0m;
-	var volumePerTrade = GetTradeVolume(stopDistance);
-	if (volumePerTrade <= 0m)
-	return;
+		var stopDistance = StopLossPips > 0 ? StopLossPips * pip : 0m;
+		var volumePerTrade = GetTradeVolume(stopDistance);
+		if (volumePerTrade <= 0m)
+			return;
 
-	var maxVolume = volumePerTrade * MaxPositions;
-	if (maxVolume <= 0m)
-	return;
+		var maxVolume = volumePerTrade * MaxPositions;
+		if (maxVolume <= 0m)
+			return;
 
-	var limit = maxVolume - Position;
-	if (limit <= 0m)
-	return;
+		var limit = maxVolume - Position;
+		if (limit <= 0m)
+			return;
 
-	var volumeToBuy = volumePerTrade;
-	if (Position < 0m)
-	volumeToBuy += -Position;
+		var volumeToBuy = volumePerTrade;
+		if (Position < 0m)
+			volumeToBuy += -Position;
 
-	if (volumeToBuy > limit)
-	volumeToBuy = limit;
+		if (volumeToBuy > limit)
+			volumeToBuy = limit;
 
-	if (volumeToBuy <= 0m)
-	return;
+		if (volumeToBuy <= 0m)
+			return;
 
-	BuyMarket(volumeToBuy);
+		BuyMarket(volumeToBuy);
 
-	_longEntryPrice = candle.ClosePrice;
-	_longStopPrice = StopLossPips > 0 ? candle.ClosePrice - stopDistance : null;
-	_longTakePrice = TakeProfitPips > 0 ? candle.ClosePrice + TakeProfitPips * pip : null;
+		_longEntryPrice = candle.ClosePrice;
+		_longStopPrice = StopLossPips > 0 ? candle.ClosePrice - stopDistance : null;
+		_longTakePrice = TakeProfitPips > 0 ? candle.ClosePrice + TakeProfitPips * pip : null;
 
-	ResetShortState();
+		ResetShortState();
 	}
 
 	private void TryEnterShort(ICandleMessage candle, decimal pip)
 	{
-	var stopDistance = StopLossPips > 0 ? StopLossPips * pip : 0m;
-	var volumePerTrade = GetTradeVolume(stopDistance);
-	if (volumePerTrade <= 0m)
-	return;
+		var stopDistance = StopLossPips > 0 ? StopLossPips * pip : 0m;
+		var volumePerTrade = GetTradeVolume(stopDistance);
+		if (volumePerTrade <= 0m)
+			return;
 
-	var maxVolume = volumePerTrade * MaxPositions;
-	if (maxVolume <= 0m)
-	return;
+		var maxVolume = volumePerTrade * MaxPositions;
+		if (maxVolume <= 0m)
+			return;
 
-	var limit = maxVolume + Position;
-	if (limit <= 0m)
-	return;
+		var limit = maxVolume + Position;
+		if (limit <= 0m)
+			return;
 
-	var volumeToSell = volumePerTrade;
-	if (Position > 0m)
-	volumeToSell += Position;
+		var volumeToSell = volumePerTrade;
+		if (Position > 0m)
+			volumeToSell += Position;
 
-	if (volumeToSell > limit)
-	volumeToSell = limit;
+		if (volumeToSell > limit)
+			volumeToSell = limit;
 
-	if (volumeToSell <= 0m)
-	return;
+		if (volumeToSell <= 0m)
+			return;
 
-	SellMarket(volumeToSell);
+		SellMarket(volumeToSell);
 
-	_shortEntryPrice = candle.ClosePrice;
-	_shortStopPrice = StopLossPips > 0 ? candle.ClosePrice + stopDistance : null;
-	_shortTakePrice = TakeProfitPips > 0 ? candle.ClosePrice - TakeProfitPips * pip : null;
+		_shortEntryPrice = candle.ClosePrice;
+		_shortStopPrice = StopLossPips > 0 ? candle.ClosePrice + stopDistance : null;
+		_shortTakePrice = TakeProfitPips > 0 ? candle.ClosePrice - TakeProfitPips * pip : null;
 
-	ResetLongState();
+		ResetLongState();
 	}
 
 	private void ManageLongPosition(ICandleMessage candle, decimal pip)
 	{
-	if (Position <= 0m)
-	{
-	ResetLongState();
-	return;
-	}
+		if (Position <= 0m)
+		{
+			ResetLongState();
+			return;
+		}
 
-	if (_longStopPrice is decimal stop && candle.LowPrice <= stop)
-	{
-	SellMarket(Position);
-	ResetLongState();
-	return;
-	}
+		if (_longStopPrice is decimal stop && candle.LowPrice <= stop)
+		{
+			SellMarket(Position);
+			ResetLongState();
+			return;
+		}
 
-	if (_longTakePrice is decimal take && candle.HighPrice >= take)
-	{
-	SellMarket(Position);
-	ResetLongState();
-	return;
-	}
+		if (_longTakePrice is decimal take && candle.HighPrice >= take)
+		{
+			SellMarket(Position);
+			ResetLongState();
+			return;
+		}
 
-	if (TrailingStopPips > 0 && _longEntryPrice is decimal entry)
-	{
-	var distance = TrailingStopPips * pip;
-	var step = TrailingStepPips * pip;
-	if (distance > 0m)
-	{
-	var profit = candle.ClosePrice - entry;
-	if (profit > (TrailingStopPips + TrailingStepPips) * pip)
-	{
-	var threshold = candle.ClosePrice - (distance + step);
-	if (!_longStopPrice.HasValue || _longStopPrice.Value < threshold)
-	{
-	_longStopPrice = candle.ClosePrice - distance;
-	}
-	}
-	}
-	}
+		if (TrailingStopPips > 0 && _longEntryPrice is decimal entry)
+		{
+			var distance = TrailingStopPips * pip;
+			var step = TrailingStepPips * pip;
+			if (distance > 0m)
+			{
+				var profit = candle.ClosePrice - entry;
+				if (profit > (TrailingStopPips + TrailingStepPips) * pip)
+				{
+					var threshold = candle.ClosePrice - (distance + step);
+					if (!_longStopPrice.HasValue || _longStopPrice.Value < threshold)
+					{
+						_longStopPrice = candle.ClosePrice - distance;
+					}
+				}
+			}
+		}
 
-	if (UseFractalTrailing && _longEntryPrice is decimal longEntry && _longStopPrice.HasValue && TakeProfitPips > 0)
-	{
-	var target = TakeProfitPips * pip;
-	if (target > 0m)
-	{
-	var profit = candle.ClosePrice - longEntry;
-	if (profit >= 0.95m * target && _lastLowerFractal is decimal lower && lower > _longStopPrice.Value)
-	{
-	_longStopPrice = lower;
-	}
-	}
-	}
+		if (UseFractalTrailing && _longEntryPrice is decimal longEntry && _longStopPrice.HasValue && TakeProfitPips > 0)
+		{
+			var target = TakeProfitPips * pip;
+			if (target > 0m)
+			{
+				var profit = candle.ClosePrice - longEntry;
+				if (profit >= 0.95m * target && _lastLowerFractal is decimal lower && lower > _longStopPrice.Value)
+				{
+					_longStopPrice = lower;
+				}
+			}
+		}
 
-	if (_longStopPrice is decimal trailing && candle.LowPrice <= trailing)
-	{
-	SellMarket(Position);
-	ResetLongState();
-	}
+		if (_longStopPrice is decimal trailing && candle.LowPrice <= trailing)
+		{
+			SellMarket(Position);
+			ResetLongState();
+		}
 	}
 
 	private void ManageShortPosition(ICandleMessage candle, decimal pip)
 	{
-	if (Position >= 0m)
-	{
-	ResetShortState();
-	return;
-	}
+		if (Position >= 0m)
+		{
+			ResetShortState();
+			return;
+		}
 
-	var shortVolume = Math.Abs(Position);
+		var shortVolume = Math.Abs(Position);
 
-	if (_shortStopPrice is decimal stop && candle.HighPrice >= stop)
-	{
-	BuyMarket(shortVolume);
-	ResetShortState();
-	return;
-	}
+		if (_shortStopPrice is decimal stop && candle.HighPrice >= stop)
+		{
+			BuyMarket(shortVolume);
+			ResetShortState();
+			return;
+		}
 
-	if (_shortTakePrice is decimal take && candle.LowPrice <= take)
-	{
-	BuyMarket(shortVolume);
-	ResetShortState();
-	return;
-	}
+		if (_shortTakePrice is decimal take && candle.LowPrice <= take)
+		{
+			BuyMarket(shortVolume);
+			ResetShortState();
+			return;
+		}
 
-	if (TrailingStopPips > 0 && _shortEntryPrice is decimal entry)
-	{
-	var distance = TrailingStopPips * pip;
-	var step = TrailingStepPips * pip;
-	if (distance > 0m)
-	{
-	var profit = entry - candle.ClosePrice;
-	if (profit > (TrailingStopPips + TrailingStepPips) * pip)
-	{
-	var threshold = candle.ClosePrice + (distance + step);
-	if (!_shortStopPrice.HasValue || _shortStopPrice.Value > threshold)
-	{
-	_shortStopPrice = candle.ClosePrice + distance;
-	}
-	}
-	}
-	}
+		if (TrailingStopPips > 0 && _shortEntryPrice is decimal entry)
+		{
+			var distance = TrailingStopPips * pip;
+			var step = TrailingStepPips * pip;
+			if (distance > 0m)
+			{
+				var profit = entry - candle.ClosePrice;
+				if (profit > (TrailingStopPips + TrailingStepPips) * pip)
+				{
+					var threshold = candle.ClosePrice + (distance + step);
+					if (!_shortStopPrice.HasValue || _shortStopPrice.Value > threshold)
+					{
+						_shortStopPrice = candle.ClosePrice + distance;
+					}
+				}
+			}
+		}
 
-	if (UseFractalTrailing && _shortEntryPrice is decimal shortEntry && _shortStopPrice.HasValue && TakeProfitPips > 0)
-	{
-	var target = TakeProfitPips * pip;
-	if (target > 0m)
-	{
-	var profit = shortEntry - candle.ClosePrice;
-	if (profit >= 0.95m * target && _lastUpperFractal is decimal upper && upper < _shortStopPrice.Value)
-	{
-	_shortStopPrice = upper;
-	}
-	}
-	}
+		if (UseFractalTrailing && _shortEntryPrice is decimal shortEntry && _shortStopPrice.HasValue && TakeProfitPips > 0)
+		{
+			var target = TakeProfitPips * pip;
+			if (target > 0m)
+			{
+				var profit = shortEntry - candle.ClosePrice;
+				if (profit >= 0.95m * target && _lastUpperFractal is decimal upper && upper < _shortStopPrice.Value)
+				{
+					_shortStopPrice = upper;
+				}
+			}
+		}
 
-	if (_shortStopPrice is decimal trailing && candle.HighPrice >= trailing)
-	{
-	BuyMarket(shortVolume);
-	ResetShortState();
-	}
+		if (_shortStopPrice is decimal trailing && candle.HighPrice >= trailing)
+		{
+			BuyMarket(shortVolume);
+			ResetShortState();
+		}
 	}
 
 	private void UpdateHistory(decimal fast, decimal slow, decimal macdMain)
 	{
-	_fastPrev3 = _fastPrev2;
-	_fastPrev2 = _fastPrev1;
-	_fastPrev1 = fast;
+		_fastPrev3 = _fastPrev2;
+		_fastPrev2 = _fastPrev1;
+		_fastPrev1 = fast;
 
-	_slowPrev3 = _slowPrev2;
-	_slowPrev2 = _slowPrev1;
-	_slowPrev1 = slow;
+		_slowPrev3 = _slowPrev2;
+		_slowPrev2 = _slowPrev1;
+		_slowPrev1 = slow;
 
-	_macdPrev3 = _macdPrev2;
-	_macdPrev2 = _macdPrev1;
-	_macdPrev1 = macdMain;
+		_macdPrev3 = _macdPrev2;
+		_macdPrev2 = _macdPrev1;
+		_macdPrev1 = macdMain;
 	}
 
 	private void UpdateFractals(ICandleMessage candle)
 	{
-	for (var i = 0; i < _highWindow.Length - 1; i++)
-	{
-	_highWindow[i] = _highWindow[i + 1];
-	_lowWindow[i] = _lowWindow[i + 1];
-	}
+		for (var i = 0; i < _highWindow.Length - 1; i++)
+		{
+			_highWindow[i] = _highWindow[i + 1];
+			_lowWindow[i] = _lowWindow[i + 1];
+		}
 
-	_highWindow[^1] = candle.HighPrice;
-	_lowWindow[^1] = candle.LowPrice;
+		_highWindow[^1] = candle.HighPrice;
+		_lowWindow[^1] = candle.LowPrice;
 
-	if (_fractalCount < _highWindow.Length)
-	_fractalCount++;
+		if (_fractalCount < _highWindow.Length)
+			_fractalCount++;
 
-	if (_fractalCount < _highWindow.Length)
-	return;
+		if (_fractalCount < _highWindow.Length)
+			return;
 
-	var center = _highWindow.Length / 2;
-	var potentialUpper = _highWindow[center];
-	var potentialLower = _lowWindow[center];
+		var center = _highWindow.Length / 2;
+		var potentialUpper = _highWindow[center];
+		var potentialLower = _lowWindow[center];
 
-	var isUpper = true;
-	for (var i = 0; i < _highWindow.Length; i++)
-	{
-	if (i == center)
-	continue;
+		var isUpper = true;
+		for (var i = 0; i < _highWindow.Length; i++)
+		{
+			if (i == center)
+				continue;
 
-	if (_highWindow[i] >= potentialUpper)
-	{
-	isUpper = false;
-	break;
-	}
-	}
+			if (_highWindow[i] >= potentialUpper)
+			{
+				isUpper = false;
+				break;
+			}
+		}
 
-	if (isUpper)
-	_lastUpperFractal = potentialUpper;
+		if (isUpper)
+			_lastUpperFractal = potentialUpper;
 
-	var isLower = true;
-	for (var i = 0; i < _lowWindow.Length; i++)
-	{
-	if (i == center)
-	continue;
+		var isLower = true;
+		for (var i = 0; i < _lowWindow.Length; i++)
+		{
+			if (i == center)
+				continue;
 
-	if (_lowWindow[i] <= potentialLower)
-	{
-	isLower = false;
-	break;
-	}
-	}
+			if (_lowWindow[i] <= potentialLower)
+			{
+				isLower = false;
+				break;
+			}
+		}
 
-	if (isLower)
-	_lastLowerFractal = potentialLower;
+		if (isLower)
+			_lastLowerFractal = potentialLower;
 	}
 
 	private decimal GetTradeVolume(decimal stopDistance)
 	{
-	if (UseManualVolume || stopDistance <= 0m)
-	return ManualVolume;
+		if (UseManualVolume || stopDistance <= 0m)
+			return ManualVolume;
 
-	var portfolioValue = Portfolio?.CurrentValue ?? Portfolio?.BeginValue ?? 0m;
-	if (portfolioValue <= 0m)
-	return ManualVolume;
+		var portfolioValue = Portfolio?.CurrentValue ?? Portfolio?.BeginValue ?? 0m;
+		if (portfolioValue <= 0m)
+			return ManualVolume;
 
-	var riskAmount = portfolioValue * RiskPercent / 100m;
-	if (riskAmount <= 0m)
-	return ManualVolume;
+		var riskAmount = portfolioValue * RiskPercent / 100m;
+		if (riskAmount <= 0m)
+			return ManualVolume;
 
-	var volume = riskAmount / stopDistance;
-	if (volume <= 0m)
-	return ManualVolume;
+		var volume = riskAmount / stopDistance;
+		if (volume <= 0m)
+			return ManualVolume;
 
-	var step = Security?.VolumeStep ?? 0m;
-	if (step > 0m)
-	{
-	var stepsCount = Math.Floor((double)(volume / step));
-	volume = stepsCount <= 0 ? step : (decimal)stepsCount * step;
-	}
+		var step = Security?.VolumeStep ?? 0m;
+		if (step > 0m)
+		{
+			var stepsCount = Math.Floor((double)(volume / step));
+			volume = stepsCount <= 0 ? step : (decimal)stepsCount * step;
+		}
 
-	var minVolume = Security?.MinVolume ?? 0m;
-	if (minVolume > 0m && volume < minVolume)
-	volume = minVolume;
+		var minVolume = Security?.MinVolume ?? 0m;
+		if (minVolume > 0m && volume < minVolume)
+			volume = minVolume;
 
-	var maxVolume = Security?.MaxVolume ?? 0m;
-	if (maxVolume > 0m && volume > maxVolume)
-	volume = maxVolume;
+		var maxVolume = Security?.MaxVolume ?? 0m;
+		if (maxVolume > 0m && volume > maxVolume)
+			volume = maxVolume;
 
-	return volume;
+		return volume;
 	}
 
 	private decimal GetPipSize()
 	{
-	var step = Security?.PriceStep;
-	if (step is null || step <= 0m)
-	return 0.0001m;
+		var step = Security?.PriceStep;
+		if (step is null || step <= 0m)
+			return 0.0001m;
 
-	if (step < 0.01m)
-	return step.Value * 10m;
+		if (step < 0.01m)
+			return step.Value * 10m;
 
-	return step.Value;
+		return step.Value;
 	}
 
 	private void ResetLongState()
 	{
-	_longEntryPrice = null;
-	_longStopPrice = null;
-	_longTakePrice = null;
+		_longEntryPrice = null;
+		_longStopPrice = null;
+		_longTakePrice = null;
 	}
 
 	private void ResetShortState()
 	{
-	_shortEntryPrice = null;
-	_shortStopPrice = null;
-	_shortTakePrice = null;
+		_shortEntryPrice = null;
+		_shortStopPrice = null;
+		_shortTakePrice = null;
 	}
 }

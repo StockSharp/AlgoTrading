@@ -286,9 +286,10 @@ public class MacdAndSarStrategy : Strategy
 			DrawIndicator(priceArea, _parabolicSar);
 			DrawOwnTrades(priceArea);
 
-			var macdArea = CreateChartArea("MACD");
+			var macdArea = CreateChartArea();
 			if (macdArea != null)
 			{
+				macdArea.Title = "MACD";
 				DrawIndicator(macdArea, _macd);
 			}
 		}

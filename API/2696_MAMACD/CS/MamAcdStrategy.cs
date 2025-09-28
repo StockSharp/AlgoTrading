@@ -201,9 +201,10 @@ public class MamAcdStrategy : Strategy
 			DrawIndicator(priceArea, _triggerEma, "EMA Trigger");
 			DrawOwnTrades(priceArea);
 
-			var macdArea = CreateChartArea("MACD");
+			var macdArea = CreateChartArea();
 			if (macdArea != null)
 			{
+				macdArea.Title = "MACD";
 				DrawIndicator(macdArea, _macd, "MACD");
 			}
 		}

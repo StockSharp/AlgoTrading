@@ -122,9 +122,10 @@ public class VolatilityArbitrageSpreadOscillatorModelStrategy : Strategy
 		secondSub.Bind(ProcessSecond).Start();
 
 		var area = CreateChartArea();
-		var rsiArea = CreateChartArea("Spread RSI");
+		var rsiArea = CreateChartArea();
 		if (area != null)
 		{
+			area.Title = "Spread RSI";
 			DrawCandles(area, frontSub);
 			DrawOwnTrades(area);
 		}

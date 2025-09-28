@@ -21,11 +21,23 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 {
+	public enum CalculationModes
+	{
+		/// <summary>
+		/// High/Low prices.
+		/// </summary>
+		HighLow,
+		/// <summary>
+		/// Close prices.
+		/// </summary>
+		Close
+	}
+
 	private readonly StrategyParam<DataType> _skyscraperCandleType;
 	private readonly StrategyParam<int> _skyscraperLength;
 	private readonly StrategyParam<decimal> _skyscraperKv;
 	private readonly StrategyParam<decimal> _skyscraperPercentage;
-	private readonly StrategyParam<SkyscraperCalculationMode> _skyscraperMode;
+	private readonly StrategyParam<CalculationModes> _skyscraperMode;
 	private readonly StrategyParam<int> _skyscraperSignalBar;
 	private readonly StrategyParam<bool> _skyscraperEnableLongEntry;
 	private readonly StrategyParam<bool> _skyscraperEnableShortEntry;
@@ -100,7 +112,7 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 		_skyscraperPercentage = Param(nameof(SkyscraperPercentage), 0m)
 			.SetDisplay("Midline Offset %", "Percentage offset applied to the middle line", "Skyscraper Fix");
 
-		_skyscraperMode = Param(nameof(SkyscraperMode), SkyscraperCalculationMode.HighLow)
+		_skyscraperMode = Param(nameof(SkyscraperMode), CalculationModes.HighLow)
 			.SetDisplay("Price Mode", "Price source used to build the channel", "Skyscraper Fix");
 
 		_skyscraperSignalBar = Param(nameof(SkyscraperSignalBar), 1)
@@ -224,7 +236,7 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 	/// <summary>
 	/// Price mode used to build the Skyscraper channel.
 	/// </summary>
-	public SkyscraperCalculationMode SkyscraperMode { get => _skyscraperMode.Value; set => _skyscraperMode.Value = value; }
+	public CalculationModes SkyscraperMode { get => _skyscraperMode.Value; set => _skyscraperMode.Value = value; }
 
 	/// <summary>
 	/// Number of closed candles used to delay Skyscraper signals.

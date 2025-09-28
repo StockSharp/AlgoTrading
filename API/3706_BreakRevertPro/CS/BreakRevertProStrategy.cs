@@ -31,9 +31,9 @@ public class BreakRevertProStrategy : Strategy
 	private readonly StrategyParam<int> _safetyTradeIntervalSeconds;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ICandleManagerSubscription _m1Subscription;
-	private ICandleManagerSubscription _m15Subscription;
-	private ICandleManagerSubscription _h1Subscription;
+	private ISubscriptionHandler<ICandleMessage> _m1Subscription;
+	private ISubscriptionHandler<ICandleMessage> _m15Subscription;
+	private ISubscriptionHandler<ICandleMessage> _h1Subscription;
 
 	private AverageTrueRange _m1Atr;
 	private SimpleMovingAverage _m1TrendAverage;
@@ -65,8 +65,9 @@ public class BreakRevertProStrategy : Strategy
 		.SetCanOptimize(true, 0.5m, 5m, 0.5m);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
+			.SetRange(10, 60)
 		.SetDisplay("Lookback", "Number of finished candles used for statistics", "Signals")
-		.SetCanOptimize(true, 10, 60, 5);
+		.SetCanOptimize(true);
 
 		_breakoutThreshold = Param(nameof(BreakoutThreshold), 0.4m)
 		.SetDisplay("Breakout Threshold", "Minimum composite probability required for breakout entries", "Signals")

@@ -49,7 +49,7 @@ public class StochasticAcceleratorStrategy : Strategy
 	private StochasticOscillator _signalStochastic = null!;
 	private StochasticOscillator _entryStochastic = null!;
 	private StochasticOscillator _filterStochastic = null!;
-	private AcceleratorOscillator _accelerator = null!;
+	private Acceleration _accelerator = null!;
 	private AwesomeOscillator _awesome = null!;
 
 	private decimal _pipSize;
@@ -367,7 +367,7 @@ public class StochasticAcceleratorStrategy : Strategy
 			D = { Length = FilterDPeriod },
 		};
 
-		_accelerator = new AcceleratorOscillator();
+		_accelerator = new Acceleration();
 		_awesome = new AwesomeOscillator();
 
 		var subscription = SubscribeCandles(CandleType);

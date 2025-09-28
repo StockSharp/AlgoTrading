@@ -111,7 +111,7 @@ public class IchimokuPriceActionStrategy : Strategy
 		set => _macdSignal.Value = value;
 	}
 
-	public StopLossModes StopLossModes
+	public StopLossModes StopLossMode
 	{
 		get => _stopLossMode.Value;
 		set => _stopLossMode.Value = value;
@@ -153,7 +153,7 @@ public class IchimokuPriceActionStrategy : Strategy
 		set => _swingCandleType.Value = value;
 	}
 
-	public TakeProfitModes TakeProfitModes
+	public TakeProfitModes TakeProfitMode
 	{
 		get => _takeProfitMode.Value;
 		set => _takeProfitMode.Value = value;
@@ -305,7 +305,7 @@ public class IchimokuPriceActionStrategy : Strategy
 		.Bind(_macd, ProcessTradingCandle)
 		.Start();
 
-		if (StopLossModes == StopLossModes.AtrMultiplier || TakeProfitModes == TakeProfitModes.RiskReward)
+		if (StopLossMode == StopLossModes.AtrMultiplier || TakeProfitMode == TakeProfitModes.RiskReward)
 		{
 			_atr = new AverageTrueRange { Length = AtrPeriod };
 			var atrSubscription = SubscribeCandles(AtrCandleType);
@@ -314,7 +314,7 @@ public class IchimokuPriceActionStrategy : Strategy
 			.Start();
 		}
 
-		if (StopLossModes == StopLossModes.SwingHighLow)
+		if (StopLossMode == StopLossModes.SwingHighLow)
 		{
 			_swingHigh = new Highest
 			{
@@ -488,7 +488,7 @@ public class IchimokuPriceActionStrategy : Strategy
 
 		var priceStep = Security.PriceStep ?? 0.0001m;
 
-		switch (StopLossModes)
+		switch (StopLossMode)
 		{
 			case StopLossModes.FixedPips:
 			{
@@ -517,7 +517,7 @@ public class IchimokuPriceActionStrategy : Strategy
 
 		var priceStep = Security.PriceStep ?? 0.0001m;
 
-		switch (TakeProfitModes)
+		switch (TakeProfitMode)
 		{
 			case TakeProfitModes.FixedPips:
 			{

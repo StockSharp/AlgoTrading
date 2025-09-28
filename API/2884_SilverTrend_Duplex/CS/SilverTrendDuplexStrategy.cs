@@ -251,9 +251,10 @@ public class SilverTrendDuplexStrategy : Strategy
 			.Bind(_shortIndicator, ProcessShortCandle)
 			.Start();
 
-		var longArea = CreateChartArea("Long SilverTrend");
+		var longArea = CreateChartArea();
 		if (longArea != null)
 		{
+			longArea.Title = "Long SilverTrend";
 			DrawCandles(longArea, longSubscription);
 			DrawIndicator(longArea, _longIndicator);
 			DrawOwnTrades(longArea);
@@ -261,9 +262,10 @@ public class SilverTrendDuplexStrategy : Strategy
 
 		if (!Equals(LongCandleType, ShortCandleType))
 		{
-			var shortArea = CreateChartArea("Short SilverTrend");
+			var shortArea = CreateChartArea();
 			if (shortArea != null)
 			{
+				shortArea.Title = "Short SilverTrend";
 				DrawCandles(shortArea, shortSubscription);
 				DrawIndicator(shortArea, _shortIndicator);
 				DrawOwnTrades(shortArea);
