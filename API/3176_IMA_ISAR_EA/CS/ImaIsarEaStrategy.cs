@@ -633,7 +633,7 @@ public class ImaIsarEaStrategy : Strategy
 		_shortTakePrice = null;
 	}
 
-	private decimal? ApplyShift(Shift? shift, decimal value, ICandleMessage candle)
+	private decimal? ApplyShift(Shift shift, decimal value, ICandleMessage candle)
 	{
 		if (shift is null)
 		return value;

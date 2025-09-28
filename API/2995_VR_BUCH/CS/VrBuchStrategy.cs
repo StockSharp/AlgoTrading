@@ -53,8 +53,8 @@ public class VrBuchStrategy : Strategy
 	private readonly StrategyParam<CandlePrices> _signalPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverage _fastMa = null!;
-	private MovingAverage _slowMa = null!;
+	private LengthIndicator<decimal> _fastMa = null!;
+	private LengthIndicator<decimal> _slowMa = null!;
 
 	private decimal[] _fastBuffer = Array.Empty<decimal>();
 	private int _fastIndex;
@@ -330,11 +330,11 @@ public class VrBuchStrategy : Strategy
 		return true;
 	}
 
-	private static MovingAverage CreateMovingAverage(MovingAverageMethods method, int period, CandlePrices price)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int period, CandlePrices price)
 	{
 		var length = Math.Max(1, period);
 
-		MovingAverage indicator = method switch
+		LengthIndicator<decimal> indicator = method switch
 		{
 			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
 			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },

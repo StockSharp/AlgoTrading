@@ -30,8 +30,8 @@ public class DualSupertrendMacdStrategy : Strategy
 	private readonly StrategyParam<int> _atrPeriod1;
 	private readonly StrategyParam<decimal> _factor1;
 	private readonly StrategyParam<int> _atrPeriod2;
-private readonly StrategyParam<decimal> _factor2;
-private readonly StrategyParam<Sides?> _direction;
+	private readonly StrategyParam<decimal> _factor2;
+	private readonly StrategyParam<Sides?> _direction;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="DualSupertrendMacdStrategy"/>.
@@ -72,8 +72,8 @@ private readonly StrategyParam<Sides?> _direction;
 					   .SetCanOptimize(true)
 					   .SetDisplay("Factor 2", "ATR multiplier for second Supertrend", "Supertrend");
 
-_direction = Param(nameof(Direction), (Sides?)null)
-.SetDisplay("Direction", "Trading direction: Long, Short or Both", "Strategy");
+		_direction = Param(nameof(Direction), (Sides?)null)
+		.SetDisplay("Direction", "Trading direction: Long, Short or Both", "Strategy");
 	}
 
 	/// <summary>
@@ -169,11 +169,11 @@ _direction = Param(nameof(Direction), (Sides?)null)
 	/// <summary>
 	/// Trading direction.
 	/// </summary>
-public Sides? Direction
-{
-get => _direction.Value;
-set => _direction.Value = value;
-}
+	public Sides? Direction
+	{
+		get => _direction.Value;
+		set => _direction.Value = value;
+	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
@@ -188,12 +188,15 @@ set => _direction.Value = value;
 		var st2 = new SuperTrend { Length = AtrPeriod2, Multiplier = Factor2 };
 
 		var macd =
-			new MovingAverageConvergenceDivergenceSignal { Macd =
-															   {
-																   ShortMa = CreateMa(OscillatorMaType, MacdFast),
-																   LongMa = CreateMa(OscillatorMaType, MacdSlow),
-															   },
-														   SignalMa = CreateMa(SignalMaType, MacdSignal) };
+			new MovingAverageConvergenceDivergenceSignal
+			{
+				Macd =
+				{
+					ShortMa = CreateMa(OscillatorMaType, MacdFast),
+					LongMa = CreateMa(OscillatorMaType, MacdSlow),
+				},
+				SignalMa = CreateMa(SignalMaType, MacdSignal)
+			};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.BindEx(st1, st2, macd, ProcessCandle).Start();
@@ -230,23 +233,26 @@ set => _direction.Value = value;
 		var exitLong = close < st1 || close < st2 || hist < 0;
 		var exitShort = close > st1 || close > st2 || hist > 0;
 
-var dir = Direction;
+		var dir = Direction;
 
-if ((dir is null or Sides.Buy) && isBullish && Position <= 0)
-BuyMarket(Volume + Math.Abs(Position));
-else if (Position > 0 && exitLong)
-SellMarket(Position);
+		if ((dir is null or Sides.Buy) && isBullish && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && exitLong)
+			SellMarket(Position);
 
-if ((dir is null or Sides.Sell) && isBearish && Position >= 0)
-SellMarket(Volume + Math.Abs(Position));
-else if (Position < 0 && exitShort)
-BuyMarket(Math.Abs(Position));
+		if ((dir is null or Sides.Sell) && isBearish && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position < 0 && exitShort)
+			BuyMarket(Math.Abs(Position));
 	}
 
-	private MovingAverage CreateMa(MovingAverageTypes type, int length)
+	private LengthIndicator<decimal> CreateMa(MovingAverageTypes type, int length)
 	{
-		return type switch { MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
-							 _ => new ExponentialMovingAverage { Length = length } };
+		return type switch
+		{
+			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
+			_ => new ExponentialMovingAverage { Length = length }
+		};
 	}
 
 	/// <summary>

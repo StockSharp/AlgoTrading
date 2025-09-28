@@ -37,8 +37,8 @@ public class CandleStopSystemTmPlusStrategy : Strategy
 
 	private Highest _upHighest = null!;
 	private Lowest _downLowest = null!;
-	private Shift? _upShiftIndicator;
-	private Shift? _downShiftIndicator;
+	private Shift _upShiftIndicator;
+	private Shift _downShiftIndicator;
 	private readonly List<int> _colorHistory = new();
 	private int _historyCapacity;
 	private DateTimeOffset? _positionOpenTime;

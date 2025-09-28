@@ -84,9 +84,9 @@ public class PuriaMethodStrategy : Strategy
 	private LengthIndicator<decimal> _ma0 = null!;
 	private LengthIndicator<decimal> _ma1 = null!;
 	private LengthIndicator<decimal> _ma2 = null!;
-	private Shift? _ma0ShiftIndicator;
-	private Shift? _ma1ShiftIndicator;
-	private Shift? _ma2ShiftIndicator;
+	private Shift _ma0ShiftIndicator;
+	private Shift _ma1ShiftIndicator;
+	private Shift _ma2ShiftIndicator;
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 
 	private decimal? _previousMa0;
@@ -750,7 +750,7 @@ public class PuriaMethodStrategy : Strategy
 			_previousMacd = macd.Value;
 	}
 
-	private decimal? ProcessMovingAverage(LengthIndicator<decimal> indicator, Shift? shift, ICandleMessage candle)
+	private decimal? ProcessMovingAverage(LengthIndicator<decimal> indicator, Shift shift, ICandleMessage candle)
 	{
 		var value = indicator.Process(candle);
 		if (!value.IsFinal)

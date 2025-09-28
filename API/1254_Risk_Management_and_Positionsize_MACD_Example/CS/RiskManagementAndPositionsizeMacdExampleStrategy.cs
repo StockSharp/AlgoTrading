@@ -347,7 +347,7 @@ public class RiskManagementAndPositionsizeMacdExampleStrategy : Strategy
 		return equity * (1 + MarginFactor) / price;
 	}
 
-	private static MovingAverage CreateMa(MovingAverageTypes type, int length)
+	private static LengthIndicator<decimal> CreateMa(MovingAverageTypes type, int length)
 	{
 		return type switch { MovingAverageTypes.SMA => new SimpleMovingAverage { Length = length },
 							 MovingAverageTypes.EMA => new ExponentialMovingAverage { Length = length },

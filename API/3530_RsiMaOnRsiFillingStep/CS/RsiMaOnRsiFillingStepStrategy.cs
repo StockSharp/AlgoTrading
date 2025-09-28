@@ -54,7 +54,7 @@ public class RsiMaOnRsiFillingStepStrategy : Strategy
 	private readonly StrategyParam<TimeSpan> _sessionEnd;
 
 	private RelativeStrengthIndex _rsi;
-	private MovingAverage _signalMa;
+	private LengthIndicator<decimal> _signalMa;
 	private decimal? _previousRsi;
 	private decimal? _previousSignal;
 	private DateTimeOffset? _lastSignalBarTime;

@@ -167,7 +167,7 @@ public class BollingerBandsTrailingStopStrategy : Strategy
 		}
 	}
 
-	private static MovingAverage CreateMa(MovingAverageTypes type, int length)
+	private static LengthIndicator<decimal> CreateMa(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{

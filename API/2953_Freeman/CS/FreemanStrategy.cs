@@ -777,7 +777,7 @@ public class FreemanStrategy : Strategy
 			queue.Dequeue();
 	}
 
-	private static MovingAverage CreateMovingAverage(MovingAverageTypes type, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{

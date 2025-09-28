@@ -32,12 +32,12 @@ public class Mare51ShiftCrossoverStrategy : Strategy
 
 	private SimpleMovingAverage _fastMa = null!;
 	private SimpleMovingAverage _slowMa = null!;
-	private Shift? _fastShift0;
-	private Shift? _fastShift2;
-	private Shift? _fastShift5;
-	private Shift? _slowShift0;
-	private Shift? _slowShift2;
-	private Shift? _slowShift5;
+	private Shift _fastShift0;
+	private Shift _fastShift2;
+	private Shift _fastShift5;
+	private Shift _slowShift0;
+	private Shift _slowShift2;
+	private Shift _slowShift5;
 
 	private ICandleMessage _previousCandle;
 	private decimal _pointSize;
@@ -316,7 +316,7 @@ public class Mare51ShiftCrossoverStrategy : Strategy
 		}
 	}
 
-	private decimal? GetShiftedValue(Shift? shift, decimal baseValue, ICandleMessage candle)
+	private decimal? GetShiftedValue(Shift shift, decimal baseValue, ICandleMessage candle)
 	{
 		if (shift == null)
 		return baseValue;
@@ -325,7 +325,7 @@ public class Mare51ShiftCrossoverStrategy : Strategy
 		return value.IsFinal ? value.ToDecimal() : null;
 	}
 
-	private static Shift? CreateShift(int totalShift)
+	private static Shift CreateShift(int totalShift)
 	{
 	return totalShift > 0 ? new Shift { Length = totalShift } : null;
 	}

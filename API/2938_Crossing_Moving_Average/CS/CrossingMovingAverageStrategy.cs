@@ -57,8 +57,8 @@ public class CrossingMovingAverageStrategy : Strategy
 	private readonly StrategyParam<int> _momentumPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverage _fastMa;
-	private MovingAverage _slowMa;
+	private LengthIndicator<decimal> _fastMa;
+	private LengthIndicator<decimal> _slowMa;
 	private Momentum _momentum;
 
 	private readonly List<decimal> _fastHistory = new();
@@ -623,7 +623,7 @@ public class CrossingMovingAverageStrategy : Strategy
 		};
 	}
 
-	private static MovingAverage CreateMovingAverage(MovingAverageModes mode, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageModes mode, int length)
 	{
 		return mode switch
 		{

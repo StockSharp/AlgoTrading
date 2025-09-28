@@ -59,7 +59,7 @@ public class FirebirdChannelAveragingStrategy : Strategy
 	private readonly StrategyParam<decimal> _stepExponent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverage _ma;
+	private LengthIndicator<decimal> _ma;
 	private readonly Queue<decimal> _maHistory = new();
 	private readonly List<PositionEntry> _entries = new();
 	private bool? _isLong;
@@ -523,7 +523,7 @@ public class FirebirdChannelAveragingStrategy : Strategy
 		return _maHistory.Peek();
 	}
 
-	private MovingAverage CreateMovingAverage(MovingAverageTypes type)
+	private LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type)
 	{
 		return type switch
 		{

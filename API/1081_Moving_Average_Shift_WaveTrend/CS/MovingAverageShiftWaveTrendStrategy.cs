@@ -251,7 +251,7 @@ public class MovingAverageShiftWaveTrendStrategy : Strategy
 		_prevLongMa = longMaValue;
 	}
 
-	private MovingAverage CreateMa(string type, int length)
+	private LengthIndicator<decimal> CreateMa(string type, int length)
 	{
 		return type switch
 		{

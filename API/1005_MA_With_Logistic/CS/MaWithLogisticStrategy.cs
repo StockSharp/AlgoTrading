@@ -239,7 +239,7 @@ public class MaWithLogisticStrategy : Strategy
 		}
 	}
 
-	private MovingAverage CreateMa(MaTypes type, int length)
+	private LengthIndicator<decimal> CreateMa(MaTypes type, int length)
 	{
 		return type switch {
 			MaTypes.EMA => new ExponentialMovingAverage { Length = length },
