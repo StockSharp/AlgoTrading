@@ -215,9 +215,9 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnOrderRegisterFailed(OrderFail fail)
+	protected override void OnOrderRegisterFailed(OrderFail fail, bool calcRisk)
 	{
-		base.OnOrderRegisterFailed(fail);
+		base.OnOrderRegisterFailed(fail, calcRisk);
 
 		if (_pendingEntrySide != null && fail.Order.Side == _pendingEntrySide)
 		{

@@ -24,7 +24,7 @@ public class VrOverturnStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _volumeEpsilon;
 
-	private enum InitialDirections
+	public enum InitialDirections
 	{
 		/// <summary>
 		/// Start with a long position.
@@ -37,7 +37,7 @@ public class VrOverturnStrategy : Strategy
 		Sell
 	}
 
-	private enum TradeModes
+	public enum TradeModes
 	{
 		/// <summary>
 		/// Increase size after losses and reset after wins.

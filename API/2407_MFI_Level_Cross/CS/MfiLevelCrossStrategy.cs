@@ -11,15 +11,13 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
 /// Money Flow Index based strategy that opens positions when the indicator crosses predefined levels.
 /// The strategy can trade in the direction of the crossing or in the opposite direction based on Trend Mode.
 /// </summary>
 public class MfiLevelCrossStrategy : Strategy
 {
-	private enum TrendModes
+	public enum TrendModes
 	{
 		Direct,
 		Against

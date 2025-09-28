@@ -861,9 +861,9 @@ public class ExpFiboZzStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnOrderRegisterFailed(OrderFail fail)
+	protected override void OnOrderRegisterFailed(OrderFail fail, bool calcRisk)
 	{
-		base.OnOrderRegisterFailed(fail);
+		base.OnOrderRegisterFailed(fail, calcRisk);
 
 		if (_buyStopOrder != null && fail.Order == _buyStopOrder)
 		_buyStopOrder = null;

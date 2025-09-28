@@ -18,14 +18,14 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TradingTheChannelStrategy : Strategy
 {
-	private enum TradeRules
+	public enum TradeRules
 	{
 		TradeTrend,
 		TradeBreakouts,
 		TradeChannel
 	}
 
-	private enum RangeSources
+	public enum RangeSources
 	{
 		Close,
 		HighLow

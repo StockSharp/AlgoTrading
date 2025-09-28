@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ExpHlrSignStrategy : Strategy
 {
-	private enum AlgMethods
+	public enum AlgMethods
 	{
 		ModeIn,
 		ModeOut,

@@ -28,7 +28,7 @@ public class Universum30OriginalStrategy : Strategy
 	private readonly StrategyParam<int> _lossesLimit;
 	private readonly StrategyParam<bool> _fastOptimize;
 
-	private DeMarker? _deMarker;
+	private DeMarker _deMarker;
 	private decimal _pointValue;
 	private decimal _takeProfitOffset;
 	private decimal _stopLossOffset;

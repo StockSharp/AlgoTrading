@@ -178,8 +178,7 @@ public class Ema612Strategy : Strategy
 
 		StartProtection(
 			takeProfit: takeProfitUnit,
-			stopLoss: null,
-			trailingStop: trailingUnit,
+			stopLoss: trailingUnit,
 			useMarketOrders: true);
 
 		_shortEma = new EMA { Length = ShortEmaLength };
@@ -201,9 +200,9 @@ public class Ema612Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnOrderRegisterFailed(OrderFail fail)
+	protected override void OnOrderRegisterFailed(OrderFail fail, bool calcRisk)
 	{
-		base.OnOrderRegisterFailed(fail);
+		base.OnOrderRegisterFailed(fail, calcRisk);
 
 		_orderPending = false;
 	}

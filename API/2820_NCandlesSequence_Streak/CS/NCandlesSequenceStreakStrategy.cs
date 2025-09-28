@@ -50,7 +50,7 @@ public class NCandlesSequenceStreakStrategy : Strategy
 	/// <summary>
 	/// Defines how positions are closed when a "black sheep" candle appears.
 	/// </summary>
-	private enum ClosingModes
+	public enum ClosingModes
 	{
 		/// <summary>Close every open position.</summary>
 		All,

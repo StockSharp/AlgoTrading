@@ -338,9 +338,9 @@ public class CurrencyStopLossTakeProfitStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnOrderRegisterFailed(OrderFail fail)
+	protected override void OnOrderRegisterFailed(OrderFail fail, bool calcRisk)
 	{
-		base.OnOrderRegisterFailed(fail);
+		base.OnOrderRegisterFailed(fail, calcRisk);
 
 		if (_closingOrders.TryGetValue(fail.Order, out var lot))
 		{

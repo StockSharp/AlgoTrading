@@ -20,7 +20,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class EmaWmaRsiStrategy : Strategy
 {
-
 	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<int> _wmaPeriod;
 	private readonly StrategyParam<int> _rsiPeriod;
@@ -54,7 +53,7 @@ public class EmaWmaRsiStrategy : Strategy
 	private decimal? _longTake;
 	private decimal? _shortTake;
 
-	private enum TrailingSources
+	public enum TrailingSources
 	{
 		Fractals,
 		CandleExtremes,

@@ -20,14 +20,14 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SpecificDayTimeStrategy : Strategy
 {
-	private enum OrderModes
+	public enum OrderModes
 	{
 		Market,
 		Stop,
 		Limit,
 	}
 
-	private enum LotSizingModes
+	public enum LotSizingModes
 	{
 		Manual,
 		Automatic,

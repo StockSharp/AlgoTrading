@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class IuBiggerThanRangeStrategy : Strategy
 {
-	private enum StopLossMethods
+	public enum StopLossMethods
 	{
 		PreviousHighLow,
 		Atr,

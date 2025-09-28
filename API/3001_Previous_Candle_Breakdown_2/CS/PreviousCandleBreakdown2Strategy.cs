@@ -99,7 +99,7 @@ public class PreviousCandleBreakdown2Strategy : Strategy
 	/// <summary>
 	/// Moving average calculation method.
 	/// </summary>
-	public MaMethods MaMethods
+	public MaMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -602,7 +602,7 @@ public class PreviousCandleBreakdown2Strategy : Strategy
 
 	private IIndicator CreateMovingAverage(int period)
 	{
-		return MaMethods switch
+		return MaMethod switch
 		{
 			MaMethods.Simple => new SimpleMovingAverage { Length = period },
 			MaMethods.Exponential => new ExponentialMovingAverage { Length = period },

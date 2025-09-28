@@ -42,13 +42,13 @@ public class TargetEaManagerStrategy : Strategy
 	private decimal _longAveragePrice;
 	private decimal _shortAveragePrice;
 
-	private enum ManageModes
+	public enum ManageModes
 	{
 		Separate,
 		Combined
 	}
 
-	private enum TargetCalculationModes
+	public enum TargetCalculationModes
 	{
 		Pips,
 		CurrencyPerLot,

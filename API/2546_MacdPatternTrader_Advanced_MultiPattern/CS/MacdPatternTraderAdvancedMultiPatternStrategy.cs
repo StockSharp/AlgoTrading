@@ -1286,12 +1286,13 @@ public class MacdPatternTraderAdvancedMultiPatternStrategy : Strategy
 		if (macdcurr > Pattern3MaxLowThreshold)
 			_pattern3BarsBup++;
 
-		double max13 = 0, max23 = 0;
+		var max13 = 0m;
+		var max23 = 0m;
 		var stops3 = 0;
 		var stops13 = 0;
 
 		if (S3 == 1 && macdcurr < macdlast && macdlast > macdlast3 && macdlast > max13 && stops3 == 0)
-			max13 = (double)macdlast;
+			max13 = macdlast;
 
 		if (max13 > 0 && macdcurr < Pattern3MaxThreshold)
 			stops3 = 1;
@@ -1304,7 +1305,7 @@ public class MacdPatternTraderAdvancedMultiPatternStrategy : Strategy
 		}
 
 		if (stops3 == 1 && macdcurr > Pattern3MaxThreshold && macdcurr < macdlast && macdlast > macdlast3 && macdlast > max13 && macdlast > max23 && stops13 == 0)
-			max23 = (double)macdlast;
+			max23 = macdlast;
 
 		if (max23 > 0 && macdcurr < Pattern3MaxThreshold)
 			stops13 = 1;
@@ -1334,10 +1335,11 @@ public class MacdPatternTraderAdvancedMultiPatternStrategy : Strategy
 		var bS3 = macdcurr < Pattern3MinThreshold ? 1 : 0;
 		var sstops3 = 0;
 		var sstops13 = 0;
-		double min13 = 0, min23 = 0;
+		var min13 = 0m;
+		var min23 = 0m;
 
 		if (bS3 == 1 && macdcurr > macdlast && macdlast < macdlast3 && macdlast < min13 && sstops3 == 0)
-			min13 = (double)macdlast;
+			min13 = macdlast;
 
 		if (min13 < 0 && macdcurr > Pattern3MinThreshold)
 		{
@@ -1353,7 +1355,7 @@ public class MacdPatternTraderAdvancedMultiPatternStrategy : Strategy
 		}
 
 		if (sstops3 == 1 && macdcurr < Pattern3MaxThreshold && macdcurr > macdlast && macdlast < macdlast3 && macdlast < min13 && macdlast < min23 && sstops13 == 0)
-			min23 = (double)macdlast;
+			min23 = macdlast;
 
 		if (min23 < 0 && macdcurr > Pattern3MinThreshold)
 		{
@@ -1387,14 +1389,14 @@ public class MacdPatternTraderAdvancedMultiPatternStrategy : Strategy
 	{
 		var aopSell = false;
 		var aopBuy = false;
-		double max14 = 0;
-		double min14 = 0;
+		var max14 = 0m;
+		var min14 = 0m;
 		var stops4 = 0;
 		var sstop4 = 0;
 
 		if (macdcurr > Pattern4MaxThreshold && macdcurr < macdlast && macdlast > macdlast3 && stops4 == 0)
 		{
-			max14 = (double)macdlast;
+			max14 = macdlast;
 			stops4 = 1;
 		}
 
@@ -1418,7 +1420,7 @@ public class MacdPatternTraderAdvancedMultiPatternStrategy : Strategy
 
 		if (macdcurr < Pattern4MinThreshold && macdcurr > macdlast && macdlast < macdlast3 && sstop4 == 0)
 		{
-			min14 = (double)macdlast;
+			min14 = macdlast;
 			sstop4 = 1;
 		}
 

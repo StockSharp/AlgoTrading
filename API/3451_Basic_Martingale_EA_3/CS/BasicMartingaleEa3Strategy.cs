@@ -19,14 +19,14 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BasicMartingaleEa3Strategy : Strategy
 {
-	private enum AveragingModes
+	public enum AveragingModes
 	{
 		AverageDown,
 		AverageUp,
 		None,
 	}
 
-	private enum MartinModes
+	public enum MartinModes
 	{
 		Multiply,
 		Increment,

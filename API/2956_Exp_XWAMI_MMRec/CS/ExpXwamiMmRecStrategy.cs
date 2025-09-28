@@ -23,7 +23,7 @@ public class ExpXwamiMmRecStrategy : Strategy
 	/// <summary>
 	/// Smoothing modes supported by the XWAMI conversion.
 	/// </summary>
-	public enum XwamiSmoothingMethods
+	public enum SmoothMethods
 	{
 		/// <summary>
 		/// Simple moving average.
@@ -66,21 +66,37 @@ public class ExpXwamiMmRecStrategy : Strategy
 		/// </summary>
 		Ama
 	}
+	public enum AppliedPrices
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted,
+		Simple,
+		Quarter,
+		TrendFollow0,
+		TrendFollow1,
+		Demark
+	}
+
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _period;
-	private readonly StrategyParam<XwamiSmoothingMethods> _method1;
+	private readonly StrategyParam<SmoothMethods> _method1;
 	private readonly StrategyParam<int> _length1;
 	private readonly StrategyParam<int> _phase1;
-	private readonly StrategyParam<XwamiSmoothingMethods> _method2;
+	private readonly StrategyParam<SmoothMethods> _method2;
 	private readonly StrategyParam<int> _length2;
 	private readonly StrategyParam<int> _phase2;
-	private readonly StrategyParam<XwamiSmoothingMethods> _method3;
+	private readonly StrategyParam<SmoothMethods> _method3;
 	private readonly StrategyParam<int> _length3;
 	private readonly StrategyParam<int> _phase3;
-	private readonly StrategyParam<XwamiSmoothingMethods> _method4;
+	private readonly StrategyParam<SmoothMethods> _method4;
 	private readonly StrategyParam<int> _length4;
 	private readonly StrategyParam<int> _phase4;
-	private readonly StrategyParam<XwamiAppliedPrice> _appliedPrice;
+	private readonly StrategyParam<AppliedPrices> _appliedPrice;
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<bool> _allowBuyOpen;
 	private readonly StrategyParam<bool> _allowSellOpen;
@@ -125,7 +141,7 @@ public class ExpXwamiMmRecStrategy : Strategy
 		.SetDisplay("Momentum Shift", "Distance between the compared prices", "Indicator")
 		.SetCanOptimize(true);
 
-		_method1 = Param(nameof(Method1), XwamiSmoothingMethods.T3)
+		_method1 = Param(nameof(Method1), SmoothMethods.T3)
 		.SetDisplay("Smoothing 1", "First smoothing method", "Indicator");
 		_length1 = Param(nameof(Length1), 4)
 		.SetDisplay("Length 1", "Length of the first smoothing", "Indicator")
@@ -133,7 +149,7 @@ public class ExpXwamiMmRecStrategy : Strategy
 		_phase1 = Param(nameof(Phase1), 15)
 		.SetDisplay("Phase 1", "Phase used by Jurik/T3 smoothers", "Indicator");
 
-		_method2 = Param(nameof(Method2), XwamiSmoothingMethods.Jjma)
+		_method2 = Param(nameof(Method2), SmoothMethods.Jjma)
 		.SetDisplay("Smoothing 2", "Second smoothing method", "Indicator");
 		_length2 = Param(nameof(Length2), 13)
 		.SetDisplay("Length 2", "Length of the second smoothing", "Indicator")
@@ -141,7 +157,7 @@ public class ExpXwamiMmRecStrategy : Strategy
 		_phase2 = Param(nameof(Phase2), 15)
 		.SetDisplay("Phase 2", "Phase used by Jurik/T3 smoothers", "Indicator");
 
-		_method3 = Param(nameof(Method3), XwamiSmoothingMethods.Jjma)
+		_method3 = Param(nameof(Method3), SmoothMethods.Jjma)
 		.SetDisplay("Smoothing 3", "Third smoothing method", "Indicator");
 		_length3 = Param(nameof(Length3), 13)
 		.SetDisplay("Length 3", "Length of the third smoothing", "Indicator")
@@ -149,7 +165,7 @@ public class ExpXwamiMmRecStrategy : Strategy
 		_phase3 = Param(nameof(Phase3), 15)
 		.SetDisplay("Phase 3", "Phase used by Jurik/T3 smoothers", "Indicator");
 
-		_method4 = Param(nameof(Method4), XwamiSmoothingMethods.Jjma)
+		_method4 = Param(nameof(Method4), SmoothMethods.Jjma)
 		.SetDisplay("Smoothing 4", "Fourth smoothing method", "Indicator");
 		_length4 = Param(nameof(Length4), 4)
 		.SetDisplay("Length 4", "Length of the fourth smoothing", "Indicator")
@@ -157,7 +173,7 @@ public class ExpXwamiMmRecStrategy : Strategy
 		_phase4 = Param(nameof(Phase4), 15)
 		.SetDisplay("Phase 4", "Phase used by Jurik/T3 smoothers", "Indicator");
 
-		_appliedPrice = Param(nameof(AppliedPrice), XwamiAppliedPrice.Close)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPrices.Close)
 		.SetDisplay("Applied Price", "Price source forwarded into the filter", "Indicator");
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetDisplay("Signal Bar", "Index of the bar used for signal detection", "Indicator")
@@ -221,7 +237,7 @@ public class ExpXwamiMmRecStrategy : Strategy
 	/// <summary>
 	/// First smoothing method.
 	/// </summary>
-	public XwamiSmoothingMethods Method1
+	public SmoothMethods Method1
 	{
 		get => _method1.Value;
 		set => _method1.Value = value;
@@ -248,7 +264,7 @@ public class ExpXwamiMmRecStrategy : Strategy
 	/// <summary>
 	/// Second smoothing method.
 	/// </summary>
-	public XwamiSmoothingMethods Method2
+	public SmoothMethods Method2
 	{
 		get => _method2.Value;
 		set => _method2.Value = value;
@@ -275,7 +291,7 @@ public class ExpXwamiMmRecStrategy : Strategy
 	/// <summary>
 	/// Third smoothing method.
 	/// </summary>
-	public XwamiSmoothingMethods Method3
+	public SmoothMethods Method3
 	{
 		get => _method3.Value;
 		set => _method3.Value = value;
@@ -302,7 +318,7 @@ public class ExpXwamiMmRecStrategy : Strategy
 	/// <summary>
 	/// Fourth smoothing method.
 	/// </summary>
-	public XwamiSmoothingMethods Method4
+	public SmoothMethods Method4
 	{
 		get => _method4.Value;
 		set => _method4.Value = value;
@@ -329,7 +345,7 @@ public class ExpXwamiMmRecStrategy : Strategy
 	/// <summary>
 	/// Price source used as the indicator input.
 	/// </summary>
-	public XwamiAppliedPrice AppliedPrice
+	public AppliedPrices AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -694,42 +710,42 @@ public class ExpXwamiMmRecStrategy : Strategy
 		return filter.IsFormed ? result : null;
 	}
 
-	private IXwamiFilter CreateFilter(XwamiSmoothingMethods method, int length, int phase)
+	private IXwamiFilter CreateFilter(SmoothMethods method, int length, int phase)
 	{
 		var normalizedLength = Math.Max(1, length);
 
 		return method switch
 		{
-			XwamiSmoothingMethods.Sma => new IndicatorWrapper(new SimpleMovingAverage { Length = normalizedLength }),
-			XwamiSmoothingMethods.Ema => new IndicatorWrapper(new ExponentialMovingAverage { Length = normalizedLength }),
-			XwamiSmoothingMethods.Smma => new IndicatorWrapper(new SmoothedMovingAverage { Length = normalizedLength }),
-			XwamiSmoothingMethods.Lwma => new IndicatorWrapper(new WeightedMovingAverage { Length = normalizedLength }),
-			XwamiSmoothingMethods.Jjma => new IndicatorWrapper(new JurikMovingAverage { Length = normalizedLength, Phase = phase }),
-			XwamiSmoothingMethods.JurX => new IndicatorWrapper(new JurikMovingAverage { Length = normalizedLength, Phase = phase }),
-			XwamiSmoothingMethods.ParMa => new IndicatorWrapper(new ExponentialMovingAverage { Length = normalizedLength }),
-			XwamiSmoothingMethods.T3 => new TillsonT3Filter(normalizedLength, phase),
-			XwamiSmoothingMethods.Vidya => new IndicatorWrapper(new ExponentialMovingAverage { Length = normalizedLength }),
-			XwamiSmoothingMethods.Ama => new IndicatorWrapper(new KaufmanAdaptiveMovingAverage { Length = normalizedLength }),
+			SmoothMethods.Sma => new IndicatorWrapper(new SimpleMovingAverage { Length = normalizedLength }),
+			SmoothMethods.Ema => new IndicatorWrapper(new ExponentialMovingAverage { Length = normalizedLength }),
+			SmoothMethods.Smma => new IndicatorWrapper(new SmoothedMovingAverage { Length = normalizedLength }),
+			SmoothMethods.Lwma => new IndicatorWrapper(new WeightedMovingAverage { Length = normalizedLength }),
+			SmoothMethods.Jjma => new IndicatorWrapper(new JurikMovingAverage { Length = normalizedLength, Phase = phase }),
+			SmoothMethods.JurX => new IndicatorWrapper(new JurikMovingAverage { Length = normalizedLength, Phase = phase }),
+			SmoothMethods.ParMa => new IndicatorWrapper(new ExponentialMovingAverage { Length = normalizedLength }),
+			SmoothMethods.T3 => new TillsonT3Filter(normalizedLength, phase),
+			SmoothMethods.Vidya => new IndicatorWrapper(new ExponentialMovingAverage { Length = normalizedLength }),
+			SmoothMethods.Ama => new IndicatorWrapper(new KaufmanAdaptiveMovingAverage { Length = normalizedLength }),
 			_ => new IndicatorWrapper(new SimpleMovingAverage { Length = normalizedLength })
 		};
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, XwamiAppliedPrice type)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrices type)
 	{
 		return type switch
 		{
-			XwamiAppliedPrice.Close => candle.ClosePrice,
-			XwamiAppliedPrice.Open => candle.OpenPrice,
-			XwamiAppliedPrice.High => candle.HighPrice,
-			XwamiAppliedPrice.Low => candle.LowPrice,
-			XwamiAppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			XwamiAppliedPrice.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-			XwamiAppliedPrice.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			XwamiAppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			XwamiAppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			XwamiAppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
-			XwamiAppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
-			XwamiAppliedPrice.Demark => CalculateDemarkPrice(candle),
+			AppliedPrices.Close => candle.ClosePrice,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+			AppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			AppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
+			AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
+			AppliedPrices.Demark => CalculateDemarkPrice(candle),
 			_ => candle.ClosePrice,
 		};
 	}

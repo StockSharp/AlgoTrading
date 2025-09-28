@@ -714,7 +714,7 @@ public class EnvelopeLimitLadderStrategy : Strategy
 		}
 	}
 
-	private enum EnvelopeMaMethods
+	public enum EnvelopeMaMethods
 	{
 		Sma = 0,
 		Ema = 1,

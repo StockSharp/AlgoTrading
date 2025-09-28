@@ -17,7 +17,7 @@ namespace StockSharp.Samples.Strategies;
 /// Martingale strategy for Bitcoin with optional entry signals.
 /// </summary>
 public class InwCoinMartingaleStrategy : Strategy {
-	private enum StartLogics { MacdLine, StochasticRsi, AtrChannel }
+	public enum StartLogics { MacdLine, StochasticRsi, AtrChannel }
 
 	private readonly StrategyParam<StartLogics> _startLogic;
 	private readonly StrategyParam<decimal> _takeProfitPercent;

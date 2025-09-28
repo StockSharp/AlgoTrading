@@ -18,7 +18,7 @@ using StockSharp.Messages;
 /// </summary>
 public class VirtualProfitCloseStrategy : Strategy
 {
-	private enum DemoDirections
+	public enum DemoDirections
 	{
 		Sell,
 		Buy
@@ -43,7 +43,7 @@ public class VirtualProfitCloseStrategy : Strategy
 	private decimal? _shortTrailingStop;
 
 	private bool _demoOrderActive;
-	private ISubscription _tradeSubscription;
+	private ISubscriptionHandler<ITickTradeMessage> _tradeSubscription;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="VirtualProfitCloseStrategy"/> class.
@@ -197,15 +197,6 @@ public class VirtualProfitCloseStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStopped()
-	{
-		base.OnStopped();
-
-		_tradeSubscription?.Dispose();
-		_tradeSubscription = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnPositionReceived(Position position)
 	{
 		base.OnPositionReceived(position);
@@ -224,11 +215,9 @@ public class VirtualProfitCloseStrategy : Strategy
 	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		var lastPrice = trade.Price;
-		if (lastPrice is null)
-		return;
 
-		var bid = Security.BestBid?.Price ?? lastPrice.Value;
-		var ask = Security.BestAsk?.Price ?? lastPrice.Value;
+		var bid = Security.BestBid?.Price ?? lastPrice;
+		var ask = Security.BestAsk?.Price ?? lastPrice;
 
 		if (Position > 0m)
 		{

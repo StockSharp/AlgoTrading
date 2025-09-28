@@ -949,9 +949,9 @@ private void ManageOpenPosition(decimal currentPrice)
 	}
 
 	/// <inheritdoc />
-	protected override void OnOrderRegisterFailed(OrderFail fail)
+	protected override void OnOrderRegisterFailed(OrderFail fail, bool calcRisk)
 	{
-		base.OnOrderRegisterFailed(fail);
+		base.OnOrderRegisterFailed(fail, calcRisk);
 
 		if (_pendingLimitOrder != null && fail.Order == _pendingLimitOrder)
 		{

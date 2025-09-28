@@ -144,9 +144,9 @@ public NevalyashkaDirectionStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnOrderRegisterFailed(OrderFail fail)
+	protected override void OnOrderRegisterFailed(OrderFail fail, bool calcRisk)
 	{
-		base.OnOrderRegisterFailed(fail);
+		base.OnOrderRegisterFailed(fail, calcRisk);
 
 		if (_pendingDirection is { } pending && fail.Order.Side == pending)
 		{

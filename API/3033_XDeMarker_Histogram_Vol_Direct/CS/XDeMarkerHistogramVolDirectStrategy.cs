@@ -115,7 +115,7 @@ public class XDeMarkerHistogramVolDirectStrategy : Strategy
 	/// <summary>
 	/// Source of volume used in indicator calculations.
 	/// </summary>
-	public VolumeSources VolumeSources
+	public VolumeSources VolumeSource
 	{
 		get => _volumeSource.Value;
 		set => _volumeSource.Value = value;
@@ -160,7 +160,7 @@ public class XDeMarkerHistogramVolDirectStrategy : Strategy
 	/// <summary>
 	/// Moving average type applied to the histogram and volume.
 	/// </summary>
-	public SmoothingMethods SmoothingMethods
+	public SmoothingMethods SmoothingMethod
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -255,12 +255,12 @@ public class XDeMarkerHistogramVolDirectStrategy : Strategy
 		_indicator = new XDeMarkerHistogramVolDirectIndicator
 		{
 			Period = DeMarkerPeriod,
-			VolumeSources = VolumeSources,
+			VolumeSources = VolumeSource,
 			HighLevel2 = HighLevel2,
 			HighLevel1 = HighLevel1,
 			LowLevel1 = LowLevel1,
 			LowLevel2 = LowLevel2,
-			Method = SmoothingMethods,
+			Method = SmoothingMethod,
 			Length = SmoothingLength,
 			Phase = SmoothingPhase
 		};
@@ -282,22 +282,22 @@ public class XDeMarkerHistogramVolDirectStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue indicatorValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
 		var value = (XDeMarkerHistogramVolDirectValue)indicatorValue;
 		if (!value.IsSignalFormed)
-		return;
+			return;
 
 		var currentDirection = value.Direction;
 		_directionHistory.Add(currentDirection);
 		if (_directionHistory.Count > 4)
-		_directionHistory.RemoveRange(0, _directionHistory.Count - 4);
+			_directionHistory.RemoveRange(0, _directionHistory.Count - 4);
 
 		if (_directionHistory.Count < 2)
-		return;
+			return;
 
 		var previousDirection = _directionHistory[^2];
 
@@ -481,7 +481,7 @@ public class XDeMarkerHistogramVolDirectStrategy : Strategy
 			}
 
 			if (Period <= 0)
-			throw new InvalidOperationException("Period must be greater than zero.");
+				throw new InvalidOperationException("Period must be greater than zero.");
 
 			var high = candle.HighPrice;
 			var low = candle.LowPrice;

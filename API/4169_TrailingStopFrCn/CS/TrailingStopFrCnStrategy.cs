@@ -451,7 +451,7 @@ public class TrailingStopFrCnStrategy : Strategy
 			_fractalHighs.RemoveRange(0, _fractalHighs.Count - 100);
 	}
 
-	private enum TrailingSources
+	public enum TrailingSources
 	{
 		Fractals,
 		Candles,

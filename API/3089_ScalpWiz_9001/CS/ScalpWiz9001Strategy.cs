@@ -21,7 +21,7 @@ public class ScalpWiz9001Strategy : Strategy
 {
 	private readonly StrategyParam<int> _levelCount;
 
-	private enum VolumeModes
+	public enum VolumeModes
 	{
 		FixedVolume,
 		RiskPercent,

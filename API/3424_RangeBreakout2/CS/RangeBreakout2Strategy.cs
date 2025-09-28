@@ -21,28 +21,28 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class RangeBreakout2Strategy : Strategy
 {
-	private enum PeriodicityModes
+	public enum PeriodicityModes
 	{
 		Weekly,
 		Daily,
 		NonStop,
 	}
 
-	private enum RangeCalculationModes
+	public enum RangeCalculationModes
 	{
 		Atr,
 		Percent,
 		Fixed,
 	}
 
-	private enum TradeModeOptions
+	public enum TradeModeOptions
 	{
 		Stop,
 		Limit,
 		Random,
 	}
 
-	private enum LotManagementModes
+	public enum LotManagementModes
 	{
 		Constant,
 		Linear,
@@ -50,7 +50,7 @@ public class RangeBreakout2Strategy : Strategy
 		Fibonacci,
 	}
 
-	private enum StrategyPhases
+	public enum StrategyPhases
 	{
 		StandBy,
 		Setup,

@@ -903,7 +903,7 @@ public class ColorSchaffJccxTrendCycleMmrecDuplexStrategy : Strategy
 		return factor;
 	}
 
-	private enum AppliedPrices
+	public enum AppliedPrices
 	{
 		Close,
 		Open,

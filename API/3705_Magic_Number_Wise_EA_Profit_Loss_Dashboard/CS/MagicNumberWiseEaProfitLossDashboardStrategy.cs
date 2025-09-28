@@ -103,19 +103,11 @@ public class MagicNumberWiseEaProfitLossDashboardStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnOrderRegistered(Order order)
-	{
-		base.OnOrderRegistered(order);
-
-		RegisterOrder(order);
-	}
-
-	/// <inheritdoc />
 	protected override void OnOrderReceived(Order order)
 	{
 		base.OnOrderReceived(order);
 
-		RegisterOrder(order);
+		HandleOrder(order);
 	}
 
 	/// <inheritdoc />
@@ -123,10 +115,10 @@ public class MagicNumberWiseEaProfitLossDashboardStrategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		RegisterTrade(trade);
+		HandleTrade(trade);
 	}
 
-	private void RegisterOrder(Order order)
+	private void HandleOrder(Order order)
 	{
 		var identifier = GetIdentifier(order);
 		var comment = order.Comment;
@@ -140,7 +132,7 @@ public class MagicNumberWiseEaProfitLossDashboardStrategy : Strategy
 		UpdateSymbol(summary, symbol);
 	}
 
-	private void RegisterTrade(MyTrade trade)
+	private void HandleTrade(MyTrade trade)
 	{
 		var identifier = GetIdentifier(trade.Order);
 		var order = trade.Order;
@@ -151,7 +143,7 @@ public class MagicNumberWiseEaProfitLossDashboardStrategy : Strategy
 		var summary = GetOrCreateSummary(identifier);
 
 		summary.DealCount++;
-		summary.ClosedPnL += trade.PnL;
+		summary.ClosedPnL += (trade.PnL ?? 0);
 
 		if (GroupByComment && summary.Comment.IsEmpty())
 			summary.Comment = identifier;
