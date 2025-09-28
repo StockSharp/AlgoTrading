@@ -176,7 +176,7 @@ public class ColorSchaffTrixTrendCycleStrategy : Strategy {
 		.SetDisplay("Low Level", "Lower threshold", "Indicator");
 
 	_candleType =
-		Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromHours(4)))
+		Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for candles", "General");
 
 	_stopLoss =

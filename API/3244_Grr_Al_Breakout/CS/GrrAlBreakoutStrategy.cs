@@ -103,7 +103,7 @@ public class GrrAlBreakoutStrategy : Strategy
 		.SetDisplay("Take Profit", "Profit target in points", "Risk")
 		.SetCanOptimize(true);
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for anchoring the breakout", "Data");
 	}
 

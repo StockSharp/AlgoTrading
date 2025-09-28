@@ -87,7 +87,7 @@ _lowerLevel = Param(nameof(LowerLevel), 20m)
 .SetDisplay("Lower Threshold", "Level that marks a downtrend state", "Signals")
 .SetCanOptimize(true);
 
-_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(15)))
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 .SetDisplay("Candle Type", "Time-frame used for indicator calculations", "Data");
 }
 

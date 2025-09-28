@@ -94,13 +94,13 @@ public class StarterTripleStochasticStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Money Value", "Lot size or risk percent depending on mode", "Money Management");
 
-		_fastCandleType = Param(nameof(FastCandleType), DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+		_fastCandleType = Param(nameof(FastCandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Fast Timeframe", "Timeframe for the fast moving average and stochastic", "Data");
 
-		_normalCandleType = Param(nameof(NormalCandleType), DataType.TimeFrame(TimeSpan.FromMinutes(30)))
+		_normalCandleType = Param(nameof(NormalCandleType), TimeSpan.FromMinutes(30).TimeFrame())
 		.SetDisplay("Normal Timeframe", "Intermediate timeframe for filters", "Data");
 
-		_slowCandleType = Param(nameof(SlowCandleType), DataType.TimeFrame(TimeSpan.FromHours(2)))
+		_slowCandleType = Param(nameof(SlowCandleType), TimeSpan.FromHours(2).TimeFrame())
 		.SetDisplay("Slow Timeframe", "Slow timeframe that triggers entries", "Data");
 
 		_maPeriod = Param(nameof(MaPeriod), 20)

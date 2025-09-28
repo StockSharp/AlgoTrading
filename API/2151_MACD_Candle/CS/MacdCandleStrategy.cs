@@ -72,7 +72,7 @@ public class MacdCandleStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(5, 15, 1);
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromHours(4)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for indicators", "General");
 	}
 

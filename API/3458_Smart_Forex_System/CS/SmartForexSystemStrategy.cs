@@ -100,7 +100,7 @@ public class SmartForexSystemStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(50m, 600m, 25m);
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromHours(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used for signal evaluation", "Signals");
 	}
 

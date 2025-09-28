@@ -110,7 +110,7 @@ public class ScalpRsiStrategy : Strategy
 			.SetDisplay("Enable Buy", "Allow buy trades", "General");
 		_enableSell = Param(nameof(EnableSell), true)
 			.SetDisplay("Enable Sell", "Allow sell trades", "General");
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle", "Candle type", "General");
 
 		_tradeDelaySeconds = Param(nameof(TradeDelaySeconds), 360)

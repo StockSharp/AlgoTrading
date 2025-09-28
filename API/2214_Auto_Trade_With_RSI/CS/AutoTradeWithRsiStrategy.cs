@@ -75,7 +75,7 @@ public class AutoTradeWithRsiStrategy : Strategy
 			.SetDisplay("Close Sell Threshold", "Average RSI above which to close short", "Rules")
 			.SetCanOptimize(true);
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle data type", "General");
 	}
 

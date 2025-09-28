@@ -102,7 +102,7 @@ _takeProfitSteps = Param(nameof(TakeProfitSteps), 200m)
 .SetDisplay("Take profit (points)", "Profit target distance expressed in MetaTrader points.", "Risk")
 .SetCanOptimize(true);
 
-_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Primary candles", "Timeframe used for the trading logic.", "Data")
 .SetCanOptimize(true);
 }

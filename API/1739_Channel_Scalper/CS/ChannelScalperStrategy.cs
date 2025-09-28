@@ -50,7 +50,7 @@ public class ChannelScalperStrategy : Strategy
 	{
 		_atrPeriod = Param(nameof(AtrPeriod), 11).SetDisplay("ATR Period").SetCanOptimize(true);
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1.28m).SetDisplay("ATR Multiplier").SetCanOptimize(true);
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type");
 	}
 
 	/// <inheritdoc />

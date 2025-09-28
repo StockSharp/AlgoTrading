@@ -52,7 +52,7 @@ public class CloseCrossMaStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(10, 200, 10);
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for incoming candles", "Parameters")
 			.SetCanOptimize(false);
 	}

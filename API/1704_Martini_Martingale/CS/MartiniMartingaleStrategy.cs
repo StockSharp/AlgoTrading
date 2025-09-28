@@ -61,7 +61,7 @@ public class MartiniMartingaleStrategy : Strategy
 		_initialVolume = Param(nameof(InitialVolume), 1m)
 			.SetDisplay("Initial Volume", "Initial trade volume", "General")
 			.SetCanOptimize(true);
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle", "Candle type", "General");
 	}
 	

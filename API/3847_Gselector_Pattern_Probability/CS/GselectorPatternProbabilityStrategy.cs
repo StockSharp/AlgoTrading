@@ -64,7 +64,7 @@ public class GselectorPatternProbabilityStrategy : Strategy
 	/// </summary>
 	public GselectorPatternProbabilityStrategy()
 	{
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type");
 		_probabilityThreshold = Param(nameof(ProbabilityThreshold), 0.8m)
 		.SetDisplay("Minimum probability to open a trade");

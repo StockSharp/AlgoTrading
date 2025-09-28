@@ -91,7 +91,7 @@ public class RampokScalpStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 0.01m, 0.001m);
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle", "Candle type", "General");
 	}
 

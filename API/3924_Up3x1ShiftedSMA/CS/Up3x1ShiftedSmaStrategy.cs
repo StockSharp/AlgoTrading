@@ -78,7 +78,7 @@ public class Up3x1ShiftedSmaStrategy : Strategy
 			.SetDisplay("Fraction of portfolio value used for sizing")
 			.SetCanOptimize(true);
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromHours(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle type for analysis");
 	}
 

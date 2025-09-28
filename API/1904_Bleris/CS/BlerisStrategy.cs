@@ -64,7 +64,7 @@ public class BlerisStrategy : Strategy
 	_signalBarSample = Param(nameof(SignalBarSample), 24).SetDisplay("Signal bar sample").SetCanOptimize(true);
 	_counterTrend = Param(nameof(CounterTrend), false).SetDisplay("Counter trend").SetCanOptimize(true);
 	_lots = Param(nameof(Lots), 0.3m).SetDisplay("Lot size").SetCanOptimize(true);
-	_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromDays(1))).SetDisplay("Candle type");
+	_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame()).SetDisplay("Candle type");
 	_anotherOrderPips = Param(nameof(AnotherOrderPips), 600).SetDisplay("Another order pips").SetCanOptimize(true);
 }
 

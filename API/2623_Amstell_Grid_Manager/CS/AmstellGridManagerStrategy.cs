@@ -129,7 +129,7 @@ public class AmstellGridManagerStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(2m, 15m, 1m);
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for processing", "General");
 	}
 

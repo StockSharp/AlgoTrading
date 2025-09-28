@@ -69,7 +69,7 @@ public class TuyulGapEndOfWeekStrategy : Strategy
 		.SetRange(0m, 100000m)
 		.SetDisplay("Secure Profit Target", "Unrealized profit per position that triggers an immediate exit", "Risk");
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromHours(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for the high/low scan and monitoring", "Data");
 	}
 

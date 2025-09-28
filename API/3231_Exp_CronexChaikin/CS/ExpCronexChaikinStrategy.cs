@@ -200,7 +200,7 @@ public class ExpCronexChaikinStrategy : Strategy
 	{
 		Volume = 1m;
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromHours(4)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Indicator Timeframe", "Time frame used for Cronex Chaikin calculations", "General");
 
 		_chaikinMethod = Param(nameof(ChaikinMethod), ChaikinAverageMethods.Exponential)

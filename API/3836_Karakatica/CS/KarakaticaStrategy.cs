@@ -72,7 +72,7 @@ public class KarakaticaStrategy : Strategy
 		_optimizationEnd = Param(nameof(OptimizationEnd), 150)
 		.SetDisplay("Optimization end period");
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(15)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Primary candle type");
 	}
 

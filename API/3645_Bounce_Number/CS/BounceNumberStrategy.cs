@@ -77,7 +77,7 @@ public class BounceNumberStrategy : Strategy
 			.SetDisplay("Channel Half-Width", "Half height of the bounce channel measured in price points", "General")
 			.SetCanOptimize(true);
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to perform the bounce analysis", "Data");
 	}
 

@@ -141,7 +141,7 @@ public class MartingaleBreakoutStrategy : Strategy
 		.SetDisplay("Recovery distance", "Multiplier applied to the take-profit distance while recovering.", "Risk")
 		.SetCanOptimize(true);
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(15)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle type", "Data source used for breakout detection.", "Data");
 	}
 

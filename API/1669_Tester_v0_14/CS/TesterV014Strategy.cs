@@ -54,7 +54,7 @@ public class TesterV014Strategy : Strategy
 		_barsNumber = Param(nameof(BarsNumber), 1)
 		.SetDisplay("Bars Number", "Holding period in bars", "General");
 		
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromHours(4)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame used by the strategy", "General");
 	}
 	

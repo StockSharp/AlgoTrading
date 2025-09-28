@@ -114,7 +114,7 @@ public class RSIMartingaleStrategy : Strategy
 			.SetDisplay("Trading End", "Last hour when new positions may be opened", "Schedule")
 			.SetCanOptimize(true);
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(15)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for calculations", "Data");
 
 		_hourFilters = new StrategyParam<bool>[24];

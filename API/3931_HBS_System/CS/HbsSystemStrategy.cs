@@ -92,7 +92,7 @@ _roundingFactor = Param(nameof(RoundingFactor), 100m)
 .SetGreaterThanZero()
 .SetDisplay("Rounding Factor", "Multiplier used to mimic MathCeil/MathFloor price rounding", "Execution");
 
-_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromHours(1)))
+_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 .SetDisplay("Candle Type", "Primary candle aggregation used for signal calculations", "Data");
 }
 

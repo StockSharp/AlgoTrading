@@ -95,7 +95,7 @@ public class ColorHmaStDevStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(2m, 5m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromHours(4)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to subscribe", "Common");
 	}
 

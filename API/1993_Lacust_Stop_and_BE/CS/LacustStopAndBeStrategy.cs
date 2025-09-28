@@ -96,7 +96,7 @@ public class LacustStopAndBeStrategy : Strategy
 
 	public LacustStopAndBeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle type");
 		_stopLoss = Param(nameof(StopLoss), 40m)
 			.SetDisplay("Stop loss").SetCanOptimize(true);

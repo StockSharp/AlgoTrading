@@ -151,7 +151,7 @@ public class EarlyBirdRangeBreakoutStrategy : Strategy
 		.SetDisplay("RSI Length", "Number of periods for RSI", "Indicators")
 		.SetCanOptimize(true);
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(15)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe for calculations", "Data")
 		.SetCanOptimize(false);
 		_volatilityWindowLength = Param(nameof(VolatilityWindowLength), 16)

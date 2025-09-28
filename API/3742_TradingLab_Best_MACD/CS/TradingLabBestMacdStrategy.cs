@@ -100,7 +100,7 @@ public class TradingLabBestMacdStrategy : Strategy
 			.SetDisplay("Risk-Reward Multiplier", "Multiplier applied to derive the take-profit distance", "Risk")
 			.SetCanOptimize(true);
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromHours(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Data type used to subscribe for candles", "General")
 			.SetCanOptimize(true);
 	}

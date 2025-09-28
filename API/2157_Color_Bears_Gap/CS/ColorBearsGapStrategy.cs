@@ -93,7 +93,7 @@ public class ColorBearsGapStrategy : Strategy
 		_sellClose = Param(nameof(SellClose), true)
 			.SetDisplay("Sell Close", "Allow closing short positions", "Parameters");
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromHours(8)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candle subscription", "Parameters");
 	}
 

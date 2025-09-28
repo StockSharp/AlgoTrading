@@ -175,7 +175,7 @@ public class MacdEmaSarBollingerBullBearStrategy : Strategy
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m).SetDisplay("BB Deviation", "Bollinger Bands deviation", "Bollinger");
 		_sessionStart = Param(nameof(SessionStart), TimeSpan.FromHours(9)).SetDisplay("Session Start", "Trading session start", "Session");
 		_sessionEnd = Param(nameof(SessionEnd), TimeSpan.FromHours(17)).SetDisplay("Session End", "Trading session end", "Session");
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Type of candles", "Common");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "Common");
 	}
 
 	/// <inheritdoc />

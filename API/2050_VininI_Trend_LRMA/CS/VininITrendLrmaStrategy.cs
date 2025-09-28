@@ -50,7 +50,7 @@ public class VininITrendLrmaStrategy : Strategy
 		_upLevel = Param(nameof(UpLevel), 10).SetDisplay("Upper level").SetCanOptimize(true);
 		_dnLevel = Param(nameof(DnLevel), -10).SetDisplay("Lower level").SetCanOptimize(true);
 		_mode = Param(nameof(Mode), EntryModes.Breakdown).SetDisplay("Entry mode");
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type");
 	}
 
 	/// <summary>LRMA period.</summary>

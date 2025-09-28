@@ -321,7 +321,7 @@ public SvosEurJpyD1Strategy()
 	.SetDisplay("Doji Divisor", "Ratio used to detect doji candles", "Patterns")
 	.SetGreaterThanZero();
 
-	_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromDays(1)))
+	_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 	.SetDisplay("Candle Type", "Primary candle type for analysis", "General");
 
 	_pipSizeOverride = Param(nameof(PipSizeOverride), 0m)

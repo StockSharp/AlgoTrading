@@ -92,7 +92,7 @@ public class RandomTrailingStopStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, DataType.TimeFrame(TimeSpan.FromMinutes(1)))];
+		return [(Security, TimeSpan.FromMinutes(1).TimeFrame())];
 	}
 
 	/// <inheritdoc />
@@ -101,7 +101,7 @@ public class RandomTrailingStopStrategy : Strategy
 		base.OnStarted(time);
 
 		var sma = new SimpleMovingAverage { Length = SmaPeriod };
-		var subscription = SubscribeCandles(DataType.TimeFrame(TimeSpan.FromMinutes(1)));
+		var subscription = SubscribeCandles(TimeSpan.FromMinutes(1).TimeFrame());
 
 		subscription.Bind(sma, ProcessCandle).Start();
 

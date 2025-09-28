@@ -121,7 +121,7 @@ public class LiquidexStrategy : Strategy
 			.SetDisplay("BE Offset", "Offset when moving stop to break-even", "Risk");
 		_trailingDistance = Param(nameof(TrailingDistance), 5m)
 			.SetDisplay("Trailing", "Trailing stop distance, 0 disables", "Risk");
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(15)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle", "Candle type", "General");
 	}
 

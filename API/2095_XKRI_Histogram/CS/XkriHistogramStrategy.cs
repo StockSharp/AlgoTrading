@@ -51,7 +51,7 @@ public class XkriHistogramStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 1000)
 			.SetDisplay("Stop Loss", "Stop loss in points", "Protection");
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromHours(4)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "General");
 	}
 

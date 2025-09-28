@@ -26,7 +26,7 @@ public class NovaBarraStrategy : Strategy
 
 	public NovaBarraStrategy()
 	{
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame that drives bar detection.", "General")
 			.SetCanOptimize(false);
 	}

@@ -99,7 +99,7 @@ public class SmaMultiHedge2Strategy : Strategy
 			.SetCanOptimize(true);
 		_profitTarget = Param(nameof(ProfitTarget), 30m)
 			.SetDisplay("Profit Target", "Take profit value", "Parameters");
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles for analysis", "Parameters");
 		_followBase = Param(nameof(FollowBase), true)
 			.SetDisplay("Follow Base", "Hedge direction follows base", "Parameters");

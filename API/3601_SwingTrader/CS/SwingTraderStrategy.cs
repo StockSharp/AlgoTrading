@@ -111,7 +111,7 @@ public class SwingTraderStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(0.1m, 5m, 0.1m);
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(15)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Candle aggregation used by the strategy", "Trading");
 	}
 

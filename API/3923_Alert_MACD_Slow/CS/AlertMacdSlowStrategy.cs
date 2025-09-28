@@ -70,7 +70,7 @@ public class AlertMacdSlowStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(40, 100, 5);
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(30)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for indicator calculations.", "Data")
 			.SetCanOptimize(false);
 	}

@@ -102,7 +102,7 @@ public class ExpCronexAOStrategy : Strategy
 	{
 		Volume = 1m;
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromHours(8)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Cronex Timeframe", "Time frame for Cronex AO candles", "General");
 
 		_fastPeriod = Param(nameof(FastPeriod), 14)

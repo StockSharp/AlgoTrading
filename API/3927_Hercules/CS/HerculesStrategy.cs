@@ -163,19 +163,19 @@ _orderVolume = Param(nameof(OrderVolume), 0.01m)
 		.SetDisplay("H4 Envelope %", "Percentage width of the H4 envelope", "Filters")
 		.SetCanOptimize(true);
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromHours(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Main Timeframe", "Primary candle series used for execution", "Data")
 		.SetCanOptimize(false);
 
-		_rsiTimeFrame = Param(nameof(RsiTimeFrame), DataType.TimeFrame(TimeSpan.FromHours(1)))
+		_rsiTimeFrame = Param(nameof(RsiTimeFrame), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("RSI Timeframe", "Candle series used for the RSI filter", "Data")
 		.SetCanOptimize(false);
 
-		_dailyTimeFrame = Param(nameof(DailyTimeFrame), DataType.TimeFrame(TimeSpan.FromDays(1)))
+		_dailyTimeFrame = Param(nameof(DailyTimeFrame), TimeSpan.FromDays(1).TimeFrame())
 		.SetDisplay("Daily Timeframe", "Candle series used for the daily envelope", "Data")
 		.SetCanOptimize(false);
 
-		_h4TimeFrame = Param(nameof(H4TimeFrame), DataType.TimeFrame(TimeSpan.FromHours(4)))
+		_h4TimeFrame = Param(nameof(H4TimeFrame), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("H4 Timeframe", "Candle series used for the H4 envelope", "Data")
 		.SetCanOptimize(false);
 	}

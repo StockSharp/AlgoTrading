@@ -43,7 +43,7 @@ public class AutoRiskStrategy : Strategy
 		_roundUp = Param(nameof(RoundUp), true)
 			.SetDisplay("Round the calculated volume to the nearest step");
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromDays(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle type for ATR calculation");
 	}
 

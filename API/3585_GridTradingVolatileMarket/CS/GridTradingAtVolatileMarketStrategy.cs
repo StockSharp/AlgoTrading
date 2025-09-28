@@ -141,7 +141,7 @@ public class GridTradingAtVolatileMarketStrategy : Strategy
 		if (CandleType.Arg is TimeSpan span && span > TimeSpan.Zero)
 		{
 			var higherFrame = GetBiggerTimeFrame(span);
-			yield return (Security, DataType.TimeFrame(higherFrame));
+			yield return (Security, higherFrame.TimeFrame());
 		}
 	}
 
@@ -176,7 +176,7 @@ public class GridTradingAtVolatileMarketStrategy : Strategy
 		throw new InvalidOperationException("CandleType must contain a positive TimeSpan argument.");
 
 		var higherSpan = GetBiggerTimeFrame(baseSpan);
-		_higherCandleType = DataType.TimeFrame(higherSpan);
+		_higherCandleType = higherSpan.TimeFrame();
 
 		_atr = new ATR { Length = 20 };
 		_slowMa = new SMA { Length = SlowMaLength };

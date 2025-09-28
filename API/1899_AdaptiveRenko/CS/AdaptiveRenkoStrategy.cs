@@ -74,7 +74,7 @@ public class AdaptiveRenkoStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(1m, 5m, 1m);
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromHours(4)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for ATR calculation", "General");
 	}
 

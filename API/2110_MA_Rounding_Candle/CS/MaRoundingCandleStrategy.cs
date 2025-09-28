@@ -31,7 +31,7 @@ public class MaRoundingCandleStrategy : Strategy
 	    _maLength = Param(nameof(MaLength), 12)
 	        .SetDisplay("Moving average length")
 	        .SetCanOptimize(true, 2, 100, 1);
-	    _candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromHours(4)));
+	    _candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame());
 	}
 
 	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }

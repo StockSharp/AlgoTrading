@@ -140,7 +140,7 @@ public class LotScalpStrategy : Strategy
 	/// </summary>
 	public LotScalpStrategy()
 	{
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromHours(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle source", "General");
 
 

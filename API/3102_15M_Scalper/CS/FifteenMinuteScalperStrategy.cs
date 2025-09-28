@@ -143,11 +143,11 @@ public class FifteenMinuteScalperStrategy : Strategy
 			.SetDisplay("MACD slow EMA", "Slow EMA length for the MACD filter.", "Filters");
 		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
 			.SetDisplay("MACD signal EMA", "Signal EMA length for the MACD filter.", "Filters");
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(15)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Primary candles", "Main timeframe where the scalper operates.", "Data");
-		_momentumCandleType = Param(nameof(MomentumCandleType), DataType.TimeFrame(TimeSpan.FromHours(1)))
+		_momentumCandleType = Param(nameof(MomentumCandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Momentum candles", "Higher timeframe used for the momentum filter.", "Data");
-		_macdCandleType = Param(nameof(MacdCandleType), DataType.TimeFrame(TimeSpan.FromDays(30)))
+		_macdCandleType = Param(nameof(MacdCandleType), TimeSpan.FromDays(30).TimeFrame())
 			.SetDisplay("MACD candles", "Timeframe used for the MACD trend filter.", "Data");
 	}
 

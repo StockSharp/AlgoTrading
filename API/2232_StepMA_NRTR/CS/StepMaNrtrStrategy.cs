@@ -97,7 +97,7 @@ public class StepMaNrtrStrategy : Strategy
 		_useHighLow = Param(nameof(UseHighLow), true)
 			.SetDisplay("Use High/Low", "Use high/low range, otherwise close/close", "Indicator");
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromHours(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for processing", "General");
 
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)

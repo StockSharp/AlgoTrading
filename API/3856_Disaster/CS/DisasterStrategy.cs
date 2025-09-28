@@ -67,7 +67,7 @@ public class DisasterStrategy : Strategy
 		.SetRange(0m, 1000m)
 		.SetDisplay("Trigger Distance (pips)", "Minimal gap between price and SMA to arm stops", "Signal");
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Primary candle series used for the SMA", "Data");
 	}
 

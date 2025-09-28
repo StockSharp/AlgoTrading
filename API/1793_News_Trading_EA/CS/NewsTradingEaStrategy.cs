@@ -106,7 +106,7 @@ public class NewsTradingEaStrategy : Strategy
 		_expiration = Param(nameof(Expiration), 20)
 			.SetDisplay("Expiration", "Pending order lifetime in minutes", "General");
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for processing", "General");
 	}
 

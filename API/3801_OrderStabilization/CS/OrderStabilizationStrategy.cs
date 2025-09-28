@@ -130,7 +130,7 @@ _expirationMinutes = Param(nameof(ExpirationMinutes), 20)
 .SetDisplay("Expiration", "Lifetime of pending orders in minutes", "Trading")
 .SetCanOptimize(true);
 
-_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle type", "Timeframe used to evaluate stabilization", "Data")
 .SetCanOptimize(true);
 }

@@ -73,7 +73,7 @@ public class AfterEffectsStrategy : Strategy
 		_period = this.Param(nameof(Period), 3).SetDisplay("Bar Period").SetCanOptimize(true);
 		_random = this.Param(nameof(Random), false).SetDisplay("Random Range");
 		_volume = this.Param(nameof(Volume), 1m).SetDisplay("Volume");
-		_candleType = this.Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type");
+		_candleType = this.Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type");
 	}
 
 	/// <inheritdoc />

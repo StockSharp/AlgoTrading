@@ -91,7 +91,7 @@ public class ParallelStrategiesStrategy : Strategy
 		_macdSignal = Param("MacdSignal", 9)
 			.SetDisplay("MACD Signal", "Signal line period", "Indicators")
 			.SetCanOptimize(true, 5, 30);
-		_candleType = Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+		_candleType = Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "Common");
 	}
 
