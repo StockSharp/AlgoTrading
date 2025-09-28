@@ -130,7 +130,7 @@ public class OtkatSysStrategy : Strategy
 			.SetDisplay("Daily Candles", "Session statistics timeframe", "General");
 
 		_longExtraTakeProfit = Param(nameof(LongExtraTakeProfit), 3m)
-		.SetGreaterThanOrEqualTo(0m)
+		.SetNotNegative()
 		.SetDisplay("Long Bonus Take Profit", "Additional points added to long take profit", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(0m, 10m, 0.5m);

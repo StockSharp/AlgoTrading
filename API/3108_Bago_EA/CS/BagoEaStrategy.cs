@@ -21,6 +21,25 @@ using StockSharp.Algo;
 /// </summary>
 public class BagoEaStrategy : Strategy
 {
+	public enum MovingAverageTypes
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		LinearWeighted
+	}
+
+	public enum AppliedPriceTypes
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted
+	}
+
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _stopLossToFiboPips;
@@ -39,10 +58,10 @@ public class BagoEaStrategy : Strategy
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageType> _maMethod;
-	private readonly StrategyParam<AppliedPriceType> _maAppliedPrice;
+	private readonly StrategyParam<MovingAverageTypes> _maMethod;
+	private readonly StrategyParam<AppliedPriceTypes> _maAppliedPrice;
 	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<AppliedPriceType> _rsiAppliedPrice;
+	private readonly StrategyParam<AppliedPriceTypes> _rsiAppliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _historyLimit;
 	private readonly StrategyParam<decimal> _fiftyLevel;
@@ -156,17 +175,17 @@ public class BagoEaStrategy : Strategy
 		_maShift = Param(nameof(MaShift), 0)
 		.SetDisplay("MA Shift", "Horizontal displacement in bars", "Indicator");
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageType.Exponential)
+		_maMethod = Param(nameof(MaMethod), MovingAverageTypes.Exponential)
 		.SetDisplay("MA Method", "Moving average calculation mode", "Indicator");
 
-		_maAppliedPrice = Param(nameof(MaAppliedPrice), AppliedPriceType.Close)
+		_maAppliedPrice = Param(nameof(MaAppliedPrice), AppliedPriceTypes.Close)
 		.SetDisplay("MA Price", "Applied price for moving averages", "Indicator");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 21)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "RSI averaging length", "Indicator");
 
-		_rsiAppliedPrice = Param(nameof(RsiAppliedPrice), AppliedPriceType.Close)
+		_rsiAppliedPrice = Param(nameof(RsiAppliedPrice), AppliedPriceTypes.Close)
 		.SetDisplay("RSI Price", "Applied price for RSI", "Indicator");
 
 		_fiftyLevel = Param(nameof(FiftyLevel), 50m)
@@ -345,7 +364,7 @@ public class BagoEaStrategy : Strategy
 	/// <summary>
 	/// Moving average calculation method.
 	/// </summary>
-	public MovingAverageType MaMethod
+	public MovingAverageTypes MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -354,7 +373,7 @@ public class BagoEaStrategy : Strategy
 	/// <summary>
 	/// Applied price for the moving averages.
 	/// </summary>
-	public AppliedPriceType MaAppliedPrice
+	public AppliedPriceTypes MaAppliedPrice
 	{
 		get => _maAppliedPrice.Value;
 		set => _maAppliedPrice.Value = value;
@@ -372,7 +391,7 @@ public class BagoEaStrategy : Strategy
 	/// <summary>
 	/// Applied price for the RSI indicator.
 	/// </summary>
-	public AppliedPriceType RsiAppliedPrice
+	public AppliedPriceTypes RsiAppliedPrice
 	{
 		get => _rsiAppliedPrice.Value;
 		set => _rsiAppliedPrice.Value = value;
@@ -804,11 +823,11 @@ public class BagoEaStrategy : Strategy
 			return false;
 
 		var basePrice = vegasSlow.Value;
-		var bullishBreak = currentCandle.Close >= basePrice + _tunnelBandWidthDistance &&
-		currentCandle.Close <= basePrice + _tunnelSafeZoneDistance &&
-		currentCandle.Open < currentCandle.Close;
+		var bullishBreak = currentCandle.Value.Close >= basePrice + _tunnelBandWidthDistance &&
+		currentCandle.Value.Close <= basePrice + _tunnelSafeZoneDistance &&
+		currentCandle.Value.Open < currentCandle.Value.Close;
 
-		var pullbackBreak = currentCandle.Close <= basePrice - _tunnelBandWidthDistance;
+		var pullbackBreak = currentCandle.Value.Close <= basePrice - _tunnelBandWidthDistance;
 
 		if (!bullishBreak && !pullbackBreak)
 			return false;
@@ -846,11 +865,11 @@ public class BagoEaStrategy : Strategy
 			return false;
 
 		var basePrice = vegasSlow.Value;
-		var bearishBreak = currentCandle.Close <= basePrice - _tunnelBandWidthDistance &&
-		currentCandle.Close >= basePrice - _tunnelSafeZoneDistance &&
-		currentCandle.Open > currentCandle.Close;
+		var bearishBreak = currentCandle.Value.Close <= basePrice - _tunnelBandWidthDistance &&
+		currentCandle.Value.Close >= basePrice - _tunnelSafeZoneDistance &&
+		currentCandle.Value.Open > currentCandle.Value.Close;
 
-		var pushDownBreak = currentCandle.Close >= basePrice + _tunnelBandWidthDistance;
+		var pushDownBreak = currentCandle.Value.Close >= basePrice + _tunnelBandWidthDistance;
 
 		if (!bearishBreak && !pushDownBreak)
 			return false;
@@ -976,10 +995,10 @@ public class BagoEaStrategy : Strategy
 
 		if (currentCandle != null && previousCandle != null && vegasFast.HasValue && vegasSlow.HasValue)
 		{
-			var aboveTunnel = currentCandle.Close > vegasFast.Value && currentCandle.Close > vegasSlow.Value;
-			var belowTunnel = currentCandle.Close < vegasFast.Value && currentCandle.Close < vegasSlow.Value;
-			var prevAbove = previousCandle.Close > vegasFast.Value || previousCandle.Close > vegasSlow.Value;
-			var prevBelow = previousCandle.Close < vegasFast.Value || previousCandle.Close < vegasSlow.Value;
+			var aboveTunnel = currentCandle.Value.Close > vegasFast.Value && currentCandle.Value.Close > vegasSlow.Value;
+			var belowTunnel = currentCandle.Value.Close < vegasFast.Value && currentCandle.Value.Close < vegasSlow.Value;
+			var prevAbove = previousCandle.Value.Close > vegasFast.Value || previousCandle.Value.Close > vegasSlow.Value;
+			var prevBelow = previousCandle.Value.Close < vegasFast.Value || previousCandle.Value.Close < vegasSlow.Value;
 
 			if (aboveTunnel && prevBelow)
 			{
@@ -994,27 +1013,27 @@ public class BagoEaStrategy : Strategy
 		}
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceType type)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceTypes type)
 	{
 		return type switch
 		{
-			AppliedPriceType.Open => candle.OpenPrice,
-			AppliedPriceType.High => candle.HighPrice,
-			AppliedPriceType.Low => candle.LowPrice,
-			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			AppliedPriceTypes.Open => candle.OpenPrice,
+			AppliedPriceTypes.High => candle.HighPrice,
+			AppliedPriceTypes.Low => candle.LowPrice,
+			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageType type, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageType.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageType.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageType.LinearWeighted => new WeightedMovingAverage { Length = length },
+			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageTypes.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new ExponentialMovingAverage { Length = length },
 		};
 	}

@@ -181,15 +181,15 @@ public class MacdStochasticFilterStrategy : Strategy
 	{
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 10m)
 			.SetDisplay("Take Profit", "Take profit in points", "Risk")
-			.SetGreaterThanOrEqualTo(0m);
+			.SetNotNegative();
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 5m)
 			.SetDisplay("Trailing Stop", "Trailing stop distance in points", "Risk")
-			.SetGreaterThanOrEqualTo(0m);
+			.SetNotNegative();
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
 			.SetDisplay("Stop Loss", "Stop loss in points", "Risk")
-			.SetGreaterThanOrEqualTo(0m);
+			.SetNotNegative();
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetDisplay("Volume", "Order volume in lots", "Orders")
@@ -197,11 +197,11 @@ public class MacdStochasticFilterStrategy : Strategy
 
 		_macdOpenLevel = Param(nameof(MacdOpenLevel), 3m)
 			.SetDisplay("MACD Open Level", "Minimum MACD distance from zero for entries", "Indicators")
-			.SetGreaterThanOrEqualTo(0m);
+			.SetNotNegative();
 
 		_macdCloseLevel = Param(nameof(MacdCloseLevel), 2m)
 			.SetDisplay("MACD Close Level", "Minimum MACD distance from zero for exits", "Indicators")
-			.SetGreaterThanOrEqualTo(0m);
+			.SetNotNegative();
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 			.SetDisplay("MACD Fast", "Fast EMA period for MACD", "Indicators")

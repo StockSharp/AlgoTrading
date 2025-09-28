@@ -44,11 +44,11 @@ public class TrainingStrategy : Strategy
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 30)
 		.SetDisplay("Take Profit (points)", "Distance in price steps for the take-profit", "Risk")
-		.SetGreaterThanOrEqualTo(0);
+		.SetNotNegative();
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 30)
 		.SetDisplay("Stop Loss (points)", "Distance in price steps for the stop-loss", "Risk")
-		.SetGreaterThanOrEqualTo(0);
+		.SetNotNegative();
 
 		_requestBuy = Param(nameof(RequestBuy), false)
 		.SetDisplay("Request Buy", "Set to true to submit a market buy", "Manual Controls");

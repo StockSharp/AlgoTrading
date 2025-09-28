@@ -114,22 +114,22 @@ public class CoinFlipMartingaleStrategy : Strategy
 public CoinFlipMartingaleStrategy()
 	{
 		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
-			.SetGreaterThanOrEqualTo(0m)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop loss distance in price steps", "Risk")
 			.SetCanOptimize(true);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50m)
-			.SetGreaterThanOrEqualTo(0m)
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit distance in price steps", "Risk")
 			.SetCanOptimize(true);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 15m)
-			.SetGreaterThanOrEqualTo(0m)
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop", "Trailing stop activation distance", "Risk")
 			.SetCanOptimize(true);
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 5m)
-			.SetGreaterThanOrEqualTo(0m)
+			.SetNotNegative()
 			.SetDisplay("Trailing Step", "Trailing step distance", "Risk")
 			.SetCanOptimize(true);
 

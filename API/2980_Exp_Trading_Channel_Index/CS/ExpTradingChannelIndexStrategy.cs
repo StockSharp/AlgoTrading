@@ -19,6 +19,29 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ExpTradingChannelIndexStrategy : Strategy
 {
+	public enum SmoothMethods
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		Weighted,
+		Jurik
+	}
+	public enum AppliedPrices
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted,
+		Simple,
+		Quarter,
+		TrendFollow,
+		TrendFollowAverage,
+		Demark
+	}
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
@@ -29,14 +52,14 @@ public class ExpTradingChannelIndexStrategy : Strategy
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<int> _highLevel;
 	private readonly StrategyParam<int> _lowLevel;
-	private readonly StrategyParam<SmoothMethod> _method1;
-	private readonly StrategyParam<SmoothMethod> _method2;
+	private readonly StrategyParam<SmoothMethods> _method1;
+	private readonly StrategyParam<SmoothMethods> _method2;
 	private readonly StrategyParam<int> _length1;
 	private readonly StrategyParam<int> _length2;
 	private readonly StrategyParam<int> _phase1;
 	private readonly StrategyParam<int> _phase2;
 	private readonly StrategyParam<decimal> _coefficient;
-	private readonly StrategyParam<AppliedPrice> _appliedPrice;
+	private readonly StrategyParam<AppliedPrices> _appliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly List<int> _colorHistory = new();
@@ -140,7 +163,7 @@ public class ExpTradingChannelIndexStrategy : Strategy
 	/// <summary>
 	/// Primary smoothing method.
 	/// </summary>
-	public SmoothMethod Method1
+	public SmoothMethods Method1
 	{
 		get => _method1.Value;
 		set => _method1.Value = value;
@@ -149,7 +172,7 @@ public class ExpTradingChannelIndexStrategy : Strategy
 	/// <summary>
 	/// Secondary smoothing method.
 	/// </summary>
-	public SmoothMethod Method2
+	public SmoothMethods Method2
 	{
 		get => _method2.Value;
 		set => _method2.Value = value;
@@ -203,7 +226,7 @@ public class ExpTradingChannelIndexStrategy : Strategy
 	/// <summary>
 	/// Price source used for indicator calculations.
 	/// </summary>
-	public AppliedPrice AppliedPrice
+	public AppliedPrices AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -252,9 +275,9 @@ public class ExpTradingChannelIndexStrategy : Strategy
 			.SetDisplay("High Level", "Upper level for color coding", "Indicator");
 		_lowLevel = Param(nameof(LowLevel), -50)
 			.SetDisplay("Low Level", "Lower level for color coding", "Indicator");
-		_method1 = Param(nameof(Method1), SmoothMethod.Simple)
+		_method1 = Param(nameof(Method1), SmoothMethods.Simple)
 			.SetDisplay("Primary Method", "Smoothing method for the first average", "Indicator");
-		_method2 = Param(nameof(Method2), SmoothMethod.Simple)
+		_method2 = Param(nameof(Method2), SmoothMethods.Simple)
 			.SetDisplay("Secondary Method", "Smoothing method for the second average", "Indicator");
 		_length1 = Param(nameof(Length1), 60)
 			.SetDisplay("Length #1", "Period of the primary moving average", "Indicator")
@@ -271,7 +294,7 @@ public class ExpTradingChannelIndexStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetCanOptimize(true)
 			.SetOptimize(0.005m, 0.05m, 0.005m);
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPrice.Close)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPrices.Close)
 			.SetDisplay("Applied Price", "Price source for calculations", "Indicator");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series used by the strategy", "General");
@@ -516,7 +539,7 @@ public class TradingChannelIndexIndicator : BaseIndicator<decimal>
 	/// <summary>
 	/// Secondary smoothing method.
 	/// </summary>
-	public SmoothMethod Method2 { get; set; } = SmoothMethod.Simple;
+	public SmoothMethods Method2 { get; set; } = SmoothMethods.Simple;
 
 	/// <summary>
 	/// Secondary moving average length.

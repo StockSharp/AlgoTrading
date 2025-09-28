@@ -41,6 +41,37 @@ public class CrossingMovingAverageStrategy : Strategy
 		/// </summary>
 		Weighted
 	}
+	public enum CandlePrices
+	{
+		/// <summary>
+		/// Open price.
+		/// </summary>
+		Open,
+		/// <summary>
+		/// High price.
+		/// </summary>
+		High,
+		/// <summary>
+		/// Low price.
+		/// </summary>
+		Low,
+		/// <summary>
+		/// Close price.
+		/// </summary>
+		Close,
+		/// <summary>
+		/// Median price (HL/2).
+		/// </summary>
+		Median,
+		/// <summary>
+		/// Typical price (HLC/3).
+		/// </summary>
+		Typical,
+		/// <summary>
+		/// Weighted close price (HLCC/4).
+		/// </summary>
+		Weighted
+	}
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
@@ -53,7 +84,7 @@ public class CrossingMovingAverageStrategy : Strategy
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _slowShift;
 	private readonly StrategyParam<MovingAverageModes> _maMethod;
-	private readonly StrategyParam<CandlePrice> _appliedPrice;
+	private readonly StrategyParam<CandlePrices> _appliedPrice;
 	private readonly StrategyParam<int> _momentumPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -187,7 +218,7 @@ public class CrossingMovingAverageStrategy : Strategy
 	/// <summary>
 	/// Candle price used for indicator calculations.
 	/// </summary>
-	public CandlePrice AppliedPrice
+	public CandlePrices AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -270,7 +301,7 @@ public class CrossingMovingAverageStrategy : Strategy
 		.SetDisplay("MA Method", "Moving average smoothing method", "Indicators")
 		.SetCanOptimize(true);
 
-		_appliedPrice = Param(nameof(AppliedPrice), CandlePrice.Close)
+		_appliedPrice = Param(nameof(AppliedPrice), CandlePrices.Close)
 		.SetDisplay("Applied Price", "Price type used for indicators", "Indicators");
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
@@ -355,7 +386,7 @@ public class CrossingMovingAverageStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		var price = GetPrice(candle, AppliedPrice);
 
@@ -364,32 +395,32 @@ public class CrossingMovingAverageStrategy : Strategy
 		var momentumValue = _momentum.Process(price, candle.OpenTime, true);
 
 		if (!fastValue.IsFinal || !slowValue.IsFinal || !momentumValue.IsFinal)
-		return;
+			return;
 
 		if (!_fastMa.IsFormed || !_slowMa.IsFormed || !_momentum.IsFormed)
-		return;
+			return;
 
 		var fast = fastValue.ToDecimal();
 		var slow = slowValue.ToDecimal();
 		var momentumResult = momentumValue.ToDecimal();
 
 		if (_momentumOffset is null)
-		_momentumOffset = momentumResult > 10m ? 100m : 0m;
+			_momentumOffset = momentumResult > 10m ? 100m : 0m;
 
 		StoreValue(_fastHistory, fast, _historyCapacity);
 		StoreValue(_slowHistory, slow, _historyCapacity);
 		StoreValue(_momentumHistory, momentumResult, MomentumPeriod + 5);
 
 		if (!HasEnoughHistory())
-		return;
+			return;
 
 		CheckExitByStops(candle);
 
 		if (Position != 0)
-		UpdateTrailing(candle);
+			UpdateTrailing(candle);
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
 		var minDistance = MinDistancePips > 0m && _pipSize > 0m ? MinDistancePips * _pipSize : 0m;
 		var currentMomentum = GetHistoryValue(_momentumHistory, 1) - _momentumOffset.GetValueOrDefault();
@@ -419,7 +450,7 @@ public class CrossingMovingAverageStrategy : Strategy
 	{
 		var volume = Volume + Math.Abs(Position);
 		if (volume <= 0)
-		return;
+			return;
 
 		BuyMarket(volume);
 
@@ -436,7 +467,7 @@ public class CrossingMovingAverageStrategy : Strategy
 	{
 		var volume = Volume + Math.Abs(Position);
 		if (volume <= 0)
-		return;
+			return;
 
 		SellMarket(volume);
 
@@ -510,7 +541,7 @@ public class CrossingMovingAverageStrategy : Strategy
 	private void UpdateTrailing(ICandleMessage candle)
 	{
 		if (TrailingStopPips <= 0m || _pipSize <= 0m)
-		return;
+			return;
 
 		var offset = TrailingStopPips * _pipSize;
 		var step = TrailingStepPips * _pipSize;
@@ -542,13 +573,13 @@ public class CrossingMovingAverageStrategy : Strategy
 	private bool HasEnoughHistory()
 	{
 		if (_fastHistory.Count <= FastShift + 2)
-		return false;
+			return false;
 
 		if (_slowHistory.Count <= SlowShift + 2)
-		return false;
+			return false;
 
 		if (_momentumHistory.Count <= 2)
-		return false;
+			return false;
 
 		return true;
 	}
@@ -558,7 +589,7 @@ public class CrossingMovingAverageStrategy : Strategy
 		history.Insert(0, value);
 
 		if (history.Count > capacity && capacity > 0)
-		history.RemoveAt(history.Count - 1);
+			history.RemoveAt(history.Count - 1);
 	}
 
 	private static decimal GetHistoryValue(List<decimal> history, int index)
@@ -584,12 +615,12 @@ public class CrossingMovingAverageStrategy : Strategy
 	{
 		var step = Security?.PriceStep ?? 0m;
 		if (step <= 0m)
-		return 0m;
+			return 0m;
 
 		var digits = GetDecimalDigits(step);
 
 		if (digits == 3 || digits == 5)
-		return step * 10m;
+			return step * 10m;
 
 		return step;
 	}
@@ -608,17 +639,17 @@ public class CrossingMovingAverageStrategy : Strategy
 		return digits;
 	}
 
-	private static decimal GetPrice(ICandleMessage candle, CandlePrice priceType)
+	private static decimal GetPrice(ICandleMessage candle, CandlePrices priceType)
 	{
 		return priceType switch
 		{
-			CandlePrice.Open => candle.OpenPrice,
-			CandlePrice.High => candle.HighPrice,
-			CandlePrice.Low => candle.LowPrice,
-			CandlePrice.Close => candle.ClosePrice,
-			CandlePrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			CandlePrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			CandlePrice.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			CandlePrices.Open => candle.OpenPrice,
+			CandlePrices.High => candle.HighPrice,
+			CandlePrices.Low => candle.LowPrice,
+			CandlePrices.Close => candle.ClosePrice,
+			CandlePrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			CandlePrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			CandlePrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}

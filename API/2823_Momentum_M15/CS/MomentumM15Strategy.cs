@@ -43,14 +43,26 @@ public class MomentumM15Strategy : Strategy
 		/// </summary>
 		Weighted
 	}
+
+	public enum CandlePrices
+	{
+		Open,
+		High,
+		Low,
+		Close,
+		Median,
+		Typical,
+		Weighted
+	}
+
 	private readonly StrategyParam<decimal> _volumeParam;
 	private readonly StrategyParam<DataType> _candleTypeParam;
 	private readonly StrategyParam<int> _maPeriodParam;
 	private readonly StrategyParam<int> _maShiftParam;
 	private readonly StrategyParam<MovingAverageMethods> _maMethodParam;
-	private readonly StrategyParam<CandlePrice> _maPriceParam;
+	private readonly StrategyParam<CandlePrices> _maPriceParam;
 	private readonly StrategyParam<int> _momentumPeriodParam;
-	private readonly StrategyParam<CandlePrice> _momentumPriceParam;
+	private readonly StrategyParam<CandlePrices> _momentumPriceParam;
 	private readonly StrategyParam<decimal> _momentumThresholdParam;
 	private readonly StrategyParam<decimal> _momentumShiftParam;
 	private readonly StrategyParam<int> _momentumOpenLengthParam;
@@ -95,7 +107,7 @@ public class MomentumM15Strategy : Strategy
 		_maMethodParam = Param(nameof(MaMethod), MovingAverageMethods.Smoothed)
 			.SetDisplay("MA Method", "Type of moving average", "Indicators");
 
-		_maPriceParam = Param(nameof(MaPrice), CandlePrice.Low)
+		_maPriceParam = Param(nameof(MaPrice), CandlePrices.Low)
 			.SetDisplay("MA Price", "Price source for moving average", "Indicators");
 
 		_momentumPeriodParam = Param(nameof(MomentumPeriod), 23)
@@ -104,7 +116,7 @@ public class MomentumM15Strategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(10, 40, 1);
 
-		_momentumPriceParam = Param(nameof(MomentumPrice), CandlePrice.Open)
+		_momentumPriceParam = Param(nameof(MomentumPrice), CandlePrices.Open)
 			.SetDisplay("Momentum Price", "Price source for momentum", "Indicators");
 
 		_momentumThresholdParam = Param(nameof(MomentumThreshold), 100m)
@@ -182,7 +194,7 @@ public class MomentumM15Strategy : Strategy
 	/// <summary>
 	/// Price source for the moving average.
 	/// </summary>
-	public CandlePrice MaPrice
+	public CandlePrices MaPrice
 	{
 		get => _maPriceParam.Value;
 		set => _maPriceParam.Value = value;
@@ -200,7 +212,7 @@ public class MomentumM15Strategy : Strategy
 	/// <summary>
 	/// Price source for the momentum indicator.
 	/// </summary>
-	public CandlePrice MomentumPrice
+	public CandlePrices MomentumPrice
 	{
 		get => _momentumPriceParam.Value;
 		set => _momentumPriceParam.Value = value;
@@ -551,17 +563,17 @@ public class MomentumM15Strategy : Strategy
 		return true;
 	}
 
-	private static decimal GetPrice(ICandleMessage candle, CandlePrice price)
+	private static decimal GetPrice(ICandleMessage candle, CandlePrices price)
 	{
 		return price switch
 		{
-			CandlePrice.Open => candle.OpenPrice,
-			CandlePrice.High => candle.HighPrice,
-			CandlePrice.Low => candle.LowPrice,
-			CandlePrice.Close => candle.ClosePrice,
-			CandlePrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			CandlePrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			CandlePrice.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			CandlePrices.Open => candle.OpenPrice,
+			CandlePrices.High => candle.HighPrice,
+			CandlePrices.Low => candle.LowPrice,
+			CandlePrices.Close => candle.ClosePrice,
+			CandlePrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			CandlePrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			CandlePrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}

@@ -255,25 +255,25 @@ public class SidusV1Strategy : Strategy
 			.SetOptimize(50m, 80m, 5m);
 
 		_buyTakeProfitPips = Param(nameof(BuyTakeProfitPips), 95m)
-			.SetGreaterThanOrEqualTo(0m)
+			.SetNotNegative()
 			.SetDisplay("Buy Take Profit", "Take profit distance in pips for long trades", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(50m, 120m, 10m);
 
 		_buyStopLossPips = Param(nameof(BuyStopLossPips), 100m)
-			.SetGreaterThanOrEqualTo(0m)
+			.SetNotNegative()
 			.SetDisplay("Buy Stop Loss", "Stop loss distance in pips for long trades", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(60m, 140m, 10m);
 
 		_sellTakeProfitPips = Param(nameof(SellTakeProfitPips), 17m)
-			.SetGreaterThanOrEqualTo(0m)
+			.SetNotNegative()
 			.SetDisplay("Sell Take Profit", "Take profit distance in pips for short trades", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(10m, 40m, 5m);
 
 		_sellStopLossPips = Param(nameof(SellStopLossPips), 69m)
-			.SetGreaterThanOrEqualTo(0m)
+			.SetNotNegative()
 			.SetDisplay("Sell Stop Loss", "Stop loss distance in pips for short trades", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(40m, 100m, 10m);
@@ -283,7 +283,7 @@ public class SidusV1Strategy : Strategy
 			.SetDisplay("Order Volume", "Volume for opening new positions", "General");
 
 		_maxCandleVolume = Param(nameof(MaxCandleVolume), 10m)
-			.SetGreaterThanOrEqualTo(0m)
+			.SetNotNegative()
 			.SetDisplay("Max Candle Volume", "Maximum candle volume allowed for trading", "Filters")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 20m, 5m);

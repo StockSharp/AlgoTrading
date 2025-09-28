@@ -37,6 +37,59 @@ public class BandsPendingBreakoutStrategy : Strategy
 		/// </summary>
 		None
 	}
+
+	public enum MovingAverageMethods
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Simple,
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Exponential,
+		/// <summary>
+		/// Smoothed moving average.
+		/// </summary>
+		Smoothed,
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		LinearWeighted
+	}
+
+	public enum AppliedPrices
+	{
+		/// <summary>
+		/// Close price.
+		/// </summary>
+		Close,
+		/// <summary>
+		/// Open price.
+		/// </summary>
+		Open,
+		/// <summary>
+		/// High price.
+		/// </summary>
+		High,
+		/// <summary>
+		/// Low price.
+		/// </summary>
+		Low,
+		/// <summary>
+		/// Median price (HL/2).
+		/// </summary>
+		Median,
+		/// <summary>
+		/// Typical price (HLC/3).
+		/// </summary>
+		Typical,
+		/// <summary>
+		/// Weighted close price (HLCC/4).
+		/// </summary>
+		Weighted
+	}
+
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _hourStart;
@@ -50,12 +103,12 @@ public class BandsPendingBreakoutStrategy : Strategy
 	private readonly StrategyParam<decimal> _stepPips;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageMethod> _maMethod;
-	private readonly StrategyParam<AppliedPrice> _maPriceType;
+	private readonly StrategyParam<MovingAverageMethods> _maMethod;
+	private readonly StrategyParam<AppliedPrices> _maPriceType;
 	private readonly StrategyParam<int> _bandsPeriod;
 	private readonly StrategyParam<int> _bandsShift;
 	private readonly StrategyParam<decimal> _bandsDeviation;
-	private readonly StrategyParam<AppliedPrice> _bandsPriceType;
+	private readonly StrategyParam<AppliedPrices> _bandsPriceType;
 
 	private IIndicator _maIndicator = new SimpleMovingAverage();
 	private BollingerBands _bollinger = new();
@@ -121,7 +174,7 @@ public class BandsPendingBreakoutStrategy : Strategy
 	/// <summary>
 	/// Stop loss placement mode.
 	/// </summary>
-	public StopLossModes StopLossModes
+	public StopLossModes StopLossMode
 	{
 		get => _stopLossMode.Value;
 		set => _stopLossMode.Value = value;
@@ -202,7 +255,7 @@ public class BandsPendingBreakoutStrategy : Strategy
 	/// <summary>
 	/// Moving average method.
 	/// </summary>
-	public MovingAverageMethod MaMethod
+	public MovingAverageMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -211,7 +264,7 @@ public class BandsPendingBreakoutStrategy : Strategy
 	/// <summary>
 	/// Applied price for the moving average.
 	/// </summary>
-	public AppliedPrice MaPriceType
+	public AppliedPrices MaPriceType
 	{
 		get => _maPriceType.Value;
 		set => _maPriceType.Value = value;
@@ -247,7 +300,7 @@ public class BandsPendingBreakoutStrategy : Strategy
 	/// <summary>
 	/// Applied price for Bollinger bands.
 	/// </summary>
-	public AppliedPrice BandsPriceType
+	public AppliedPrices BandsPriceType
 	{
 		get => _bandsPriceType.Value;
 		set => _bandsPriceType.Value = value;
@@ -308,10 +361,10 @@ public class BandsPendingBreakoutStrategy : Strategy
 			.SetDisplay("MA Shift", "Forward shift for the moving average", "Moving Average")
 			.SetNotNegative();
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.Exponential)
+		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Exponential)
 			.SetDisplay("MA Method", "Moving average calculation method", "Moving Average");
 
-		_maPriceType = Param(nameof(MaPriceType), AppliedPrice.Close)
+		_maPriceType = Param(nameof(MaPriceType), AppliedPrices.Close)
 			.SetDisplay("MA Price", "Applied price for the moving average", "Moving Average");
 
 		_bandsPeriod = Param(nameof(BandsPeriod), 15)
@@ -326,7 +379,7 @@ public class BandsPendingBreakoutStrategy : Strategy
 			.SetDisplay("Bands Deviation", "Standard deviation multiplier", "Bollinger Bands")
 			.SetGreaterThanZero();
 
-		_bandsPriceType = Param(nameof(BandsPriceType), AppliedPrice.Close)
+		_bandsPriceType = Param(nameof(BandsPriceType), AppliedPrices.Close)
 			.SetDisplay("Bands Price", "Applied price for Bollinger bands", "Bollinger Bands");
 	}
 
@@ -389,8 +442,7 @@ public class BandsPendingBreakoutStrategy : Strategy
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, _bollinger);
-			if (_maIndicator is Indicator indicator)
-				DrawIndicator(area, indicator);
+			DrawIndicator(area, _maIndicator);
 			DrawOwnTrades(area);
 		}
 	}
@@ -435,7 +487,7 @@ public class BandsPendingBreakoutStrategy : Strategy
 		if (shiftedUpper is null || shiftedLower is null || shiftedMiddle is null)
 			return;
 
-		if (StopLossModes == StopLossModes.MovingAverage && shiftedMa is null)
+		if (StopLossMode == StopLossModes.MovingAverage && shiftedMa is null)
 			return;
 
 		var closePrice = candle.ClosePrice;
@@ -463,7 +515,7 @@ public class BandsPendingBreakoutStrategy : Strategy
 			decimal? buyStopLoss = null;
 			decimal? sellStopLoss = null;
 
-			switch (StopLossModes)
+			switch (StopLossMode)
 			{
 				case StopLossModes.BollingerBands:
 					buyStopLoss = NormalizePrice(lowerBand + offset);
@@ -741,28 +793,28 @@ public class BandsPendingBreakoutStrategy : Strategy
 		return decimals is 3 or 5 ? priceStep * 10m : priceStep;
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrice priceType)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrices priceType)
 	{
 		return priceType switch
 		{
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}
 
-	private static IIndicator CreateMovingAverage(MovingAverageMethod method, int length)
+	private static IIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.LinearWeighted => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}

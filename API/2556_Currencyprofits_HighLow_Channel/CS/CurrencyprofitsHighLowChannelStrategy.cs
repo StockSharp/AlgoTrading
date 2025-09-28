@@ -24,7 +24,7 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _riskPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<CandlePrice> _priceSource;
+	private readonly StrategyParam<CandlePrices> _priceSource;
 	private readonly StrategyParam<MovingAverageTypes> _fastMaType;
 	private readonly StrategyParam<MovingAverageTypes> _slowMaType;
 
@@ -72,7 +72,7 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	public CandlePrice PriceSource
+	public CandlePrices PriceSource
 	{
 		get => _priceSource.Value;
 		set => _priceSource.Value = value;
@@ -118,7 +118,7 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for calculations", "General");
 
-		_priceSource = Param(nameof(PriceSource), CandlePrice.Close)
+		_priceSource = Param(nameof(PriceSource), CandlePrices.Close)
 			.SetDisplay("MA Price Source", "Price source used by both moving averages", "Indicators");
 
 		_fastMaType = Param(nameof(FastMaType), MovingAverageTypes.Simple)
@@ -155,8 +155,8 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 
 		var fastMa = CreateMovingAverage(FastMaType, FastLength, PriceSource);
 		var slowMa = CreateMovingAverage(SlowMaType, SlowLength, PriceSource);
-		var highest = new Highest { Length = ChannelLength, CandlePrice = CandlePrice.High };
-		var lowest = new Lowest { Length = ChannelLength, CandlePrice = CandlePrice.Low };
+		var highest = new Highest { Length = ChannelLength, CandlePrice = CandlePrices.High };
+		var lowest = new Lowest { Length = ChannelLength, CandlePrice = CandlePrices.Low };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -340,7 +340,7 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 		_stopPrice = 0m;
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type, int length, CandlePrice price)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type, int length, CandlePrices price)
 	{
 		return type switch
 		{
@@ -358,5 +358,16 @@ public class CurrencyprofitsHighLowChannelStrategy : Strategy
 		Exponential,
 		Smoothed,
 		Weighted,
+	}
+
+	public enum CandlePrices
+	{
+		Open,
+		High,
+		Low,
+		Close,
+		Median,
+		Typical,
+		Weighted
 	}
 }

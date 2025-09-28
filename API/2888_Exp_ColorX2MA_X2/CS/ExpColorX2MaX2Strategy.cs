@@ -51,6 +51,22 @@ public class ExpColorX2MaX2Strategy : Strategy
 		Jurik
 	}
 
+	public enum AppliedPrices
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted,
+		Simple,
+		Quarter,
+		TrendFollow0,
+		TrendFollow1,
+		Demark
+	}
+
 	private readonly StrategyParam<DataType> _trendCandleType;
 	private readonly StrategyParam<SmoothMethods> _trendMethod1;
 	private readonly StrategyParam<int> _trendLength1;
@@ -58,7 +74,7 @@ public class ExpColorX2MaX2Strategy : Strategy
 	private readonly StrategyParam<SmoothMethods> _trendMethod2;
 	private readonly StrategyParam<int> _trendLength2;
 	private readonly StrategyParam<int> _trendPhase2;
-	private readonly StrategyParam<AppliedPrice> _trendPrice;
+	private readonly StrategyParam<AppliedPrices> _trendPrice;
 	private readonly StrategyParam<int> _trendSignalBar;
 
 	private readonly StrategyParam<DataType> _signalCandleType;
@@ -68,7 +84,7 @@ public class ExpColorX2MaX2Strategy : Strategy
 	private readonly StrategyParam<SmoothMethods> _signalMethod2;
 	private readonly StrategyParam<int> _signalLength2;
 	private readonly StrategyParam<int> _signalPhase2;
-	private readonly StrategyParam<AppliedPrice> _signalPrice;
+	private readonly StrategyParam<AppliedPrices> _signalPrice;
 	private readonly StrategyParam<int> _signalSignalBar;
 
 	private readonly StrategyParam<bool> _allowBuyOpen;
@@ -115,7 +131,7 @@ public class ExpColorX2MaX2Strategy : Strategy
 		.SetDisplay("Trend Length 2", "Period for the second smoother", "Trend");
 		_trendPhase2 = Param(nameof(TrendPhase2), 15)
 		.SetDisplay("Trend Phase 2", "Phase parameter for the second smoother", "Trend");
-		_trendPrice = Param(nameof(TrendPrice), AppliedPrice.Close)
+		_trendPrice = Param(nameof(TrendPrice), AppliedPrices.Close)
 		.SetDisplay("Trend Price", "Applied price for the trend ColorX2MA", "Trend");
 		_trendSignalBar = Param(nameof(TrendSignalBar), 1)
 		.SetRange(0, 10)
@@ -137,7 +153,7 @@ public class ExpColorX2MaX2Strategy : Strategy
 		.SetDisplay("Signal Length 2", "Period for the second signal smoother", "Signal");
 		_signalPhase2 = Param(nameof(SignalPhase2), 15)
 		.SetDisplay("Signal Phase 2", "Phase parameter for the second signal smoother", "Signal");
-		_signalPrice = Param(nameof(SignalPrice), AppliedPrice.Close)
+		_signalPrice = Param(nameof(SignalPrice), AppliedPrices.Close)
 		.SetDisplay("Signal Price", "Applied price for the signal ColorX2MA", "Signal");
 		_signalSignalBar = Param(nameof(SignalSignalBar), 1)
 		.SetRange(0, 10)
@@ -228,7 +244,7 @@ public class ExpColorX2MaX2Strategy : Strategy
 	/// <summary>
 	/// Applied price for the trend ColorX2MA.
 	/// </summary>
-	public AppliedPrice TrendPrice
+	public AppliedPrices TrendPrice
 	{
 		get => _trendPrice.Value;
 		set => _trendPrice.Value = value;
@@ -309,7 +325,7 @@ public class ExpColorX2MaX2Strategy : Strategy
 	/// <summary>
 	/// Applied price for the signal ColorX2MA.
 	/// </summary>
-	public AppliedPrice SignalPrice
+	public AppliedPrices SignalPrice
 	{
 		get => _signalPrice.Value;
 		set => _signalPrice.Value = value;
@@ -400,12 +416,12 @@ public class ExpColorX2MaX2Strategy : Strategy
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		if (Security is null)
-		yield break;
+			yield break;
 
 		yield return (Security, TrendCandleType);
 
 		if (TrendCandleType != SignalCandleType)
-		yield return (Security, SignalCandleType);
+			yield return (Security, SignalCandleType);
 	}
 
 	/// <inheritdoc />
@@ -449,12 +465,12 @@ public class ExpColorX2MaX2Strategy : Strategy
 	private void ProcessTrendCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		var price = GetAppliedPrice(candle, TrendPrice);
 		var ma1Value = _trendMa1.Process(price, candle.OpenTime, true);
 		if (!_trendMa1.IsFormed)
-		return;
+			return;
 
 		var ma2Value = _trendMa2.Process(ma1Value.ToDecimal(), candle.OpenTime, true);
 		var trendValue = ma2Value.ToDecimal();
@@ -463,9 +479,9 @@ public class ExpColorX2MaX2Strategy : Strategy
 		if (_trendPrevValue.HasValue)
 		{
 			if (trendValue > _trendPrevValue.Value)
-			color = 1;
+				color = 1;
 			else if (trendValue < _trendPrevValue.Value)
-			color = 2;
+				color = 2;
 		}
 
 		_trendPrevValue = trendValue;
@@ -474,9 +490,9 @@ public class ExpColorX2MaX2Strategy : Strategy
 		TrimBuffer(_trendColors, TrendSignalBar + 5);
 
 		if (_trendColors.Count <= TrendSignalBar)
-		return;
+			return;
 
-		var trendColor = _trendColors[^ (TrendSignalBar + 1)];
+		var trendColor = _trendColors[^(TrendSignalBar + 1)];
 
 		_trendDirection = trendColor switch
 		{
@@ -489,17 +505,17 @@ public class ExpColorX2MaX2Strategy : Strategy
 	private void ProcessSignalCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
 		ApplyProtectiveExits(candle);
 
 		var price = GetAppliedPrice(candle, SignalPrice);
 		var ma1Value = _signalMa1.Process(price, candle.OpenTime, true);
 		if (!_signalMa1.IsFormed)
-		return;
+			return;
 
 		var ma2Value = _signalMa2.Process(ma1Value.ToDecimal(), candle.OpenTime, true);
 		var signalValue = ma2Value.ToDecimal();
@@ -508,9 +524,9 @@ public class ExpColorX2MaX2Strategy : Strategy
 		if (_signalPrevValue.HasValue)
 		{
 			if (signalValue > _signalPrevValue.Value)
-			color = 1;
+				color = 1;
 			else if (signalValue < _signalPrevValue.Value)
-			color = 2;
+				color = 2;
 		}
 
 		_signalPrevValue = signalValue;
@@ -521,10 +537,10 @@ public class ExpColorX2MaX2Strategy : Strategy
 		var shift0 = SignalSignalBar;
 		var shift1 = SignalSignalBar + 1;
 		if (_signalColors.Count <= shift1)
-		return;
+			return;
 
-		var clr0 = _signalColors[^ (shift0 + 1)];
-		var clr1 = _signalColors[^ (shift1 + 1)];
+		var clr0 = _signalColors[^(shift0 + 1)];
+		var clr1 = _signalColors[^(shift1 + 1)];
 
 		var closeLong = AllowBuyCloseSecondary && clr1 == 2;
 		var closeShort = AllowSellCloseSecondary && clr1 == 1;
@@ -534,35 +550,35 @@ public class ExpColorX2MaX2Strategy : Strategy
 		if (_trendDirection < 0)
 		{
 			if (AllowBuyClosePrimary)
-			closeLong = true;
+				closeLong = true;
 			if (AllowSellOpen && clr0 != 2 && clr1 == 2)
-			openShort = true;
+				openShort = true;
 		}
 		else if (_trendDirection > 0)
 		{
 			if (AllowSellClosePrimary)
-			closeShort = true;
+				closeShort = true;
 			if (AllowBuyOpen && clr0 != 1 && clr1 == 1)
-			openLong = true;
+				openLong = true;
 		}
 
 		if (closeLong && Position > 0)
-		SellMarket(Position);
+			SellMarket(Position);
 
 		if (closeShort && Position < 0)
-		BuyMarket(-Position);
+			BuyMarket(-Position);
 
 		if (openLong && Position <= 0)
 		{
 			var volume = Volume + (Position < 0 ? -Position : 0m);
 			if (volume > 0)
-			BuyMarket(volume);
+				BuyMarket(volume);
 		}
 		else if (openShort && Position >= 0)
 		{
 			var volume = Volume + (Position > 0 ? Position : 0m);
 			if (volume > 0)
-			SellMarket(volume);
+				SellMarket(volume);
 		}
 	}
 
@@ -575,41 +591,41 @@ public class ExpColorX2MaX2Strategy : Strategy
 		if (Position > 0)
 		{
 			if (stopDistance > 0m && candle.LowPrice <= PositionPrice - stopDistance)
-			SellMarket(Position);
+				SellMarket(Position);
 			else if (takeDistance > 0m && candle.HighPrice >= PositionPrice + takeDistance)
-			SellMarket(Position);
+				SellMarket(Position);
 		}
 		else if (Position < 0)
 		{
 			if (stopDistance > 0m && candle.HighPrice >= PositionPrice + stopDistance)
-			BuyMarket(-Position);
+				BuyMarket(-Position);
 			else if (takeDistance > 0m && candle.LowPrice <= PositionPrice - takeDistance)
-			BuyMarket(-Position);
+				BuyMarket(-Position);
 		}
 	}
 
 	private static void TrimBuffer(List<int> buffer, int maxSize)
 	{
 		while (buffer.Count > maxSize && maxSize > 0)
-		buffer.RemoveAt(0);
+			buffer.RemoveAt(0);
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrice price)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrices price)
 	{
 		return price switch
 		{
-			AppliedPrice.Close => candle.ClosePrice,
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-			AppliedPrice.Weighted => (candle.ClosePrice * 2m + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			AppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
-			AppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
-			AppliedPrice.Demark => CalculateDemarkPrice(candle),
+			AppliedPrices.Close => candle.ClosePrice,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+			AppliedPrices.Weighted => (candle.ClosePrice * 2m + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			AppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
+			AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
+			AppliedPrices.Demark => CalculateDemarkPrice(candle),
 			_ => candle.ClosePrice,
 		};
 	}
@@ -618,11 +634,11 @@ public class ExpColorX2MaX2Strategy : Strategy
 	{
 		var sum = candle.HighPrice + candle.LowPrice + candle.ClosePrice;
 		if (candle.ClosePrice < candle.OpenPrice)
-		sum = (sum + candle.LowPrice) / 2m;
+			sum = (sum + candle.LowPrice) / 2m;
 		else if (candle.ClosePrice > candle.OpenPrice)
-		sum = (sum + candle.HighPrice) / 2m;
+			sum = (sum + candle.HighPrice) / 2m;
 		else
-		sum = (sum + candle.ClosePrice) / 2m;
+			sum = (sum + candle.ClosePrice) / 2m;
 
 		return ((sum - candle.LowPrice) + (sum - candle.HighPrice)) / 2m;
 	}
@@ -645,7 +661,7 @@ public class ExpColorX2MaX2Strategy : Strategy
 		var jma = new JurikMovingAverage { Length = length };
 		var phaseProperty = jma.GetType().GetProperty("Phase", BindingFlags.Public | BindingFlags.Instance);
 		if (phaseProperty != null && phaseProperty.CanWrite)
-		phaseProperty.SetValue(jma, phase);
+			phaseProperty.SetValue(jma, phase);
 		return jma;
 	}
 }

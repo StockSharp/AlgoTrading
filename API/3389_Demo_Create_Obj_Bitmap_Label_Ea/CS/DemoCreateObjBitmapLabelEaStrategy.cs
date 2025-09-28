@@ -12,6 +12,7 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 using StockSharp.Algo;
+using StockSharp.Charting;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -27,7 +28,7 @@ public class DemoCreateObjBitmapLabelEaStrategy : Strategy
 	private readonly StrategyParam<decimal> _priceOffset;
 	private readonly StrategyParam<int> _switchInterval;
 
-	private IChartArea? _chartArea;
+	private IChartArea _chartArea;
 	private int _processedCandles;
 	private bool _isPressed;
 

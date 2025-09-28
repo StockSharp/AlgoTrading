@@ -54,11 +54,11 @@ public class NewsTraderStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 10)
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk")
-			.SetGreaterThanOrEqualTo(0);
+			.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 10)
 			.SetDisplay("Take Profit (pips)", "Target distance in pips", "Risk")
-			.SetGreaterThanOrEqualTo(0);
+			.SetNotNegative();
 
 		_biasPips = Param(nameof(BiasPips), 20)
 			.SetDisplay("Bias (pips)", "Distance to place pending stop orders", "Entries")
@@ -66,7 +66,7 @@ public class NewsTraderStrategy : Strategy
 
 		_leadMinutes = Param(nameof(LeadMinutes), 10)
 			.SetDisplay("Lead Minutes", "Minutes before news to place orders", "Schedule")
-			.SetGreaterThanOrEqualTo(0);
+			.SetNotNegative();
 
 		_newsYear = Param(nameof(NewsYear), 2010)
 			.SetDisplay("News Year", "Year of scheduled news", "Schedule");
@@ -81,11 +81,11 @@ public class NewsTraderStrategy : Strategy
 
 		_newsHour = Param(nameof(NewsHour), 1)
 			.SetDisplay("News Hour", "Hour of scheduled news (platform time)", "Schedule")
-			.SetGreaterThanOrEqualTo(0);
+			.SetNotNegative();
 
 		_newsMinute = Param(nameof(NewsMinute), 30)
 			.SetDisplay("News Minute", "Minute of scheduled news", "Schedule")
-			.SetGreaterThanOrEqualTo(0);
+			.SetNotNegative();
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to monitor the clock", "General");

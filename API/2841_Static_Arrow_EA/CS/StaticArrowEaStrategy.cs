@@ -12,6 +12,7 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 using StockSharp.Algo;
+using StockSharp.Charting;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -26,7 +27,7 @@ public class StaticArrowEaStrategy : Strategy
 	private readonly StrategyParam<string> _arrowSymbol;
 
 	private readonly List<(DateTimeOffset Time, decimal Price)> _arrowPoints = new();
-	private IChartArea? _area;
+	private IChartArea _area;
 	private bool _isInitialized;
 	private TimeSpan _timeFrame;
 

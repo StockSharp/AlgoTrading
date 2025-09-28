@@ -47,12 +47,23 @@ public class FirebirdChannelAveragingStrategy : Strategy
 		Weighted
 	}
 
+	public enum CandlePrices
+	{
+		Open,
+		High,
+		Low,
+		Close,
+		Median,
+		Typical,
+		Weighted
+	}
+
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
 	private readonly StrategyParam<MovingAverageTypes> _maType;
-	private readonly StrategyParam<CandlePrice> _priceSource;
+	private readonly StrategyParam<CandlePrices> _priceSource;
 	private readonly StrategyParam<decimal> _pricePercent;
 	private readonly StrategyParam<bool> _tradeOnFriday;
 	private readonly StrategyParam<int> _stepPips;
@@ -114,7 +125,7 @@ public class FirebirdChannelAveragingStrategy : Strategy
 	/// <summary>
 	/// Candle price source used for the moving average and signal checks.
 	/// </summary>
-	public CandlePrice PriceSource
+	public CandlePrices PriceSource
 	{
 		get => _priceSource.Value;
 		set => _priceSource.Value = value;
@@ -196,7 +207,7 @@ public class FirebirdChannelAveragingStrategy : Strategy
 		_maType = Param(nameof(MaType), MovingAverageTypes.Exponential)
 			.SetDisplay("MA Type", "Moving average calculation mode", "Indicator");
 
-		_priceSource = Param(nameof(PriceSource), CandlePrice.Close)
+		_priceSource = Param(nameof(PriceSource), CandlePrices.Close)
 			.SetDisplay("Price Source", "Candle price used for signals", "Data");
 
 		_pricePercent = Param(nameof(PricePercent), 0.3m)
@@ -538,13 +549,13 @@ public class FirebirdChannelAveragingStrategy : Strategy
 	{
 		return PriceSource switch
 		{
-			CandlePrice.Open => candle.OpenPrice,
-			CandlePrice.High => candle.HighPrice,
-			CandlePrice.Low => candle.LowPrice,
-			CandlePrice.Close => candle.ClosePrice,
-			CandlePrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			CandlePrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			CandlePrice.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			CandlePrices.Open => candle.OpenPrice,
+			CandlePrices.High => candle.HighPrice,
+			CandlePrices.Low => candle.LowPrice,
+			CandlePrices.Close => candle.ClosePrice,
+			CandlePrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			CandlePrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			CandlePrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}

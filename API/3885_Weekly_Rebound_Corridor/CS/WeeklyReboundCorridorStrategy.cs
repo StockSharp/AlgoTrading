@@ -106,7 +106,7 @@ public class WeeklyReboundCorridorStrategy : Strategy
 	public WeeklyReboundCorridorStrategy()
 	{
 		_additionalBuyTakeProfitPoints = Param(nameof(AdditionalBuyTakeProfitPoints), 3m)
-		.SetGreaterThanOrEqualTo(0m)
+		.SetNotNegative()
 		.SetDisplay("Buy Bonus Take Profit", "Additional points added to long take profits", "Risk Management")
 		.SetCanOptimize(true)
 		.SetOptimize(0m, 10m, 0.5m);

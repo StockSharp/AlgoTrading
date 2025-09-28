@@ -145,7 +145,7 @@ public class SilverTrendV3JtpoStrategy : Strategy
 		.SetOptimize(3, 21, 2);
 
 		_defaultRisk = Param(nameof(DefaultRisk), 3)
-		.SetGreaterThanOrEqualTo(0)
+		.SetNotNegative()
 		.SetDisplay("Risk Coefficient", "Risk coefficient used in SilverTrend", "SilverTrend")
 		.SetCanOptimize(true)
 		.SetOptimize(0, 10, 1);

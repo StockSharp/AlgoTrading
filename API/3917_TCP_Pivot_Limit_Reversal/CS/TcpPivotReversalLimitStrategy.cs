@@ -67,7 +67,7 @@ public class TcpPivotReversalLimitStrategy : Strategy
 		.SetOptimize(1, 5, 1);
 
 		_trailingPoints = Param(nameof(TrailingPoints), 30m)
-		.SetGreaterThanOrEqualTo(0m)
+		.SetNotNegative()
 		.SetDisplay("Trailing Points", "Trailing stop distance in price points", "Risk");
 
 		_intradayTrading = Param(nameof(IntradayTrading), false)

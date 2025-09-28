@@ -52,12 +52,12 @@ public class RingSystemEaStrategy : Strategy
 	private readonly StrategyParam<bool> _checkOrdersParam;
 	private readonly StrategyParam<string> _commentParam;
 	private readonly StrategyParam<bool> _saveInfoParam;
-	private readonly StrategyParam<TimeSpan> _candleTypeParam;
+	private readonly StrategyParam<DataType> _candleTypeParam;
 
 	private readonly Dictionary<Order, PendingAction> _pending = new();
 	private readonly List<GroupState> _groups = new();
 	private readonly HashSet<Security> _allSecurities = new();
-	private readonly Dictionary<Security, CandleSubscription> _subscriptions = new();
+	private readonly Dictionary<Security, ISubscriptionHandler<ICandleMessage>> _subscriptions = new();
 
 	private DateTimeOffset? _sessionStart;
 	private DateTimeOffset? _sessionEnd;
@@ -66,8 +66,7 @@ public class RingSystemEaStrategy : Strategy
 	public RingSystemEaStrategy()
 	{
 		_operationParam = Param(nameof(TypeOfOperation), Operations.NormalOperation)
-			.SetDisplay("Operation Mode", "Defines how the basket operates", "Core")
-			.SetDescription("Matches the four MT4 modes: standby, trading, close on profit, or emergency close.");
+			.SetDisplay("Operation Mode", "Defines how the basket operates", "Core");
 
 		_timerParam = Param(nameof(TimerInMillisecond), 1000)
 			.SetDisplay("Timer Interval", "Background refresh interval", "Core")
@@ -94,11 +93,11 @@ public class RingSystemEaStrategy : Strategy
 
 		_minutesParam = Param(nameof(MinutesForNextOrder), 60)
 			.SetDisplay("Minutes Between Orders", "Cooldown before the same basket can add again", "Trading")
-			.SetGreaterThanOrEqualTo(0);
+			.SetNotNegative();
 
 		_maxGroupsParam = Param(nameof(MaximumGroups), 0)
 			.SetDisplay("Max Groups", "Simultaneous groups allowed (0 = unlimited)", "Trading")
-			.SetGreaterThanOrEqualTo(0);
+			.SetNotNegative();
 
 		_closeProfitParam = Param(nameof(TypeCloseInProfit), CloseProfitModes.SingleTicket)
 			.SetDisplay("Profit Close", "Scope of profit based exits", "Risk");
@@ -141,30 +140,30 @@ public class RingSystemEaStrategy : Strategy
 
 		_maxLotParam = Param(nameof(MaximumLotSize), 0m)
 			.SetDisplay("Max Lot", "Upper limit for any single order", "Money")
-			.SetGreaterThanOrEqualTo(0m);
+			.SetNotNegative();
 
 		_controlSessionParam = Param(nameof(ControlSession), false)
 			.SetDisplay("Control Session", "Limit trading to weekly session window", "Session");
 
 		_waitAfterOpenParam = Param(nameof(WaitAfterOpen), 60)
 			.SetDisplay("Wait After Open", "Minutes to wait after Monday open", "Session")
-			.SetGreaterThanOrEqualTo(0);
+			.SetNotNegative();
 
 		_stopBeforeCloseParam = Param(nameof(StopBeforeClose), 60)
 			.SetDisplay("Stop Before Close", "Minutes to stop before Friday close", "Session")
-			.SetGreaterThanOrEqualTo(0);
+			.SetNotNegative();
 
 		_maxSpreadParam = Param(nameof(MaxSpread), 0m)
 			.SetDisplay("Max Spread", "Optional spread filter", "Risk")
-			.SetGreaterThanOrEqualTo(0m);
+			.SetNotNegative();
 
 		_maxOrdersParam = Param(nameof(MaximumOrders), 0L)
 			.SetDisplay("Max Orders", "Global order limit (0 = unlimited)", "Risk")
-			.SetGreaterThanOrEqualTo(0L);
+			.SetNotNegative();
 
 		_slippageParam = Param(nameof(MaxSlippage), 3)
 			.SetDisplay("Slippage", "Maximum slippage in ticks", "Risk")
-			.SetGreaterThanOrEqualTo(0);
+			.SetNotNegative();
 
 		_prefixParam = Param(nameof(SymbolPrefix), "NONE")
 			.SetDisplay("Prefix", "Optional instrument prefix", "Universe");
@@ -174,7 +173,7 @@ public class RingSystemEaStrategy : Strategy
 
 		_magicParam = Param(nameof(MagicNumber), 0)
 			.SetDisplay("Magic", "Identifier appended to generated orders", "Meta")
-			.SetGreaterThanOrEqualTo(0);
+			.SetNotNegative();
 
 		_checkOrdersParam = Param(nameof(CheckOrders), true)
 			.SetDisplay("Check Orders", "Validate account limits before trading", "Risk");
@@ -393,7 +392,7 @@ public class RingSystemEaStrategy : Strategy
 		set => _saveInfoParam.Value = value;
 	}
 
-	public TimeSpan CandleType
+	public DataType CandleType
 	{
 		get => _candleTypeParam.Value;
 		set => _candleTypeParam.Value = value;

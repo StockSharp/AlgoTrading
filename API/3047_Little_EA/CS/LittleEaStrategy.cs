@@ -17,13 +17,32 @@ using StockSharp.Algo;
 
 public class LittleEaStrategy : Strategy
 {
+	public enum MovingAverageTypes
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		Weighted
+	}
+
+	public enum AppliedPriceTypes
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted
+	}
+
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _ohlcBarIndex;
 	private readonly StrategyParam<int> _maxPositionsPerSide;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageType> _maType;
-	private readonly StrategyParam<AppliedPriceType> _appliedPrice;
+	private readonly StrategyParam<MovingAverageTypes> _maType;
+	private readonly StrategyParam<AppliedPriceTypes> _appliedPrice;
 	private readonly StrategyParam<decimal> _tradeVolume;
 
 	private LengthIndicator<decimal> _movingAverage;
@@ -51,10 +70,10 @@ public class LittleEaStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("MA shift", "Number of bars to shift the moving average.", "Indicator");
 
-		_maType = Param(nameof(MaType), MovingAverageType.Smoothed)
+		_maType = Param(nameof(MaType), MovingAverageTypes.Smoothed)
 			.SetDisplay("MA type", "Moving average calculation mode.", "Indicator");
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceType.Close)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Close)
 			.SetDisplay("Applied price", "Price source fed into the moving average.", "Indicator");
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -92,13 +111,13 @@ public class LittleEaStrategy : Strategy
 		set => _maShift.Value = value;
 	}
 
-	public MovingAverageType MaType
+	public MovingAverageTypes MaType
 	{
 		get => _maType.Value;
 		set => _maType.Value = value;
 	}
 
-	public AppliedPriceType AppliedPrice
+	public AppliedPriceTypes AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -227,28 +246,28 @@ public class LittleEaStrategy : Strategy
 		}
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageType type, int length)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageTypes type, int length)
 	{
 		return type switch
 		{
-			MovingAverageType.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageType.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageType.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageType.Weighted => new WeightedMovingAverage { Length = length },
+			MovingAverageTypes.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
 
-	private static decimal GetPrice(ICandleMessage candle, AppliedPriceType priceType)
+	private static decimal GetPrice(ICandleMessage candle, AppliedPriceTypes priceType)
 	{
 		return priceType switch
 		{
-			AppliedPriceType.Open => candle.OpenPrice,
-			AppliedPriceType.High => candle.HighPrice,
-			AppliedPriceType.Low => candle.LowPrice,
-			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
+			AppliedPriceTypes.Open => candle.OpenPrice,
+			AppliedPriceTypes.High => candle.HighPrice,
+			AppliedPriceTypes.Low => candle.LowPrice,
+			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}

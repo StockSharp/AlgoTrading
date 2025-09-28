@@ -58,11 +58,11 @@ public class MoBidirStrategy : Strategy
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 80)
 			.SetDisplay("Stop Loss (points)", "Distance from the entry price to trigger an exit.", "Risk")
-			.SetGreaterThanOrEqualTo(0);
+			.SetNotNegative();
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 750)
 			.SetDisplay("Take Profit (points)", "Target distance from the entry price.", "Risk")
-			.SetGreaterThanOrEqualTo(0);
+			.SetNotNegative();
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to detect completed bars.", "Data");

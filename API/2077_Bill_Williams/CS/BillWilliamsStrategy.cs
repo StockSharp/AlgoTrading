@@ -74,19 +74,19 @@ public class BillWilliamsStrategy : Strategy
 	public BillWilliamsStrategy()
 	{
 		_filterPoints = Param(nameof(FilterPoints), 30m)
-			.SetGreaterThanOrEqualTo(0m)
+			.SetNotNegative()
 			.SetDisplay("Filter", "Minimal price offset in points", "General")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 100m, 5m);
 
 		_gatorDivSlowPoints = Param(nameof(GatorDivSlowPoints), 250m)
-			.SetGreaterThanOrEqualTo(0m)
+			.SetNotNegative()
 			.SetDisplay("Jaw-Teeth Points", "Required jaw-teeth distance", "Alligator")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 500m, 25m);
 
 		_gatorDivFastPoints = Param(nameof(GatorDivFastPoints), 150m)
-			.SetGreaterThanOrEqualTo(0m)
+			.SetNotNegative()
 			.SetDisplay("Lips-Teeth Points", "Required lips-teeth distance", "Alligator")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 300m, 25m);

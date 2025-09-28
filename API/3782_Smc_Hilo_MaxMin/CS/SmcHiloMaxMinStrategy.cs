@@ -119,19 +119,19 @@ public class SmcHiloMaxMinStrategy : Strategy
 		.SetDisplay("Trigger Hour", "Terminal hour when pending orders are created", "Timing");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 500m)
-		.SetGreaterThanOrEqualTo(0m)
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Distance from entry to the profit target", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 30m)
-		.SetGreaterThanOrEqualTo(0m)
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Distance from entry to the protective stop", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 30m)
-		.SetGreaterThanOrEqualTo(0m)
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance that replaces the static stop", "Risk");
 
 		_minStopDistancePips = Param(nameof(MinStopDistancePips), 0m)
-		.SetGreaterThanOrEqualTo(0m)
+		.SetNotNegative()
 		.SetDisplay("Min Stop Distance (pips)", "Broker minimum stop distance, used to pad breakout levels", "Timing");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

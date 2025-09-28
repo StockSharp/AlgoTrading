@@ -219,7 +219,7 @@ public class AK47A1Strategy : Strategy
 		.SetOptimize(5, 40, 1);
 
 		_jawShift = Param(nameof(JawShift), 8)
-		.SetGreaterThanOrEqualTo(0)
+		.SetNotNegative()
 		.SetDisplay("Jaw Shift", "Shift applied to the Alligator jaw line", "Alligator")
 		.SetCanOptimize(true)
 		.SetOptimize(0, 16, 1);
@@ -231,7 +231,7 @@ public class AK47A1Strategy : Strategy
 		.SetOptimize(5, 30, 1);
 
 		_teethShift = Param(nameof(TeethShift), 5)
-		.SetGreaterThanOrEqualTo(0)
+		.SetNotNegative()
 		.SetDisplay("Teeth Shift", "Shift applied to the Alligator teeth line", "Alligator")
 		.SetCanOptimize(true)
 		.SetOptimize(0, 16, 1);
@@ -243,7 +243,7 @@ public class AK47A1Strategy : Strategy
 		.SetOptimize(3, 20, 1);
 
 		_lipsShift = Param(nameof(LipsShift), 3)
-		.SetGreaterThanOrEqualTo(0)
+		.SetNotNegative()
 		.SetDisplay("Lips Shift", "Shift applied to the Alligator lips line", "Alligator")
 		.SetCanOptimize(true)
 		.SetOptimize(0, 10, 1);
@@ -261,43 +261,43 @@ public class AK47A1Strategy : Strategy
 		.SetOptimize(1, 6, 1);
 
 		_demarkerThreshold = Param(nameof(DemarkerThreshold), 0.5m)
-		.SetGreaterThanOrEqualTo(0m)
+		.SetNotNegative()
 		.SetDisplay("DeMarker Threshold", "Minimum value for long setups", "Filters")
 		.SetCanOptimize(true)
 		.SetOptimize(0m, 1m, 0.05m);
 
 		_wprLowerBound = Param(nameof(WprLowerBound), 0.25m)
-		.SetGreaterThanOrEqualTo(0m)
+		.SetNotNegative()
 		.SetDisplay("WPR Lower", "Lower Williams %R filter bound", "Filters")
 		.SetCanOptimize(true)
 		.SetOptimize(0m, 0.5m, 0.05m);
 
 		_wprUpperBound = Param(nameof(WprUpperBound), 0.75m)
-		.SetGreaterThanOrEqualTo(0m)
+		.SetNotNegative()
 		.SetDisplay("WPR Upper", "Upper Williams %R filter bound", "Filters")
 		.SetCanOptimize(true)
 		.SetOptimize(0.5m, 1m, 0.05m);
 
 		_spanGatorPoints = Param(nameof(SpanGatorPoints), 0.5m)
-		.SetGreaterThanOrEqualTo(0m)
+		.SetNotNegative()
 		.SetDisplay("Alligator Span", "Required gap between Alligator lines", "Alligator")
 		.SetCanOptimize(true)
 		.SetOptimize(0m, 3m, 0.1m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100m)
-		.SetGreaterThanOrEqualTo(0m)
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take-profit distance in points", "Orders")
 		.SetCanOptimize(true)
 		.SetOptimize(0m, 200m, 10m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 0m)
-		.SetGreaterThanOrEqualTo(0m)
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop-loss distance in points", "Orders")
 		.SetCanOptimize(true)
 		.SetOptimize(0m, 150m, 10m);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 50m)
-		.SetGreaterThanOrEqualTo(0m)
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop", "Trailing-stop distance in points", "Orders")
 		.SetCanOptimize(true)
 		.SetOptimize(0m, 150m, 10m);

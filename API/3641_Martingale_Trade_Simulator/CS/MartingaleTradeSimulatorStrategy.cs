@@ -178,11 +178,11 @@ public class MartingaleTradeSimulatorStrategy : Strategy
 		.SetDisplay("Order Volume", "Base volume for manual market orders.", "Manual Controls");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 500m)
-		.SetGreaterThanOrEqualTo(0m)
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (points)", "Distance from entry to protective stop.", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500m)
-		.SetGreaterThanOrEqualTo(0m)
+		.SetNotNegative()
 		.SetDisplay("Take Profit (points)", "Distance from entry to protective target.", "Risk");
 
 		_enableTrailing = Param(nameof(EnableTrailing), true)
@@ -190,11 +190,11 @@ public class MartingaleTradeSimulatorStrategy : Strategy
 		.SetCanOptimize(false);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 50m)
-		.SetGreaterThanOrEqualTo(0m)
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (points)", "Distance of the trailing stop from market price.", "Trailing");
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 20m)
-		.SetGreaterThanOrEqualTo(0m)
+		.SetNotNegative()
 		.SetDisplay("Trailing Step (points)", "Minimal gain required to move the trailing stop.", "Trailing");
 
 		_enableMartingale = Param(nameof(EnableMartingale), true)
@@ -206,11 +206,11 @@ public class MartingaleTradeSimulatorStrategy : Strategy
 		.SetDisplay("Martingale Multiplier", "Volume multiplier for each averaging order.", "Martingale");
 
 		_martingaleStepPoints = Param(nameof(MartingaleStepPoints), 150m)
-		.SetGreaterThanOrEqualTo(0m)
+		.SetNotNegative()
 		.SetDisplay("Martingale Step (points)", "Minimal adverse move before adding a new order.", "Martingale");
 
 		_martingaleTakeProfitOffset = Param(nameof(MartingaleTakeProfitOffset), 50m)
-		.SetGreaterThanOrEqualTo(0m)
+		.SetNotNegative()
 		.SetDisplay("Martingale TP Offset (points)", "Extra distance added to averaged take-profit.", "Martingale");
 
 		_buyRequest = Param(nameof(BuyRequest), false)

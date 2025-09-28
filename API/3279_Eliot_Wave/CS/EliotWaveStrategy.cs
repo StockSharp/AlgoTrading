@@ -190,25 +190,25 @@ public class EliotWaveStrategy : Strategy
 			.SetOptimize(10, 30, 2);
 
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
-			.SetGreaterThanOrEqualTo(0m)
+			.SetNotNegative()
 			.SetDisplay("Momentum Buy Threshold", "Deviation from 100 required to confirm a bullish setup", "Momentum")
 			.SetCanOptimize(true)
 			.SetOptimize(0.1m, 1.5m, 0.1m);
 
 		_momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
-			.SetGreaterThanOrEqualTo(0m)
+			.SetNotNegative()
 			.SetDisplay("Momentum Sell Threshold", "Deviation from 100 required to confirm a bearish setup", "Momentum")
 			.SetCanOptimize(true)
 			.SetOptimize(0.1m, 1.5m, 0.1m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
-			.SetGreaterThanOrEqualTo(0m)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pts)", "Protective stop-loss distance in points", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(10m, 60m, 5m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
-			.SetGreaterThanOrEqualTo(0m)
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pts)", "Target distance in points", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(20m, 100m, 5m);
