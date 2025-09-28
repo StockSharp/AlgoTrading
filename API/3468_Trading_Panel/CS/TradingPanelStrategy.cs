@@ -114,9 +114,9 @@ public class TradingPanelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStopped(DateTimeOffset time)
+	protected override void OnStopped()
 	{
-		base.OnStopped(time);
+		base.OnStopped();
 
 		// Cancel any leftover protective orders when the strategy stops.
 		CancelLongProtection();

@@ -345,9 +345,9 @@ public AdxSystemDiCrossStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged()
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged();
+		base.OnPositionReceived(position);
 
 		ResetTrailing();
 	}

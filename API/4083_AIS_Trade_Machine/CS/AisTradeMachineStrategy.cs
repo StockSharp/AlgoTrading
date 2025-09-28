@@ -204,11 +204,11 @@ else
 }
 
 /// <inheritdoc />
-protected override void OnStop()
+protected override void OnStopped()
 {
 	CancelProtectionOrders(resetLevels: true);
 
-	base.OnStop();
+	base.OnStopped();
 }
 
 private void ProcessCandle(ICandleMessage candle)

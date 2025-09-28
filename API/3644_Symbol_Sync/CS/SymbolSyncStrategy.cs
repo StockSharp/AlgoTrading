@@ -69,9 +69,9 @@ public class SymbolSyncStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStopped(DateTimeOffset time)
+	protected override void OnStopped()
 	{
-		base.OnStopped(time);
+		base.OnStopped();
 
 		_initialSecurity = null;
 	}

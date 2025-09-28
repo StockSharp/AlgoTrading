@@ -54,7 +54,7 @@ public class PainelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStopped(DateTimeOffset time)
+	protected override void OnStopped()
 	{
 		if (_isStarted)
 		{
@@ -62,7 +62,7 @@ public class PainelStrategy : Strategy
 			_isStarted = false;
 		}
 
-		base.OnStopped(time);
+		base.OnStopped();
 	}
 
 	private void ProcessLevel1(Level1ChangeMessage message)

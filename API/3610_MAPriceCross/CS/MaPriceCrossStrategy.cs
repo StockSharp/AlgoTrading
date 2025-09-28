@@ -21,10 +21,29 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MaPriceCrossStrategy : Strategy
 {
+	public enum MovingAverageMethods
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		LinearWeighted
+	}
+
+	public enum AppliedPrices
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted
+	}
+
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<MovingAverageMethod> _maMethod;
-	private readonly StrategyParam<AppliedPrice> _priceType;
+	private readonly StrategyParam<MovingAverageMethods> _maMethod;
+	private readonly StrategyParam<AppliedPrices> _priceType;
 	private readonly StrategyParam<TimeSpan> _startTime;
 	private readonly StrategyParam<TimeSpan> _stopTime;
 	private readonly StrategyParam<decimal> _stopLossPoints;
@@ -46,11 +65,11 @@ public class MaPriceCrossStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Number of bars used for the moving average", "Moving Average");
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.Simple)
+		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Simple)
 		.SetDisplay("MA Method", "Moving average calculation method", "Moving Average")
 		.SetCanOptimize(true);
 
-		_priceType = Param(nameof(PriceType), AppliedPrice.Close)
+		_priceType = Param(nameof(PriceType), AppliedPrices.Close)
 		.SetDisplay("Applied Price", "Price source forwarded to the moving average", "Moving Average")
 		.SetCanOptimize(true);
 
@@ -61,12 +80,12 @@ public class MaPriceCrossStrategy : Strategy
 		.SetDisplay("Stop Time", "Time of day when new orders are blocked", "Trading Window");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 200m)
-		.SetNonNegative()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss Points", "Protective stop distance expressed in price points", "Protection")
 		.SetCanOptimize(true);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 600m)
-		.SetNonNegative()
+		.SetNotNegative()
 		.SetDisplay("Take Profit Points", "Target distance expressed in price points", "Protection")
 		.SetCanOptimize(true);
 
@@ -97,7 +116,7 @@ public class MaPriceCrossStrategy : Strategy
 	/// <summary>
 	/// Moving average calculation method.
 	/// </summary>
-	public MovingAverageMethod MaMethod
+	public MovingAverageMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -106,7 +125,7 @@ public class MaPriceCrossStrategy : Strategy
 	/// <summary>
 	/// Price source used by the moving average.
 	/// </summary>
-	public AppliedPrice PriceType
+	public AppliedPrices PriceType
 	{
 		get => _priceType.Value;
 		set => _priceType.Value = value;
@@ -266,28 +285,28 @@ public class MaPriceCrossStrategy : Strategy
 		return points * priceStep;
 	}
 
-	private static IIndicator CreateMovingAverage(MovingAverageMethod method, int length)
+	private static IIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
 		return method switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageMethod.LinearWeighted => new WeightedMovingAverage { Length = length },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new SimpleMovingAverage { Length = length }
 		};
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrice priceType)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrices priceType)
 	{
 		return priceType switch
 		{
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice * 2m) / 4m,
 			_ => candle.ClosePrice
 		};
 	}

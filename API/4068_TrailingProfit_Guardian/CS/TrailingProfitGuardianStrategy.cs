@@ -73,9 +73,9 @@ public TrailingProfitGuardianStrategy()
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged()
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged();
+		base.OnPositionReceived(position);
 
 		if (Position == 0m)
 			ResetState();

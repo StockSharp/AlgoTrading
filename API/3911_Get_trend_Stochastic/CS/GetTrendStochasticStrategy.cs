@@ -477,9 +477,9 @@ public class GetTrendStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged(Position position)
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged(position);
+		base.OnPositionReceived(position);
 
 		if (position.Security != Security)
 			return;

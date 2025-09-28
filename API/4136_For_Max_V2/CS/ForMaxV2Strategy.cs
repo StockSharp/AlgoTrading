@@ -272,11 +272,11 @@ public class ForMaxV2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged()
+	protected override void OnPositionReceived(Position position)
 	{
 		var previous = _previousPosition;
 
-		base.OnPositionChanged();
+		base.OnPositionReceived(position);
 
 		var current = Position;
 

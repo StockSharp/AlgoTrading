@@ -106,11 +106,11 @@ public class QuickTradeKeysStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStop()
+	protected override void OnStopped()
 	{
 		Timer.Stop();
 
-		base.OnStop();
+		base.OnStopped();
 	}
 
 	private void ProcessManualCommands()

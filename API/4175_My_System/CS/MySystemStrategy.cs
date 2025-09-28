@@ -26,8 +26,8 @@ public class MySystemStrategy : Strategy
 	private readonly StrategyParam<int> _powerPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private BullPower? _bullsPower;
-	private BearPower? _bearsPower;
+	private BullPower _bullsPower;
+	private BearPower _bearsPower;
 
 	private decimal _pipSize;
 	private decimal? _previousAveragePower;

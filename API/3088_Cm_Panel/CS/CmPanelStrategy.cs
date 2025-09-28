@@ -233,9 +233,9 @@ public class CmPanelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStopped(DateTimeOffset time)
+	protected override void OnStopped()
 	{
-		base.OnStopped(time);
+		base.OnStopped();
 
 		_isRunning = false;
 	}

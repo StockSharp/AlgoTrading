@@ -225,10 +225,10 @@ public class Up3x1Premium2VmStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged()
+	protected override void OnPositionReceived(Position position)
 	// Reset or update trailing anchors whenever the position flips.
 	{
-		base.OnPositionChanged();
+		base.OnPositionReceived(position);
 
 		if (Position > 0m)
 		{

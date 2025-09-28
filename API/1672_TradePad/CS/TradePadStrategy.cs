@@ -62,11 +62,11 @@ public class TradePadStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStop()
+	protected override void OnStopped()
 	{
 		_userPanel?.Dispose();
 
-		base.OnStop();
+		base.OnStopped();
 	}
 
 	private sealed class TradePanel : IDisposable

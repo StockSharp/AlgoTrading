@@ -20,40 +20,40 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BuildYourGridStrategy : Strategy
 {
-	private enum OrderPlacementModes
+	public enum OrderPlacementModes
 	{
 		Both,
 		LongOnly,
 		ShortOnly,
 	}
 
-	private enum GridDirectionModes
+	public enum GridDirectionModes
 	{
 		WithTrend,
 		AgainstTrend,
 	}
 
-	private enum StepProgressionModes
+	public enum StepProgressionModes
 	{
 		Static,
 		Geometric,
 		Exponential,
 	}
 
-	private enum CloseTargetModes
+	public enum CloseTargetModes
 	{
 		Pips,
 		Currency,
 	}
 
-	private enum LossCloseModes
+	public enum LossCloseModes
 	{
 		DoNothing,
 		CloseFirst,
 		CloseAll,
 	}
 
-	private enum LotProgressionModes
+	public enum LotProgressionModes
 	{
 		Static,
 		Geometric,
@@ -384,7 +384,7 @@ public class BuildYourGridStrategy : Strategy
 
 		_maxSpread = Param(nameof(MaxSpread), 0m)
 			.SetDisplay("Max Spread", "Maximum allowed spread in pips (0 = ignore)", "General")
-			.SetMin(0m);
+			.SetNotNegative();
 
 		_useCompletedBar = Param(nameof(UseCompletedBar), false)
 			.SetDisplay("Use Completed Bar", "Process signals only after a candle closes", "General");
