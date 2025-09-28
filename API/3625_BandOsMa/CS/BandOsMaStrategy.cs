@@ -161,7 +161,7 @@ public class BandOsMaStrategy : Strategy
 	/// <summary>
 	/// Moving average method matching the MetaTrader enumeration.
 	/// </summary>
-	public MovingAverageMethods MovingAverageMethods
+	public MovingAverageMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -227,7 +227,7 @@ public class BandOsMaStrategy : Strategy
 		.SetDisplay("OsMA MA Shift", "Shift applied to the moving average buffer", "Indicators")
 		.SetCanOptimize(true);
 
-		_maMethod = Param(nameof(MovingAverageMethods), MovingAverageMethods.Simple)
+		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Simple)
 		.SetDisplay("OsMA MA Method", "Moving average method applied to the OsMA", "Indicators")
 		.SetCanOptimize(true);
 	}
@@ -271,10 +271,10 @@ public class BandOsMaStrategy : Strategy
 		{
 			Macd =
 			{
-				ShortMa = new ExponentialMovingAverage { Length = MacdFastPeriod },
-				LongMa = new ExponentialMovingAverage { Length = MacdSlowPeriod }
+				ShortMa = { Length = MacdFastPeriod },
+				LongMa = { Length = MacdSlowPeriod }
 			},
-			SignalMa = new ExponentialMovingAverage { Length = MacdSignalPeriod }
+			SignalMa = { Length = MacdSignalPeriod }
 		};
 
 		_bollinger = new BollingerBands
@@ -283,11 +283,11 @@ public class BandOsMaStrategy : Strategy
 			Width = BollingerDeviation
 		};
 
-		_osmaAverage = CreateMovingAverage(MovingAverageMethods, MovingAveragePeriod);
+		_osmaAverage = CreateMovingAverage(MaMethod, MovingAveragePeriod);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.WhenCandlesFinished(ProcessCandle)
+		.Bind(ProcessCandle)
 		.Start();
 
 		var area = CreateChartArea();
@@ -371,206 +371,206 @@ public class BandOsMaStrategy : Strategy
 				_activeSignal = 0;
 			}
 		}
-	else if (_activeSignal < 0)
-	{
-		if (currentOsma <= currentMa && previousOsma > previousMa)
+		else if (_activeSignal < 0)
 		{
-			_activeSignal = 0;
+			if (currentOsma <= currentMa && previousOsma > previousMa)
+			{
+				_activeSignal = 0;
+			}
+		}
+
+		if (currentOsma <= currentLower && previousOsma > previousLower)
+		{
+			_activeSignal = 1;
+		}
+		else if (currentOsma >= currentUpper && previousOsma < previousUpper)
+		{
+			_activeSignal = -1;
 		}
 	}
 
-	if (currentOsma <= currentLower && previousOsma > previousLower)
+	private void ManagePosition(ICandleMessage candle)
 	{
-		_activeSignal = 1;
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			return;
+		}
+
+		var stopDistance = StopLossPoints > 0m && _pipSize.HasValue ? StopLossPoints * _pipSize.Value : 0m;
+		_trailingStep = stopDistance > 0m ? stopDistance / 50m : 0m;
+
+		if (Position > 0m)
+		{
+			if (_activeSignal != 1)
+			{
+				SellMarket(Position);
+				ResetStops();
+			}
+			else
+			{
+				UpdateLongTrailing(candle, stopDistance);
+			}
+		}
+		else if (Position < 0m)
+		{
+			if (_activeSignal != -1)
+			{
+				BuyMarket(-Position);
+				ResetStops();
+			}
+			else
+			{
+				UpdateShortTrailing(candle, stopDistance);
+			}
+		}
+		else
+		{
+			ResetStops();
+
+			if (_activeSignal == 1)
+			{
+				BuyMarket(Volume);
+				_longEntryPrice = candle.ClosePrice;
+				if (stopDistance > 0m)
+				{
+					_longStop = candle.ClosePrice - stopDistance;
+				}
+			}
+			else if (_activeSignal == -1)
+			{
+				SellMarket(Volume);
+				_shortEntryPrice = candle.ClosePrice;
+				if (stopDistance > 0m)
+				{
+					_shortStop = candle.ClosePrice + stopDistance;
+				}
+			}
+		}
 	}
-else if (currentOsma >= currentUpper && previousOsma < previousUpper)
-{
-	_activeSignal = -1;
-}
-}
 
-private void ManagePosition(ICandleMessage candle)
-{
-	if (!IsFormedAndOnlineAndAllowTrading())
+	private void UpdateLongTrailing(ICandleMessage candle, decimal stopDistance)
 	{
-		return;
-	}
+		if (stopDistance <= 0m || !_longEntryPrice.HasValue)
+		{
+			return;
+		}
 
-	var stopDistance = StopLossPoints > 0m && _pipSize.HasValue ? StopLossPoints * _pipSize.Value : 0m;
-	_trailingStep = stopDistance > 0m ? stopDistance / 50m : 0m;
+		_longStop ??= _longEntryPrice.Value - stopDistance;
 
-	if (Position > 0m)
-	{
-		if (_activeSignal != 1)
+		var candidate = candle.ClosePrice - stopDistance;
+		if (_longStop.Value + _trailingStep < candidate)
+		{
+			_longStop = candidate;
+		}
+
+		if (_longStop.HasValue && candle.LowPrice <= _longStop.Value)
 		{
 			SellMarket(Position);
 			ResetStops();
 		}
-	else
-	{
-		UpdateLongTrailing(candle, stopDistance);
 	}
-}
-else if (Position < 0m)
-{
-	if (_activeSignal != -1)
-	{
-		BuyMarket(-Position);
-		ResetStops();
-	}
-else
-{
-	UpdateShortTrailing(candle, stopDistance);
-}
-}
-else
-{
-	ResetStops();
 
-	if (_activeSignal == 1)
+	private void UpdateShortTrailing(ICandleMessage candle, decimal stopDistance)
 	{
-		BuyMarket(Volume);
-		_longEntryPrice = candle.ClosePrice;
-		if (stopDistance > 0m)
+		if (stopDistance <= 0m || !_shortEntryPrice.HasValue)
 		{
-			_longStop = candle.ClosePrice - stopDistance;
+			return;
+		}
+
+		_shortStop ??= _shortEntryPrice.Value + stopDistance;
+
+		var candidate = candle.ClosePrice + stopDistance;
+		if (_shortStop.Value - _trailingStep > candidate)
+		{
+			_shortStop = candidate;
+		}
+
+		if (_shortStop.HasValue && candle.HighPrice >= _shortStop.Value)
+		{
+			BuyMarket(-Position);
+			ResetStops();
 		}
 	}
-else if (_activeSignal == -1)
-{
-	SellMarket(Volume);
-	_shortEntryPrice = candle.ClosePrice;
-	if (stopDistance > 0m)
-	{
-		_shortStop = candle.ClosePrice + stopDistance;
-	}
-}
-}
-}
 
-private void UpdateLongTrailing(ICandleMessage candle, decimal stopDistance)
-{
-	if (stopDistance <= 0m || !_longEntryPrice.HasValue)
+	private void ResetStops()
 	{
-		return;
+		_longStop = null;
+		_shortStop = null;
+		_longEntryPrice = null;
+		_shortEntryPrice = null;
 	}
 
-	_longStop ??= _longEntryPrice.Value - stopDistance;
-
-	var candidate = candle.ClosePrice - stopDistance;
-	if (_longStop.Value + _trailingStep < candidate)
+	private void TrimHistory()
 	{
-		_longStop = candidate;
+		var maxLength = Math.Max(Math.Max(BollingerShift, MovingAverageShift), 2) + BollingerPeriod + 5;
+		TrimList(_osmaHistory, maxLength);
+		TrimList(_upperBandHistory, maxLength);
+		TrimList(_lowerBandHistory, maxLength);
+		TrimList(_maHistory, maxLength);
 	}
 
-	if (_longStop.HasValue && candle.LowPrice <= _longStop.Value)
+	private static void TrimList(List<decimal> list, int maxLength)
 	{
-		SellMarket(Position);
-		ResetStops();
-	}
-}
+		if (maxLength < 0)
+		{
+			maxLength = 0;
+		}
 
-private void UpdateShortTrailing(ICandleMessage candle, decimal stopDistance)
-{
-	if (stopDistance <= 0m || !_shortEntryPrice.HasValue)
-	{
-		return;
-	}
+		var extra = list.Count - maxLength;
+		if (extra <= 0)
+		{
+			return;
+		}
 
-	_shortStop ??= _shortEntryPrice.Value + stopDistance;
-
-	var candidate = candle.ClosePrice + stopDistance;
-	if (_shortStop.Value - _trailingStep > candidate)
-	{
-		_shortStop = candidate;
+		list.RemoveRange(0, extra);
 	}
 
-	if (_shortStop.HasValue && candle.HighPrice >= _shortStop.Value)
+	private static bool TryGetRecentPair(List<decimal> history, int shift, out decimal current, out decimal previous)
 	{
-		BuyMarket(-Position);
-		ResetStops();
-	}
-}
+		current = 0m;
+		previous = 0m;
 
-private void ResetStops()
-{
-	_longStop = null;
-	_shortStop = null;
-	_longEntryPrice = null;
-	_shortEntryPrice = null;
-}
+		if (shift < 0)
+		{
+			shift = 0;
+		}
 
-private void TrimHistory()
-{
-	var maxLength = Math.Max(Math.Max(BollingerShift, MovingAverageShift), 2) + BollingerPeriod + 5;
-	TrimList(_osmaHistory, maxLength);
-	TrimList(_upperBandHistory, maxLength);
-	TrimList(_lowerBandHistory, maxLength);
-	TrimList(_maHistory, maxLength);
-}
+		var currentIndex = history.Count - 1 - shift;
+		var previousIndex = history.Count - 2 - shift;
+		if (previousIndex < 0 || currentIndex >= history.Count)
+		{
+			return false;
+		}
 
-private static void TrimList(List<decimal> list, int maxLength)
-{
-	if (maxLength < 0)
-	{
-		maxLength = 0;
+		current = history[currentIndex];
+		previous = history[previousIndex];
+		return true;
 	}
 
-	var extra = list.Count - maxLength;
-	if (extra <= 0)
+	private static decimal GetAppliedPrice(ICandleMessage candle, IndicatorAppliedPrices priceType)
 	{
-		return;
+		return priceType switch
+		{
+			IndicatorAppliedPrices.Open => candle.OpenPrice,
+			IndicatorAppliedPrices.High => candle.HighPrice,
+			IndicatorAppliedPrices.Low => candle.LowPrice,
+			IndicatorAppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			IndicatorAppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			IndicatorAppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
+			_ => candle.ClosePrice
+		};
 	}
 
-	list.RemoveRange(0, extra);
-}
-
-private static bool TryGetRecentPair(List<decimal> history, int shift, out decimal current, out decimal previous)
-{
-	current = 0m;
-	previous = 0m;
-
-	if (shift < 0)
+	private static IIndicator CreateMovingAverage(MovingAverageMethods method, int length)
 	{
-		shift = 0;
+		return method switch
+		{
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
+			_ => new SimpleMovingAverage { Length = length }
+		};
 	}
-
-	var currentIndex = history.Count - 1 - shift;
-	var previousIndex = history.Count - 2 - shift;
-	if (previousIndex < 0 || currentIndex >= history.Count)
-	{
-		return false;
-	}
-
-	current = history[currentIndex];
-	previous = history[previousIndex];
-	return true;
-}
-
-private static decimal GetAppliedPrice(ICandleMessage candle, IndicatorAppliedPrices priceType)
-{
-	return priceType switch
-	{
-		IndicatorAppliedPrices.Open => candle.OpenPrice,
-		IndicatorAppliedPrices.High => candle.HighPrice,
-		IndicatorAppliedPrices.Low => candle.LowPrice,
-		IndicatorAppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-		IndicatorAppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-		IndicatorAppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
-		_ => candle.ClosePrice
-	};
-}
-
-private static IIndicator CreateMovingAverage(MovingAverageMethods method, int length)
-{
-	return method switch
-	{
-		MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = length },
-		MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = length },
-		MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-		_ => new SimpleMovingAverage { Length = length }
-	};
-}
 
 	public enum IndicatorAppliedPrices
 	{

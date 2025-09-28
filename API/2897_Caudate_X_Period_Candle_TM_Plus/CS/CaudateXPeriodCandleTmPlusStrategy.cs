@@ -60,7 +60,7 @@ public class CaudateXPeriodCandleTmPlusStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Number of bars to delay signal evaluation", "Indicator");
 
-		_smoothingMethod = Param(nameof(SmoothingMethods), SmoothingMethods.Jjma)
+		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothingMethods.Jjma)
 			.SetDisplay("Smoothing Method", "Moving average applied to price components", "Indicator");
 
 		_maLength = Param(nameof(MaLength), 3)
@@ -128,7 +128,7 @@ public class CaudateXPeriodCandleTmPlusStrategy : Strategy
 	/// <summary>
 	/// Moving average type used to smooth price components.
 	/// </summary>
-	public SmoothingMethods SmoothingMethods
+	public SmoothingMethods SmoothingMethod
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -245,10 +245,10 @@ public class CaudateXPeriodCandleTmPlusStrategy : Strategy
 		base.OnStarted(time);
 
 		// Create separate smoothing filters for each candle component.
-		_openAverage = CreateMovingAverage(SmoothingMethods, MaLength);
-		_highAverage = CreateMovingAverage(SmoothingMethods, MaLength);
-		_lowAverage = CreateMovingAverage(SmoothingMethods, MaLength);
-		_closeAverage = CreateMovingAverage(SmoothingMethods, MaLength);
+		_openAverage = CreateMovingAverage(SmoothingMethod, MaLength);
+		_highAverage = CreateMovingAverage(SmoothingMethod, MaLength);
+		_lowAverage = CreateMovingAverage(SmoothingMethod, MaLength);
+		_closeAverage = CreateMovingAverage(SmoothingMethod, MaLength);
 
 		_highest = new Highest { Length = Period };
 		_lowest = new Lowest { Length = Period };

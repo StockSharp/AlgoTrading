@@ -48,7 +48,7 @@ public class SmartTrendFollowerStrategy : Strategy
 	/// <summary>
 	/// Trading signal mode.
 	/// </summary>
-	public SignalModes SignalModes
+	public SignalModes SignalMode
 	{
 		get => _signalMode.Value;
 		set => _signalMode.Value = value;
@@ -158,7 +158,7 @@ public class SmartTrendFollowerStrategy : Strategy
 	/// </summary>
 	public SmartTrendFollowerStrategy()
 	{
-		_signalMode = Param(nameof(SignalModes), SignalModes.CrossMa)
+		_signalMode = Param(nameof(SignalMode), SignalModes.CrossMa)
 		.SetDisplay("Signal Mode", "Trading logic selection", "Signals");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
@@ -210,400 +210,400 @@ public class SmartTrendFollowerStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-	return [(Security, CandleType)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
-	base.OnReseted();
+		base.OnReseted();
 
-	_fastSma = null;
-	_slowSma = null;
-	_stochastic = null;
+		_fastSma = null;
+		_slowSma = null;
+		_stochastic = null;
 
-	_longEntries.Clear();
-	_shortEntries.Clear();
+		_longEntries.Clear();
+		_shortEntries.Clear();
 
-	_prevFast = null;
-	_prevSlow = null;
-	_pipSize = 0m;
-	_longExitRequested = false;
-	_shortExitRequested = false;
+		_prevFast = null;
+		_prevSlow = null;
+		_pipSize = 0m;
+		_longExitRequested = false;
+		_shortExitRequested = false;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
-	base.OnStarted(time);
+		base.OnStarted(time);
 
-	_fastSma = new SMA { Length = Math.Max(1, FastPeriod) };
-	_slowSma = new SMA { Length = Math.Max(1, SlowPeriod) };
-	_stochastic = new StochasticOscillator
-	{
-	Length = Math.Max(1, StochasticKPeriod),
-	K = { Length = Math.Max(1, StochasticSlowing) },
-	D = { Length = Math.Max(1, StochasticDPeriod) }
-	};
+		_fastSma = new SMA { Length = Math.Max(1, FastPeriod) };
+		_slowSma = new SMA { Length = Math.Max(1, SlowPeriod) };
+		_stochastic = new StochasticOscillator
+		{
+			Length = Math.Max(1, StochasticKPeriod),
+			K = { Length = Math.Max(1, StochasticSlowing) },
+			D = { Length = Math.Max(1, StochasticDPeriod) }
+		};
 
-	var subscription = SubscribeCandles(CandleType);
-	subscription
-	.BindEx(_fastSma, _slowSma, _stochastic, ProcessCandle)
-	.Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+		.BindEx(_fastSma, _slowSma, _stochastic, ProcessCandle)
+		.Start();
 
-	_pipSize = CalculatePipSize();
+		_pipSize = CalculatePipSize();
 
-	var area = CreateChartArea();
-	if (area != null)
-	{
-	DrawCandles(area, subscription);
-	DrawIndicator(area, _fastSma);
-	DrawIndicator(area, _slowSma);
-	DrawIndicator(area, _stochastic);
-	DrawOwnTrades(area);
-	}
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, _fastSma);
+			DrawIndicator(area, _slowSma);
+			DrawIndicator(area, _stochastic);
+			DrawOwnTrades(area);
+		}
 
-	StartProtection();
+		StartProtection();
 	}
 
 	/// <inheritdoc />
 	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-	base.OnOwnTradeReceived(trade);
+		base.OnOwnTradeReceived(trade);
 
-	var info = trade.Trade;
-	var price = info.Price;
-	var volume = info.Volume;
+		var info = trade.Trade;
+		var price = info.Price;
+		var volume = info.Volume;
 
-	if (info.Side == Sides.Buy)
-	{
-	ReduceEntries(_shortEntries, ref volume);
+		if (info.Side == Sides.Buy)
+		{
+			ReduceEntries(_shortEntries, ref volume);
 
-	if (volume > 0m)
-	{
-	_longEntries.Add(new PositionEntry(price, volume));
-	}
-	}
-	else if (info.Side == Sides.Sell)
-	{
-	ReduceEntries(_longEntries, ref volume);
+			if (volume > 0m)
+			{
+				_longEntries.Add(new PositionEntry(price, volume));
+			}
+		}
+		else if (info.Side == Sides.Sell)
+		{
+			ReduceEntries(_longEntries, ref volume);
 
-	if (volume > 0m)
-	{
-	_shortEntries.Add(new PositionEntry(price, volume));
-	}
-	}
+			if (volume > 0m)
+			{
+				_shortEntries.Add(new PositionEntry(price, volume));
+			}
+		}
 
-	if (GetTotalVolume(_longEntries) <= 0m)
-	{
-	_longEntries.Clear();
-	_longExitRequested = false;
-	}
+		if (GetTotalVolume(_longEntries) <= 0m)
+		{
+			_longEntries.Clear();
+			_longExitRequested = false;
+		}
 
-	if (GetTotalVolume(_shortEntries) <= 0m)
-	{
-	_shortEntries.Clear();
-	_shortExitRequested = false;
-	}
+		if (GetTotalVolume(_shortEntries) <= 0m)
+		{
+			_shortEntries.Clear();
+			_shortExitRequested = false;
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue fastValue, IIndicatorValue slowValue, IIndicatorValue stochasticValue)
 	{
-	if (candle.State != CandleStates.Finished)
-	return;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	var fast = fastValue.ToDecimal();
-	var slow = slowValue.ToDecimal();
+		var fast = fastValue.ToDecimal();
+		var slow = slowValue.ToDecimal();
 
-	ManageExits(candle);
+		ManageExits(candle);
 
-	var signal = SignalDirections.None;
+		var signal = SignalDirections.None;
 
-	if (SignalModes == SignalModes.CrossMa)
-	{
-	if (_prevFast.HasValue && _prevSlow.HasValue)
-	{
-	var crossBuy = fast < slow && _prevSlow.Value < _prevFast.Value;
-	var crossSell = fast > slow && _prevSlow.Value > _prevFast.Value;
+		if (SignalMode == SignalModes.CrossMa)
+		{
+			if (_prevFast.HasValue && _prevSlow.HasValue)
+			{
+				var crossBuy = fast < slow && _prevSlow.Value < _prevFast.Value;
+				var crossSell = fast > slow && _prevSlow.Value > _prevFast.Value;
 
-	if (crossBuy)
-	signal = SignalDirections.Buy;
-	else if (crossSell)
-	signal = SignalDirections.Sell;
-	}
-	}
-	else if (_stochastic?.IsFormed == true && stochasticValue is StochasticOscillatorValue stoch && stoch.K is decimal kValue)
-	{
-	var bullish = candle.ClosePrice > candle.OpenPrice;
-	var bearish = candle.ClosePrice < candle.OpenPrice;
+				if (crossBuy)
+					signal = SignalDirections.Buy;
+				else if (crossSell)
+					signal = SignalDirections.Sell;
+			}
+		}
+		else if (_stochastic?.IsFormed == true && stochasticValue is StochasticOscillatorValue stoch && stoch.K is decimal kValue)
+		{
+			var bullish = candle.ClosePrice > candle.OpenPrice;
+			var bearish = candle.ClosePrice < candle.OpenPrice;
 
-	if (fast > slow && bullish && kValue <= 30m)
-	signal = SignalDirections.Buy;
-	else if (fast < slow && bearish && kValue >= 70m)
-	signal = SignalDirections.Sell;
-	}
+			if (fast > slow && bullish && kValue <= 30m)
+				signal = SignalDirections.Buy;
+			else if (fast < slow && bearish && kValue >= 70m)
+				signal = SignalDirections.Sell;
+		}
 
-	if (signal != SignalDirections.None && IsFormedAndOnlineAndAllowTrading())
-	{
-	ProcessSignal(signal, candle.ClosePrice);
-	}
+		if (signal != SignalDirections.None && IsFormedAndOnlineAndAllowTrading())
+		{
+			ProcessSignal(signal, candle.ClosePrice);
+		}
 
-	_prevFast = fast;
-	_prevSlow = slow;
+		_prevFast = fast;
+		_prevSlow = slow;
 	}
 
 	private void ProcessSignal(SignalDirections signal, decimal referencePrice)
 	{
-	switch (signal)
-	{
-	case SignalDirections.Buy:
-	{
-	var shortVolume = GetTotalVolume(_shortEntries);
-	if (shortVolume > 0m)
-	{
-	if (!_shortExitRequested)
-	{
-	_shortExitRequested = true;
-	BuyMarket(shortVolume);
-	}
-	return;
-	}
+		switch (signal)
+		{
+			case SignalDirections.Buy:
+			{
+				var shortVolume = GetTotalVolume(_shortEntries);
+				if (shortVolume > 0m)
+				{
+					if (!_shortExitRequested)
+					{
+						_shortExitRequested = true;
+						BuyMarket(shortVolume);
+					}
+					return;
+				}
 
-	var longCount = _longEntries.Count;
-	var requested = CalculateRequestedVolume(longCount);
-	var volume = PrepareNextVolume(requested);
-	if (volume <= 0m)
-	return;
+				var longCount = _longEntries.Count;
+				var requested = CalculateRequestedVolume(longCount);
+				var volume = PrepareNextVolume(requested);
+				if (volume <= 0m)
+					return;
 
-	if (longCount == 0)
-	{
-	BuyMarket(volume);
-	return;
-	}
+				if (longCount == 0)
+				{
+					BuyMarket(volume);
+					return;
+				}
 
-	var lowest = GetExtremePrice(_longEntries, true);
-	var threshold = lowest - LayerDistancePips * (_pipSize > 0m ? _pipSize : 1m);
+				var lowest = GetExtremePrice(_longEntries, true);
+				var threshold = lowest - LayerDistancePips * (_pipSize > 0m ? _pipSize : 1m);
 
-	if (referencePrice <= threshold)
-	{
-	BuyMarket(volume);
-	}
+				if (referencePrice <= threshold)
+				{
+					BuyMarket(volume);
+				}
 
-	break;
-	}
-	case SignalDirections.Sell:
-	{
-	var longVolume = GetTotalVolume(_longEntries);
-	if (longVolume > 0m)
-	{
-	if (!_longExitRequested)
-	{
-	_longExitRequested = true;
-	SellMarket(longVolume);
-	}
-	return;
-	}
+				break;
+			}
+			case SignalDirections.Sell:
+			{
+				var longVolume = GetTotalVolume(_longEntries);
+				if (longVolume > 0m)
+				{
+					if (!_longExitRequested)
+					{
+						_longExitRequested = true;
+						SellMarket(longVolume);
+					}
+					return;
+				}
 
-	var shortCount = _shortEntries.Count;
-	var requested = CalculateRequestedVolume(shortCount);
-	var volume = PrepareNextVolume(requested);
-	if (volume <= 0m)
-	return;
+				var shortCount = _shortEntries.Count;
+				var requested = CalculateRequestedVolume(shortCount);
+				var volume = PrepareNextVolume(requested);
+				if (volume <= 0m)
+					return;
 
-	if (shortCount == 0)
-	{
-	SellMarket(volume);
-	return;
-	}
+				if (shortCount == 0)
+				{
+					SellMarket(volume);
+					return;
+				}
 
-	var highest = GetExtremePrice(_shortEntries, false);
-	var threshold = highest + LayerDistancePips * (_pipSize > 0m ? _pipSize : 1m);
+				var highest = GetExtremePrice(_shortEntries, false);
+				var threshold = highest + LayerDistancePips * (_pipSize > 0m ? _pipSize : 1m);
 
-	if (referencePrice >= threshold)
-	{
-	SellMarket(volume);
-	}
+				if (referencePrice >= threshold)
+				{
+					SellMarket(volume);
+				}
 
-	break;
-	}
-	}
+				break;
+			}
+		}
 	}
 
 	private void ManageExits(ICandleMessage candle)
 	{
-	var longVolume = GetTotalVolume(_longEntries);
-	if (longVolume > 0m && !_longExitRequested)
-	{
-	var average = GetAveragePrice(_longEntries);
-	var takeProfit = TakeProfitPips > 0m ? average + TakeProfitPips * (_pipSize > 0m ? _pipSize : 1m) : (decimal?)null;
-	var stopLoss = StopLossPips > 0m ? average - StopLossPips * (_pipSize > 0m ? _pipSize : 1m) : (decimal?)null;
+		var longVolume = GetTotalVolume(_longEntries);
+		if (longVolume > 0m && !_longExitRequested)
+		{
+			var average = GetAveragePrice(_longEntries);
+			var takeProfit = TakeProfitPips > 0m ? average + TakeProfitPips * (_pipSize > 0m ? _pipSize : 1m) : (decimal?)null;
+			var stopLoss = StopLossPips > 0m ? average - StopLossPips * (_pipSize > 0m ? _pipSize : 1m) : (decimal?)null;
 
-	if (takeProfit.HasValue && candle.HighPrice >= takeProfit.Value)
-	{
-	_longExitRequested = true;
-	SellMarket(longVolume);
-	return;
-	}
+			if (takeProfit.HasValue && candle.HighPrice >= takeProfit.Value)
+			{
+				_longExitRequested = true;
+				SellMarket(longVolume);
+				return;
+			}
 
-	if (stopLoss.HasValue && candle.LowPrice <= stopLoss.Value)
-	{
-	_longExitRequested = true;
-	SellMarket(longVolume);
-	return;
-	}
-	}
+			if (stopLoss.HasValue && candle.LowPrice <= stopLoss.Value)
+			{
+				_longExitRequested = true;
+				SellMarket(longVolume);
+				return;
+			}
+		}
 
-	var shortVolume = GetTotalVolume(_shortEntries);
-	if (shortVolume > 0m && !_shortExitRequested)
-	{
-	var average = GetAveragePrice(_shortEntries);
-	var takeProfit = TakeProfitPips > 0m ? average - TakeProfitPips * (_pipSize > 0m ? _pipSize : 1m) : (decimal?)null;
-	var stopLoss = StopLossPips > 0m ? average + StopLossPips * (_pipSize > 0m ? _pipSize : 1m) : (decimal?)null;
+		var shortVolume = GetTotalVolume(_shortEntries);
+		if (shortVolume > 0m && !_shortExitRequested)
+		{
+			var average = GetAveragePrice(_shortEntries);
+			var takeProfit = TakeProfitPips > 0m ? average - TakeProfitPips * (_pipSize > 0m ? _pipSize : 1m) : (decimal?)null;
+			var stopLoss = StopLossPips > 0m ? average + StopLossPips * (_pipSize > 0m ? _pipSize : 1m) : (decimal?)null;
 
-	if (takeProfit.HasValue && candle.LowPrice <= takeProfit.Value)
-	{
-	_shortExitRequested = true;
-	BuyMarket(shortVolume);
-	return;
-	}
+			if (takeProfit.HasValue && candle.LowPrice <= takeProfit.Value)
+			{
+				_shortExitRequested = true;
+				BuyMarket(shortVolume);
+				return;
+			}
 
-	if (stopLoss.HasValue && candle.HighPrice >= stopLoss.Value)
-	{
-	_shortExitRequested = true;
-	BuyMarket(shortVolume);
-	}
-	}
+			if (stopLoss.HasValue && candle.HighPrice >= stopLoss.Value)
+			{
+				_shortExitRequested = true;
+				BuyMarket(shortVolume);
+			}
+		}
 	}
 
 	private decimal CalculateRequestedVolume(int existingCount)
 	{
-	if (InitialVolume <= 0m)
-	return 0m;
+		if (InitialVolume <= 0m)
+			return 0m;
 
-	var result = InitialVolume;
+		var result = InitialVolume;
 
-	if (existingCount > 0 && Multiplier > 0m)
-	{
-	result *= (decimal)Math.Pow((double)Math.Max(Multiplier, 1m), existingCount);
-	}
+		if (existingCount > 0 && Multiplier > 0m)
+		{
+			result *= (decimal)Math.Pow((double)Math.Max(Multiplier, 1m), existingCount);
+		}
 
-	return result;
+		return result;
 	}
 
 	private decimal PrepareNextVolume(decimal requested)
 	{
-	if (requested <= 0m)
-	return 0m;
+		if (requested <= 0m)
+			return 0m;
 
-	var security = Security;
-	if (security == null)
-	return requested;
+		var security = Security;
+		if (security == null)
+			return requested;
 
-	var step = security.VolumeStep ?? 0m;
-	if (step > 0m)
-	{
-	requested = step * Math.Round(requested / step, MidpointRounding.AwayFromZero);
-	}
+		var step = security.VolumeStep ?? 0m;
+		if (step > 0m)
+		{
+			requested = step * Math.Round(requested / step, MidpointRounding.AwayFromZero);
+		}
 
-	var min = security.VolumeMin ?? 0m;
-	if (min > 0m && requested < min)
-	return 0m;
+		var min = security.VolumeMin ?? 0m;
+		if (min > 0m && requested < min)
+			return 0m;
 
-	var max = security.VolumeMax ?? decimal.MaxValue;
-	if (requested > max)
-	{
-	requested = max;
-	}
+		var max = security.VolumeMax ?? decimal.MaxValue;
+		if (requested > max)
+		{
+			requested = max;
+		}
 
-	return requested;
+		return requested;
 	}
 
 	private void ReduceEntries(List<PositionEntry> entries, ref decimal volume)
 	{
-	var index = 0;
-	while (volume > 0m && index < entries.Count)
-	{
-	var entry = entries[index];
-	if (volume >= entry.Volume)
-	{
-	volume -= entry.Volume;
-	entries.RemoveAt(index);
-	}
-	else
-	{
-	entry.Volume -= volume;
-	volume = 0m;
-	entries[index] = entry;
-	}
-	}
+		var index = 0;
+		while (volume > 0m && index < entries.Count)
+		{
+			var entry = entries[index];
+			if (volume >= entry.Volume)
+			{
+				volume -= entry.Volume;
+				entries.RemoveAt(index);
+			}
+			else
+			{
+				entry.Volume -= volume;
+				volume = 0m;
+				entries[index] = entry;
+			}
+		}
 	}
 
 	private static decimal GetTotalVolume(List<PositionEntry> entries)
 	{
-	var total = 0m;
-	for (var i = 0; i < entries.Count; i++)
-	total += entries[i].Volume;
-	return total;
+		var total = 0m;
+		for (var i = 0; i < entries.Count; i++)
+			total += entries[i].Volume;
+		return total;
 	}
 
 	private static decimal GetAveragePrice(List<PositionEntry> entries)
 	{
-	var totalVolume = GetTotalVolume(entries);
-	if (totalVolume <= 0m)
-	return 0m;
+		var totalVolume = GetTotalVolume(entries);
+		if (totalVolume <= 0m)
+			return 0m;
 
-	var weighted = 0m;
-	for (var i = 0; i < entries.Count; i++)
-	weighted += entries[i].Price * entries[i].Volume;
+		var weighted = 0m;
+		for (var i = 0; i < entries.Count; i++)
+			weighted += entries[i].Price * entries[i].Volume;
 
-	return weighted / totalVolume;
+		return weighted / totalVolume;
 	}
 
 	private static decimal GetExtremePrice(List<PositionEntry> entries, bool forLong)
 	{
-	if (entries.Count == 0)
-	return 0m;
+		if (entries.Count == 0)
+			return 0m;
 
-	var extreme = entries[0].Price;
-	for (var i = 1; i < entries.Count; i++)
-	{
-	var price = entries[i].Price;
-	if (forLong)
-	{
-	if (price < extreme)
-	extreme = price;
-	}
-	else if (price > extreme)
-	{
-	extreme = price;
-	}
-	}
+		var extreme = entries[0].Price;
+		for (var i = 1; i < entries.Count; i++)
+		{
+			var price = entries[i].Price;
+			if (forLong)
+			{
+				if (price < extreme)
+					extreme = price;
+			}
+			else if (price > extreme)
+			{
+				extreme = price;
+			}
+		}
 
-	return extreme;
+		return extreme;
 	}
 
 	private decimal CalculatePipSize()
 	{
-	var security = Security;
-	if (security == null)
-	return 0m;
+		var security = Security;
+		if (security == null)
+			return 0m;
 
-	var step = security.PriceStep ?? 0m;
-	if (step <= 0m)
-	return 0m;
+		var step = security.PriceStep ?? 0m;
+		if (step <= 0m)
+			return 0m;
 
-	var decimals = security.Decimals;
-	if (decimals == 3 || decimals == 5)
-	return step * 10m;
+		var decimals = security.Decimals;
+		if (decimals == 3 || decimals == 5)
+			return step * 10m;
 
-	return step;
+		return step;
 	}
 
 	private enum SignalDirections
 	{
-	None,
-	Buy,
-	Sell
+		None,
+		Buy,
+		Sell
 	}
 
 	/// <summary>
@@ -611,28 +611,27 @@ public class SmartTrendFollowerStrategy : Strategy
 	/// </summary>
 	public enum SignalModes
 	{
-	/// <summary>
-	/// Use moving average crossovers in a contrarian fashion.
-	/// </summary>
-	CrossMa,
+		/// <summary>
+		/// Use moving average crossovers in a contrarian fashion.
+		/// </summary>
+		CrossMa,
 
-	/// <summary>
-	/// Follow trend direction using moving averages with stochastic confirmation.
-	/// </summary>
-	Trend
+		/// <summary>
+		/// Follow trend direction using moving averages with stochastic confirmation.
+		/// </summary>
+		Trend
 	}
 
 	private sealed class PositionEntry
 	{
-	public PositionEntry(decimal price, decimal volume)
-	{
-	Price = price;
-	Volume = volume;
-	}
+		public PositionEntry(decimal price, decimal volume)
+		{
+			Price = price;
+			Volume = volume;
+		}
 
-	public decimal Price { get; }
+		public decimal Price { get; }
 
-	public decimal Volume { get; set; }
+		public decimal Volume { get; set; }
 	}
 }
-

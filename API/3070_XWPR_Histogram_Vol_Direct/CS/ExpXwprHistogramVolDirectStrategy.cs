@@ -157,7 +157,7 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 	/// <summary>
 	/// Volume source used to weight Williams %R values.
 	/// </summary>
-	public VolumeSources VolumeSources
+	public VolumeSources VolumeSource
 	{
 		get => _volumeSource.Value;
 		set => _volumeSource.Value = value;
@@ -306,13 +306,13 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal williamsValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
 		var time = candle.OpenTime;
-		decimal volume = VolumeSources == VolumeSources.Tick ? candle.TotalTicks : candle.TotalVolume;
+		decimal volume = VolumeSource == VolumeSources.Tick ? candle.TotalTicks : candle.TotalVolume;
 		var weightedValue = (williamsValue + 50m) * volume;
 
 		var valueResult = _valueSmoother.Process(weightedValue, time, true);
@@ -337,7 +337,7 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 		UpdateHistory(direction);
 
 		if (!TryGetColors(out var recentColor, out var olderColor))
-		return;
+			return;
 
 		var shouldOpenLong = false;
 		var shouldOpenShort = false;
@@ -370,7 +370,7 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 		}
 
 		if (!shouldOpenLong && !shouldOpenShort && !shouldCloseLong && !shouldCloseShort)
-		return;
+			return;
 
 		var high2 = HighLevel2 * smoothedVolume;
 		var high1 = HighLevel1 * smoothedVolume;
@@ -409,7 +409,7 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 	private void UpdateHistory(int? direction)
 	{
 		if (direction is null)
-		return;
+			return;
 
 		var shift = SignalShift;
 		var required = shift + 2;
@@ -451,13 +451,13 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 	private static int DetermineDirection(decimal current, decimal? previousValue, int? previousDirection)
 	{
 		if (previousValue is null)
-		return previousDirection ?? 0;
+			return previousDirection ?? 0;
 
 		if (current > previousValue.Value)
-		return 0;
+			return 0;
 
 		if (current < previousValue.Value)
-		return 1;
+			return 1;
 
 		return previousDirection ?? 0;
 	}
@@ -465,16 +465,16 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 	private static string ClassifyZone(decimal value, decimal high2, decimal high1, decimal low1, decimal low2)
 	{
 		if (value > high2)
-		return "Extreme Bullish";
+			return "Extreme Bullish";
 
 		if (value > high1)
-		return "Bullish";
+			return "Bullish";
 
 		if (value < low2)
-		return "Extreme Bearish";
+			return "Extreme Bearish";
 
 		if (value < low1)
-		return "Bearish";
+			return "Bearish";
 
 		return "Neutral";
 	}
@@ -519,4 +519,3 @@ public class ExpXwprHistogramVolDirectStrategy : Strategy
 		Real,
 	}
 }
-

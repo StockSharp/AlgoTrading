@@ -74,7 +74,7 @@ public class CandlesSmoothedStrategy : Strategy
 	/// <summary>
 	/// Moving average smoothing method.
 	/// </summary>
-	public MaMethods MaMethods
+	public MaMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -93,7 +93,7 @@ public class CandlesSmoothedStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(10, 60, 5);
 
-		_maMethod = Param(nameof(MaMethods), MaMethods.Weighted)
+		_maMethod = Param(nameof(MaMethod), MaMethods.Weighted)
 			.SetDisplay("MA Method", "Smoothing algorithm for candle difference", "Indicator");
 	}
 
@@ -108,7 +108,7 @@ public class CandlesSmoothedStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_ma = MaMethods switch
+		_ma = MaMethod switch
 		{
 			MaMethods.Simple => new SMA { Length = MaLength },
 			MaMethods.Exponential => new EMA { Length = MaLength },

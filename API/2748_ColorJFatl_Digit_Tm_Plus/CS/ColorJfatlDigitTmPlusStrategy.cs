@@ -143,7 +143,7 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 	/// <summary>
 	/// Applied price option for the digital filter input.
 	/// </summary>
-	public AppliedPrices AppliedPrices
+	public AppliedPrices AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -229,7 +229,7 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(3, 15, 1);
 
-		_appliedPrice = Param(nameof(AppliedPrices), AppliedPrices.Close)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPrices.Close)
 		.SetDisplay("Applied Price", "Price source for the filter", "Indicator");
 
 		_roundingDigits = Param(nameof(RoundingDigits), 2)
@@ -265,13 +265,13 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 
 		_indicator = new ColorJfatlDigitIndicator
 		{
-			AppliedPrices = AppliedPrices,
+			AppliedPrices = AppliedPrice,
 			RoundingDigits = RoundingDigits,
 			JmaLength = JmaLength,
 		};
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.WhenNew(ProcessCandle).Start();
+		subscription.Bind(ProcessCandle).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -284,20 +284,20 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		var indicatorValue = (ColorJfatlDigitValue)_indicator.Process(candle);
 		if (!_indicator.IsFormed || indicatorValue.Color is null)
-		return;
+			return;
 
 		_colorHistory.Add(indicatorValue.Color.Value);
 
 		var maxHistory = Math.Max(SignalBar + 2, 2);
 		if (_colorHistory.Count > maxHistory)
-		_colorHistory.RemoveAt(0);
+			_colorHistory.RemoveAt(0);
 
 		if (!TryGetColors(out var currentColor, out var previousColor))
-		return;
+			return;
 
 		var buyOpen = false;
 		var sellOpen = false;
@@ -307,23 +307,23 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 		if (currentColor == 2)
 		{
 			if (EnableBuyEntries && previousColor < 2)
-			buyOpen = true;
+				buyOpen = true;
 
 			if (EnableSellExits)
-			sellClose = true;
+				sellClose = true;
 		}
 		else if (currentColor == 0)
 		{
 			if (EnableSellEntries && previousColor > 0)
-			sellOpen = true;
+				sellOpen = true;
 
 			if (EnableBuyExits)
-			buyClose = true;
+				buyClose = true;
 		}
 
 		HandleTimeExit(candle);
 		if (HandleStops(candle))
-		return;
+			return;
 
 		if (buyClose && Position > 0)
 		{
@@ -366,7 +366,7 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 
 		var offset = Math.Max(SignalBar, 1);
 		if (_colorHistory.Count < offset + 1)
-		return false;
+			return false;
 
 		currentColor = _colorHistory[^offset];
 		previousColor = _colorHistory[^(offset + 1)];
@@ -376,16 +376,16 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 	private void HandleTimeExit(ICandleMessage candle)
 	{
 		if (!UseTimeExit || Position == 0 || _entryTime is null || HoldingMinutes <= 0)
-		return;
+			return;
 
 		var elapsed = candle.CloseTime - _entryTime.Value;
 		if (elapsed < TimeSpan.FromMinutes(HoldingMinutes))
-		return;
+			return;
 
 		if (Position > 0)
-		SellMarket(Math.Abs(Position));
+			SellMarket(Math.Abs(Position));
 		else if (Position < 0)
-		BuyMarket(Math.Abs(Position));
+			BuyMarket(Math.Abs(Position));
 
 		_entryPrice = null;
 		_entryTime = null;
@@ -394,7 +394,7 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 	private bool HandleStops(ICandleMessage candle)
 	{
 		if (Position == 0 || _entryPrice is null)
-		return false;
+			return false;
 
 		var step = Security?.PriceStep ?? 1m;
 		var stopOffset = StopLossPoints > 0 ? StopLossPoints * step : 0m;
@@ -477,13 +477,13 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 		{
 			var candle = input.GetValue<ICandleMessage>();
 			if (!input.IsFinal)
-			return new ColorJfatlDigitValue(this, input, null, null, false);
+				return new ColorJfatlDigitValue(this, input, null, null, false);
 
 			var price = GetPrice(candle);
 			_buffer[_bufferIndex] = price;
 			_bufferIndex = (_bufferIndex + 1) % _buffer.Length;
 			if (_bufferCount < _buffer.Length)
-			_bufferCount++;
+				_bufferCount++;
 
 			if (_bufferCount < _buffer.Length)
 			{
@@ -513,11 +513,11 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 			{
 				var diff = smoothed - prev;
 				if (diff > 0m)
-				color = 2;
+					color = 2;
 				else if (diff < 0m)
-				color = 0;
+					color = 0;
 				else if (_previousColor.HasValue)
-				color = _previousColor.Value;
+					color = _previousColor.Value;
 			}
 
 			_previousLine = smoothed;
@@ -561,11 +561,11 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 		{
 			var res = candle.HighPrice + candle.LowPrice + candle.ClosePrice;
 			if (candle.ClosePrice < candle.OpenPrice)
-			res = (res + candle.LowPrice) / 2m;
+				res = (res + candle.LowPrice) / 2m;
 			else if (candle.ClosePrice > candle.OpenPrice)
-			res = (res + candle.HighPrice) / 2m;
+				res = (res + candle.HighPrice) / 2m;
 			else
-			res = (res + candle.ClosePrice) / 2m;
+				res = (res + candle.ClosePrice) / 2m;
 
 			return ((res - candle.LowPrice) + (res - candle.HighPrice)) / 2m;
 		}

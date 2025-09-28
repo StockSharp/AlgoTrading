@@ -80,7 +80,7 @@ public class TwoPendingOrders2Strategy : Strategy
 		.SetDisplay("Trailing Step (points)", "Minimum increment to move the trailing stop.", "Trailing")
 		.SetCanOptimize(true);
 
-		_tradeMode = Param(nameof(TradeModes), TradeModes.BuySell)
+		_tradeMode = Param(nameof(TradeMode), TradeModes.BuySell)
 		.SetDisplay("Trade Mode", "Allowed trade direction for new pending orders.", "General");
 
 		_pendingType = Param(nameof(PendingType), PendingOrderModes.Stop)
@@ -176,7 +176,7 @@ public class TwoPendingOrders2Strategy : Strategy
 	/// <summary>
 	/// Trade direction allowed for fresh pending orders.
 	/// </summary>
-	public TradeModes TradeModes
+	public TradeModes TradeMode
 	{
 		get => _tradeMode.Value;
 		set => _tradeMode.Value = value;
@@ -271,13 +271,12 @@ public class TwoPendingOrders2Strategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		if (trade.Order.Direction is not Sides side)
-		return;
-
-		var volume = trade.Trade?.Volume ?? 0m;
-		var price = trade.Trade?.Price ?? 0m;
+		var volume = trade.Trade.Volume;
+		var price = trade.Trade.Price;
 		if (volume <= 0m || price <= 0m)
 		return;
+
+		var side = trade.Order.Side;
 
 		if (side == Sides.Buy)
 		{
@@ -554,7 +553,7 @@ public class TwoPendingOrders2Strategy : Strategy
 
 	private bool IsDirectionAllowed(Sides side)
 	{
-		return TradeModes switch
+		return TradeMode switch
 		{
 			TradeModes.Buy => side == Sides.Buy,
 			TradeModes.Sell => side == Sides.Sell,

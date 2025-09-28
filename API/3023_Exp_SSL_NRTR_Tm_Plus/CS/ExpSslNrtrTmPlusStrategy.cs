@@ -56,7 +56,7 @@ public class ExpSslNrtrTmPlusStrategy : Strategy
 		set => _moneyManagement.Value = value;
 	}
 
-	public MarginModes MarginModes
+	public MarginModes MarginMode
 	{
 		get => _marginMode.Value;
 		set => _marginMode.Value = value;
@@ -327,7 +327,7 @@ public class ExpSslNrtrTmPlusStrategy : Strategy
 		var currentColor = _colorHistory[currentIndex];
 		var previousColor = _colorHistory[previousIndex];
 		var signalTime = _timeHistory[currentIndex];
-		var timeFrame = CandleType.TimeFrame ?? TimeSpan.FromMinutes(1);
+		var timeFrame = CandleType.GetTimeFrame();
 
 		if (currentColor == 0)
 		{
@@ -497,7 +497,7 @@ public class ExpSslNrtrTmPlusStrategy : Strategy
 
 		decimal volume;
 
-		switch (MarginModes)
+		switch (MarginMode)
 		{
 			case MarginModes.FreeMargin:
 			case MarginModes.Balance:

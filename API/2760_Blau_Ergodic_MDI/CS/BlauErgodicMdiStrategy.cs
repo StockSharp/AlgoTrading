@@ -83,7 +83,7 @@ public class BlauErgodicMdiStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Indicator Timeframe", "Timeframe used for calculations", "Data");
 
-		_smoothingMethod = Param(nameof(SmoothingMethods), SmoothingMethods.Exponential)
+		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothingMethods.Exponential)
 			.SetDisplay("Smoothing Method", "Type of moving average", "Indicator");
 
 		_primaryLength = Param(nameof(PrimaryLength), 20)
@@ -110,7 +110,7 @@ public class BlauErgodicMdiStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(2, 30, 1);
 
-		_appliedPrice = Param(nameof(AppliedPrices), AppliedPrices.Close)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPrices.Close)
 			.SetDisplay("Applied Price", "Price source for calculations", "Indicator");
 
 		_signalBarShift = Param(nameof(SignalBarShift), 1)
@@ -205,7 +205,7 @@ public class BlauErgodicMdiStrategy : Strategy
 	/// <summary>
 	/// Moving average family used for smoothing steps.
 	/// </summary>
-	public SmoothingMethods SmoothingMethods
+	public SmoothingMethods SmoothingMethod
 	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
@@ -250,7 +250,7 @@ public class BlauErgodicMdiStrategy : Strategy
 	/// <summary>
 	/// Applied price selection for calculations.
 	/// </summary>
-	public AppliedPrices AppliedPrices
+	public AppliedPrices AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -300,10 +300,10 @@ public class BlauErgodicMdiStrategy : Strategy
 		if (_pointValue <= 0m)
 			_pointValue = 1m;
 
-		_priceAverage = CreateMovingAverage(SmoothingMethods, PrimaryLength);
-		_firstSmoothing = CreateMovingAverage(SmoothingMethods, FirstSmoothingLength);
-		_secondSmoothing = CreateMovingAverage(SmoothingMethods, SecondSmoothingLength);
-		_signalSmoothing = CreateMovingAverage(SmoothingMethods, SignalLength);
+		_priceAverage = CreateMovingAverage(SmoothingMethod, PrimaryLength);
+		_firstSmoothing = CreateMovingAverage(SmoothingMethod, FirstSmoothingLength);
+		_secondSmoothing = CreateMovingAverage(SmoothingMethod, SecondSmoothingLength);
+		_signalSmoothing = CreateMovingAverage(SmoothingMethod, SignalLength);
 
 		InitializeBuffers();
 
@@ -492,7 +492,7 @@ public class BlauErgodicMdiStrategy : Strategy
 
 	private decimal SelectPrice(ICandleMessage candle)
 	{
-		return AppliedPrices switch
+		return AppliedPrice switch
 		{
 			AppliedPrices.Open => candle.OpenPrice,
 			AppliedPrices.High => candle.HighPrice,

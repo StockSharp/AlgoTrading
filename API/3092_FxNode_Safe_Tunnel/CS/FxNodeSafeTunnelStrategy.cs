@@ -177,7 +177,7 @@ public class FxNodeSafeTunnelStrategy : Strategy
 	/// <summary>
 	/// Preferred trade direction.
 	/// </summary>
-	public TrendPreferences TrendPreferences
+	public TrendPreferences TrendPreference
 	{
 		get => _trendPreference.Value;
 		set => _trendPreference.Value = value;

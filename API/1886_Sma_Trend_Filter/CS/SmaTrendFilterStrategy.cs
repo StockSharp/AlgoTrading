@@ -25,7 +25,7 @@ public class SmaTrendFilterStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType3;
 	
 	private readonly int[] _periods = { 5, 8, 13, 21, 34 };
-	private readonly Sma[][] _smas = new Sma[3][];
+	private readonly SMA[][] _smas = new SMA[3][];
 	private readonly decimal[][] _previous = new decimal[3][];
 	private readonly decimal[] _uitog = new decimal[3];
 	private readonly decimal[] _ditog = new decimal[3];
@@ -94,10 +94,10 @@ public SmaTrendFilterStrategy()
 	
 	for (var i = 0; i < 3; i++)
 	{
-		_smas[i] = new Sma[_periods.Length];
+		_smas[i] = new SMA[_periods.Length];
 		_previous[i] = new decimal[_periods.Length];
 		for (var j = 0; j < _periods.Length; j++)
-		_smas[i][j] = new Sma { Length = _periods[j] };
+		_smas[i][j] = new SMA { Length = _periods[j] };
 }
 }
 

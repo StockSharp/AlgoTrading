@@ -85,7 +85,7 @@ public class MartingaleBoneCrusherStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Step", "Allowed profit pullback", "Risk Management");
 
-		_martingaleMode = Param(nameof(MartingaleModes), MartingaleModes.Martingale2)
+		_martingaleMode = Param(nameof(MartingaleMode), MartingaleModes.Martingale2)
 			.SetDisplay("Mode", "Martingale logic variant", "General");
 
 		_useMoveToBreakeven = Param(nameof(UseMoveToBreakeven), true)
@@ -204,7 +204,7 @@ public class MartingaleBoneCrusherStrategy : Strategy
 	/// <summary>
 	/// Selected martingale mode.
 	/// </summary>
-	public MartingaleModes MartingaleModes
+	public MartingaleModes MartingaleMode
 	{
 		get => _martingaleMode.Value;
 		set => _martingaleMode.Value = value;
@@ -421,16 +421,16 @@ public class MartingaleBoneCrusherStrategy : Strategy
 	{
 		Sides? signal = null;
 		if (fastValue < slowValue)
-		signal = Sides.Buy;
+			signal = Sides.Buy;
 		else if (fastValue > slowValue)
-		signal = Sides.Sell;
+			signal = Sides.Sell;
 
 		if (_lastTradeResult < 0m)
 		{
-		if (MartingaleModes == MartingaleModes.Martingale2 && _lastLosingSide.HasValue)
-		return _lastLosingSide == Sides.Buy ? Sides.Sell : Sides.Buy;
+			if (MartingaleMode == MartingaleModes.Martingale2 && _lastLosingSide.HasValue)
+				return _lastLosingSide == Sides.Buy ? Sides.Sell : Sides.Buy;
 
-		return signal;
+			return signal;
 		}
 
 		return signal;
@@ -558,7 +558,7 @@ public class MartingaleBoneCrusherStrategy : Strategy
 		if (_lastPositionSide == Sides.Buy)
 		{
 			if (closePrice >= _averagePrice + trigger)
-			_breakevenPrice = _averagePrice + offset;
+				_breakevenPrice = _averagePrice + offset;
 		}
 		else if (closePrice <= _averagePrice - trigger)
 		{
@@ -642,12 +642,12 @@ public class MartingaleBoneCrusherStrategy : Strategy
 		if (_lastPositionSide == Sides.Buy)
 		{
 			if (candle.HighPrice > _highestPrice)
-			_highestPrice = candle.HighPrice;
+				_highestPrice = candle.HighPrice;
 		}
 		else
 		{
 			if (_lowestPrice == 0m || candle.LowPrice < _lowestPrice)
-			_lowestPrice = candle.LowPrice;
+				_lowestPrice = candle.LowPrice;
 		}
 	}
 
@@ -655,9 +655,9 @@ public class MartingaleBoneCrusherStrategy : Strategy
 	{
 		decimal nextVolume;
 		if (_lastTradeResult < 0m)
-		nextVolume = DoubleLotSize ? _lastOrderVolume * Multiply : _lastOrderVolume + LotSizeIncrement;
+			nextVolume = DoubleLotSize ? _lastOrderVolume * Multiply : _lastOrderVolume + LotSizeIncrement;
 		else
-		nextVolume = InitialVolume;
+			nextVolume = InitialVolume;
 
 		_currentVolume = AlignVolume(nextVolume);
 		_lastOrderVolume = _currentVolume;
@@ -667,7 +667,7 @@ public class MartingaleBoneCrusherStrategy : Strategy
 	{
 		var priceStep = Security?.PriceStep ?? 0m;
 		if (priceStep <= 0m)
-		return 0m;
+			return 0m;
 
 		return steps * priceStep;
 	}
@@ -675,7 +675,7 @@ public class MartingaleBoneCrusherStrategy : Strategy
 	private decimal AlignVolume(decimal volume)
 	{
 		if (Security is null)
-		return volume;
+			return volume;
 
 		var step = Security.VolumeStep ?? 0m;
 		var min = Security.VolumeMin ?? 0m;
@@ -683,17 +683,17 @@ public class MartingaleBoneCrusherStrategy : Strategy
 
 		if (step > 0m)
 		{
-		var ratio = Math.Round(volume / step, MidpointRounding.AwayFromZero);
-		if (ratio == 0m && volume > 0m)
-		ratio = 1m;
-		volume = ratio * step;
+			var ratio = Math.Round(volume / step, MidpointRounding.AwayFromZero);
+			if (ratio == 0m && volume > 0m)
+				ratio = 1m;
+			volume = ratio * step;
 		}
 
 		if (min > 0m && volume < min)
-		volume = min;
+			volume = min;
 
 		if (volume > max)
-		volume = max;
+			volume = max;
 
 		return volume;
 	}

@@ -58,7 +58,7 @@ public class BlauCMomentumStrategy : Strategy
 			.SetDisplay("Money Management", "Fraction of capital used to size positions (negative value = fixed volume)", "Trading")
 			.SetCanOptimize(true);
 
-		_marginMode = Param(nameof(MarginModes), MarginModes.FreeMarginShare)
+		_marginMode = Param(nameof(MarginMode), MarginModes.FreeMarginShare)
 			.SetDisplay("Margin Mode", "Interpretation of money management parameter", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
@@ -84,7 +84,7 @@ public class BlauCMomentumStrategy : Strategy
 		_enableShortExit = Param(nameof(EnableShortExit), true)
 			.SetDisplay("Enable Short Exit", "Allow closing short positions", "Trading");
 
-		_entryMode = Param(nameof(EntryModes), EntryModes.Twist)
+		_entryMode = Param(nameof(EntryMode), EntryModes.Twist)
 			.SetDisplay("Entry Mode", "Choose between zero breakout or twist logic", "Logic");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -140,7 +140,7 @@ public class BlauCMomentumStrategy : Strategy
 	/// <summary>
 	/// Interpretation of the money management parameter.
 	/// </summary>
-	public MarginModes MarginModes
+	public MarginModes MarginMode
 	{
 		get => _marginMode.Value;
 		set => _marginMode.Value = value;
@@ -212,7 +212,7 @@ public class BlauCMomentumStrategy : Strategy
 	/// <summary>
 	/// Entry logic: zero-line breakdown or twist detection.
 	/// </summary>
-	public EntryModes EntryModes
+	public EntryModes EntryMode
 	{
 		get => _entryMode.Value;
 		set => _entryMode.Value = value;
@@ -357,227 +357,227 @@ public class BlauCMomentumStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
-	if (candle.State != CandleStates.Finished || _momentum is null)
-	return;
+		if (candle.State != CandleStates.Finished || _momentum is null)
+			return;
 
-	var step = Security?.PriceStep ?? 1m;
-	var indicatorValue = _momentum.Process(candle, step);
-	if (indicatorValue is null)
-	return;
+		var step = Security?.PriceStep ?? 1m;
+		var indicatorValue = _momentum.Process(candle, step);
+		if (indicatorValue is null)
+			return;
 
-	_indicatorHistory.Add(indicatorValue.Value);
+		_indicatorHistory.Add(indicatorValue.Value);
 
-	var requiredHistory = Math.Max(SignalBar + 3, 5);
-	if (_indicatorHistory.Count > requiredHistory)
-	_indicatorHistory.RemoveRange(0, _indicatorHistory.Count - requiredHistory);
+		var requiredHistory = Math.Max(SignalBar + 3, 5);
+		if (_indicatorHistory.Count > requiredHistory)
+			_indicatorHistory.RemoveRange(0, _indicatorHistory.Count - requiredHistory);
 
-	if (!IsFormedAndOnlineAndAllowTrading())
-	return;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-	var current = GetHistoryValue(SignalBar);
-	var previous = GetHistoryValue(SignalBar + 1);
+		var current = GetHistoryValue(SignalBar);
+		var previous = GetHistoryValue(SignalBar + 1);
 
-	if (current is null || previous is null)
-	return;
+		if (current is null || previous is null)
+			return;
 
-	var closeShort = false;
-	var closeLong = false;
-	var openLong = false;
-	var openShort = false;
+		var closeShort = false;
+		var closeLong = false;
+		var openLong = false;
+		var openShort = false;
 
-	switch (EntryModes)
-	{
-	case EntryModes.Breakdown:
-	{
-	if (previous.Value > 0m)
-	{
-	if (EnableLongEntry && current.Value <= 0m)
-	{
-	openLong = true;
-	}
+		switch (EntryMode)
+		{
+			case EntryModes.Breakdown:
+			{
+				if (previous.Value > 0m)
+				{
+					if (EnableLongEntry && current.Value <= 0m)
+					{
+						openLong = true;
+					}
 
-	if (EnableShortExit)
-	{
-	closeShort = true;
-	}
-	}
+					if (EnableShortExit)
+					{
+						closeShort = true;
+					}
+				}
 
-	if (previous.Value < 0m)
-	{
-	if (EnableShortEntry && current.Value >= 0m)
-	{
-	openShort = true;
-	}
+				if (previous.Value < 0m)
+				{
+					if (EnableShortEntry && current.Value >= 0m)
+					{
+						openShort = true;
+					}
 
-	if (EnableLongExit)
-	{
-	closeLong = true;
-	}
-	}
-	break;
-	}
-	case EntryModes.Twist:
-	{
-	var older = GetHistoryValue(SignalBar + 2);
-	if (older is null)
-	return;
+					if (EnableLongExit)
+					{
+						closeLong = true;
+					}
+				}
+				break;
+			}
+			case EntryModes.Twist:
+			{
+				var older = GetHistoryValue(SignalBar + 2);
+				if (older is null)
+					return;
 
-	if (previous.Value < older.Value)
-	{
-	if (EnableLongEntry && current.Value >= previous.Value)
-	{
-	openLong = true;
-	}
+				if (previous.Value < older.Value)
+				{
+					if (EnableLongEntry && current.Value >= previous.Value)
+					{
+						openLong = true;
+					}
 
-	if (EnableShortExit)
-	{
-	closeShort = true;
-	}
-	}
+					if (EnableShortExit)
+					{
+						closeShort = true;
+					}
+				}
 
-	if (previous.Value > older.Value)
-	{
-	if (EnableShortEntry && current.Value <= previous.Value)
-	{
-	openShort = true;
-	}
+				if (previous.Value > older.Value)
+				{
+					if (EnableShortEntry && current.Value <= previous.Value)
+					{
+						openShort = true;
+					}
 
-	if (EnableLongExit)
-	{
-	closeLong = true;
-	}
-	}
-	break;
-	}
-	}
+					if (EnableLongExit)
+					{
+						closeLong = true;
+					}
+				}
+				break;
+			}
+		}
 
-	if (closeLong && Position > 0m)
-	{
-	SellMarket(Position);
-	}
+		if (closeLong && Position > 0m)
+		{
+			SellMarket(Position);
+		}
 
-	if (closeShort && Position < 0m)
-	{
-	BuyMarket(-Position);
-	}
+		if (closeShort && Position < 0m)
+		{
+			BuyMarket(-Position);
+		}
 
-	if (openLong && Position <= 0m && CanEnterLong(candle.OpenTime))
-	{
-	var volume = CalculateTradeVolume(candle.ClosePrice);
-	if (volume > 0m)
-	{
-	var totalVolume = volume + Math.Max(0m, -Position);
-	if (totalVolume > 0m)
-	{
-	BuyMarket(totalVolume);
-	SetLongBlock(candle.OpenTime);
-	}
-	}
-	}
+		if (openLong && Position <= 0m && CanEnterLong(candle.OpenTime))
+		{
+			var volume = CalculateTradeVolume(candle.ClosePrice);
+			if (volume > 0m)
+			{
+				var totalVolume = volume + Math.Max(0m, -Position);
+				if (totalVolume > 0m)
+				{
+					BuyMarket(totalVolume);
+					SetLongBlock(candle.OpenTime);
+				}
+			}
+		}
 
-	if (openShort && Position >= 0m && CanEnterShort(candle.OpenTime))
-	{
-	var volume = CalculateTradeVolume(candle.ClosePrice);
-	if (volume > 0m)
-	{
-	var totalVolume = volume + Math.Max(0m, Position);
-	if (totalVolume > 0m)
-	{
-	SellMarket(totalVolume);
-	SetShortBlock(candle.OpenTime);
-	}
-	}
-	}
+		if (openShort && Position >= 0m && CanEnterShort(candle.OpenTime))
+		{
+			var volume = CalculateTradeVolume(candle.ClosePrice);
+			if (volume > 0m)
+			{
+				var totalVolume = volume + Math.Max(0m, Position);
+				if (totalVolume > 0m)
+				{
+					SellMarket(totalVolume);
+					SetShortBlock(candle.OpenTime);
+				}
+			}
+		}
 	}
 
 	private decimal? GetHistoryValue(int shift)
 	{
-	if (shift < 0)
-	return null;
+		if (shift < 0)
+			return null;
 
-	var index = _indicatorHistory.Count - shift - 1;
-	if (index < 0 || index >= _indicatorHistory.Count)
-	return null;
+		var index = _indicatorHistory.Count - shift - 1;
+		if (index < 0 || index >= _indicatorHistory.Count)
+			return null;
 
-	return _indicatorHistory[index];
+		return _indicatorHistory[index];
 	}
 
 	private bool CanEnterLong(DateTimeOffset signalTime)
 	{
-	return !_longTradeBlockUntil.HasValue || signalTime >= _longTradeBlockUntil.Value;
+		return !_longTradeBlockUntil.HasValue || signalTime >= _longTradeBlockUntil.Value;
 	}
 
 	private bool CanEnterShort(DateTimeOffset signalTime)
 	{
-	return !_shortTradeBlockUntil.HasValue || signalTime >= _shortTradeBlockUntil.Value;
+		return !_shortTradeBlockUntil.HasValue || signalTime >= _shortTradeBlockUntil.Value;
 	}
 
 	private void SetLongBlock(DateTimeOffset signalTime)
 	{
-	_longTradeBlockUntil = _candleSpan != TimeSpan.Zero ? signalTime + _candleSpan : signalTime;
+		_longTradeBlockUntil = _candleSpan != TimeSpan.Zero ? signalTime + _candleSpan : signalTime;
 	}
 
 	private void SetShortBlock(DateTimeOffset signalTime)
 	{
-	_shortTradeBlockUntil = _candleSpan != TimeSpan.Zero ? signalTime + _candleSpan : signalTime;
+		_shortTradeBlockUntil = _candleSpan != TimeSpan.Zero ? signalTime + _candleSpan : signalTime;
 	}
 
 	private decimal CalculateTradeVolume(decimal price)
 	{
-	if (price <= 0m)
-	return 0m;
+		if (price <= 0m)
+			return 0m;
 
-	var step = Security?.VolumeStep ?? 1m;
-	var minVolume = Security?.MinVolume ?? step;
-	var capital = Portfolio?.CurrentValue ?? Portfolio?.BeginValue ?? 0m;
-	var moneyManagement = MoneyManagement;
-	decimal volume;
+		var step = Security?.VolumeStep ?? 1m;
+		var minVolume = Security?.MinVolume ?? step;
+		var capital = Portfolio?.CurrentValue ?? Portfolio?.BeginValue ?? 0m;
+		var moneyManagement = MoneyManagement;
+		decimal volume;
 
-	if (moneyManagement < 0m)
-	{
-	volume = Math.Abs(moneyManagement);
-	}
-	else
-	{
-	if (capital <= 0m)
-	return minVolume;
+		if (moneyManagement < 0m)
+		{
+			volume = Math.Abs(moneyManagement);
+		}
+		else
+		{
+			if (capital <= 0m)
+				return minVolume;
 
-	switch (MarginModes)
-	{
-	case MarginModes.FreeMarginShare:
-	case MarginModes.BalanceShare:
-	{
-	var budget = capital * moneyManagement;
-	volume = budget / price;
-	break;
-	}
-	case MarginModes.FreeMarginRisk:
-	case MarginModes.BalanceRisk:
-	{
-	var riskCapital = capital * moneyManagement;
-	var stepPrice = Security?.StepPrice ?? 1m;
-	var stopLoss = StopLossPoints > 0 ? StopLossPoints * stepPrice : price;
-	volume = stopLoss > 0m ? riskCapital / stopLoss : riskCapital / price;
-	break;
-	}
-	default:
-	{
-	var budget = capital * moneyManagement;
-	volume = budget / price;
-	break;
-	}
-	}
-	}
+			switch (MarginMode)
+			{
+				case MarginModes.FreeMarginShare:
+				case MarginModes.BalanceShare:
+				{
+					var budget = capital * moneyManagement;
+					volume = budget / price;
+					break;
+				}
+				case MarginModes.FreeMarginRisk:
+				case MarginModes.BalanceRisk:
+				{
+					var riskCapital = capital * moneyManagement;
+					var stepPrice = Security?.StepPrice ?? 1m;
+					var stopLoss = StopLossPoints > 0 ? StopLossPoints * stepPrice : price;
+					volume = stopLoss > 0m ? riskCapital / stopLoss : riskCapital / price;
+					break;
+				}
+				default:
+				{
+					var budget = capital * moneyManagement;
+					volume = budget / price;
+					break;
+				}
+			}
+		}
 
-	if (step > 0m && volume > 0m)
-	{
-	volume = Math.Floor(volume / step) * step;
-	}
+		if (step > 0m && volume > 0m)
+		{
+			volume = Math.Floor(volume / step) * step;
+		}
 
-	if (volume < minVolume)
-	volume = minVolume;
+		if (volume < minVolume)
+			volume = minVolume;
 
-	return volume;
+		return volume;
 	}
 
 	/// <summary>
@@ -585,15 +585,15 @@ public class BlauCMomentumStrategy : Strategy
 	/// </summary>
 	public enum EntryModes
 	{
-	/// <summary>
-	/// Entry when the indicator breaks zero.
-	/// </summary>
-	Breakdown,
+		/// <summary>
+		/// Entry when the indicator breaks zero.
+		/// </summary>
+		Breakdown,
 
-	/// <summary>
-	/// Entry when the indicator changes direction (twist).
-	/// </summary>
-	Twist
+		/// <summary>
+		/// Entry when the indicator changes direction (twist).
+		/// </summary>
+		Twist
 	}
 
 	/// <summary>
@@ -601,65 +601,65 @@ public class BlauCMomentumStrategy : Strategy
 	/// </summary>
 	public enum AppliedPrices
 	{
-	/// <summary>
-	/// Closing price.
-	/// </summary>
-	Close = 1,
+		/// <summary>
+		/// Closing price.
+		/// </summary>
+		Close = 1,
 
-	/// <summary>
-	/// Opening price.
-	/// </summary>
-	Open,
+		/// <summary>
+		/// Opening price.
+		/// </summary>
+		Open,
 
-	/// <summary>
-	/// High price.
-	/// </summary>
-	High,
+		/// <summary>
+		/// High price.
+		/// </summary>
+		High,
 
-	/// <summary>
-	/// Low price.
-	/// </summary>
-	Low,
+		/// <summary>
+		/// Low price.
+		/// </summary>
+		Low,
 
-	/// <summary>
-	/// Median price (HL/2).
-	/// </summary>
-	Median,
+		/// <summary>
+		/// Median price (HL/2).
+		/// </summary>
+		Median,
 
-	/// <summary>
-	/// Typical price (HLC/3).
-	/// </summary>
-	Typical,
+		/// <summary>
+		/// Typical price (HLC/3).
+		/// </summary>
+		Typical,
 
-	/// <summary>
-	/// Weighted close (HLCC/4).
-	/// </summary>
-	Weighted,
+		/// <summary>
+		/// Weighted close (HLCC/4).
+		/// </summary>
+		Weighted,
 
-	/// <summary>
-	/// Simple price (OC/2).
-	/// </summary>
-	Simple,
+		/// <summary>
+		/// Simple price (OC/2).
+		/// </summary>
+		Simple,
 
-	/// <summary>
-	/// Quarted price (HLOC/4).
-	/// </summary>
-	Quarter,
+		/// <summary>
+		/// Quarted price (HLOC/4).
+		/// </summary>
+		Quarter,
 
-	/// <summary>
-	/// Trend-following price variant 1.
-	/// </summary>
-	TrendFollow1,
+		/// <summary>
+		/// Trend-following price variant 1.
+		/// </summary>
+		TrendFollow1,
 
-	/// <summary>
-	/// Trend-following price variant 2.
-	/// </summary>
-	TrendFollow2,
+		/// <summary>
+		/// Trend-following price variant 2.
+		/// </summary>
+		TrendFollow2,
 
-	/// <summary>
-	/// Demark price.
-	/// </summary>
-	Demark
+		/// <summary>
+		/// Demark price.
+		/// </summary>
+		Demark
 	}
 
 	/// <summary>
@@ -667,25 +667,25 @@ public class BlauCMomentumStrategy : Strategy
 	/// </summary>
 	public enum MarginModes
 	{
-	/// <summary>
-	/// Use a fraction of account capital (approximation of free margin share).
-	/// </summary>
-	FreeMarginShare = 0,
+		/// <summary>
+		/// Use a fraction of account capital (approximation of free margin share).
+		/// </summary>
+		FreeMarginShare = 0,
 
-	/// <summary>
-	/// Use a fraction of balance (treated equally to free margin share in this port).
-	/// </summary>
-	BalanceShare = 1,
+		/// <summary>
+		/// Use a fraction of balance (treated equally to free margin share in this port).
+		/// </summary>
+		BalanceShare = 1,
 
-	/// <summary>
-	/// Risk a fraction of capital with stop-loss distance.
-	/// </summary>
-	FreeMarginRisk = 2,
+		/// <summary>
+		/// Risk a fraction of capital with stop-loss distance.
+		/// </summary>
+		FreeMarginRisk = 2,
 
-	/// <summary>
-	/// Risk a fraction of balance with stop-loss distance.
-	/// </summary>
-	BalanceRisk = 3
+		/// <summary>
+		/// Risk a fraction of balance with stop-loss distance.
+		/// </summary>
+		BalanceRisk = 3
 	}
 
 	/// <summary>
@@ -693,162 +693,162 @@ public class BlauCMomentumStrategy : Strategy
 	/// </summary>
 	public enum SmoothMethods
 	{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Simple,
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Simple,
 
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Exponential,
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Exponential,
 
-	/// <summary>
-	/// Smoothed moving average (RMA/SMMA).
-	/// </summary>
-	Smoothed,
+		/// <summary>
+		/// Smoothed moving average (RMA/SMMA).
+		/// </summary>
+		Smoothed,
 
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	LinearWeighted,
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		LinearWeighted,
 
-	/// <summary>
-	/// Jurik moving average.
-	/// </summary>
-	Jurik,
+		/// <summary>
+		/// Jurik moving average.
+		/// </summary>
+		Jurik,
 
-	/// <summary>
-	/// Triple exponential moving average (approximation of T3).
-	/// </summary>
-	TripleExponential,
+		/// <summary>
+		/// Triple exponential moving average (approximation of T3).
+		/// </summary>
+		TripleExponential,
 
-	/// <summary>
-	/// Kaufman adaptive moving average.
-	/// </summary>
-	Adaptive
+		/// <summary>
+		/// Kaufman adaptive moving average.
+		/// </summary>
+		Adaptive
 	}
 
 	private sealed class BlauMomentumCalculator
 	{
-	private readonly SmoothMethods _method;
-	private readonly int _momentumLength;
-	private readonly int _firstLength;
-	private readonly int _secondLength;
-	private readonly int _thirdLength;
-	private readonly int _phase;
-	private readonly AppliedPrices _price1;
-	private readonly AppliedPrices _price2;
+		private readonly SmoothMethods _method;
+		private readonly int _momentumLength;
+		private readonly int _firstLength;
+		private readonly int _secondLength;
+		private readonly int _thirdLength;
+		private readonly int _phase;
+		private readonly AppliedPrices _price1;
+		private readonly AppliedPrices _price2;
 
-	private readonly Queue<decimal> _priceBuffer = new();
-	private readonly LengthIndicator<decimal> _ma1;
-	private readonly LengthIndicator<decimal> _ma2;
-	private readonly LengthIndicator<decimal> _ma3;
+		private readonly Queue<decimal> _priceBuffer = new();
+		private readonly LengthIndicator<decimal> _ma1;
+		private readonly LengthIndicator<decimal> _ma2;
+		private readonly LengthIndicator<decimal> _ma3;
 
-	public BlauMomentumCalculator(
-	SmoothMethods method,
-	int momentumLength,
-	int firstLength,
-	int secondLength,
-	int thirdLength,
-	int phase,
-	AppliedPrices price1,
-	AppliedPrices price2)
-	{
-	_method = method;
-	_momentumLength = Math.Max(1, momentumLength);
-	_firstLength = Math.Max(1, firstLength);
-	_secondLength = Math.Max(1, secondLength);
-	_thirdLength = Math.Max(1, thirdLength);
-	_phase = phase;
-	_price1 = price1;
-	_price2 = price2;
+		public BlauMomentumCalculator(
+		SmoothMethods method,
+		int momentumLength,
+		int firstLength,
+		int secondLength,
+		int thirdLength,
+		int phase,
+		AppliedPrices price1,
+		AppliedPrices price2)
+		{
+			_method = method;
+			_momentumLength = Math.Max(1, momentumLength);
+			_firstLength = Math.Max(1, firstLength);
+			_secondLength = Math.Max(1, secondLength);
+			_thirdLength = Math.Max(1, thirdLength);
+			_phase = phase;
+			_price1 = price1;
+			_price2 = price2;
 
-	_ma1 = CreateMovingAverage(method, _firstLength, _phase);
-	_ma2 = CreateMovingAverage(method, _secondLength, _phase);
-	_ma3 = CreateMovingAverage(method, _thirdLength, _phase);
-	}
+			_ma1 = CreateMovingAverage(method, _firstLength, _phase);
+			_ma2 = CreateMovingAverage(method, _secondLength, _phase);
+			_ma3 = CreateMovingAverage(method, _thirdLength, _phase);
+		}
 
-	public decimal? Process(ICandleMessage candle, decimal point)
-	{
-	var value1 = GetAppliedPrice(_price1, candle);
-	var value2 = GetAppliedPrice(_price2, candle);
+		public decimal? Process(ICandleMessage candle, decimal point)
+		{
+			var value1 = GetAppliedPrice(_price1, candle);
+			var value2 = GetAppliedPrice(_price2, candle);
 
-	_priceBuffer.Enqueue(value2);
-	if (_priceBuffer.Count > _momentumLength)
-	_priceBuffer.Dequeue();
+			_priceBuffer.Enqueue(value2);
+			if (_priceBuffer.Count > _momentumLength)
+				_priceBuffer.Dequeue();
 
-	if (_priceBuffer.Count < _momentumLength)
-	return null;
+			if (_priceBuffer.Count < _momentumLength)
+				return null;
 
-	var reference = _priceBuffer.Peek();
-	var momentum = value1 - reference;
-	var time = candle.OpenTime;
+			var reference = _priceBuffer.Peek();
+			var momentum = value1 - reference;
+			var time = candle.OpenTime;
 
-	var smooth1 = _ma1.Process(momentum, time, true).ToDecimal();
-	var smooth2 = _ma2.Process(smooth1, time, true).ToDecimal();
-	var smooth3 = _ma3.Process(smooth2, time, true).ToDecimal();
+			var smooth1 = _ma1.Process(momentum, time, true).ToDecimal();
+			var smooth2 = _ma2.Process(smooth1, time, true).ToDecimal();
+			var smooth3 = _ma3.Process(smooth2, time, true).ToDecimal();
 
-	if (!_ma3.IsFormed)
-	return null;
+			if (!_ma3.IsFormed)
+				return null;
 
-	return point > 0m ? smooth3 * 100m / point : smooth3;
-	}
+			return point > 0m ? smooth3 * 100m / point : smooth3;
+		}
 
-	public void Reset()
-	{
-	_priceBuffer.Clear();
-	_ma1.Reset();
-	_ma2.Reset();
-	_ma3.Reset();
-	}
+		public void Reset()
+		{
+			_priceBuffer.Clear();
+			_ma1.Reset();
+			_ma2.Reset();
+			_ma3.Reset();
+		}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(SmoothMethods method, int length, int phase)
-	{
-	return method switch
-	{
-	SmoothMethods.Simple => new SimpleMovingAverage { Length = length },
-	SmoothMethods.Exponential => new ExponentialMovingAverage { Length = length },
-	SmoothMethods.Smoothed => new SmoothedMovingAverage { Length = length },
-	SmoothMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
-	SmoothMethods.Jurik => new JurikMovingAverage { Length = length, Phase = phase },
-	SmoothMethods.TripleExponential => new TripleExponentialMovingAverage { Length = length },
-	SmoothMethods.Adaptive => new KaufmanAdaptiveMovingAverage { Length = length },
-	_ => new ExponentialMovingAverage { Length = length }
-	};
-	}
+		private static LengthIndicator<decimal> CreateMovingAverage(SmoothMethods method, int length, int phase)
+		{
+			return method switch
+			{
+				SmoothMethods.Simple => new SimpleMovingAverage { Length = length },
+				SmoothMethods.Exponential => new ExponentialMovingAverage { Length = length },
+				SmoothMethods.Smoothed => new SmoothedMovingAverage { Length = length },
+				SmoothMethods.LinearWeighted => new WeightedMovingAverage { Length = length },
+				SmoothMethods.Jurik => new JurikMovingAverage { Length = length, Phase = phase },
+				SmoothMethods.TripleExponential => new TripleExponentialMovingAverage { Length = length },
+				SmoothMethods.Adaptive => new KaufmanAdaptiveMovingAverage { Length = length },
+				_ => new ExponentialMovingAverage { Length = length }
+			};
+		}
 
-	private static decimal GetAppliedPrice(AppliedPrices price, ICandleMessage candle)
-	{
-	return price switch
-	{
-	AppliedPrices.Close => candle.ClosePrice,
-	AppliedPrices.Open => candle.OpenPrice,
-	AppliedPrices.High => candle.HighPrice,
-	AppliedPrices.Low => candle.LowPrice,
-	AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-	AppliedPrices.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-	AppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-	AppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-	AppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-	AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
-	AppliedPrices.TrendFollow2 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
-	AppliedPrices.Demark => CalculateDemarkPrice(candle),
-	_ => candle.ClosePrice
-	};
-	}
+		private static decimal GetAppliedPrice(AppliedPrices price, ICandleMessage candle)
+		{
+			return price switch
+			{
+				AppliedPrices.Close => candle.ClosePrice,
+				AppliedPrices.Open => candle.OpenPrice,
+				AppliedPrices.High => candle.HighPrice,
+				AppliedPrices.Low => candle.LowPrice,
+				AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+				AppliedPrices.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+				AppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+				AppliedPrices.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+				AppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+				AppliedPrices.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
+				AppliedPrices.TrendFollow2 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
+				AppliedPrices.Demark => CalculateDemarkPrice(candle),
+				_ => candle.ClosePrice
+			};
+		}
 
-	private static decimal CalculateDemarkPrice(ICandleMessage candle)
-	{
-	var res = candle.HighPrice + candle.LowPrice + candle.ClosePrice;
-	if (candle.ClosePrice < candle.OpenPrice)
-	res = (res + candle.LowPrice) / 2m;
-	else if (candle.ClosePrice > candle.OpenPrice)
-	res = (res + candle.HighPrice) / 2m;
-	else
-	res = (res + candle.ClosePrice) / 2m;
+		private static decimal CalculateDemarkPrice(ICandleMessage candle)
+		{
+			var res = candle.HighPrice + candle.LowPrice + candle.ClosePrice;
+			if (candle.ClosePrice < candle.OpenPrice)
+				res = (res + candle.LowPrice) / 2m;
+			else if (candle.ClosePrice > candle.OpenPrice)
+				res = (res + candle.HighPrice) / 2m;
+			else
+				res = (res + candle.ClosePrice) / 2m;
 
-	return ((res - candle.LowPrice) + (res - candle.HighPrice)) / 2m;
-	}
+			return ((res - candle.LowPrice) + (res - candle.HighPrice)) / 2m;
+		}
 	}
 }

@@ -61,7 +61,7 @@ public class GannFanStrategy : Strategy
 	private decimal? _fastValue;
 	private decimal? _slowValue;
 	private decimal? _macdMain;
-	private decimal? _macdSignal;
+	private decimal? _macdSignalValue;
 	private bool _macdReady;
 
 	private int _bufferCount;
@@ -424,7 +424,7 @@ public class GannFanStrategy : Strategy
 		_fastValue = null;
 		_slowValue = null;
 		_macdMain = null;
-		_macdSignal = null;
+		_macdSignalValue = null;
 		_macdReady = false;
 		_bufferCount = 0;
 		_h0 = _h1 = _h2 = _h3 = _h4 = 0m;
@@ -470,7 +470,7 @@ public class GannFanStrategy : Strategy
 		ProcessIndicators(candle, isFinal);
 
 		if (!isFinal)
-		return;
+			return;
 
 		UpdateBuffers(candle);
 		UpdateMomentum(candle);
@@ -485,10 +485,10 @@ public class GannFanStrategy : Strategy
 		ManageOpenPosition(candle);
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
 		if (!IsSignalReady())
-		return;
+			return;
 
 		TryEnter(candle);
 	}
@@ -499,17 +499,17 @@ public class GannFanStrategy : Strategy
 
 		var fastValue = _fastMa.Process(typical, candle.OpenTime, isFinal);
 		if (fastValue.IsFinal)
-		_fastValue = fastValue.ToDecimal();
+			_fastValue = fastValue.ToDecimal();
 
 		var slowValue = _slowMa.Process(typical, candle.OpenTime, isFinal);
 		if (slowValue.IsFinal)
-		_slowValue = slowValue.ToDecimal();
+			_slowValue = slowValue.ToDecimal();
 
 		var macdValue = _macd.Process(candle.ClosePrice, candle.OpenTime, isFinal);
 		if (macdValue.IsFinal && macdValue is MovingAverageConvergenceDivergenceSignalValue typed)
 		{
 			_macdMain = typed.Macd;
-			_macdSignal = typed.Signal;
+			_macdSignalValue = typed.Signal;
 			_macdReady = true;
 		}
 	}
@@ -541,46 +541,46 @@ public class GannFanStrategy : Strategy
 		}
 
 		if (IsUpFractal())
-		RegisterUpFractal(new FractalPoint(_t2, _h2));
+			RegisterUpFractal(new FractalPoint(_t2, _h2));
 
 		if (IsDownFractal())
-		RegisterDownFractal(new FractalPoint(_t2, _l2));
+			RegisterDownFractal(new FractalPoint(_t2, _l2));
 	}
 
 	private void UpdateMomentum(ICandleMessage candle)
 	{
 		var period = MomentumPeriod;
 		if (period <= 0)
-		return;
+			return;
 
 		_closeBuffer.Enqueue(candle.ClosePrice);
 		while (_closeBuffer.Count > period + 1)
-		_closeBuffer.Dequeue();
+			_closeBuffer.Dequeue();
 
 		if (_closeBuffer.Count < period + 1)
-		return;
+			return;
 
 		var oldest = _closeBuffer.Peek();
 		if (oldest == 0m)
-		return;
+			return;
 
 		var momentum = 100m * candle.ClosePrice / oldest;
 		var deviation = Math.Abs(100m - momentum);
 
 		_momentumDeviationHistory.Enqueue(deviation);
 		while (_momentumDeviationHistory.Count > 3)
-		_momentumDeviationHistory.Dequeue();
+			_momentumDeviationHistory.Dequeue();
 	}
 
 	private void UpdateRecentExtremes(ICandleMessage candle)
 	{
 		_recentHighs.Enqueue(candle.HighPrice);
 		while (_recentHighs.Count > Math.Max(1, TrailingCandles))
-		_recentHighs.Dequeue();
+			_recentHighs.Dequeue();
 
 		_recentLows.Enqueue(candle.LowPrice);
 		while (_recentLows.Count > Math.Max(1, TrailingCandles))
-		_recentLows.Dequeue();
+			_recentLows.Dequeue();
 	}
 
 	private void ManageOpenPosition(ICandleMessage candle)
@@ -604,7 +604,7 @@ public class GannFanStrategy : Strategy
 		var entryPrice = _longEntryPrice ?? candle.ClosePrice;
 		var priceStep = GetPriceStep();
 		if (priceStep <= 0m)
-		return;
+			return;
 
 		var volume = Position;
 
@@ -634,7 +634,7 @@ public class GannFanStrategy : Strategy
 		{
 			var trigger = entryPrice + priceStep * BreakEvenTriggerPips;
 			if (candle.HighPrice >= trigger)
-			_longBreakEvenPrice = entryPrice + priceStep * BreakEvenOffsetPips;
+				_longBreakEvenPrice = entryPrice + priceStep * BreakEvenOffsetPips;
 		}
 
 		if (_longBreakEvenPrice.HasValue && candle.LowPrice <= _longBreakEvenPrice.Value)
@@ -653,21 +653,21 @@ public class GannFanStrategy : Strategy
 				var trigger = priceStep * TrailTriggerPips;
 				var distance = priceStep * TrailDistancePips;
 				if (distance > 0m && candle.ClosePrice - entryPrice >= trigger)
-				candidate = candle.ClosePrice - distance;
+					candidate = candle.ClosePrice - distance;
 			}
 
 			if (UseCandleTrail && _recentLows.Count > 0)
 			{
 				var lowest = decimal.MaxValue;
 				foreach (var low in _recentLows)
-				lowest = Math.Min(lowest, low);
+					lowest = Math.Min(lowest, low);
 
 				var candleBased = lowest - priceStep * TrailPadPips;
 				candidate = candidate.HasValue ? Math.Max(candidate.Value, candleBased) : candleBased;
 			}
 
 			if (candidate.HasValue && (!_longTrailingStop.HasValue || candidate.Value > _longTrailingStop.Value))
-			_longTrailingStop = candidate.Value;
+				_longTrailingStop = candidate.Value;
 		}
 
 		if (_longTrailingStop.HasValue && candle.LowPrice <= _longTrailingStop.Value)
@@ -682,7 +682,7 @@ public class GannFanStrategy : Strategy
 		var entryPrice = _shortEntryPrice ?? candle.ClosePrice;
 		var priceStep = GetPriceStep();
 		if (priceStep <= 0m)
-		return;
+			return;
 
 		var volume = Math.Abs(Position);
 
@@ -712,7 +712,7 @@ public class GannFanStrategy : Strategy
 		{
 			var trigger = entryPrice - priceStep * BreakEvenTriggerPips;
 			if (candle.LowPrice <= trigger)
-			_shortBreakEvenPrice = entryPrice - priceStep * BreakEvenOffsetPips;
+				_shortBreakEvenPrice = entryPrice - priceStep * BreakEvenOffsetPips;
 		}
 
 		if (_shortBreakEvenPrice.HasValue && candle.HighPrice >= _shortBreakEvenPrice.Value)
@@ -731,21 +731,21 @@ public class GannFanStrategy : Strategy
 				var trigger = priceStep * TrailTriggerPips;
 				var distance = priceStep * TrailDistancePips;
 				if (distance > 0m && entryPrice - candle.ClosePrice >= trigger)
-				candidate = candle.ClosePrice + distance;
+					candidate = candle.ClosePrice + distance;
 			}
 
 			if (UseCandleTrail && _recentHighs.Count > 0)
 			{
 				var highest = decimal.MinValue;
 				foreach (var high in _recentHighs)
-				highest = Math.Max(highest, high);
+					highest = Math.Max(highest, high);
 
 				var candleBased = highest + priceStep * TrailPadPips;
 				candidate = candidate.HasValue ? Math.Min(candidate.Value, candleBased) : candleBased;
 			}
 
 			if (candidate.HasValue && (!_shortTrailingStop.HasValue || candidate.Value < _shortTrailingStop.Value))
-			_shortTrailingStop = candidate.Value;
+				_shortTrailingStop = candidate.Value;
 		}
 
 		if (_shortTrailingStop.HasValue && candle.HighPrice >= _shortTrailingStop.Value)
@@ -760,7 +760,7 @@ public class GannFanStrategy : Strategy
 		var fast = _fastValue;
 		var slow = _slowValue;
 		if (fast is null || slow is null)
-		return;
+			return;
 
 		if (ShouldEnterLong(fast.Value, slow.Value))
 		{
@@ -801,19 +801,19 @@ public class GannFanStrategy : Strategy
 	private bool ShouldEnterLong(decimal fast, decimal slow)
 	{
 		if (fast <= slow)
-		return false;
+			return false;
 
 		if (!HasMomentumSignal())
-		return false;
+			return false;
 
 		if (!_macdReady || _macdMain is null || _macdSignal is null || _macdMain <= _macdSignal)
-		return false;
+			return false;
 
 		if (UseGannFilter && !HasBullishFan())
-		return false;
+			return false;
 
 		if (Volume <= 0m)
-		return false;
+			return false;
 
 		var steps = GetCurrentSteps();
 		return steps < MaxTrades;
@@ -822,19 +822,19 @@ public class GannFanStrategy : Strategy
 	private bool ShouldEnterShort(decimal fast, decimal slow)
 	{
 		if (fast >= slow)
-		return false;
+			return false;
 
 		if (!HasMomentumSignal())
-		return false;
+			return false;
 
 		if (!_macdReady || _macdMain is null || _macdSignal is null || _macdMain >= _macdSignal)
-		return false;
+			return false;
 
 		if (UseGannFilter && !HasBearishFan())
-		return false;
+			return false;
 
 		if (Volume <= 0m)
-		return false;
+			return false;
 
 		var steps = GetCurrentSteps();
 		return steps < MaxTrades;
@@ -843,12 +843,12 @@ public class GannFanStrategy : Strategy
 	private bool HasMomentumSignal()
 	{
 		if (_momentumDeviationHistory.Count < 3)
-		return false;
+			return false;
 
 		foreach (var value in _momentumDeviationHistory)
 		{
 			if (value >= MomentumThreshold)
-			return true;
+				return true;
 		}
 
 		return false;
@@ -857,7 +857,7 @@ public class GannFanStrategy : Strategy
 	private bool HasBullishFan()
 	{
 		if (_downFractals.Count < 2)
-		return false;
+			return false;
 
 		var older = _downFractals[^2];
 		var recent = _downFractals[^1];
@@ -867,7 +867,7 @@ public class GannFanStrategy : Strategy
 	private bool HasBearishFan()
 	{
 		if (_upFractals.Count < 2)
-		return false;
+			return false;
 
 		var older = _upFractals[^2];
 		var recent = _upFractals[^1];
@@ -878,11 +878,11 @@ public class GannFanStrategy : Strategy
 	{
 		var baseVolume = Volume;
 		if (baseVolume <= 0m)
-		return 0m;
+			return 0m;
 
 		var steps = GetCurrentSteps();
 		if (steps >= MaxTrades)
-		return 0m;
+			return 0m;
 
 		var multiplier = (decimal)Math.Pow((double)LotExponent, steps);
 		return baseVolume * multiplier;
@@ -892,11 +892,11 @@ public class GannFanStrategy : Strategy
 	{
 		var baseVolume = Volume;
 		if (baseVolume <= 0m)
-		return int.MaxValue;
+			return int.MaxValue;
 
 		var positionVolume = Math.Abs(Position);
 		if (positionVolume <= 0m)
-		return 0;
+			return 0;
 
 		return (int)Math.Round((double)(positionVolume / baseVolume), MidpointRounding.AwayFromZero);
 	}
@@ -980,7 +980,7 @@ public class GannFanStrategy : Strategy
 	{
 		var limit = Math.Max(2, FractalHistory);
 		while (storage.Count > limit)
-		storage.RemoveAt(0);
+			storage.RemoveAt(0);
 	}
 
 	private decimal GetPriceStep()
@@ -1006,4 +1006,3 @@ public class GannFanStrategy : Strategy
 		public decimal Price { get; }
 	}
 }
-

@@ -57,7 +57,7 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 	/// <summary>
 	/// Gets or sets the trade size calculation mode.
 	/// </summary>
-	public TradeSizeTypes TradeSizeTypes
+	public TradeSizeTypes TradeSizeType
 	{
 		get => _tradeSizeType.Value;
 		set => _tradeSizeType.Value = value;
@@ -275,7 +275,7 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 	/// </summary>
 	public EuroSurgeSimplifiedStrategy()
 	{
-		_tradeSizeType = Param(nameof(TradeSizeTypes), TradeSizeTypes.FixedSize)
+		_tradeSizeType = Param(nameof(TradeSizeType), TradeSizeTypes.FixedSize)
 		.SetDisplay("Trade Size Mode", "How trading volume is calculated", "Money Management");
 
 		_fixedVolume = Param(nameof(FixedVolume), 1m)
@@ -417,25 +417,25 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue fastValue, IIndicatorValue slowValue, IIndicatorValue rsiValue, IIndicatorValue macdValue, IIndicatorValue bollingerValue, IIndicatorValue stochasticValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
 		if (!TryBuildSignals(fastValue, slowValue, rsiValue, macdValue, bollingerValue, stochasticValue, candle, out var isBuySignal, out var isSellSignal))
-		return;
+			return;
 
 		if (!isBuySignal && !isSellSignal)
-		return;
+			return;
 
 		var now = candle.CloseTime;
 		var minInterval = TimeSpan.FromMinutes(MinTradeIntervalMinutes);
 		if (_lastTradeTime != DateTimeOffset.MinValue && now - _lastTradeTime < minInterval)
-		return;
+			return;
 
 		var volume = CalculateTradeVolume(candle.ClosePrice);
 		if (volume <= 0m)
-		return;
+			return;
 
 		var currentPosition = Position;
 
@@ -443,17 +443,17 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 		{
 			var orderVolume = volume;
 			if (currentPosition < 0m)
-			orderVolume += Math.Abs(currentPosition);
+				orderVolume += Math.Abs(currentPosition);
 
 			CancelActiveOrders();
 			BuyMarket(orderVolume);
 			var resultingPosition = currentPosition + orderVolume;
 
 			if (TakeProfitPoints > 0)
-			SetTakeProfit(TakeProfitPoints, candle.ClosePrice, resultingPosition);
+				SetTakeProfit(TakeProfitPoints, candle.ClosePrice, resultingPosition);
 
 			if (StopLossPoints > 0)
-			SetStopLoss(StopLossPoints, candle.ClosePrice, resultingPosition);
+				SetStopLoss(StopLossPoints, candle.ClosePrice, resultingPosition);
 
 			_lastTradeTime = now;
 		}
@@ -461,17 +461,17 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 		{
 			var orderVolume = volume;
 			if (currentPosition > 0m)
-			orderVolume += Math.Abs(currentPosition);
+				orderVolume += Math.Abs(currentPosition);
 
 			CancelActiveOrders();
 			SellMarket(orderVolume);
 			var resultingPosition = currentPosition - orderVolume;
 
 			if (TakeProfitPoints > 0)
-			SetTakeProfit(TakeProfitPoints, candle.ClosePrice, resultingPosition);
+				SetTakeProfit(TakeProfitPoints, candle.ClosePrice, resultingPosition);
 
 			if (StopLossPoints > 0)
-			SetStopLoss(StopLossPoints, candle.ClosePrice, resultingPosition);
+				SetStopLoss(StopLossPoints, candle.ClosePrice, resultingPosition);
 
 			_lastTradeTime = now;
 		}
@@ -483,19 +483,19 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 		isSellSignal = false;
 
 		if (UseMa && (!_fastMa.IsFormed || !_slowMa.IsFormed))
-		return false;
+			return false;
 
 		if (UseRsi && !_rsi.IsFormed)
-		return false;
+			return false;
 
 		if (UseMacd && !_macd.IsFormed)
-		return false;
+			return false;
 
 		if (UseBollinger && !_bollinger.IsFormed)
-		return false;
+			return false;
 
 		if (UseStochastic && !_stochastic.IsFormed)
-		return false;
+			return false;
 
 		var fast = fastValue.ToDecimal();
 		var slow = slowValue.ToDecimal();
@@ -538,14 +538,14 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 	{
 		var volume = FixedVolume;
 
-		switch (TradeSizeTypes)
+		switch (TradeSizeType)
 		{
 			case TradeSizeTypes.BalancePercent when Portfolio?.BeginValue is decimal balance && balance > 0m && referencePrice > 0m:
 			{
 				var moneyToUse = balance * TradeSizePercent / 100m;
 				var estimatedVolume = moneyToUse / referencePrice;
 				if (estimatedVolume > 0m)
-				volume = estimatedVolume;
+					volume = estimatedVolume;
 				break;
 			}
 
@@ -554,18 +554,18 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 				var moneyToUse = equity * TradeSizePercent / 100m;
 				var estimatedVolume = moneyToUse / referencePrice;
 				if (estimatedVolume > 0m)
-				volume = estimatedVolume;
+					volume = estimatedVolume;
 				break;
 			}
 		}
 
 		var minVolume = Security?.MinVolume;
 		if (minVolume is decimal min && min > 0m && volume < min)
-		volume = min;
+			volume = min;
 
 		var maxVolume = Security?.MaxVolume;
 		if (maxVolume is decimal max && max > 0m && volume > max)
-		volume = max;
+			volume = max;
 
 		var step = Security?.VolumeStep;
 		if (step is decimal s && s > 0m)

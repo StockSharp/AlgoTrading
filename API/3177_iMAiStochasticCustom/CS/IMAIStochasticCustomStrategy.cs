@@ -93,7 +93,7 @@ public class IMAIStochasticCustomStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("MA Shift", "Number of completed bars used to shift the moving average.", "Indicators");
 
-		_maMethod = Param(nameof(MaMethods), MaMethods.Smoothed)
+		_maMethod = Param(nameof(MaMethod), MaMethods.Smoothed)
 		.SetDisplay("MA Method", "Calculation method for the moving average envelope.", "Indicators");
 
 		_levelUpPips = Param(nameof(LevelUpPips), 80)
@@ -188,7 +188,7 @@ public class IMAIStochasticCustomStrategy : Strategy
 		set => _maShift.Value = value;
 	}
 
-	public MaMethods MaMethods
+	public MaMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -264,7 +264,7 @@ public class IMAIStochasticCustomStrategy : Strategy
 
 		_pipSize = GetPipSize();
 
-		_movingAverage = CreateMovingAverage(MaMethods, Math.Max(1, MaPeriod));
+		_movingAverage = CreateMovingAverage(MaMethod, Math.Max(1, MaPeriod));
 		_stochastic = new StochasticOscillator
 		{
 			Length = Math.Max(1, StochasticKPeriod),

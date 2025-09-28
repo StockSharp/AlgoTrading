@@ -66,7 +66,7 @@ public class MaOnMomentumMinProfitStrategy : Strategy
 	/// <summary>
 	/// Moving average calculation mode applied to momentum.
 	/// </summary>
-	public MomentumMovingAverageTypes MomentumMovingAverageTypes
+	public MomentumMovingAverageTypes MomentumMovingAverageType
 	{
 		get => _momentumMaType.Value;
 		set => _momentumMaType.Value = value;
@@ -208,7 +208,7 @@ public class MaOnMomentumMinProfitStrategy : Strategy
 			Length = MomentumPeriod
 		};
 
-		_momentumAverage = CreateMovingAverage(MomentumMovingAverageTypes, MomentumMovingAveragePeriod);
+		_momentumAverage = CreateMovingAverage(MomentumMovingAverageType, MomentumMovingAveragePeriod);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

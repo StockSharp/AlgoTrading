@@ -59,7 +59,7 @@ public class ColorPemaEnvelopesDigitSystemStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("PEMA Length", "Length of each EMA stage in PEMA", "Indicator");
 
-		_appliedPrice = Param(nameof(AppliedPrices), AppliedPrices.Close)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPrices.Close)
 		.SetDisplay("Applied Price", "Price source passed to PEMA", "Indicator");
 
 		_deviationPercent = Param(nameof(DeviationPercent), 0.1m)
@@ -132,7 +132,7 @@ public class ColorPemaEnvelopesDigitSystemStrategy : Strategy
 	/// <summary>
 	/// Price source passed to PEMA.
 	/// </summary>
-	public AppliedPrices AppliedPrices
+	public AppliedPrices AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -390,20 +390,20 @@ public class ColorPemaEnvelopesDigitSystemStrategy : Strategy
 		var low = candle.LowPrice;
 		var close = candle.ClosePrice;
 
-		return AppliedPrices switch
+		return AppliedPrice switch
 		{
-			Strategies.AppliedPrices.Close => close,
-			Strategies.AppliedPrices.Open => open,
-			Strategies.AppliedPrices.High => high,
-			Strategies.AppliedPrices.Low => low,
-			Strategies.AppliedPrices.Median => (high + low) / 2m,
-			Strategies.AppliedPrices.Typical => (close + high + low) / 3m,
-			Strategies.AppliedPrices.Weighted => (2m * close + high + low) / 4m,
-			Strategies.AppliedPrices.Simple => (open + close) / 2m,
-			Strategies.AppliedPrices.Quarter => (open + close + high + low) / 4m,
-			Strategies.AppliedPrices.TrendFollow0 => close > open ? high : close < open ? low : close,
-			Strategies.AppliedPrices.TrendFollow1 => close > open ? (high + close) / 2m : close < open ? (low + close) / 2m : close,
-			Strategies.AppliedPrices.Demark => CalculateDemarkPrice(open, high, low, close),
+			AppliedPrices.Close => close,
+			AppliedPrices.Open => open,
+			AppliedPrices.High => high,
+			AppliedPrices.Low => low,
+			AppliedPrices.Median => (high + low) / 2m,
+			AppliedPrices.Typical => (close + high + low) / 3m,
+			AppliedPrices.Weighted => (2m * close + high + low) / 4m,
+			AppliedPrices.Simple => (open + close) / 2m,
+			AppliedPrices.Quarter => (open + close + high + low) / 4m,
+			AppliedPrices.TrendFollow0 => close > open ? high : close < open ? low : close,
+			AppliedPrices.TrendFollow1 => close > open ? (high + close) / 2m : close < open ? (low + close) / 2m : close,
+			AppliedPrices.Demark => CalculateDemarkPrice(open, high, low, close),
 			_ => close,
 		};
 	}

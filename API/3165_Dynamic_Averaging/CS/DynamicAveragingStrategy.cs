@@ -410,7 +410,7 @@ public class DynamicAveragingStrategy : Strategy
 		if (days <= 0)
 		return 1;
 
-		TimeSpan? timeFrame = CandleType.TimeFrame;
+		TimeSpan? timeFrame = CandleType.GetTimeFrame();
 
 		if (timeFrame == null)
 		{

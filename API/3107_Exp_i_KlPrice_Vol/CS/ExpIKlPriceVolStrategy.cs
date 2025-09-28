@@ -296,7 +296,7 @@ public class ExpIKlPriceVolStrategy : Strategy
 	/// <summary>
 	/// Price input used by the oscillator.
 	/// </summary>
-	public AppliedPrices AppliedPrices
+	public AppliedPrices AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -392,7 +392,7 @@ public class ExpIKlPriceVolStrategy : Strategy
 			RangeMaLength,
 			RangeMaPhase,
 			SmoothingLength,
-			AppliedPrices,
+			AppliedPrice,
 			VolumeType,
 			HighLevel2,
 			HighLevel1,

@@ -63,7 +63,7 @@ public class BasicMaTemplateStrategy : Strategy
 	/// <summary>
 	/// Moving average calculation mode.
 	/// </summary>
-	public MovingAverageMethods MovingAverageMethods
+	public MovingAverageMethods MovingAverageMethod
 	{
 		get => _movingAverageMethod.Value;
 		set => _movingAverageMethod.Value = value;
@@ -104,7 +104,7 @@ public class BasicMaTemplateStrategy : Strategy
 		_movingAverageShift = Param(nameof(MovingAverageShift), 0)
 			.SetDisplay("MA Shift", "Forward shift applied to the moving average", "Indicator");
 
-		_movingAverageMethod = Param(nameof(MovingAverageMethods), MovingAverageMethods.Simple)
+		_movingAverageMethod = Param(nameof(MovingAverageMethod), MovingAverageMethods.Simple)
 			.SetDisplay("MA Method", "Moving average calculation mode", "Indicator");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 38.5m)
@@ -139,7 +139,7 @@ public class BasicMaTemplateStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		var movingAverage = CreateMovingAverage(MovingAverageMethods, MovingAveragePeriod);
+		var movingAverage = CreateMovingAverage(MovingAverageMethod, MovingAveragePeriod);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

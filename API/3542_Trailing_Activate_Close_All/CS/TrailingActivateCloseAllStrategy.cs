@@ -64,7 +64,7 @@ public class TrailingActivateCloseAllStrategy : Strategy
 	/// <summary>
 	/// Frequency of trailing calculations.
 	/// </summary>
-	public TrailingModes TrailingModes
+	public TrailingModes TrailingMode
 	{
 		get => _trailingMode.Value;
 		set => _trailingMode.Value = value;
@@ -196,7 +196,7 @@ public class TrailingActivateCloseAllStrategy : Strategy
 	{
 		yield return (Security, DataType.Level1);
 
-		if (TrailingModes == TrailingModes.NewBar)
+		if (TrailingMode == TrailingModes.NewBar)
 		{
 			yield return (Security, CandleType);
 		}
@@ -249,7 +249,7 @@ public class TrailingActivateCloseAllStrategy : Strategy
 		.Bind(ProcessLevel1)
 		.Start();
 
-		if (TrailingModes == TrailingModes.NewBar)
+		if (TrailingMode == TrailingModes.NewBar)
 		{
 			var subscription = SubscribeCandles(CandleType);
 			subscription.Bind(ProcessCandle).Start();
@@ -296,25 +296,25 @@ public class TrailingActivateCloseAllStrategy : Strategy
 	private void ProcessLevel1(Level1ChangeMessage message)
 	{
 		if (message.TryGetDecimal(Level1Fields.BestBidPrice) is decimal bid)
-		_bestBid = bid;
+			_bestBid = bid;
 
 		if (message.TryGetDecimal(Level1Fields.BestAskPrice) is decimal ask)
-		_bestAsk = ask;
+			_bestAsk = ask;
 
 		if (StopLevelField is Level1Fields stopField && message.Changes.TryGetValue(stopField, out var stopValue))
-		_stopLevel = ToDecimal(stopValue);
+			_stopLevel = ToDecimal(stopValue);
 
 		if (FreezeLevelField is Level1Fields freezeField && message.Changes.TryGetValue(freezeField, out var freezeValue))
-		_freezeLevel = ToDecimal(freezeValue);
+			_freezeLevel = ToDecimal(freezeValue);
 
-		if (TrailingModes == TrailingModes.EveryTick)
-		UpdateProtectionAndTrailing();
+		if (TrailingMode == TrailingModes.EveryTick)
+			UpdateProtectionAndTrailing();
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		UpdateProtectionAndTrailing(candle.ClosePrice);
 	}
@@ -322,47 +322,47 @@ public class TrailingActivateCloseAllStrategy : Strategy
 	private void UpdateProtectionAndTrailing(decimal? candlePrice = null)
 	{
 		if (!IsFormedAndOnline())
-		return;
+			return;
 
 		var signedVolume = (decimal)Position;
 		if (signedVolume == 0m)
-		return;
+			return;
 
 		var isLong = signedVolume > 0m;
 		var marketPrice = GetMarketPrice(isLong, candlePrice);
 		if (marketPrice is not decimal price)
-		return;
+			return;
 
 		if (HandleTargetProfit(price))
-		return;
+			return;
 
 		EnsureProtection(isLong);
 
 		if (TrailingStopPoints > 0m)
-		ApplyTrailing(isLong, price);
+			ApplyTrailing(isLong, price);
 	}
 
 	private bool HandleTargetProfit(decimal marketPrice)
 	{
 		if (TargetProfit <= 0m)
-		return false;
+			return false;
 
 		if (PositionPrice is not decimal entryPrice || entryPrice <= 0m)
-		return false;
+			return false;
 
 		var signedVolume = (decimal)Position;
 		var profit = (marketPrice - entryPrice) * signedVolume;
 
 		if (profit < TargetProfit)
-		return false;
+			return false;
 
 		if (_isClosingAll)
-		return true;
+			return true;
 
 		_isClosingAll = true;
 
 		if (DetailedLogging)
-		LogInfo(string.Format(CultureInfo.InvariantCulture, "Target profit reached. Closing all positions. Profit={0:F2}", profit));
+			LogInfo(string.Format(CultureInfo.InvariantCulture, "Target profit reached. Closing all positions. Profit={0:F2}", profit));
 
 		CancelActiveOrders();
 		CancelProtectiveOrder(ref _stopOrder);
@@ -375,11 +375,11 @@ public class TrailingActivateCloseAllStrategy : Strategy
 	{
 		var volume = NormalizeVolume(Math.Abs((decimal)Position));
 		if (volume <= 0m)
-		return;
+			return;
 
 		var referencePrice = GetReferencePrice(isLong);
 		if (referencePrice is not decimal price)
-		return;
+			return;
 
 		var minDistance = GetMinimalDistance();
 
@@ -409,18 +409,18 @@ public class TrailingActivateCloseAllStrategy : Strategy
 	private void ApplyTrailing(bool isLong, decimal marketPrice)
 	{
 		if (PositionPrice is not decimal entryPrice || entryPrice <= 0m)
-		return;
+			return;
 
 		var trailingDistance = TrailingStopPoints * _pointValue;
 		if (trailingDistance <= 0m)
-		return;
+			return;
 
 		var minDistance = GetMinimalDistance();
 		trailingDistance = Math.Max(trailingDistance, minDistance);
 
 		var stepDistance = TrailingStepPoints * _pointValue;
 		if (stepDistance <= 0m)
-		return;
+			return;
 
 		var activationDistance = TrailingActivatePoints * _pointValue;
 		var takeProfitPrice = _takeProfitOrder?.Price;
@@ -429,45 +429,45 @@ public class TrailingActivateCloseAllStrategy : Strategy
 		{
 			var profit = marketPrice - entryPrice;
 			if (profit < trailingDistance + stepDistance)
-			return;
+				return;
 
 			if (marketPrice - trailingDistance < entryPrice + activationDistance)
-			return;
+				return;
 
 			var newStop = marketPrice - trailingDistance;
 			if (_stopOrder is Order stopOrder && stopOrder.Price >= newStop - stepDistance)
-			return;
+				return;
 
 			var bidPrice = _bestBid ?? marketPrice;
 			if (takeProfitPrice is decimal tp && bidPrice >= tp - minDistance)
-			return;
+				return;
 
 			UpdateStopOrder(newStop, NormalizeVolume(Math.Abs((decimal)Position)), true);
 
 			if (DetailedLogging)
-			LogInfo(string.Format(CultureInfo.InvariantCulture, "Trailing stop for long position moved to {0:F5}.", newStop));
+				LogInfo(string.Format(CultureInfo.InvariantCulture, "Trailing stop for long position moved to {0:F5}.", newStop));
 		}
 		else
 		{
 			var profit = entryPrice - marketPrice;
 			if (profit < trailingDistance + stepDistance)
-			return;
+				return;
 
 			if (marketPrice + trailingDistance > entryPrice - activationDistance)
-			return;
+				return;
 
 			var newStop = marketPrice + trailingDistance;
 			if (_stopOrder is Order stopOrder && stopOrder.Price <= newStop + stepDistance)
-			return;
+				return;
 
 			var askPrice = _bestAsk ?? marketPrice;
 			if (takeProfitPrice is decimal tp && askPrice <= tp + minDistance)
-			return;
+				return;
 
 			UpdateStopOrder(newStop, NormalizeVolume(Math.Abs((decimal)Position)), false);
 
 			if (DetailedLogging)
-			LogInfo(string.Format(CultureInfo.InvariantCulture, "Trailing stop for short position moved to {0:F5}.", newStop));
+				LogInfo(string.Format(CultureInfo.InvariantCulture, "Trailing stop for short position moved to {0:F5}.", newStop));
 		}
 	}
 
@@ -488,12 +488,12 @@ public class TrailingActivateCloseAllStrategy : Strategy
 	private void ClosePosition(decimal volume)
 	{
 		if (volume == 0m)
-		return;
+			return;
 
 		if (volume > 0m)
-		SellMarket(volume);
+			SellMarket(volume);
 		else
-		BuyMarket(-volume);
+			BuyMarket(-volume);
 	}
 
 	private void UpdateStopOrder(decimal? targetPrice, decimal volume, bool isLong)
@@ -525,7 +525,7 @@ public class TrailingActivateCloseAllStrategy : Strategy
 		}
 
 		if (_stopOrder.Price != normalizedPrice || _stopOrder.Volume != volume)
-		ReRegisterOrder(_stopOrder, normalizedPrice, volume);
+			ReRegisterOrder(_stopOrder, normalizedPrice, volume);
 	}
 
 	private void UpdateTakeProfitOrder(decimal? targetPrice, decimal volume, bool isLong)
@@ -557,17 +557,17 @@ public class TrailingActivateCloseAllStrategy : Strategy
 		}
 
 		if (_takeProfitOrder.Price != normalizedPrice || _takeProfitOrder.Volume != volume)
-		ReRegisterOrder(_takeProfitOrder, normalizedPrice, volume);
+			ReRegisterOrder(_takeProfitOrder, normalizedPrice, volume);
 	}
 
 	private void CancelProtectiveOrder(ref Order order)
 	{
 		var current = order;
 		if (current == null)
-		return;
+			return;
 
 		if (current.State == OrderStates.Active)
-		CancelOrder(current);
+			CancelOrder(current);
 
 		order = null;
 	}
@@ -575,7 +575,7 @@ public class TrailingActivateCloseAllStrategy : Strategy
 	private decimal NormalizePrice(decimal price)
 	{
 		if (_priceStep <= 0m)
-		return price;
+			return price;
 
 		var steps = Math.Round(price / _priceStep, MidpointRounding.AwayFromZero);
 		return steps * _priceStep;
@@ -584,7 +584,7 @@ public class TrailingActivateCloseAllStrategy : Strategy
 	private decimal NormalizeVolume(decimal volume)
 	{
 		if (_volumeStep <= 0m)
-		return volume;
+			return volume;
 
 		var steps = Math.Round(volume / _volumeStep, MidpointRounding.AwayFromZero);
 		return steps * _volumeStep;
@@ -599,7 +599,7 @@ public class TrailingActivateCloseAllStrategy : Strategy
 		if (freeze <= 0m)
 		{
 			if (coeff > 0m && _bestBid is decimal bid && _bestAsk is decimal ask)
-			freeze = Math.Abs(ask - bid) * coeff;
+				freeze = Math.Abs(ask - bid) * coeff;
 		}
 		else if (coeff > 0m)
 		{
@@ -609,7 +609,7 @@ public class TrailingActivateCloseAllStrategy : Strategy
 		if (stops <= 0m)
 		{
 			if (coeff > 0m && _bestBid is decimal bid2 && _bestAsk is decimal ask2)
-			stops = Math.Abs(ask2 - bid2) * coeff;
+				stops = Math.Abs(ask2 - bid2) * coeff;
 		}
 		else if (coeff > 0m)
 		{
@@ -619,7 +619,7 @@ public class TrailingActivateCloseAllStrategy : Strategy
 		var level = Math.Max(freeze, stops);
 
 		if (level <= 0m && _priceStep > 0m)
-		level = _priceStep;
+			level = _priceStep;
 
 		return level;
 	}
@@ -627,23 +627,23 @@ public class TrailingActivateCloseAllStrategy : Strategy
 	private decimal CalculatePointValue()
 	{
 		if (Security == null)
-		return 0.0001m;
+			return 0.0001m;
 
 		var step = Security.PriceStep ?? 0m;
 		if (step <= 0m)
 		{
 			var decimals = Security.Decimals;
 			if (decimals != null && decimals.Value > 0)
-			step = (decimal)Math.Pow(10, -decimals.Value);
+				step = (decimal)Math.Pow(10, -decimals.Value);
 		}
 
 		if (step <= 0m)
-		step = 0.0001m;
+			step = 0.0001m;
 
 		var multiplier = 1m;
 		var digits = Security.Decimals;
 		if (digits != null && (digits.Value == 3 || digits.Value == 5))
-		multiplier = 10m;
+			multiplier = 10m;
 
 		return step * multiplier;
 	}

@@ -443,7 +443,7 @@ public class GselectorPatternProbabilityStrategy : Strategy
 
 	private void ActivatePattern(int deltaIndex, int pattern, ICandleMessage candle)
 	{
-		var timeFrame = CandleType.TimeFrame ?? TimeSpan.FromMinutes(1);
+		var timeFrame = CandleType.GetTimeFrame();
 		var cooldown = TimeSpan.FromTicks(timeFrame.Ticks * Math.Max(1, CooldownFactor));
 
 		for (var stopIndex = 0; stopIndex < StopLevels; stopIndex++)
@@ -582,7 +582,7 @@ public class GselectorPatternProbabilityStrategy : Strategy
 
 	private void TryOpenLong(ICandleMessage candle, SignalCandidate candidate)
 	{
-		var timeFrame = CandleType.TimeFrame ?? TimeSpan.FromMinutes(1);
+		var timeFrame = CandleType.GetTimeFrame();
 		var cooldown = TimeSpan.FromTicks(timeFrame.Ticks * Math.Max(1, CooldownFactor));
 
 		if (_lastBuyTime.HasValue && candle.CloseTime - _lastBuyTime.Value < cooldown)
@@ -620,7 +620,7 @@ public class GselectorPatternProbabilityStrategy : Strategy
 
 	private void TryOpenShort(ICandleMessage candle, SignalCandidate candidate)
 	{
-		var timeFrame = CandleType.TimeFrame ?? TimeSpan.FromMinutes(1);
+		var timeFrame = CandleType.GetTimeFrame();
 		var cooldown = TimeSpan.FromTicks(timeFrame.Ticks * Math.Max(1, CooldownFactor));
 
 		if (_lastSellTime.HasValue && candle.CloseTime - _lastSellTime.Value < cooldown)

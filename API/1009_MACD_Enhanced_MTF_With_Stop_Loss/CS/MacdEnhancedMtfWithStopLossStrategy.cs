@@ -129,7 +129,7 @@ public class MacdEnhancedMtfWithStopLossStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		var tf = CandleType.TimeFrame ?? TimeSpan.FromMinutes(1);
+		var tf = CandleType.GetTimeFrame();
 		return [(Security, CandleType), (Security, GetHigherTimeFrame(tf))];
 	}
 
@@ -138,7 +138,7 @@ public class MacdEnhancedMtfWithStopLossStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		var timeFrame = CandleType.TimeFrame ?? TimeSpan.FromMinutes(1);
+		var timeFrame = CandleType.GetTimeFrame();
 		_htfType = GetHigherTimeFrame(timeFrame);
 		_calc = GetCalcValue(timeFrame);
 

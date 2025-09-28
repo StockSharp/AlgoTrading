@@ -296,14 +296,14 @@ public class IndicesSectorSigmaSpikesStrategy : Strategy
 
 	private sealed class SigmaCalculator
 	{
-		private readonly StdDev _stdDev;
+		private readonly StandardDeviation _stdDev;
 		private readonly Queue<decimal> _closeBuffer = new();
 		private readonly int _retLen;
 		private decimal? _prevClose;
 
 		public SigmaCalculator(int length, int retLen)
 		{
-			_stdDev = new StdDev { Length = length };
+			_stdDev = new StandardDeviation { Length = length };
 			_retLen = retLen;
 		}
 
