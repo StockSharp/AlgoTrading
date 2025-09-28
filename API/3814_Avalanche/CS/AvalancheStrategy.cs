@@ -590,9 +590,9 @@ public class AvalancheStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnOrderFailed(Order order, OrderFail fail)
+	protected override void OnOrderRegisterFailed(OrderFail fail, bool calcRisk)
 	{
-		base.OnOrderFailed(order, fail);
+		base.OnOrderRegisterFailed(fail, calcRisk);
 
 		if (order?.Side != null && _pendingEntrySide.HasValue && order.Side == _pendingEntrySide)
 			_pendingEntrySide = null;

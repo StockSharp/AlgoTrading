@@ -52,8 +52,8 @@ public class TestinatorStrategy : Strategy
 	private AverageDirectionalIndex _adx = null!;
 	private StochasticOscillator _stochastic = null!;
 	private WilliamsR _williams = null!;
-	private MovingAverageConvergenceDivergence _macd = null!;
-	private IchimokuKinkoHyo _ichimoku = null!;
+	private MovingAverageConvergenceDivergenceSignal _macd = null!;
+	private Ichimoku _ichimoku = null!;
 	private RelativeStrengthIndex _rsiEntry = null!;
 	private RelativeStrengthIndex _rsiClose = null!;
 	private AverageTrueRange _dailyAtr = null!;
@@ -416,7 +416,7 @@ public class TestinatorStrategy : Strategy
 			LongLength = 26,
 			SignalLength = 9
 		};
-		_ichimoku = new IchimokuKinkoHyo
+		_ichimoku = new Ichimoku
 		{
 			TenkanSenLength = 9,
 			KijunSenLength = 26,
@@ -684,7 +684,7 @@ public class TestinatorStrategy : Strategy
 	AverageDirectionalIndexValue adx,
 	StochasticOscillatorValue stochastic,
 	decimal williams,
-	MovingAverageConvergenceDivergenceValue macd,
+	MovingAverageConvergenceDivergenceSignalValue macd,
 	IchimokuKinkoHyoValue ichimoku,
 	decimal rsiEntry,
 	decimal? previousRsiEntry,

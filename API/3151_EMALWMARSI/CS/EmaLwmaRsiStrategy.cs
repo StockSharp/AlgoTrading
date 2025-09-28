@@ -183,10 +183,7 @@ public class EmaLwmaRsiStrategy : Strategy
 		var stopLossUnit = StopLossPips > 0 ? new Unit(StopLossPips * _pipSize, UnitTypes.Point) : null;
 		var takeProfitUnit = TakeProfitPips > 0 ? new Unit(TakeProfitPips * _pipSize, UnitTypes.Point) : null;
 
-		if (stopLossUnit != null || takeProfitUnit != null)
-			StartProtection(takeProfit: takeProfitUnit, stopLoss: stopLossUnit);
-		else
-			StartProtection();
+		StartProtection(takeProfit: takeProfitUnit, stopLoss: stopLossUnit);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -222,9 +219,9 @@ public class EmaLwmaRsiStrategy : Strategy
 			ProcessPendingOrders();
 	}
 
-	protected override void OnOrderFailed(Order order, OrderFail fail)
+	protected override void OnOrderRegisterFailed(OrderFail fail, bool calcRisk)
 	{
-		base.OnOrderFailed(order, fail);
+		base.OnOrderRegisterFailed(fail, calcRisk);
 
 		_orderInFlight = false;
 	}

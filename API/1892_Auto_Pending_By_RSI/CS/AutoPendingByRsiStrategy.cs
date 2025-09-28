@@ -176,13 +176,13 @@ public class AutoPendingByRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnOrderFailed(Order order, OrderFail fail)
+	protected override void OnOrderRegisterFailed(OrderFail fail, bool calcRisk)
 	{
-		base.OnOrderFailed(order, fail);
+		base.OnOrderRegisterFailed(fail, calcRisk);
 
-		if (order == _buyOrder)
+		if (fail.Order == _buyOrder)
 			_buyOrder = null;
-		else if (order == _sellOrder)
+		else if (fail.Order == _sellOrder)
 			_sellOrder = null;
 	}
 }
