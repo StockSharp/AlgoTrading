@@ -165,7 +165,7 @@ public class JkSynchroStrategy : Strategy
 	public JkSynchroStrategy()
 	{
 	_volumeTolerance = Param(nameof(VolumeTolerance), 1e-8m)
-	.SetGreaterThanOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Volume Tolerance", "Threshold below which positions are considered flat", "Risk");
 
 	_orderVolume = Param(nameof(OrderVolume), 0.1m)

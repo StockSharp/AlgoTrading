@@ -302,7 +302,7 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 
 		_intervalPips = Param(nameof(IntervalPips), 15)
 		.SetDisplay("Interval (pips)", "Base spacing between entries", "Grid")
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetCanOptimize(true);
 
 		_intervalCoefficient = Param(nameof(IntervalCoefficient), 1.2m)
@@ -312,20 +312,20 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 0)
 		.SetDisplay("Stop Loss (pips)", "Distance to protective stop", "Risk")
-		.SetGreaterThanOrEqualZero();
+		.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 		.SetDisplay("Take Profit (pips)", "Base take profit distance", "Risk")
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetCanOptimize(true);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 0)
 		.SetDisplay("Trailing Stop (pips)", "Trailing distance", "Risk")
-		.SetGreaterThanOrEqualZero();
+		.SetNotNegative();
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
 		.SetDisplay("Trailing Step (pips)", "Extra move required to tighten trail", "Risk")
-		.SetGreaterThanOrEqualZero();
+		.SetNotNegative();
 
 		_takeProfitCoefficient = Param(nameof(TakeProfitCoefficient), 1.2m)
 		.SetDisplay("TP Coefficient", "Take profit multiplier per entry", "Risk")
@@ -334,14 +334,14 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 
 		_secureProfit = Param(nameof(SecureProfit), 300m)
 		.SetDisplay("Secure Profit", "Cumulative profit to trigger protection", "Risk")
-		.SetGreaterThanOrEqualZero();
+		.SetNotNegative();
 
 		_accountProtection = Param(nameof(AccountProtection), true)
 		.SetDisplay("Account Protection", "Enable profit locking", "Risk");
 
 		_positionsForProtection = Param(nameof(PositionsForProtection), 3)
 		.SetDisplay("Positions For Protection", "Entries required for protection", "Risk")
-		.SetGreaterThanOrEqualZero();
+		.SetNotNegative();
 
 		_reverseCondition = Param(nameof(ReverseCondition), false)
 		.SetDisplay("Reverse Condition", "Invert MACD slope logic", "General");
@@ -372,7 +372,7 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 
 		_minimumBalance = Param(nameof(MinimumBalance), 1000m)
 		.SetDisplay("Minimum Balance", "Stop trading below this balance", "Risk")
-		.SetGreaterThanOrEqualZero();
+		.SetNotNegative();
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for calculations", "General");

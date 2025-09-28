@@ -120,7 +120,7 @@ public class VltTraderStraddleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security security, DataType dataType)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		if (Security != null)
 			yield return (Security, CandleType);

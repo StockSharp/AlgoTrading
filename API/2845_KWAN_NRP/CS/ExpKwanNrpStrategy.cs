@@ -233,7 +233,7 @@ public class ExpKwanNrpStrategy : Strategy
 			.SetOptimize(2, 15, 1);
 
 		_signalBar = Param(nameof(SignalBar), 1)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Bar offset used for signals", "Trading");
 
 		_enableBuyEntries = Param(nameof(EnableBuyEntries), true)
@@ -252,11 +252,11 @@ public class ExpKwanNrpStrategy : Strategy
 			.SetDisplay("Use Protection", "Enable stop-loss/take-profit", "Risk");
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 1000)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop-Loss Steps", "Stop-loss distance in steps", "Risk");
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 2000)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take-Profit Steps", "Take-profit distance in steps", "Risk");
 	}
 

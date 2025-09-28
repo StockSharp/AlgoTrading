@@ -153,15 +153,15 @@ public class MacdMultiTimeframeExpertStrategy : Strategy
 			.SetDisplay("Order Volume", "Position size in lots", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 200m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss Points", "Stop-loss distance in points", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit Points", "Take-profit distance in points", "Risk");
 
 		_maxSpreadPoints = Param(nameof(MaxSpreadPoints), 20m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Max Spread", "Maximum allowed spread in points", "Risk");
 
 		_fastPeriod = Param(nameof(FastPeriod), 12)

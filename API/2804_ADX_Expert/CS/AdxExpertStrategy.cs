@@ -121,19 +121,19 @@ public class AdxExpertStrategy : Strategy
 			.SetOptimize(15m, 35m, 5m);
 
 		_maxSpreadPoints = Param(nameof(MaxSpreadPoints), 20m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Max spread (points)", "Maximum allowed bid-ask spread in points", "Risk management")
 			.SetCanOptimize(true)
 			.SetOptimize(5m, 40m, 5m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 200m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop loss (points)", "Protective stop distance in price points", "Risk management")
 			.SetCanOptimize(true)
 			.SetOptimize(100m, 400m, 50m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take profit (points)", "Target distance in price points", "Risk management")
 			.SetCanOptimize(true)
 			.SetOptimize(200m, 600m, 100m);

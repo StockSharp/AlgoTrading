@@ -85,11 +85,11 @@ public class BullsBearsPowerAverageStrategy : Strategy
 			.SetDisplay("Order Volume", "Order size for entries", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 15)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 95)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk");
 
 		_maPeriod = Param(nameof(MaPeriod), 5)

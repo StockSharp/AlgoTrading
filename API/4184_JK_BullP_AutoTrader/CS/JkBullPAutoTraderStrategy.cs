@@ -105,15 +105,15 @@ public class JkBullPAutoTraderStrategy : Strategy
 			.SetDisplay("Order Volume", "Market order size for entries", "Trading");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 500m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take profit distance expressed in pips", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance expressed in pips", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 10m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing distance used to protect profits", "Risk");
 
 		_emaPeriod = Param(nameof(EmaPeriod), 13)

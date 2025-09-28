@@ -59,7 +59,7 @@ public class PivotsStrategy : Strategy
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 30)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (points)", "Trailing stop distance expressed in points", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 200, 5);

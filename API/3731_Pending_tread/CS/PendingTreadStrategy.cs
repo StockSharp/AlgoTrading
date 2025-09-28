@@ -72,7 +72,7 @@ public class PendingTreadStrategy : Strategy
 			.SetDisplay("Below market side", "Type of orders stacked below the current price", "Orders");
 
 		_slippagePoints = Param(nameof(SlippagePoints), 3)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Slippage (points)", "Retained for parity with the MT4 input; pending orders ignore slippage in StockSharp", "Execution");
 	}
 

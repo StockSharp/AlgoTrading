@@ -105,26 +105,26 @@ public class DemarkerMartingaleStrategy : Strategy
 		.SetDisplay("Max Steps", "Maximum consecutive martingale escalations", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 5m)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 5m)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Target profit distance in pips", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 30m)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk");
 
 		_useBreakEven = Param(nameof(UseBreakEven), true)
 		.SetDisplay("Use Break-Even", "Enable break-even shift of the stop", "Risk");
 
 		_breakEvenTriggerPips = Param(nameof(BreakEvenTriggerPips), 10m)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Break-Even Trigger", "Profit in pips required before moving stop", "Risk");
 
 		_breakEvenOffsetPips = Param(nameof(BreakEvenOffsetPips), 5m)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Break-Even Offset", "Extra buffer beyond entry when moving stop", "Risk");
 	}
 

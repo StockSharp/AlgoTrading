@@ -80,11 +80,11 @@ public class ConditionalPositionOpenerStrategy : Strategy
 	{
 
 		_stopLossPips = Param(nameof(StopLossPips), 100m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance in price steps", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 200m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take profit distance in price steps", "Risk");
 
 		_enableBuy = Param(nameof(EnableBuy), false)

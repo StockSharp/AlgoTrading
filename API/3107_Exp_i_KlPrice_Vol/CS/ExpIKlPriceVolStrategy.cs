@@ -76,11 +76,11 @@ public class ExpIKlPriceVolStrategy : Strategy
 			.SetDisplay("Secondary Volume", "Order volume dispatched by the second slot", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Protective stop in price steps", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Target distance in price steps", "Risk");
 
 		_allowLongEntry = Param(nameof(AllowLongEntry), true)
@@ -145,7 +145,7 @@ public class ExpIKlPriceVolStrategy : Strategy
 			.SetDisplay("Low Level 2", "Lower extreme multiplied by smoothed volume", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Shift applied before evaluating colour transitions", "Trading");
 	}
 

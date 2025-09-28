@@ -149,31 +149,31 @@ public class GridTemplateStrategy : Strategy
 
 		_riskPercent = Param(nameof(RiskPercent), 2m)
 			.SetDisplay("Risk %", "Risk percentage applied to free margin", "Money Management")
-			.SetGreaterThanOrEqualZero();
+			.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 20m)
 			.SetDisplay("Take Profit (pips)", "Take-profit distance for each grid order", "Orders")
-			.SetGreaterThanOrEqualZero();
+			.SetNotNegative();
 
 		_stopLossPips = Param(nameof(StopLossPips), 30m)
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance for each grid order", "Orders")
-			.SetGreaterThanOrEqualZero();
+			.SetNotNegative();
 
 		_priceDistancePips = Param(nameof(PriceDistancePips), 15m)
 			.SetDisplay("Initial Offset (pips)", "Distance from price to the first grid order", "Orders")
-			.SetGreaterThanOrEqualZero();
+			.SetNotNegative();
 
 		_gridStepPips = Param(nameof(GridStepPips), 10m)
 			.SetDisplay("Grid Step (pips)", "Spacing between consecutive grid levels", "Orders")
-			.SetGreaterThanOrEqualZero();
+			.SetNotNegative();
 
 		_gridOrders = Param(nameof(GridOrders), 2)
 			.SetDisplay("Orders Per Side", "Number of pending orders on each side", "Orders")
-			.SetGreaterThanOrEqualZero();
+			.SetNotNegative();
 
 		_pendingExpirationHours = Param(nameof(PendingExpirationHours), 4)
 			.SetDisplay("Pending Expiration (hours)", "Time until the grid is cancelled", "Orders")
-			.SetGreaterThanOrEqualZero();
+			.SetNotNegative();
 	}
 
 	/// <inheritdoc />

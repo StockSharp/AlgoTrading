@@ -67,7 +67,7 @@ public class ITradeStrategy : Strategy
 
 		_profitResetAfterWins = Param(nameof(ProfitResetAfterWins), 1)
 			.SetDisplay("Profit Reset Wins", "Number of consecutive winning cycles before profit counters reset.", "Profit Control")
-			.SetGreaterThanOrEqualZero();
+			.SetNotNegative();
 
 		_historyLimit = Param(nameof(HistoryLimit), 200)
 			.SetDisplay("History Limit", "Maximum number of closed profit samples retained.", "Profit Control")

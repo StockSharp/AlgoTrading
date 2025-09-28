@@ -147,13 +147,13 @@ public class BobnaleyStrategy : Strategy
 	public BobnaleyStrategy()
 	{
 		_takeProfit = Param(nameof(TakeProfit), 0.007m)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Target distance in price units", "Risk Management")
 		.SetCanOptimize(true)
 		.SetOptimize(0.002m, 0.02m, 0.001m);
 
 		_stopLoss = Param(nameof(StopLoss), 0.0035m)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Protective stop distance in price units", "Risk Management")
 		.SetCanOptimize(true)
 		.SetOptimize(0.001m, 0.01m, 0.0005m);
@@ -195,7 +195,7 @@ public class BobnaleyStrategy : Strategy
 		.SetOptimize(60m, 90m, 5m);
 
 		_minimumBalance = Param(nameof(MinimumBalance), 5000m)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Minimum Balance", "Minimal portfolio value required for new trades", "Risk Management");
 
 		_baseVolume = Param(nameof(BaseVolume), 5m)

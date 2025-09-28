@@ -62,19 +62,19 @@ public class MacdPatternTraderDoubleTopStrategy : Strategy
 		.SetOptimize(1, 9, 1);
 
 		_triggerLevel = Param(nameof(TriggerLevel), 0.0045m)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trigger Level", "Absolute MACD level that arms the pattern logic", "MACD")
 		.SetCanOptimize(true)
 		.SetOptimize(0.001m, 0.01m, 0.0005m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 100m)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop-Loss (pips)", "Stop-loss distance expressed in pips", "Risk Management")
 		.SetCanOptimize(true)
 		.SetOptimize(50m, 200m, 10m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 300m)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take-Profit (pips)", "Take-profit distance expressed in pips", "Risk Management")
 		.SetCanOptimize(true)
 		.SetOptimize(150m, 500m, 10m);

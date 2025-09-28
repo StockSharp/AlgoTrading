@@ -140,27 +140,27 @@ public class PerceptronMultStrategy : Strategy
 			.SetDisplay("Third Weight 4", "Fourth perceptron weight for the third instrument", "Perceptron");
 
 		_firstStopLossPoints = Param(nameof(FirstStopLossPoints), 40m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("First Stop Loss", "Stop-loss distance in points for the first security", "Risk");
 
 		_firstTakeProfitPoints = Param(nameof(FirstTakeProfitPoints), 95m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("First Take Profit", "Take-profit distance in points for the first security", "Risk");
 
 		_secondStopLossPoints = Param(nameof(SecondStopLossPoints), 40m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Second Stop Loss", "Stop-loss distance in points for the second security", "Risk");
 
 		_secondTakeProfitPoints = Param(nameof(SecondTakeProfitPoints), 95m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Second Take Profit", "Take-profit distance in points for the second security", "Risk");
 
 		_thirdStopLossPoints = Param(nameof(ThirdStopLossPoints), 40m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Third Stop Loss", "Stop-loss distance in points for the third security", "Risk");
 
 		_thirdTakeProfitPoints = Param(nameof(ThirdTakeProfitPoints), 95m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Third Take Profit", "Take-profit distance in points for the third security", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

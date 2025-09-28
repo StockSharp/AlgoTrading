@@ -26,8 +26,8 @@ public class SymbolSwapPanelStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<bool> _swapRequested;
 
-	private MarketDataSubscription _candleSubscription;
-	private MarketDataSubscription _level1Subscription;
+	private ISubscriptionHandler<ICandleMessage> _candleSubscription;
+	private ISubscriptionHandler<Level1ChangeMessage> _level1Subscription;
 
 	private Security _activeSecurity;
 	private string _appliedSecurityId;
@@ -124,9 +124,6 @@ public class SymbolSwapPanelStrategy : Strategy
 
 	private void SubscribeToSecurity(Security security)
 	{
-		_candleSubscription?.Stop();
-		_level1Subscription?.Stop();
-
 		if (!ReferenceEquals(Security, security))
 			Security = security;
 

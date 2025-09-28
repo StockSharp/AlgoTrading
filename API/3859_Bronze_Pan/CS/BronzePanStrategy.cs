@@ -109,7 +109,7 @@ public class BronzePanStrategy : Strategy
 
 		_minimumBalance = Param(nameof(MinimumBalance), 3000m)
 			.SetDisplay("Minimum Balance", "Stop opening trades below this account balance", "Risk")
-			.SetGreaterThanOrEqualZero();
+			.SetNotNegative();
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Time-frame used for indicator calculations", "Data");

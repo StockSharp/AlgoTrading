@@ -154,9 +154,9 @@ public class JMasterRsxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	public override void Reset()
+	protected override void OnReseted()
 	{
-		base.Reset();
+		base.OnReseted();
 
 		_fastPrevious = null;
 		_slowPrevious = null;

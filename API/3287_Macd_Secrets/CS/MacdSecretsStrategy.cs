@@ -58,11 +58,11 @@ public class MacdSecretsStrategy : Strategy
 	.SetDisplay("Order Volume", "Position size in lots", "Trading");
 
 	_takeProfitPoints = Param(nameof(TakeProfitPoints), 50m)
-	.SetGreaterThanOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Take Profit", "Take-profit distance in points", "Risk");
 
 	_stopLossPoints = Param(nameof(StopLossPoints), 20m)
-	.SetGreaterThanOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Stop Loss", "Stop-loss distance in points", "Risk");
 
 	_fastMaPeriod = Param(nameof(FastMaPeriod), 6)
@@ -90,11 +90,11 @@ public class MacdSecretsStrategy : Strategy
 	.SetDisplay("Momentum Period", "Momentum lookback length on the trend timeframe", "Momentum");
 
 	_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
-	.SetGreaterThanOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Momentum Buy", "Minimum deviation from 100 for long trades", "Momentum");
 
 	_momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
-	.SetGreaterThanOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Momentum Sell", "Minimum deviation from 100 for short trades", "Momentum");
 
 	_primaryCandleType = Param(nameof(PrimaryCandleType), TimeSpan.FromMinutes(15).TimeFrame())

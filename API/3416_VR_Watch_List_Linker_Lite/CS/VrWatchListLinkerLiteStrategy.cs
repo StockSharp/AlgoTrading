@@ -26,7 +26,7 @@ public class VrWatchListLinkerLiteStrategy : Strategy
 	private readonly StrategyParam<bool> _includePrimarySecurity;
 	private readonly StrategyParam<bool> _restartOnMismatch;
 
-	private readonly Dictionary<Security, MarketDataSubscription> _subscriptions = new();
+	private readonly Dictionary<Security, ISubscriptionHandler<ICandleMessage>> _subscriptions = new();
 	private readonly Dictionary<Security, DateTimeOffset> _lastCandleTimes = new();
 
 	private List<Security> _activeSecurities = [];
@@ -178,7 +178,7 @@ public class VrWatchListLinkerLiteStrategy : Strategy
 
 	private void SubscribeSecurity(Security security, DataType candleType)
 	{
-		MarketDataSubscription subscription;
+		ISubscriptionHandler<ICandleMessage> subscription;
 
 		if (security == Security)
 			subscription = SubscribeCandles(candleType);

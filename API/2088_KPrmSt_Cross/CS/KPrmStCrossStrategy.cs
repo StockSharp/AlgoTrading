@@ -107,11 +107,11 @@ public class KPrmStCrossStrategy : Strategy
 			.SetDisplay("Slowing", "Smoothing factor for %K", "KPrmSt");
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk Management");
 
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit in price units", "Risk Management");
 	}
 

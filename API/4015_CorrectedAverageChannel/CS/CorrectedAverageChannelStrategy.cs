@@ -155,22 +155,22 @@ public class CorrectedAverageChannelStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 60)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Distance from entry to the profit target in price steps", "Risk")
 			.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 40)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Distance from entry to the protective stop in price steps", "Risk")
 			.SetCanOptimize(true);
 
 		_trailingPoints = Param(nameof(TrailingPoints), 0)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Trigger (points)", "Profit distance required before the trailing stop activates", "Risk")
 			.SetCanOptimize(true);
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 0)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (points)", "Minimum advance in price steps before the trailing stop moves", "Risk")
 			.SetCanOptimize(true);
 
@@ -183,12 +183,12 @@ public class CorrectedAverageChannelStrategy : Strategy
 			.SetDisplay("MA Type", "Moving average type used inside the Corrected Average", "Indicator");
 
 		_sigmaBuyPoints = Param(nameof(SigmaBuyPoints), 5)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Sigma BUY (points)", "Offset added above the corrected average before buying", "Signal")
 			.SetCanOptimize(true);
 
 		_sigmaSellPoints = Param(nameof(SigmaSellPoints), 5)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Sigma SELL (points)", "Offset subtracted from the corrected average before selling", "Signal")
 			.SetCanOptimize(true);
 

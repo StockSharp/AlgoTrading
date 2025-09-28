@@ -146,25 +146,25 @@ public class FxfFastInFastOutStrategy : Strategy
 	public FxfFastInFastOutStrategy()
 	{
 		_enterOffsetPoints = Param(nameof(EnterOffsetPoints), 22)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Entry Offset (points)", "Distance between quote and pending stop order.", "Orders")
 		.SetCanOptimize(true)
 		.SetOptimize(10, 40, 5);
 
 		_maxSpreadPoints = Param(nameof(MaxSpreadPoints), 15)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Max Spread", "Maximum spread allowed for new entries (price steps).", "Orders");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 250)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take-profit distance in price steps.", "Orders");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 500)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop-loss distance in price steps.", "Orders");
 
 		_volatilitySizePoints = Param(nameof(VolatilitySizePoints), 220)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Volatility Threshold", "Minimum candle size required to trade (price steps).", "Signals")
 		.SetCanOptimize(true)
 		.SetOptimize(150, 400, 50);
@@ -173,7 +173,7 @@ public class FxfFastInFastOutStrategy : Strategy
 		.SetDisplay("Enable Trailing", "Toggle trailing stop management.", "Risk");
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 1)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop", "Base trailing distance in price steps.", "Risk");
 
 		_useMoneyManagement = Param(nameof(UseMoneyManagement), true)

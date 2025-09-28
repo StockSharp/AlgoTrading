@@ -132,19 +132,19 @@ public class Ichimoku2005Strategy : Strategy
 	public Ichimoku2005Strategy()
 	{
 		_stopLossPoints = Param(nameof(StopLossPoints), 30m)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop loss distance in points", "Risk Management")
 		.SetCanOptimize(true)
 		.SetOptimize(10m, 100m, 10m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 60m)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take profit distance in points", "Risk Management")
 		.SetCanOptimize(true)
 		.SetOptimize(20m, 200m, 20m);
 
 		_shift = Param(nameof(Shift), 1)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Shift", "Number of bars back to validate breakouts", "General")
 		.SetCanOptimize(true)
 		.SetOptimize(0, 3, 1);
@@ -155,7 +155,7 @@ public class Ichimoku2005Strategy : Strategy
 		.SetCanOptimize(false);
 
 		_maximumRisk = Param(nameof(MaximumRisk), 10m)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Maximum Risk %", "Portfolio percent used when MM is enabled", "Trading")
 		.SetCanOptimize(true)
 		.SetOptimize(1m, 20m, 1m);

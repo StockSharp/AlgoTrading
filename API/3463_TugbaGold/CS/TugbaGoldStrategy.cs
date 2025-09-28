@@ -103,7 +103,7 @@ public class TugbaGoldStrategy : Strategy
 	{
 		_takeProfitPips = Param(nameof(TakeProfitPips), 300m)
 			.SetDisplay("Take Profit (pips)", "Distance for single order take profit", "Risk")
-			.SetGreaterThanOrEqualZero();
+			.SetNotNegative();
 
 		_startVolume = Param(nameof(StartVolume), 0.01m)
 			.SetDisplay("Start Volume", "Initial order volume for a new grid", "Trading")
@@ -111,18 +111,18 @@ public class TugbaGoldStrategy : Strategy
 
 		_maxVolume = Param(nameof(MaxVolume), 2.56m)
 			.SetDisplay("Max Volume", "Upper cap for order volume (0 disables)", "Trading")
-			.SetGreaterThanOrEqualZero();
+			.SetNotNegative();
 
 		_closeMode = Param(nameof(CloseMode), CloseOrderModes.Average)
 			.SetDisplay("Close Mode", "Averaging exit logic", "Trading");
 
 		_pointOrderStepPips = Param(nameof(PointOrderStepPips), 390m)
 			.SetDisplay("Grid Step (pips)", "Minimal distance between new entries", "Trading")
-			.SetGreaterThanOrEqualZero();
+			.SetNotNegative();
 
 		_minimalProfitPips = Param(nameof(MinimalProfitPips), 70m)
 			.SetDisplay("Minimal Profit (pips)", "Profit requirement before closing the basket", "Trading")
-			.SetGreaterThanOrEqualZero();
+			.SetNotNegative();
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Source candles for signals", "General");

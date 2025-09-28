@@ -118,25 +118,25 @@ _sellVolume = Param(nameof(SellVolume), 1m)
 .SetOptimize(0.1m, 10m, 0.1m);
 
 _takeProfitPoints = Param(nameof(TakeProfitPoints), 400)
-.SetGreaterThanOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Take Profit Points", "Distance in points used to close positions for profit. Zero disables the feature.", "Risk Management")
 .SetCanOptimize(true)
 .SetOptimize(50, 800, 50);
 
 _stopLossPoints = Param(nameof(StopLossPoints), 200)
-.SetGreaterThanOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Stop Loss Points", "Distance in points used to protect positions from losses. Zero disables the feature.", "Risk Management")
 .SetCanOptimize(true)
 .SetOptimize(20, 400, 20);
 
 _limitOrderPoints = Param(nameof(LimitOrderPoints), 50)
-.SetGreaterThanOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Limit Offset Points", "Offset in points applied to automatic limit prices.", "Pricing")
 .SetCanOptimize(true)
 .SetOptimize(5, 200, 5);
 
 _stopOrderPoints = Param(nameof(StopOrderPoints), 50)
-.SetGreaterThanOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Stop Offset Points", "Offset in points applied to automatic stop prices.", "Pricing")
 .SetCanOptimize(true)
 .SetOptimize(5, 200, 5);

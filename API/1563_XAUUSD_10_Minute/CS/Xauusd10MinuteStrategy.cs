@@ -121,7 +121,7 @@ public class Xauusd10MinuteStrategy : Strategy
 		_atrLength = Param(nameof(AtrLength), 14).SetGreaterThanZero();
 		_stopLossMul = Param(nameof(StopLossMul), 3m).SetGreaterThanZero();
 		_takeProfitMul = Param(nameof(TakeProfitMul), 5m).SetGreaterThanZero();
-		_spreadPoints = Param(nameof(SpreadPoints), 38).SetGreaterThanOrEqualZero();
+		_spreadPoints = Param(nameof(SpreadPoints), 38).SetNotNegative();
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame());
 	}
 

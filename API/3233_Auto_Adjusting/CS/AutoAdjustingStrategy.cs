@@ -104,11 +104,11 @@ public class AutoAdjustingStrategy : Strategy
 			.SetDisplay("Swing Lookback", "Number of candles used to detect swing highs and lows", "Signals");
 
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Momentum Buy", "Minimum deviation above 100 required for long setups", "Signals");
 
 		_momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Momentum Sell", "Minimum deviation above 100 required for short setups", "Signals");
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)

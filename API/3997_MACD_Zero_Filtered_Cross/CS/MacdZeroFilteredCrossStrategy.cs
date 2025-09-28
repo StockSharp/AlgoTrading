@@ -129,7 +129,7 @@ public class MacdZeroFilteredCrossStrategy : Strategy
 			.SetOptimize(0.05m, 0.5m, 0.05m);
 
 		_minimumBalancePerVolume = Param(nameof(MinimumBalancePerVolume), 1000m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Balance per Volume", "Required balance per volume unit before opening trades", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())

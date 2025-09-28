@@ -19,6 +19,14 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ChoSmoothedEaStrategy : Strategy
 {
+	public enum MovingAverageTypes
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		LinearWeighted
+	}
+
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
@@ -251,19 +259,19 @@ public class ChoSmoothedEaStrategy : Strategy
 			.SetDisplay("End Time", "Session end time", "Session");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 150m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pts)", "Stop-loss distance in points", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 460m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pts)", "Take-profit distance in points", "Risk");
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 250m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pts)", "Trailing stop distance in points", "Risk");
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 50m)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pts)", "Minimum move to update trailing stop", "Risk");
 	}
 

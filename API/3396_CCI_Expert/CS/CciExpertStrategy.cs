@@ -99,31 +99,31 @@ public class CciExpertStrategy : Strategy
 	public CciExpertStrategy()
 	{
 		_fixedVolume = Param(nameof(FixedVolume), 0.1m)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Fixed volume", "Lot size used for trading when greater than zero", "Risk management")
 		.SetCanOptimize(true)
 		.SetOptimize(0.05m, 1m, 0.05m);
 
 		_riskPercent = Param(nameof(RiskPercent), 0m)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Risk percent", "Risk based sizing when fixed volume is zero", "Risk management")
 		.SetCanOptimize(true)
 		.SetOptimize(1m, 10m, 1m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 150m)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take profit (points)", "Take-profit distance in price points", "Risk management")
 		.SetCanOptimize(true)
 		.SetOptimize(50m, 300m, 25m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 600m)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop loss (points)", "Stop-loss distance in price points", "Risk management")
 		.SetCanOptimize(true)
 		.SetOptimize(100m, 800m, 50m);
 
 		_maxSpreadPoints = Param(nameof(MaxSpreadPoints), 30m)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Max spread (points)", "Maximum allowed bid-ask spread in points", "Trading filters")
 		.SetCanOptimize(true)
 		.SetOptimize(10m, 60m, 5m);

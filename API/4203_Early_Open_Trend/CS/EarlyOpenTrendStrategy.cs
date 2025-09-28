@@ -58,17 +58,17 @@ public class EarlyOpenTrendStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_rangeFilterPips = Param(nameof(RangeFilterPips), 1)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Range Filter (pips)", "Minimum wick size from the daily open", "Filters")
 			.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Optional take-profit distance in pips", "Risk")
 			.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 1000)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Optional stop-loss distance in pips", "Risk")
 			.SetCanOptimize(true);
 
@@ -85,7 +85,7 @@ public class EarlyOpenTrendStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_holdingHours = Param(nameof(HoldingHours), 0)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Holding Limit (hours)", "Maximum holding time before forcing an exit", "Risk")
 			.SetCanOptimize(true);
 

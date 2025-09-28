@@ -257,7 +257,7 @@ public class FlatChannelStrategy : Strategy
 
 		_orderLifetimeSeconds = Param(nameof(OrderLifetimeSeconds), 86400)
 		.SetDisplay("Order Lifetime", "Pending order lifetime in seconds", "Orders")
-		.SetGreaterThanOrEqualZero();
+		.SetNotNegative();
 
 		_stdDevPeriod = Param(nameof(StdDevPeriod), 37)
 		.SetDisplay("StdDev Period", "Standard deviation indicator period", "Indicators")

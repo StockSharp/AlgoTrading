@@ -52,11 +52,11 @@ public class NewsTemplateUniversalStrategy : Strategy
 			.SetDisplay("Include High", "Include high importance events", "Filters");
 
 		_stopBeforeMinutes = Param(nameof(StopBeforeNewsMinutes), 30)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Minutes Before", "Minutes to stop before news", "Timing");
 
 		_startAfterMinutes = Param(nameof(StartAfterNewsMinutes), 30)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Minutes After", "Minutes to resume after news", "Timing");
 
 		_currencies = Param(nameof(Currencies), "USD,EUR,CAD,AUD,NZD,GBP")

@@ -280,19 +280,19 @@ public class HerculesATC2006Strategy : Strategy
 			.SetOptimize(10, 80, 5);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 90)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(20, 150, 10);
 
 		_takeProfit1Pips = Param(nameof(TakeProfit1Pips), 210)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit 1 (pips)", "First take-profit distance", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(100, 260, 10);
 
 		_takeProfit2Pips = Param(nameof(TakeProfit2Pips), 280)
-			.SetGreaterThanOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit 2 (pips)", "Second take-profit distance", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(150, 360, 10);

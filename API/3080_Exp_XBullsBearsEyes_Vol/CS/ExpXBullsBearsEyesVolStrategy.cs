@@ -75,11 +75,11 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 		.SetDisplay("Secondary Volume", "Order volume used by the second long/short slot", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (points)", "Protective stop distance expressed in price steps", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (points)", "Target distance expressed in price steps", "Risk");
 
 		_allowLongEntry = Param(nameof(AllowLongEntry), true)
@@ -130,7 +130,7 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 		.SetDisplay("Smoothing Phase", "Phase parameter for Jurik based smoothing", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-		.SetGreaterThanOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Signal Bar", "Shift applied before evaluating colour transitions", "Trading");
 	}
 

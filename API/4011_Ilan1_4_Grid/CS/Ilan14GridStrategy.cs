@@ -52,14 +52,14 @@ public class Ilan14GridStrategy : Strategy
 	private DateTimeOffset? _basketExpiration;
 	private Sides? _basketDirection;
 
-	private enum MoneyManagementModes
+	public enum MoneyManagementModes
 	{
 		Fixed,
 		Geometric,
 		RecoverLastLoss,
 	}
 
-public Ilan14GridStrategy()
+	public Ilan14GridStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle type", "Timeframe that feeds the strategy logic.", "General");
@@ -155,7 +155,7 @@ public Ilan14GridStrategy()
 		set => _volumeDigits.Value = value;
 	}
 
-	public MoneyManagementModes MoneyManagementModes
+	public MoneyManagementModes MoneyManagementMode
 	{
 		get => _moneyManagementMode.Value;
 		set => _moneyManagementMode.Value = value;
@@ -540,7 +540,7 @@ public Ilan14GridStrategy()
 	{
 		decimal volume;
 
-		switch (MoneyManagementModes)
+		switch (MoneyManagementMode)
 		{
 			case MoneyManagementModes.Fixed:
 				volume = InitialVolume;

@@ -135,7 +135,7 @@ public class ForceTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security security, DataType dataType)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		yield return (Security, CandleType);
 	}
