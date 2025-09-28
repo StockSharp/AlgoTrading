@@ -28,7 +28,7 @@ public class GoldenTransformStrategy : Strategy
 
 	private RateOfChange _roc;
 	private HullMovingAverage _hmaEntry;
-	private FisherTransform _fisher;
+	private EhlersFisherTransform _fisher;
 	private HullMovingAverage _fisherSmooth;
 	private HullMovingAverage _hull1;
 	private HullMovingAverage _hull2;
@@ -149,7 +149,7 @@ public class GoldenTransformStrategy : Strategy
 
 		_roc = new RateOfChange { Length = RocLength };
 		_hmaEntry = new HullMovingAverage { Length = HullEntryLength };
-		_fisher = new FisherTransform { Length = FisherLength };
+		_fisher = new EhlersFisherTransform { Length = FisherLength };
 		_fisherSmooth = new HullMovingAverage { Length = FisherSmoothLength };
 		_hull1 = new HullMovingAverage { Length = TrixLength };
 		_hull2 = new HullMovingAverage { Length = TrixLength };

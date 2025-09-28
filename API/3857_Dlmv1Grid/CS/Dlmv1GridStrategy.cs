@@ -46,7 +46,7 @@ public class Dlmv1GridStrategy : Strategy
 	private readonly StrategyParam<int> _signalSmoothing;
 	private readonly StrategyParam<decimal> _defaultPipValue;
 
-	private FisherTransform _fisher = null!;
+	private EhlersFisherTransform _fisher = null!;
 	private SimpleMovingAverage _signalSma = null!;
 
 	private decimal _pipSize;
@@ -437,7 +437,7 @@ public class Dlmv1GridStrategy : Strategy
 		_initialEquity = Portfolio?.CurrentValue ?? 0m;
 		_martingaleBaseVolume = CalculateBaseVolume();
 
-		_fisher = new FisherTransform { Length = FisherLength };
+		_fisher = new EhlersFisherTransform { Length = FisherLength };
 		_signalSma = new SimpleMovingAverage { Length = SignalSmoothing };
 
 		var subscription = SubscribeCandles(CandleType);

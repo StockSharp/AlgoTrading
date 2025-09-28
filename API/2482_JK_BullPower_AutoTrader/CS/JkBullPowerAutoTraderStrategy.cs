@@ -101,23 +101,23 @@ public class JkBullPowerAutoTraderStrategy : Strategy
 			.SetOptimize(5, 30, 1);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 350m)
-			.SetGreaterOrEqualTo(0m)
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pts)", "Take profit distance in price steps", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(50m, 600m, 50m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 100m)
-			.SetGreaterOrEqualTo(0m)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pts)", "Stop loss distance in price steps", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(50m, 300m, 25m);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 100m)
-			.SetGreaterOrEqualTo(0m)
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pts)", "Profit distance that activates trailing", "Risk");
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 40m)
-			.SetGreaterOrEqualTo(0m)
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pts)", "Minimal trailing increment", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

@@ -103,17 +103,17 @@ public class ScalpelStrategy : Strategy
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 40m)
 			.SetDisplay("Take Profit (points)", "Distance to the profit target expressed in price steps", "Risk")
-			.SetGreaterOrEqualTo(0m)
+			.SetNotNegative()
 			.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 340m)
 			.SetDisplay("Stop Loss (points)", "Protective stop distance expressed in price steps", "Risk")
-			.SetGreaterOrEqualTo(0m)
+			.SetNotNegative()
 			.SetCanOptimize(true);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 25m)
 			.SetDisplay("Trailing Stop (points)", "Trailing stop distance expressed in price steps", "Risk")
-			.SetGreaterOrEqualTo(0m)
+			.SetNotNegative()
 			.SetCanOptimize(true);
 
 		_cciPeriod = Param(nameof(CciPeriod), 14)
@@ -160,7 +160,7 @@ public class ScalpelStrategy : Strategy
 
 		_spreadLimitPoints = Param(nameof(SpreadLimitPoints), 5.5m)
 			.SetDisplay("Spread Limit (points)", "Maximum spread allowed when opening new positions", "Risk")
-			.SetGreaterOrEqualTo(0m)
+			.SetNotNegative()
 			.SetCanOptimize(true);
 	}
 

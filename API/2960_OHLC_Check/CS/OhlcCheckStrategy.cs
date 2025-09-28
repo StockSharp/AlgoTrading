@@ -43,18 +43,18 @@ public class OhlcCheckStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance expressed in pips", "Risk")
-			.SetGreaterOrEqualTo(0m);
+			.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100m)
 			.SetDisplay("Take Profit (pips)", "Take profit distance expressed in pips", "Risk")
-			.SetGreaterOrEqualTo(0m);
+			.SetNotNegative();
 
 		_reverseSignals = Param(nameof(ReverseSignals), false)
 			.SetDisplay("Reverse Signals", "Trade opposite direction of the candle body", "General");
 
 		_spreadLimitPips = Param(nameof(SpreadLimitPips), 1m)
 			.SetDisplay("Spread Limit (pips)", "Maximum allowed spread before opening", "Risk")
-			.SetGreaterOrEqualTo(0m);
+			.SetNotNegative();
 
 		_signalShift = Param(nameof(SignalShift), 1)
 			.SetDisplay("Signal Shift", "How many closed candles back to evaluate", "General")

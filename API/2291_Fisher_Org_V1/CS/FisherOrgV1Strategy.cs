@@ -23,7 +23,7 @@ public class FisherOrgV1Strategy : Strategy
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private FisherTransform _fisher;
+	private EhlersFisherTransform _fisher;
 	private decimal _prev;
 	private decimal _prevPrev;
 	private int _valueCount;
@@ -83,7 +83,7 @@ public class FisherOrgV1Strategy : Strategy
 
 		StartProtection();
 
-		_fisher = new FisherTransform
+		_fisher = new EhlersFisherTransform
 		{
 			Length = Length
 		};

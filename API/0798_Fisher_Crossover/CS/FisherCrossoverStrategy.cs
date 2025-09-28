@@ -23,7 +23,7 @@ public class FisherCrossoverStrategy : Strategy
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private FisherTransform _fisher;
+	private EhlersFisherTransform _fisher;
 	private decimal _prevFisher;
 	private decimal _prevPrevFisher;
 	private int _valueCount;
@@ -83,7 +83,7 @@ public class FisherCrossoverStrategy : Strategy
 
 		StartProtection();
 
-		_fisher = new FisherTransform
+		_fisher = new EhlersFisherTransform
 		{
 			Length = Length
 		};

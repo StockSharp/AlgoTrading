@@ -33,8 +33,8 @@ public class FisherTransformX2Strategy : Strategy
 	private readonly StrategyParam<bool> _buyCloseSignal;
 	private readonly StrategyParam<bool> _sellCloseSignal;
 
-	private FisherTransform _trendFisher;
-	private FisherTransform _signalFisher;
+	private EhlersFisherTransform _trendFisher;
+	private EhlersFisherTransform _signalFisher;
 
 	private decimal _prevTrendFisher;
 	private bool _isFirstTrend = true;
@@ -175,8 +175,8 @@ public class FisherTransformX2Strategy : Strategy
 
 		StartProtection(new Unit(TakeProfit, UnitTypes.Point), new Unit(StopLoss, UnitTypes.Point));
 
-		_trendFisher = new FisherTransform { Length = TrendLength };
-		_signalFisher = new FisherTransform { Length = SignalLength };
+		_trendFisher = new EhlersFisherTransform { Length = TrendLength };
+		_signalFisher = new EhlersFisherTransform { Length = SignalLength };
 
 		var trendSub = SubscribeCandles(TrendCandleType);
 		trendSub.Bind(ProcessTrend).Start();

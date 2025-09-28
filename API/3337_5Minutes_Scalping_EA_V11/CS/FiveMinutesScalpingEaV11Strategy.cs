@@ -51,8 +51,8 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 
 	private HullMovingAverage _hullFast;
 	private HullMovingAverage _hullSlow;
-	private FisherTransform _fisherMomentum;
-	private FisherTransform _fisherTrend;
+	private EhlersFisherTransform _fisherMomentum;
+	private EhlersFisherTransform _fisherTrend;
 	private AverageTrueRange _atr;
 
 	private readonly List<decimal> _hullFastHistory = new();
@@ -89,7 +89,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 		.SetOptimize(0, 3, 1)
 		.SetNotNegative();
 
-		_signalMode = Param(nameof(SignalModes), SignalModes.Normal)
+		_signalMode = Param(nameof(SignalMode), SignalModes.Normal)
 		.SetDisplay("Signal Direction", "Switches between normal and reversed signal interpretation", "General");
 
 		_useIndicator1 = Param(nameof(UseIndicator1), true)
@@ -206,7 +206,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 	/// <summary>
 	/// Determines if signals are interpreted normally or reversed.
 	/// </summary>
-	public SignalModes SignalModes
+	public SignalModes SignalMode
 	{
 		get => _signalMode.Value;
 		set => _signalMode.Value = value;
@@ -405,8 +405,8 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 
 		_hullFast = new HullMovingAverage { Length = Period1 };
 		_hullSlow = new HullMovingAverage { Length = Period2 };
-		_fisherMomentum = new FisherTransform { Length = Period3 };
-		_fisherTrend = new FisherTransform { Length = Period5 };
+		_fisherMomentum = new EhlersFisherTransform { Length = Period3 };
+		_fisherTrend = new EhlersFisherTransform { Length = Period5 };
 		_atr = new AverageTrueRange { Length = Period4 };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -422,13 +422,13 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 		{
 			DrawCandles(area, subscription);
 			if (_hullFast != null)
-			DrawIndicator(area, _hullFast);
+				DrawIndicator(area, _hullFast);
 			if (_hullSlow != null)
-			DrawIndicator(area, _hullSlow);
+				DrawIndicator(area, _hullSlow);
 			if (_fisherMomentum != null)
-			DrawIndicator(area, _fisherMomentum);
+				DrawIndicator(area, _fisherMomentum);
 			if (_fisherTrend != null)
-			DrawIndicator(area, _fisherTrend);
+				DrawIndicator(area, _fisherTrend);
 		}
 	}
 
@@ -478,7 +478,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 	private void ProcessHullValues(ICandleMessage candle, decimal fastHull, decimal slowHull)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		_hullFastHistory.Add(fastHull);
 		_hullSlowHistory.Add(slowHull);
@@ -490,7 +490,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 	private void ProcessFisherMomentum(ICandleMessage candle, decimal fisherValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		var adjusted = ApplyPriceMode(candle, fisherValue);
 		_fisherMomentumHistory.Add(adjusted);
@@ -500,7 +500,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 	private void ProcessAtr(ICandleMessage candle, decimal atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		_atrHistory.Add(atrValue);
 		TrimHistory(_atrHistory);
@@ -509,7 +509,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 	private void ProcessTrendFisher(ICandleMessage candle, decimal fisherValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		_fisherTrendHistory.Add(fisherValue);
 		TrimHistory(_fisherTrendHistory);
@@ -520,20 +520,20 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 	private void UpdateSignals(ICandleMessage candle)
 	{
 		if (_lastProcessedTime == candle.OpenTime)
-		return;
+			return;
 
 		_lastProcessedTime = candle.OpenTime;
 
 		if (!IndicatorsReady())
-		return;
+			return;
 
 		ManageOpenPositions(candle);
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
 		if (!IsWithinTradingWindow(candle.OpenTime))
-		return;
+			return;
 
 		var shift = IndicatorShift;
 		var hull1 = UseIndicator1 ? GetHullDirection(_hullFastHistory, shift) : TrendDirections.Neutral;
@@ -550,20 +550,20 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 			_lastSignal = 1;
 
 			if (CloseOnSignal)
-			CloseShort(candle.ClosePrice);
+				CloseShort(candle.ClosePrice);
 
 			if (Position <= 0m)
-			EnterLong(candle.ClosePrice);
+				EnterLong(candle.ClosePrice);
 		}
 		else if (shortCondition && _lastSignal >= 0)
 		{
 			_lastSignal = -1;
 
 			if (CloseOnSignal)
-			CloseLong(candle.ClosePrice);
+				CloseLong(candle.ClosePrice);
 
 			if (Position >= 0m)
-			EnterShort(candle.ClosePrice);
+				EnterShort(candle.ClosePrice);
 		}
 	}
 
@@ -575,19 +575,19 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 		var atrRequirement = shift + 3;
 
 		if (UseIndicator1 && _hullFastHistory.Count < hullRequirement)
-		return false;
+			return false;
 
 		if (UseIndicator2 && _hullSlowHistory.Count < hullRequirement)
-		return false;
+			return false;
 
 		if (UseIndicator3 && _fisherMomentumHistory.Count < fisherRequirement)
-		return false;
+			return false;
 
 		if (UseIndicator4 && (_atrHistory.Count < atrRequirement || _candleHistory.Count < atrRequirement))
-		return false;
+			return false;
 
 		if (UseIndicator5 && _fisherTrendHistory.Count < fisherRequirement)
-		return false;
+			return false;
 
 		return true;
 	}
@@ -611,7 +611,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 			UpdateLongRisk(candle);
 
 			if (_longStopPrice is decimal updatedStop && candle.LowPrice <= updatedStop)
-			CloseLong(updatedStop);
+				CloseLong(updatedStop);
 		}
 		else if (Position < 0m)
 		{
@@ -630,14 +630,14 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 			UpdateShortRisk(candle);
 
 			if (_shortStopPrice is decimal updatedStop && candle.HighPrice >= updatedStop)
-			CloseShort(updatedStop);
+				CloseShort(updatedStop);
 		}
 	}
 
 	private void UpdateLongRisk(ICandleMessage candle)
 	{
 		if (Position <= 0m || PositionPrice is not decimal entry)
-		return;
+			return;
 
 		if (UseBreakEven && BreakEvenPips > 0m)
 		{
@@ -648,7 +648,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 			{
 				_longBreakEvenPrice = newStop;
 				if (!_longStopPrice.HasValue || newStop > _longStopPrice.Value)
-				_longStopPrice = newStop;
+					_longStopPrice = newStop;
 			}
 		}
 
@@ -658,22 +658,22 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 			var step = StepsToPrice(TrailingStepPips);
 
 			if (!_longTrailAnchor.HasValue)
-			_longTrailAnchor = entry;
+				_longTrailAnchor = entry;
 
 			var candidate = Math.Max(_longTrailAnchor.Value, candle.HighPrice);
 			if (candidate - _longTrailAnchor.Value >= step)
-			_longTrailAnchor = candidate;
+				_longTrailAnchor = candidate;
 
 			var trailingStop = _longTrailAnchor.Value - distance;
 			if (!_longStopPrice.HasValue || trailingStop > _longStopPrice.Value)
-			_longStopPrice = trailingStop;
+				_longStopPrice = trailingStop;
 		}
 	}
 
 	private void UpdateShortRisk(ICandleMessage candle)
 	{
 		if (Position >= 0m || PositionPrice is not decimal entry)
-		return;
+			return;
 
 		if (UseBreakEven && BreakEvenPips > 0m)
 		{
@@ -684,7 +684,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 			{
 				_shortBreakEvenPrice = newStop;
 				if (!_shortStopPrice.HasValue || newStop < _shortStopPrice.Value)
-				_shortStopPrice = newStop;
+					_shortStopPrice = newStop;
 			}
 		}
 
@@ -694,15 +694,15 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 			var step = StepsToPrice(TrailingStepPips);
 
 			if (!_shortTrailAnchor.HasValue)
-			_shortTrailAnchor = entry;
+				_shortTrailAnchor = entry;
 
 			var candidate = Math.Min(_shortTrailAnchor.Value, candle.LowPrice);
 			if (_shortTrailAnchor.Value - candidate >= step)
-			_shortTrailAnchor = candidate;
+				_shortTrailAnchor = candidate;
 
 			var trailingStop = _shortTrailAnchor.Value + distance;
 			if (!_shortStopPrice.HasValue || trailingStop < _shortStopPrice.Value)
-			_shortStopPrice = trailingStop;
+				_shortStopPrice = trailingStop;
 		}
 	}
 
@@ -710,7 +710,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 	{
 		var volume = TradeVolume;
 		if (volume <= 0m)
-		return;
+			return;
 
 		BuyMarket(volume);
 	}
@@ -719,7 +719,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 	{
 		var volume = TradeVolume;
 		if (volume <= 0m)
-		return;
+			return;
 
 		SellMarket(volume);
 	}
@@ -727,7 +727,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 	private void CloseLong(decimal price)
 	{
 		if (Position <= 0m)
-		return;
+			return;
 
 		SellMarket(Position);
 		ResetRiskState();
@@ -736,7 +736,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 	private void CloseShort(decimal price)
 	{
 		if (Position >= 0m)
-		return;
+			return;
 
 		BuyMarket(-Position);
 		ResetRiskState();
@@ -784,15 +784,15 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 	{
 		var index = history.Count - 1 - shift;
 		if (index <= 0)
-		return TrendDirections.Neutral;
+			return TrendDirections.Neutral;
 
 		var current = history[index];
 		var previous = history[index - 1];
 
 		if (current > previous)
-		return TrendDirections.Up;
+			return TrendDirections.Up;
 		if (current < previous)
-		return TrendDirections.Down;
+			return TrendDirections.Down;
 		return TrendDirections.Neutral;
 	}
 
@@ -800,13 +800,13 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 	{
 		var index = history.Count - 1 - shift;
 		if (index < 0)
-		return TrendDirections.Neutral;
+			return TrendDirections.Neutral;
 
 		var value = history[index];
 		if (value > 0m)
-		return TrendDirections.Up;
+			return TrendDirections.Up;
 		if (value < 0m)
-		return TrendDirections.Down;
+			return TrendDirections.Down;
 		return TrendDirections.Neutral;
 	}
 
@@ -814,7 +814,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 	{
 		var index = _candleHistory.Count - 1 - shift;
 		if (index < 0 || index + 2 >= _candleHistory.Count)
-		return TrendDirections.Neutral;
+			return TrendDirections.Neutral;
 
 		var current = _candleHistory[index];
 		var previous1 = _candleHistory[index + 1];
@@ -834,7 +834,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 		current.OpenPrice > previous2.ClosePrice - atrValue;
 
 		if (buyCondition == sellCondition)
-		return TrendDirections.Neutral;
+			return TrendDirections.Neutral;
 
 		return buyCondition ? TrendDirections.Up : TrendDirections.Down;
 	}
@@ -850,23 +850,23 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 		var capacity = IndicatorShift + 10;
 		var overflow = list.Count - capacity;
 		if (overflow > 0)
-		list.RemoveRange(0, overflow);
+			list.RemoveRange(0, overflow);
 	}
 
 	private bool IsWithinTradingWindow(DateTimeOffset time)
 	{
 		if (!UseTimeFilter)
-		return true;
+			return true;
 
 		var hour = time.LocalDateTime.Hour;
 		var start = StartHour % 24;
 		var end = EndHour % 24;
 
 		if (start == end)
-		return true;
+			return true;
 
 		if (start < end)
-		return hour >= start && hour < end;
+			return hour >= start && hour < end;
 
 		return hour >= start || hour < end;
 	}
@@ -874,7 +874,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 	private decimal StepsToPrice(decimal steps)
 	{
 		if (_pipSize <= 0m)
-		return 0m;
+			return 0m;
 
 		return steps * _pipSize;
 	}
@@ -883,7 +883,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 	{
 		var step = Security?.PriceStep ?? 0m;
 		if (step <= 0m)
-		return 1m;
+			return 1m;
 
 		return step < 1m ? step * 10m : step;
 	}
@@ -937,4 +937,3 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 		OpenClose
 	}
 }
-

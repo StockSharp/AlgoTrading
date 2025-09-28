@@ -25,7 +25,7 @@ public class FisherOrgSignStrategy : Strategy
 	private readonly StrategyParam<decimal> _downLevel;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private FisherTransform _fisher;
+	private EhlersFisherTransform _fisher;
 	private decimal _prevFisher;
 
 	/// <summary>
@@ -105,7 +105,7 @@ public class FisherOrgSignStrategy : Strategy
 
 		StartProtection();
 
-		_fisher = new FisherTransform
+		_fisher = new EhlersFisherTransform
 		{
 			Length = Length
 		};
