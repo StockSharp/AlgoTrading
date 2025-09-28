@@ -37,7 +37,7 @@ public class TradingPanelControlStrategy : Strategy
 
 	private Security _resolvedSecurity;
 	private DataType _activeCandleType;
-	private CandleIndicatorSubscription _subscription;
+	private ISubscriptionHandler<ICandleMessage> _subscription;
 
 	/// <summary>
 	/// Preferred timeframe name like "M1", "H4", or "D1".

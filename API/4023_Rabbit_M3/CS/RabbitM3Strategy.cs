@@ -41,7 +41,7 @@ public class RabbitM3Strategy : Strategy
 	private ExponentialMovingAverage _fastEma = null!;
 	private ExponentialMovingAverage _slowEma = null!;
 	private CommodityChannelIndex _cci = null!;
-	private WilliamsPercentRange _williams = null!;
+	private WilliamsR _williams = null!;
 	private DonchianChannels _donchian = null!;
 
 	private decimal _pipSize;
@@ -333,13 +333,11 @@ public class RabbitM3Strategy : Strategy
 		_fastEma = new ExponentialMovingAverage
 		{
 			Length = FastEmaPeriod,
-			CandlePrice = CandlePrice.Close,
 		};
 
 		_slowEma = new ExponentialMovingAverage
 		{
 			Length = SlowEmaPeriod,
-			CandlePrice = CandlePrice.Close,
 		};
 
 		_cci = new CommodityChannelIndex
@@ -347,7 +345,7 @@ public class RabbitM3Strategy : Strategy
 			Length = CciPeriod,
 		};
 
-		_williams = new WilliamsPercentRange
+		_williams = new WilliamsR
 		{
 			Length = WilliamsPeriod,
 		};
@@ -359,7 +357,7 @@ public class RabbitM3Strategy : Strategy
 
 		_pipSize = Security?.PriceStep ?? 0m;
 		if (_pipSize <= 0m)
-		_pipSize = 1m;
+			_pipSize = 1m;
 
 		_currentVolume = EntryVolume;
 		Volume = _currentVolume;
@@ -380,10 +378,10 @@ public class RabbitM3Strategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue, decimal cciValue, decimal williamsValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
 		UpdateTrendState(fastValue, slowValue);
 
@@ -409,12 +407,12 @@ public class RabbitM3Strategy : Strategy
 	private void UpdateDonchian(ICandleMessage candle, IIndicatorValue donchianValue)
 	{
 		if (!donchianValue.IsFinal)
-		return;
+			return;
 
 		var channels = (DonchianChannelsValue)donchianValue;
 
 		if (channels.UpperBand is not decimal upper || channels.LowerBand is not decimal lower)
-		return;
+			return;
 
 		if (_currentDonchianUpper.HasValue && _currentDonchianLower.HasValue)
 		{
@@ -431,10 +429,10 @@ public class RabbitM3Strategy : Strategy
 		if (fastValue < slowValue)
 		{
 			if (_trendDirection == TrendDirections.Bearish)
-			return;
+				return;
 
 			if (Position > 0m)
-			CloseLongPosition("EMA trend flipped bearish");
+				CloseLongPosition("EMA trend flipped bearish");
 
 			_allowSell = true;
 			_allowBuy = false;
@@ -443,10 +441,10 @@ public class RabbitM3Strategy : Strategy
 		else if (fastValue > slowValue)
 		{
 			if (_trendDirection == TrendDirections.Bullish)
-			return;
+				return;
 
 			if (Position < 0m)
-			CloseShortPosition("EMA trend flipped bullish");
+				CloseShortPosition("EMA trend flipped bullish");
 
 			_allowSell = false;
 			_allowBuy = true;
@@ -505,13 +503,13 @@ public class RabbitM3Strategy : Strategy
 	private void TryEnterPosition(ICandleMessage candle, decimal cciValue, decimal williamsValue)
 	{
 		if (Position != 0m)
-		return;
+			return;
 
 		if (_previousWilliams is not decimal previousWilliams)
-		return;
+			return;
 
 		if (MaxOpenPositions <= 0)
-		return;
+			return;
 
 		var canShort = _allowSell && cciValue > CciSellLevel && previousWilliams > WilliamsSellLevel && previousWilliams < 0m && williamsValue < WilliamsSellLevel;
 		if (canShort)
@@ -540,7 +538,7 @@ public class RabbitM3Strategy : Strategy
 	private void CloseLongPosition(string reason)
 	{
 		if (Position <= 0m)
-		return;
+			return;
 
 		LogInfo($"Closing long position: {reason}");
 		SellMarket(Position);
@@ -553,7 +551,7 @@ public class RabbitM3Strategy : Strategy
 	private void CloseShortPosition(string reason)
 	{
 		if (Position >= 0m)
-		return;
+			return;
 
 		LogInfo($"Closing short position: {reason}");
 		BuyMarket(-Position);
@@ -569,16 +567,16 @@ public class RabbitM3Strategy : Strategy
 		base.OnPnLChanged(diff);
 
 		if (diff <= 0m)
-		return;
+			return;
 
 		if (VolumeIncrement <= 0m)
-		return;
+			return;
 
 		if (_currentBigWinTarget == decimal.MaxValue)
-		return;
+			return;
 
 		if (Position != 0m)
-		return;
+			return;
 
 		if (diff > _currentBigWinTarget)
 		{

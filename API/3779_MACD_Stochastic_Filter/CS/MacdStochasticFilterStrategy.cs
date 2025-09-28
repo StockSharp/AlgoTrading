@@ -37,7 +37,7 @@ public class MacdStochasticFilterStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
-	private Stochastic _stochastic = null!;
+	private StochasticOscillator _stochastic = null!;
 	private ExponentialMovingAverage _ema = null!;
 
 	private decimal? _prevMacd;
@@ -272,7 +272,7 @@ public class MacdStochasticFilterStrategy : Strategy
 			SignalMa = { Length = MacdSignalPeriod }
 		};
 
-		_stochastic = new Stochastic
+		_stochastic = new StochasticOscillator
 		{
 			Length = StochasticLength,
 			KPeriod = StochasticKPeriod,

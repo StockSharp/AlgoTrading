@@ -40,6 +40,14 @@ public class RsiMaOnRsiFillingStepStrategy : Strategy
 		Both,
 	}
 
+	public enum MovingAverageTypes
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		LinearWeighted
+	}
+
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<int> _maPeriod;
@@ -255,9 +263,10 @@ public class RsiMaOnRsiFillingStepStrategy : Strategy
 			DrawOwnTrades(priceArea);
 		}
 
-		var oscillatorArea = CreateChartArea("RSI");
+		var oscillatorArea = CreateChartArea();
 		if (oscillatorArea != null)
 		{
+			oscillatorArea.Title = "RSI";
 			if (_rsi != null)
 			{
 				DrawIndicator(oscillatorArea, _rsi);
