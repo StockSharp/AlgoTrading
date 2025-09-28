@@ -157,22 +157,22 @@ public class SilverTrendV3JtpoStrategy : Strategy
 		.SetOptimize(5, 40, 1);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 0m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop", "Trailing stop distance in points", "Risk Management")
 		.SetCanOptimize(true);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 0m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take profit distance in points", "Risk Management")
 		.SetCanOptimize(true);
 
 		_initialStopPoints = Param(nameof(InitialStopPoints), 0m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Initial Stop", "Initial protective stop distance in points", "Risk Management")
 		.SetCanOptimize(true);
 
 		_fridayHour = Param(nameof(FridayCutoffHour), 16m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Friday Cutoff", "Hour after which no new trades are allowed on Friday", "Risk Management")
 		.SetCanOptimize(true);
 

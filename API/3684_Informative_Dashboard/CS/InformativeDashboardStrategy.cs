@@ -138,9 +138,9 @@ public class InformativeDashboardStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged(decimal delta)
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged(delta);
+		base.OnPositionReceived(position);
 
 		_hasOpenPosition = Position != 0m;
 

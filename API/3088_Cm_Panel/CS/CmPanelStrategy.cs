@@ -497,7 +497,7 @@ public class CmPanelStrategy : Strategy
 		if (security?.BestAsk?.Price is decimal ask && ask > 0m)
 		return ask;
 
-		if (security?.LastTrade?.Price is decimal last && last > 0m)
+		if (security?.LastTick?.Price is decimal last && last > 0m)
 		return last;
 
 		return 0m;
@@ -509,7 +509,7 @@ public class CmPanelStrategy : Strategy
 		if (security?.BestBid?.Price is decimal bid && bid > 0m)
 		return bid;
 
-		if (security?.LastTrade?.Price is decimal last && last > 0m)
+		if (security?.LastTick?.Price is decimal last && last > 0m)
 		return last;
 
 		return 0m;

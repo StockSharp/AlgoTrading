@@ -180,9 +180,9 @@ public class RPoint250Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged(decimal delta)
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged(delta);
+		base.OnPositionReceived(position);
 
 		// Reset trailing anchors whenever the net position changes.
 		_bestLongPrice = null;

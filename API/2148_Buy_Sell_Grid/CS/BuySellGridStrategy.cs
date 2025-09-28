@@ -164,6 +164,6 @@ public class BuySellGridStrategy : Strategy
 		_sellEntryPrice = 0m;
 		_hasPositions = false;
 		
-		OpenGridLevel(LastTrade?.Price ?? 0m);
+		OpenGridLevel(LastTick?.Price ?? 0m);
 	}
 }

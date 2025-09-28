@@ -149,33 +149,6 @@ public class MacdPatternTraderAllV001Strategy : Strategy
 	private decimal? _shortStop;
 	private decimal? _shortTake;
 
-	private bool _pattern2WasPositive;
-	private bool _pattern2WasNegative;
-	private bool _pattern2SellArmed;
-	private bool _pattern2BuyArmed;
-
-	private int _pattern3BarsBup;
-
-	private int _pattern6BarsAbove;
-	private int _pattern6BarsBelow;
-	private bool _pattern6SellBlocked;
-	private bool _pattern6BuyBlocked;
-	private bool _pattern6SellReady;
-	private bool _pattern6BuyReady;
-
-	private decimal _currentVolume;
-	private decimal _longVolume;
-	private decimal _shortVolume;
-	private decimal _longAveragePrice;
-	private decimal _shortAveragePrice;
-	private decimal _cycleRealizedPnL;
-	private int _longPartialCount;
-	private int _shortPartialCount;
-	private decimal? _longStop;
-	private decimal? _longTake;
-	private decimal? _shortStop;
-	private decimal? _shortTake;
-
 	/// <summary>
 	/// Enable or disable pattern #1.
 	/// </summary>

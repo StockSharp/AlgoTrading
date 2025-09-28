@@ -515,7 +515,7 @@ public class TugbaGoldStrategy : Strategy
 		if (Security?.BestBid?.Price is decimal bid && bid > 0m)
 			return bid;
 
-		if (Security?.LastTrade?.Price is decimal last && last > 0m)
+		if (Security?.LastTick?.Price is decimal last && last > 0m)
 			return last;
 
 		return candle.ClosePrice;
@@ -526,7 +526,7 @@ public class TugbaGoldStrategy : Strategy
 		if (Security?.BestAsk?.Price is decimal ask && ask > 0m)
 			return ask;
 
-		if (Security?.LastTrade?.Price is decimal last && last > 0m)
+		if (Security?.LastTick?.Price is decimal last && last > 0m)
 			return last;
 
 		return candle.ClosePrice;

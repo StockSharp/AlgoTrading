@@ -98,19 +98,19 @@ _slowMaLength = Param(nameof(SlowMaLength), 50)
 .SetDisplay("Slow MA Length", "Length of the slow simple moving average", "Indicators");
 
 _maxSpreadPoints = Param(nameof(MaxSpreadPoints), 20m)
-.SetGreaterThanOrEqual(0m)
+.SetNotNegative()
 .SetDisplay("Max Spread (pts)", "Maximum allowed spread in points", "Trading");
 
 _stopLossPoints = Param(nameof(StopLossPoints), 500m)
-.SetGreaterThanOrEqual(0m)
+.SetNotNegative()
 .SetDisplay("Stop Loss (pts)", "Stop-loss distance in points", "Risk");
 
 _takeProfitPoints = Param(nameof(TakeProfitPoints), 500m)
-.SetGreaterThanOrEqual(0m)
+.SetNotNegative()
 .SetDisplay("Take Profit (pts)", "Take-profit distance in points", "Risk");
 
 _profitTargetPerLot = Param(nameof(ProfitTargetPerLot), 50m)
-.SetGreaterThanOrEqual(0m)
+.SetNotNegative()
 .SetDisplay("Profit Target per Lot", "Floating profit required to close positions", "Risk");
 
 _trendAnchorIndex = Param(nameof(TrendAnchorIndex), 3)

@@ -23,8 +23,8 @@ public class BullsBearsEyesStrategy : Strategy {
 	private readonly StrategyParam<decimal> _lowLevel;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private BullsPower _bulls;
-	private BearsPower _bears;
+	private BullPower _bulls;
+	private BearPower _bears;
 	private int _trend;
 
 	/// <summary>
@@ -111,8 +111,8 @@ public class BullsBearsEyesStrategy : Strategy {
 
 		StartProtection();
 
-		_bulls = new BullsPower { Length = Period };
-		_bears = new BearsPower { Length = Period };
+		_bulls = new BullPower { Length = Period };
+		_bears = new BearPower { Length = Period };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(_bulls, _bears, ProcessCandle).Start();

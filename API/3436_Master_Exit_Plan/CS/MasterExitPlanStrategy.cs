@@ -291,8 +291,8 @@ public class MasterExitPlanStrategy : Strategy
 		if (security == null)
 			return;
 
-		var bid = security.BestBid?.Price ?? security.LastTrade?.Price ?? 0m;
-		var ask = security.BestAsk?.Price ?? security.LastTrade?.Price ?? 0m;
+		var bid = security.BestBid?.Price ?? security.LastTick?.Price ?? 0m;
+		var ask = security.BestAsk?.Price ?? security.LastTick?.Price ?? 0m;
 
 		if (EnableTargetEquity)
 			CheckTargetEquity();

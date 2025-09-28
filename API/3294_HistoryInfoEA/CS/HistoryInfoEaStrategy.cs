@@ -253,14 +253,14 @@ public class HistoryInfoEaStrategy : Strategy
 /// Snapshot that stores aggregated history information.
 /// </summary>
 /// <param name="FirstTrade">Timestamp of the earliest counted trade.</param>
-/// <param name="LastTrade">Timestamp of the latest counted trade.</param>
+/// <param name="LastTick">Timestamp of the latest counted trade.</param>
 /// <param name="TotalVolume">Cumulative filled volume.</param>
 /// <param name="TotalProfit">Net profit including commissions.</param>
 /// <param name="TotalPips">Net profit expressed in pips.</param>
 /// <param name="TradeCount">Number of trades that satisfied the filter.</param>
 public sealed record HistoryInfoSnapshot(
 DateTimeOffset? FirstTrade,
-DateTimeOffset? LastTrade,
+DateTimeOffset? LastTick,
 decimal TotalVolume,
 decimal TotalProfit,
 decimal TotalPips,

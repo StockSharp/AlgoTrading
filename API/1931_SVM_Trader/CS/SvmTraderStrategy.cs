@@ -23,8 +23,8 @@ public class SvmTraderStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _riskExposure;
 
-	private BearsPower _bears;
-	private BullsPower _bulls;
+	private BearPower _bears;
+	private BullPower _bulls;
 	private AverageTrueRange _atr;
 	private Momentum _momentum;
 	private MovingAverageConvergenceDivergenceSignal _macd;
@@ -83,8 +83,8 @@ public class SvmTraderStrategy : Strategy
 		base.OnStarted(time);
 
 		// Initialize indicators with constants similar to original strategy
-		_bears = new BearsPower { Length = 13 };
-		_bulls = new BullsPower { Length = 13 };
+		_bears = new BearPower { Length = 13 };
+		_bulls = new BullPower { Length = 13 };
 		_atr = new AverageTrueRange { Length = 13 };
 		_momentum = new Momentum { Length = 13 };
 		_macd = new MovingAverageConvergenceDivergenceSignal

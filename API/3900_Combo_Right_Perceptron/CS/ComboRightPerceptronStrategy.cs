@@ -73,13 +73,13 @@ public class ComboRightPerceptronStrategy : Strategy
 	{
 		_takeProfit1 = Param(nameof(TakeProfit1), 50m)
 		.SetDisplay("Take Profit 1", "Profit target in points for the base CCI signal", "Risk Management")
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetCanOptimize(true)
 		.SetOptimize(10m, 200m, 10m);
 
 		_stopLoss1 = Param(nameof(StopLoss1), 50m)
 		.SetDisplay("Stop Loss 1", "Stop distance in points for the base CCI signal", "Risk Management")
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetCanOptimize(true)
 		.SetOptimize(10m, 200m, 10m);
 
@@ -111,13 +111,13 @@ public class ComboRightPerceptronStrategy : Strategy
 
 		_takeProfit2 = Param(nameof(TakeProfit2), 50m)
 		.SetDisplay("Take Profit 2", "Profit target in points for the bearish perceptron", "Risk Management")
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetCanOptimize(true)
 		.SetOptimize(10m, 200m, 10m);
 
 		_stopLoss2 = Param(nameof(StopLoss2), 50m)
 		.SetDisplay("Stop Loss 2", "Stop distance in points for the bearish perceptron", "Risk Management")
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetCanOptimize(true)
 		.SetOptimize(10m, 200m, 10m);
 
@@ -149,13 +149,13 @@ public class ComboRightPerceptronStrategy : Strategy
 
 		_takeProfit3 = Param(nameof(TakeProfit3), 50m)
 		.SetDisplay("Take Profit 3", "Profit target in points for the bullish perceptron", "Risk Management")
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetCanOptimize(true)
 		.SetOptimize(10m, 200m, 10m);
 
 		_stopLoss3 = Param(nameof(StopLoss3), 50m)
 		.SetDisplay("Stop Loss 3", "Stop distance in points for the bullish perceptron", "Risk Management")
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetCanOptimize(true)
 		.SetOptimize(10m, 200m, 10m);
 

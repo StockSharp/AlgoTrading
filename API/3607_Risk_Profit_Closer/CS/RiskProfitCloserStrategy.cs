@@ -180,7 +180,7 @@ public class RiskProfitCloserStrategy : Strategy
                                 return ask;
                 }
 
-                var lastTrade = security.LastTrade?.Price;
+                var lastTrade = security.LastTick?.Price;
                 if (lastTrade is { } tradePrice && tradePrice > 0m)
                         return tradePrice;
 

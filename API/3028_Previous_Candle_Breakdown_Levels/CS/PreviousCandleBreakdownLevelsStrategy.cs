@@ -228,9 +228,9 @@ public class PreviousCandleBreakdownLevelsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged(decimal delta)
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged(delta);
+		base.OnPositionReceived(position);
 
 		// Reset risk tracking whenever the net position changes.
 		if (Position > 0m)

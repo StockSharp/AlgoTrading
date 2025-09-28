@@ -140,8 +140,8 @@ protected override void OnStarted(DateTimeOffset time)
 base.OnStarted(time);
 
 var step = Security.PriceStep ?? 1m;
-var bid = Security.BestBid?.Price ?? Security.LastTrade?.Price ?? 0m;
-var ask = Security.BestAsk?.Price ?? Security.LastTrade?.Price ?? 0m;
+var bid = Security.BestBid?.Price ?? Security.LastTick?.Price ?? 0m;
+var ask = Security.BestAsk?.Price ?? Security.LastTick?.Price ?? 0m;
 
 for (var i = 1; i <= NumberOfTrades; i++)
 {

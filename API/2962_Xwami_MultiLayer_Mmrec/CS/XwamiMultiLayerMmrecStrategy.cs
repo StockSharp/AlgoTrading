@@ -232,7 +232,7 @@ public class XwamiMultiLayerMmrecStrategy : Strategy
 		return IsFormedAndOnlineAndAllowTrading();
 	}
 
-	internal void RequestCloseLong(XwamiLayer layer, decimal price)
+	private void RequestCloseLong(XwamiLayer layer, decimal price)
 	{
 		if (!layer.CloseLong(price))
 		return;
@@ -240,7 +240,7 @@ public class XwamiMultiLayerMmrecStrategy : Strategy
 		UpdateTargetPosition();
 	}
 
-	internal void RequestCloseShort(XwamiLayer layer, decimal price)
+	private void RequestCloseShort(XwamiLayer layer, decimal price)
 	{
 		if (!layer.CloseShort(price))
 		return;
@@ -248,7 +248,7 @@ public class XwamiMultiLayerMmrecStrategy : Strategy
 		UpdateTargetPosition();
 	}
 
-	internal void RequestOpenLong(XwamiLayer layer, decimal price)
+	private void RequestOpenLong(XwamiLayer layer, decimal price)
 	{
 		var changed = false;
 
@@ -271,7 +271,7 @@ public class XwamiMultiLayerMmrecStrategy : Strategy
 		UpdateTargetPosition();
 	}
 
-	internal void RequestOpenShort(XwamiLayer layer, decimal price)
+	private void RequestOpenShort(XwamiLayer layer, decimal price)
 	{
 		var changed = false;
 

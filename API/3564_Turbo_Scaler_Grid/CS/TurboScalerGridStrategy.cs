@@ -109,19 +109,19 @@ public class TurboScalerGridStrategy : Strategy
 
 		_buyStopLossPrice = Param(nameof(BuyStopLossPrice), 0m)
 			.SetDisplay("Buy Stop Loss Price", "Fixed stop loss price for long positions", "Orders")
-			.SetGreaterThanOrEqual(0m);
+			.SetNotNegative();
 
 		_sellStopLossPrice = Param(nameof(SellStopLossPrice), 0m)
 			.SetDisplay("Sell Stop Loss Price", "Fixed stop loss price for short positions", "Orders")
-			.SetGreaterThanOrEqual(0m);
+			.SetNotNegative();
 
 		_buyStopEntry = Param(nameof(BuyStopEntry), 0m)
 			.SetDisplay("Buy Stop Entry", "Base price for buy stop grid", "Orders")
-			.SetGreaterThanOrEqual(0m);
+			.SetNotNegative();
 
 		_sellStopEntry = Param(nameof(SellStopEntry), 0m)
 			.SetDisplay("Sell Stop Entry", "Base price for sell stop grid", "Orders")
-			.SetGreaterThanOrEqual(0m);
+			.SetNotNegative();
 
 		_orderVolume = Param(nameof(OrderVolume), 0.01m)
 			.SetDisplay("Order Volume", "Volume for each pending order", "Orders")
@@ -158,19 +158,19 @@ public class TurboScalerGridStrategy : Strategy
 
 		_maxFloatLoss = Param(nameof(MaxFloatLoss), 3m)
 			.SetDisplay("Max Floating Loss", "Maximum allowed floating loss in base currency units", "Equity")
-			.SetGreaterThanOrEqual(0m);
+			.SetNotNegative();
 
 		_equityBreakeven = Param(nameof(EquityBreakeven), 2.5m)
 			.SetDisplay("Equity Break-even", "Equity level maintained after trigger", "Equity")
-			.SetGreaterThanOrEqual(0m);
+			.SetNotNegative();
 
 		_equityTrigger = Param(nameof(EquityTrigger), 7m)
 			.SetDisplay("Equity Trigger", "Equity profit that activates the lock line", "Equity")
-			.SetGreaterThanOrEqual(0m);
+			.SetNotNegative();
 
 		_equityTrail = Param(nameof(EquityTrail), 10m)
 			.SetDisplay("Equity Trail", "Distance used to trail the equity lock", "Equity")
-			.SetGreaterThanOrEqual(0m);
+			.SetNotNegative();
 	}
 
 	/// <summary>
@@ -472,9 +472,9 @@ public class TurboScalerGridStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged(decimal delta)
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged(delta);
+		base.OnPositionReceived(position);
 
 		if (Position == 0m)
 		{

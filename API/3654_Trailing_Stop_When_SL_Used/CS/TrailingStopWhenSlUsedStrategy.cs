@@ -78,9 +78,9 @@ public class TrailingStopWhenSlUsedStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged(decimal delta)
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged(delta);
+		base.OnPositionReceived(position);
 
 		// Remove the opposite protective order when the position flips.
 		if (Position <= 0m)

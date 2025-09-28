@@ -56,8 +56,8 @@ public class MarketMasterStrategy : Strategy
 	private AverageTrueRange _atr = null!;
 	private AverageTrueRange _atrHedge = null!;
 	private MoneyFlowIndex _mfi = null!;
-	private BullsPower _bulls = null!;
-	private BearsPower _bears = null!;
+	private BullPower _bulls = null!;
+	private BearPower _bears = null!;
 	private StochasticOscillator _stochastic = null!;
 	private ParabolicSar _psar = null!;
 	private ParabolicSar _psarConfirm = null!;
@@ -491,8 +491,8 @@ public class MarketMasterStrategy : Strategy
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 		_atrHedge = new AverageTrueRange { Length = AtrHedgePeriod };
 		_mfi = new MoneyFlowIndex { Length = MfiPeriod };
-		_bulls = new BullsPower { Length = BullBearPeriod };
-		_bears = new BearsPower { Length = BullBearPeriod };
+		_bulls = new BullPower { Length = BullBearPeriod };
+		_bears = new BearPower { Length = BullBearPeriod };
 		_stochastic = new StochasticOscillator
 		{
 			Length = StochasticKPeriod,

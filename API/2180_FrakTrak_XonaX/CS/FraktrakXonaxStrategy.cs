@@ -89,7 +89,7 @@ public class FraktrakXonaxStrategy : Strategy
 	{
 
 		_fractalOffset = Param(nameof(FractalOffset), 15)
-			.SetGreaterThanOrEqualToZero()
+			.SetNotNegative()
 			.SetDisplay("Fractal Offset", "Price steps added beyond fractal", "Signals");
 
 		_takeProfit = Param(nameof(TakeProfit), 1000)

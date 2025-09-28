@@ -275,9 +275,9 @@ public class RonzAutoSltpStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged(decimal delta)
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged(delta);
+		base.OnPositionReceived(position);
 
 		if (ManageAllSecurities)
 		{
@@ -806,9 +806,9 @@ public class RonzAutoSltpStrategy : Strategy
 		public decimal? GetReferencePrice(bool isLong)
 		{
 			if (isLong)
-			return BestBid ?? _security.LastTrade?.Price;
+			return BestBid ?? _security.LastTick?.Price;
 
-			return BestAsk ?? _security.LastTrade?.Price;
+			return BestAsk ?? _security.LastTick?.Price;
 		}
 
 		public decimal GetMinimalDistance()

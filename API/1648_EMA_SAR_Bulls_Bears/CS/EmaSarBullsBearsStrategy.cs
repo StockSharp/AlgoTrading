@@ -33,8 +33,8 @@ public class EmaSarBullsBearsStrategy : Strategy
 	private ExponentialMovingAverage _shortEma;
 	private ExponentialMovingAverage _longEma;
 	private ParabolicSar _sar;
-	private BearsPower _bearsPower;
-	private BullsPower _bullsPower;
+	private BearPower _bearsPower;
+	private BullPower _bullsPower;
 
 	private decimal? _prevBearsPower;
 	private decimal? _prevBullsPower;

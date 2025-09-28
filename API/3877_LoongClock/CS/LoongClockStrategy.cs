@@ -239,7 +239,7 @@ public class LoongClockStrategy : Strategy
 		if (_anchorPrice != null)
 		return _anchorPrice.Value;
 
-		var lastTrade = Security?.LastTrade;
+		var lastTrade = Security?.LastTick;
 
 		if (lastTrade != null)
 		return lastTrade.Price;

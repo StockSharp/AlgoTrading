@@ -136,11 +136,11 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 			.SetDisplay("Long MA Slow Method", "Smoothing algorithm for the slow moving average", "Long Block");
 
 		_longNormalVolume = Param(nameof(LongNormalVolume), 0.1m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Long Normal Volume", "Default long volume before the money management filter", "Money Management");
 
 		_longReducedVolume = Param(nameof(LongReducedVolume), 0.01m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Long Reduced Volume", "Volume used after a long loss streak", "Money Management");
 
 		_longHistoryDepth = Param(nameof(LongHistoryDepth), 5)
@@ -207,11 +207,11 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 			.SetDisplay("Short MA Slow Method", "Smoothing algorithm for the slow moving average", "Short Block");
 
 		_shortNormalVolume = Param(nameof(ShortNormalVolume), 0.1m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Short Normal Volume", "Default short volume before the money management filter", "Money Management");
 
 		_shortReducedVolume = Param(nameof(ShortReducedVolume), 0.01m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Short Reduced Volume", "Volume used after a short loss streak", "Money Management");
 
 		_shortHistoryDepth = Param(nameof(ShortHistoryDepth), 5)

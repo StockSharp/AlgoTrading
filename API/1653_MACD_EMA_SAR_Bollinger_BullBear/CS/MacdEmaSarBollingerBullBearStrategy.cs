@@ -196,8 +196,8 @@ public class MacdEmaSarBollingerBullBearStrategy : Strategy
 		var fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
 		var slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
 		var sar = new ParabolicSar { AccelerationStep = SarStep, AccelerationMax = SarMax };
-		var bears = new BearsPower { Length = PowerPeriod };
-		var bulls = new BullsPower { Length = PowerPeriod };
+		var bears = new BearPower { Length = PowerPeriod };
+		var bulls = new BullPower { Length = PowerPeriod };
 		var bollinger = new BollingerBands { Length = BollingerPeriod, Width = BollingerDeviation };
 
 		var subscription = SubscribeCandles(CandleType);

@@ -261,7 +261,7 @@ _lowLevel2 = Param(nameof(LowLevel2), -100m)
 .SetDisplay("Low Level 2", "Outer bearish threshold multiplier", "Bands");
 
 _signalBar = Param(nameof(SignalBar), 1)
-.SetGreaterThanOrEqualToZero()
+.SetNotNegative()
 .SetDisplay("Signal Bar", "Number of closed candles to look back", "Signals");
 
 _allowLongEntries = Param(nameof(AllowLongEntries), true)
@@ -277,11 +277,11 @@ _allowShortExits = Param(nameof(AllowShortExits), true)
 .SetDisplay("Allow Short Exits", "Enable closing sell positions on buy signals", "Trading");
 
 _stopLossPoints = Param(nameof(StopLossPoints), 1000m)
-.SetGreaterThanOrEqualToZero()
+.SetNotNegative()
 .SetDisplay("Stop Loss Points", "Protective stop distance in price points", "Risk Management");
 
 _takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
-.SetGreaterThanOrEqualToZero()
+.SetNotNegative()
 .SetDisplay("Take Profit Points", "Profit target distance in price points", "Risk Management");
 
 _volumeSource = Param(nameof(VolumeSource), VolumeModes.Tick)

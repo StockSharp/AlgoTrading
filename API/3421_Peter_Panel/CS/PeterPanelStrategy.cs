@@ -325,9 +325,9 @@ public class PeterPanelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStopped(DateTimeOffset time)
+	protected override void OnStopped()
 	{
-		base.OnStopped(time);
+		base.OnStopped();
 
 		_isRunning = false;
 	}
@@ -704,7 +704,7 @@ public class PeterPanelStrategy : Strategy
 
 		if (bid <= 0m && ask <= 0m)
 		{
-			var last = security?.LastTrade?.Price ?? 0m;
+			var last = security?.LastTick?.Price ?? 0m;
 			if (last <= 0m)
 			return false;
 

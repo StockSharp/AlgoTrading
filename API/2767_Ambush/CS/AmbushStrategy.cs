@@ -102,30 +102,30 @@ public class AmbushStrategy : Strategy
 	public AmbushStrategy()
 	{
 		_indentationPoints = Param(nameof(IndentationPoints), 10m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Indentation (points)", "Distance from price for pending stops", "Orders");
 
 		_maxSpreadPoints = Param(nameof(MaxSpreadPoints), 5m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Max Spread (points)", "Maximum allowed spread", "Orders");
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 10m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (points)", "Base trailing distance", "Orders");
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 1m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (points)", "Additional trailing offset", "Orders");
 
 		_pause = Param(nameof(Pause), TimeSpan.FromSeconds(1))
 			.SetDisplay("Pause", "Pause between trailing recalculations", "Orders");
 
 		_equityTakeProfit = Param(nameof(EquityTakeProfit), 15m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Equity Take Profit", "Flatten positions once this profit is reached", "Risk");
 
 		_equityStopLoss = Param(nameof(EquityStopLoss), 5m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Equity Stop Loss", "Flatten positions after this loss", "Risk");
 	}
 

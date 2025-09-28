@@ -187,9 +187,9 @@ public class EmaCrossTrailingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged(decimal delta)
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged(delta);
+		base.OnPositionReceived(position);
 
 		// Any filled entry or exit frees the strategy for the next signal.
 		_entryPending = false;

@@ -99,15 +99,15 @@ public class MyLineOrderStrategy : Strategy
 	        .SetDisplay("Sell Price", "Price level to trigger sell order", "Trading");
 
 	    _takeProfitPips = Param(nameof(TakeProfitPips), 30m)
-	        .SetGreaterThanOrEqual(0m)
+	        .SetNotNegative()
 	        .SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk");
 
 	    _stopLossPips = Param(nameof(StopLossPips), 20m)
-	        .SetGreaterThanOrEqual(0m)
+	        .SetNotNegative()
 	        .SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk");
 
 	    _trailingStopPips = Param(nameof(TrailingStopPips), 0m)
-	        .SetGreaterThanOrEqual(0m)
+	        .SetNotNegative()
 	        .SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk");
 
 	    _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

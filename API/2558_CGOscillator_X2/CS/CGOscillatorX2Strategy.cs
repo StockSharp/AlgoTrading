@@ -31,8 +31,8 @@ public class CGOscillatorX2Strategy : Strategy
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
 
-	private CenterOfGravityOscillatorIndicator _trendIndicator;
-	private CenterOfGravityOscillatorIndicator _signalIndicator;
+	private CenterOfGravityOscillator _trendIndicator;
+	private CenterOfGravityOscillator _signalIndicator;
 
 	private int _trendDirection;
 	private decimal? _signalPrevMain;
@@ -110,12 +110,12 @@ public class CGOscillatorX2Strategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_trendIndicator = new CenterOfGravityOscillatorIndicator
+		_trendIndicator = new CenterOfGravityOscillator
 		{
 			Length = TrendLength
 		};
 
-		_signalIndicator = new CenterOfGravityOscillatorIndicator
+		_signalIndicator = new CenterOfGravityOscillator
 		{
 			Length = SignalLength
 		};
@@ -292,89 +292,4 @@ public class CGOscillatorX2Strategy : Strategy
 		_stopPrice = null;
 		_takePrice = null;
 	}
-}
-
-/// <summary>
-/// Center of Gravity oscillator indicator producing main and signal lines.
-/// </summary>
-public class CenterOfGravityOscillatorIndicator : BaseIndicator<decimal>
-{
-	private readonly Queue<decimal> _medianPrices = new();
-	private decimal? _previousMain;
-
-	public int Length { get; set; } = 10;
-
-	private decimal Shift => (Length + 1m) / 2m;
-
-	public override bool IsFormed => _medianPrices.Count >= Length;
-
-	/// <inheritdoc />
-	protected override IIndicatorValue OnProcess(IIndicatorValue input)
-	{
-		if (input is not ICandleMessage candle || candle.State != CandleStates.Finished)
-			return new DecimalIndicatorValue(this, default, input.Time);
-
-		var median = (candle.HighPrice + candle.LowPrice) / 2m;
-		_medianPrices.Enqueue(median);
-
-		while (_medianPrices.Count > Length)
-			_medianPrices.Dequeue();
-
-		if (_medianPrices.Count < Length || Length <= 0)
-		{
-			_previousMain = null;
-			return new DecimalIndicatorValue(this, default, input.Time);
-		}
-
-		decimal numerator = 0m;
-		decimal denominator = 0m;
-		var index = 1m;
-
-		foreach (var price in _medianPrices)
-		{
-			numerator += index * price;
-			denominator += price;
-			index += 1m;
-		}
-
-		decimal main = 0m;
-
-		if (denominator != 0m)
-			main = -numerator / denominator + Shift;
-
-		var signal = _previousMain ?? main;
-		_previousMain = main;
-
-		return new CenterOfGravityOscillatorValue(this, input, main, signal);
-	}
-
-	/// <inheritdoc />
-	public override void Reset()
-	{
-		base.Reset();
-
-		_medianPrices.Clear();
-		_previousMain = null;
-	}
-}
-
-/// <summary>
-/// Indicator value for <see cref="CenterOfGravityOscillatorIndicator"/>.
-/// </summary>
-public class CenterOfGravityOscillatorValue : ComplexIndicatorValue
-{
-	public CenterOfGravityOscillatorValue(IIndicator indicator, IIndicatorValue input, decimal main, decimal signal)
-	: base(indicator, input, (nameof(Main), main), (nameof(Signal), signal))
-	{
-	}
-
-	/// <summary>
-	/// Main oscillator value.
-	/// </summary>
-	public decimal Main => (decimal)GetValue(nameof(Main));
-
-	/// <summary>
-	/// Signal value (previous oscillator value).
-	/// </summary>
-	public decimal Signal => (decimal)GetValue(nameof(Signal));
 }

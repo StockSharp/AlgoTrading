@@ -32,8 +32,8 @@ public class BullsBearsEyesEaStrategy : Strategy
 	private readonly StrategyParam<int> _endHour;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private BullsPower _bulls;
-	private BearsPower _bears;
+	private BullPower _bulls;
+	private BearPower _bears;
 
 	private decimal _l0;
 	private decimal _l1;
@@ -220,8 +220,8 @@ public class BullsBearsEyesEaStrategy : Strategy
 		if (TrailingStopPips > 0m && TrailingStepPips <= 0m)
 			throw new InvalidOperationException("TrailingStepPips must be positive when trailing stop is used.");
 
-		_bulls = new BullsPower { Length = Period };
-		_bears = new BearsPower { Length = Period };
+		_bulls = new BullPower { Length = Period };
+		_bears = new BearPower { Length = Period };
 		_pipSize = GetPipSize();
 
 		var subscription = SubscribeCandles(CandleType);
@@ -262,9 +262,9 @@ public class BullsBearsEyesEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged(decimal delta)
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged(delta);
+		base.OnPositionReceived(position);
 
 		if (Position > 0)
 		{

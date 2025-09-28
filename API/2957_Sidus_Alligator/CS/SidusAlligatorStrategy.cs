@@ -219,7 +219,7 @@ public SidusAlligatorStrategy()
 		.SetDisplay("Trailing Step", "Minimum move before trailing advances", "Risk");
 
 		_delta = Param(nameof(Delta), 0.00003m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Delta", "Minimum Alligator slope difference", "Filters");
 
 		_closeOpposite = Param(nameof(CloseOpposite), false)

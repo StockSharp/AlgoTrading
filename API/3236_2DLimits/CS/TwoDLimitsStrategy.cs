@@ -159,7 +159,7 @@ public class TwoDLimitsStrategy : Strategy
 
 		var ask = _lastAsk > 0m ? _lastAsk : (Security?.BestAsk?.Price ?? 0m);
 		var bid = _lastBid > 0m ? _lastBid : (Security?.BestBid?.Price ?? 0m);
-		var lastTradePrice = Security?.LastTrade?.Price ?? 0m;
+		var lastTradePrice = Security?.LastTick?.Price ?? 0m;
 
 		if (ask <= 0m && lastTradePrice > 0m)
 			ask = lastTradePrice;
@@ -236,9 +236,9 @@ public class TwoDLimitsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged(decimal delta)
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged(delta);
+		base.OnPositionReceived(position);
 
 		var position = Position;
 

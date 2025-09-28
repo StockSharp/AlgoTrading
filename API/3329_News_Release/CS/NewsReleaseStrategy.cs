@@ -234,11 +234,11 @@ public class NewsReleaseStrategy : Strategy
 
 		_distancePips = Param(nameof(DistancePips), 10m)
 		.SetDisplay("Distance", "Initial distance in pips", "Orders")
-		.SetGreaterThanOrEqual(0m);
+		.SetNotNegative();
 
 		_stepPips = Param(nameof(StepPips), 5m)
 		.SetDisplay("Step", "Additional spacing between orders", "Orders")
-		.SetGreaterThanOrEqual(0m);
+		.SetNotNegative();
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 		.SetDisplay("Volume", "Volume per pending order", "Orders")
@@ -252,21 +252,21 @@ public class NewsReleaseStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 10m)
 		.SetDisplay("Stop Loss", "Stop-loss distance in pips", "Risk")
-		.SetGreaterThanOrEqual(0m);
+		.SetNotNegative();
 
 		_useTakeProfit = Param(nameof(UseTakeProfit), true)
 		.SetDisplay("Use Take Profit", "Enable take-profit control", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 15m)
 		.SetDisplay("Take Profit", "Take-profit distance in pips", "Risk")
-		.SetGreaterThanOrEqual(0m);
+		.SetNotNegative();
 
 		_useBreakEven = Param(nameof(UseBreakEven), true)
 		.SetDisplay("Use Break Even", "Enable break-even protection", "Risk");
 
 		_breakEvenTriggerPips = Param(nameof(BreakEvenTriggerPips), 5m)
 		.SetDisplay("Break Even Trigger", "Profit required to arm break-even", "Risk")
-		.SetGreaterThanOrEqual(0m);
+		.SetNotNegative();
 
 		_breakEvenOffsetPips = Param(nameof(BreakEvenOffsetPips), 1m)
 		.SetDisplay("Break Even Offset", "Offset applied when moving to break-even", "Risk");
@@ -276,7 +276,7 @@ public class NewsReleaseStrategy : Strategy
 
 		_trailingPips = Param(nameof(TrailingPips), 5m)
 		.SetDisplay("Trailing Distance", "Trailing distance in pips", "Risk")
-		.SetGreaterThanOrEqual(0m);
+		.SetNotNegative();
 
 		_closeAfterEvent = Param(nameof(CloseAfterEvent), false)
 		.SetDisplay("Close After Event", "Close position when event window ends", "Risk");
@@ -457,9 +457,9 @@ public class NewsReleaseStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged(decimal delta)
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged(delta);
+		base.OnPositionReceived(position);
 
 		// Cancel leftover pending orders when a position is opened or closed.
 		if (delta != 0)

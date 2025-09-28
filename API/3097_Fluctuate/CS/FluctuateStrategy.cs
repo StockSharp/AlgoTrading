@@ -17,7 +17,7 @@ using StockSharp.Algo;
 
 public class FluctuateStrategy : Strategy
 {
-	private enum LotModes
+	public enum LotModes
 	{
 		FixedVolume,
 		RiskPercent

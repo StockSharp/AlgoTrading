@@ -78,8 +78,8 @@ public class BullsBearsPowerCrossStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		var bulls = new BullsPower { Length = Length };
-		var bears = new BearsPower { Length = Length };
+		var bulls = new BullPower { Length = Length };
+		var bears = new BearPower { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(bulls, bears, ProcessCandle).Start();

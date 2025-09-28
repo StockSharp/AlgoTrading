@@ -114,19 +114,19 @@ public class StandardDeviationChannelStrategy : Strategy
 
 		_breakEvenTriggerPips = Param(nameof(BreakEvenTriggerPips), 30m)
 		.SetDisplay("Break-Even Trigger", "Profit needed before arming the break-even stop.", "Risk")
-		.SetGreaterThanOrEqual(0m);
+		.SetNotNegative();
 
 		_breakEvenOffsetPips = Param(nameof(BreakEvenOffsetPips), 5m)
 		.SetDisplay("Break-Even Offset", "Extra distance added when jumping the stop to break-even.", "Risk")
-		.SetGreaterThanOrEqual(0m);
+		.SetNotNegative();
 
 		_trailingStartPips = Param(nameof(TrailingStartPips), 40m)
 		.SetDisplay("Trailing Start", "Profit required before trailing activates.", "Risk")
-		.SetGreaterThanOrEqual(0m);
+		.SetNotNegative();
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 20m)
 		.SetDisplay("Trailing Step", "Distance maintained by the trailing stop.", "Risk")
-		.SetGreaterThanOrEqual(0m);
+		.SetNotNegative();
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 		.SetDisplay("MACD Fast", "Fast EMA length for MACD.", "MACD")

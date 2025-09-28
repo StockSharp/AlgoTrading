@@ -146,7 +146,7 @@ public class CmFishingStrategy : Strategy
 
 		StartProtection();
 
-		var lastTrade = Security.LastTrade;
+		var lastTrade = Security.LastTick;
 		_level = lastTrade?.Price ?? 0m;
 		_entryPrice = 0m;
 

@@ -30,8 +30,8 @@ public class Rpm5BullsBearsEyesStrategy : Strategy
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private BullsPower _bulls = null!;
-	private BearsPower _bears = null!;
+	private BullPower _bulls = null!;
+	private BearPower _bears = null!;
 	private AverageTrueRange _atr = null!;
 
 	private decimal _l0;
@@ -216,8 +216,8 @@ public class Rpm5BullsBearsEyesStrategy : Strategy
 		Volume = TradeVolume;
 		_pipSize = GetPipSize();
 
-		_bulls = new BullsPower { Length = Period };
-		_bears = new BearsPower { Length = Period };
+		_bulls = new BullPower { Length = Period };
+		_bears = new BearPower { Length = Period };
 		_atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -264,9 +264,9 @@ public class Rpm5BullsBearsEyesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged(decimal delta)
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged(delta);
+		base.OnPositionReceived(position);
 
 		if (Position > 0m)
 		{

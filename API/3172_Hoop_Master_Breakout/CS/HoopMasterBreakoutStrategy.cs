@@ -266,9 +266,9 @@ public class HoopMasterBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged(decimal delta)
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged(delta);
+		base.OnPositionReceived(position);
 
 		var current = Position;
 
@@ -293,7 +293,7 @@ public class HoopMasterBreakoutStrategy : Strategy
 		CancelActiveOrder(_sellStopOrder);
 		_sellStopOrder = null;
 
-		_longEntryPrice = _buyStopOrder?.Price ?? Security?.LastTrade?.Price;
+		_longEntryPrice = _buyStopOrder?.Price ?? Security?.LastTick?.Price;
 		_longStopPrice = _pendingLongStop;
 
 		RegisterLongProtection();
@@ -304,7 +304,7 @@ public class HoopMasterBreakoutStrategy : Strategy
 		CancelActiveOrder(_buyStopOrder);
 		_buyStopOrder = null;
 
-		_shortEntryPrice = _sellStopOrder?.Price ?? Security?.LastTrade?.Price;
+		_shortEntryPrice = _sellStopOrder?.Price ?? Security?.LastTick?.Price;
 		_shortStopPrice = _pendingShortStop;
 
 		RegisterShortProtection();

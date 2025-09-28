@@ -144,11 +144,11 @@ public class ElliIchimokuAdxStrategy : Strategy
 	{
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 60m)
 			.SetDisplay("Take Profit", "Take profit distance in price steps", "Risk Management")
-			.SetGreaterThanOrEqual(0m);
+			.SetNotNegative();
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 30m)
 			.SetDisplay("Stop Loss", "Stop loss distance in price steps", "Risk Management")
-			.SetGreaterThanOrEqual(0m);
+			.SetNotNegative();
 
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 19)
 			.SetDisplay("Tenkan Period", "Tenkan-sen (conversion line) length", "Ichimoku")
@@ -172,11 +172,11 @@ public class ElliIchimokuAdxStrategy : Strategy
 
 		_plusDiLowThreshold = Param(nameof(PlusDiLowThreshold), 6m)
 			.SetDisplay("+DI Low Threshold", "Level previous +DI must stay below", "ADX")
-			.SetGreaterThanOrEqual(0m);
+			.SetNotNegative();
 
 		_baselineDistanceThreshold = Param(nameof(BaselineDistanceThreshold), 20m)
 			.SetDisplay("Baseline Distance", "Minimum Tenkan/Kijun spread in steps", "Ichimoku")
-			.SetGreaterThanOrEqual(0m);
+			.SetNotNegative();
 
 		_ichimokuCandleType = Param(nameof(IchimokuCandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Ichimoku Candle", "Candle series for Ichimoku", "General");

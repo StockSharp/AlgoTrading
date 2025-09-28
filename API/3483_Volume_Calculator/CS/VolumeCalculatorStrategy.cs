@@ -200,7 +200,7 @@ public class VolumeCalculatorStrategy : Strategy
 
 	private decimal? GetReferencePrice()
 	{
-		var lastTradePrice = Security.LastTrade?.Price;
+		var lastTradePrice = Security.LastTick?.Price;
 
 		if (lastTradePrice != null)
 			return lastTradePrice;

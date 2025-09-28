@@ -173,9 +173,9 @@ public class DynamicStopLossStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged(decimal delta)
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged(delta);
+		base.OnPositionReceived(position);
 
 		// Remove stale stop orders once the position is flat.
 		if (Position == 0m)

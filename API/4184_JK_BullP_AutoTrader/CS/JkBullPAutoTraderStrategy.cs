@@ -204,9 +204,9 @@ public class JkBullPAutoTraderStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged(decimal delta)
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged(delta);
+		base.OnPositionReceived(position);
 
 		// Detect new entries and store the price baseline for trailing decisions.
 		if (_previousPosition == 0m && Position != 0m)

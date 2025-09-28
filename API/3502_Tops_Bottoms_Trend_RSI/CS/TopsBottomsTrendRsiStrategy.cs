@@ -226,11 +226,11 @@ public class TopsBottomsTrendRsiStrategy : Strategy
 			.SetDisplay("Buy Stop Loss (pips)", "Stop-loss distance for long positions", "Risk Management");
 
 		_buyTakeProfitPips = Param(nameof(BuyTakeProfitPips), 5m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Buy Take Profit (pips)", "Optional fixed take-profit for long positions", "Risk Management");
 
 		_buyTakeProfitPercentOfStop = Param(nameof(BuyTakeProfitPercentOfStop), 100m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Buy Take Profit (%)", "Take-profit as percentage of the stop-loss", "Risk Management");
 
 		_sellVolume = Param(nameof(SellVolume), 0.01m)
@@ -242,7 +242,7 @@ public class TopsBottomsTrendRsiStrategy : Strategy
 			.SetDisplay("Sell Stop Loss (pips)", "Stop-loss distance for short positions", "Risk Management");
 
 		_sellTakeProfitPercentOfStop = Param(nameof(SellTakeProfitPercentOfStop), 100m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Sell Take Profit (%)", "Take-profit as percentage of the stop-loss", "Risk Management");
 
 		_sellTrendCandles = Param(nameof(SellTrendCandles), 10)

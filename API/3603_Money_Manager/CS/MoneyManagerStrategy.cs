@@ -221,7 +221,7 @@ public class MoneyManagerStrategy : Strategy
 				return _bestAsk;
 		}
 
-		return Security?.LastTrade?.Price ?? 0m;
+		return Security?.LastTick?.Price ?? 0m;
 	}
 }
 

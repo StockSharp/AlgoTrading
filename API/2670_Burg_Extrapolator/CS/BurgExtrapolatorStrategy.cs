@@ -174,7 +174,7 @@ public class BurgExtrapolatorStrategy : Strategy
 	{
 		_riskPercent = Param(nameof(RiskPercent), 5m)
 		.SetDisplay("Risk %", "Risk percent per trade", "Money")
-		.SetGreaterThanOrEqual(0m);
+		.SetNotNegative();
 
 		_maxPositions = Param(nameof(MaxPositions), 1)
 		.SetDisplay("Max Positions", "Maximum simultaneous trades", "Risk")
@@ -182,23 +182,23 @@ public class BurgExtrapolatorStrategy : Strategy
 
 		_minProfitPips = Param(nameof(MinProfitPips), 160m)
 		.SetDisplay("Min Profit", "Minimum predicted profit (pips)", "Signals")
-		.SetGreaterThanOrEqual(0m);
+		.SetNotNegative();
 
 		_maxLossPips = Param(nameof(MaxLossPips), 130m)
 		.SetDisplay("Max Loss", "Maximum tolerated loss (pips)", "Risk")
-		.SetGreaterThanOrEqual(0m);
+		.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 0m)
 		.SetDisplay("Take Profit", "Take profit distance (pips)", "Risk")
-		.SetGreaterThanOrEqual(0m);
+		.SetNotNegative();
 
 		_stopLossPips = Param(nameof(StopLossPips), 180m)
 		.SetDisplay("Stop Loss", "Stop loss distance (pips)", "Risk")
-		.SetGreaterThanOrEqual(0m);
+		.SetNotNegative();
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 10m)
 		.SetDisplay("Trailing Stop", "Trailing stop distance (pips)", "Risk")
-		.SetGreaterThanOrEqual(0m);
+		.SetNotNegative();
 
 		_pastBars = Param(nameof(PastBars), 200)
 		.SetDisplay("Past Bars", "Bars used for Burg model", "Model")

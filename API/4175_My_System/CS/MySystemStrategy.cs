@@ -26,8 +26,8 @@ public class MySystemStrategy : Strategy
 	private readonly StrategyParam<int> _powerPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private BullsPower? _bullsPower;
-	private BearsPower? _bearsPower;
+	private BullPower? _bullsPower;
+	private BearPower? _bearsPower;
 
 	private decimal _pipSize;
 	private decimal? _previousAveragePower;
@@ -98,19 +98,19 @@ public class MySystemStrategy : Strategy
 	{
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 86m)
 			.SetDisplay("Take Profit (points)", "Distance for take profit orders in price steps", "Risk Management")
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(10m, 200m, 10m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 60m)
 			.SetDisplay("Stop Loss (points)", "Distance for stop loss orders in price steps", "Risk Management")
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(10m, 200m, 10m);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 10m)
 			.SetDisplay("Trailing Stop (points)", "Trailing exit trigger distance in price steps", "Risk Management")
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 100m, 5m);
 
@@ -156,8 +156,8 @@ public class MySystemStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_bullsPower = new BullsPower { Length = PowerPeriod };
-		_bearsPower = new BearsPower { Length = PowerPeriod };
+		_bullsPower = new BullPower { Length = PowerPeriod };
+		_bearsPower = new BearPower { Length = PowerPeriod };
 
 		_pipSize = CalculatePipSize();
 
@@ -178,9 +178,9 @@ public class MySystemStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged(decimal delta)
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged(delta);
+		base.OnPositionReceived(position);
 
 		if (Position == 0)
 		{

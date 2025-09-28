@@ -280,9 +280,9 @@ public class ErrorEaStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged(decimal delta)
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged(delta);
+		base.OnPositionReceived(position);
 
 		// Reset scaling counters once the net position flips or becomes flat.
 		if (Position == 0)

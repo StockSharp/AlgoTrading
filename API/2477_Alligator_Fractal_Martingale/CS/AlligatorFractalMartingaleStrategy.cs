@@ -347,11 +347,11 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 		.SetDisplay("Lips Shift", "Forward shift of the lips", "Alligator");
 
 		_entrySpread = Param(nameof(EntrySpread), 0.0005m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Entry Spread", "Required jaw-lips spread to enable entries", "Alligator");
 
 		_exitSpread = Param(nameof(ExitSpread), 0.0001m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Exit Spread", "Spread that closes the mouth", "Alligator");
 
 		_useAlligatorEntry = Param(nameof(UseAlligatorEntry), true)
@@ -376,15 +376,15 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 		.SetDisplay("Manual Mode", "Disable automatic entries", "Trading");
 
 		_takeProfitDistance = Param(nameof(TakeProfitDistance), 0.008m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Take Profit Distance", "Fixed distance for profit taking", "Protection");
 
 		_stopLossDistance = Param(nameof(StopLossDistance), 0.008m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Stop Loss Distance", "Fixed distance for protective stop", "Protection");
 
 		_trailingStep = Param(nameof(TrailingStep), 0.001m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Trailing Step", "Minimum move before trailing", "Protection");
 
 		_fractalLookback = Param(nameof(FractalLookback), 10)
@@ -392,7 +392,7 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 		.SetDisplay("Fractal Lookback", "Bars to keep fractal levels", "Fractals");
 
 		_fractalBuffer = Param(nameof(FractalBuffer), 0.003m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Fractal Buffer", "Extra distance to validate fractals", "Fractals");
 
 		_martingaleSteps = Param(nameof(MartingaleSteps), 10)
@@ -404,11 +404,11 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 		.SetDisplay("Martingale Multiplier", "Volume multiplier per level", "Martingale");
 
 		_martingaleStepDistance = Param(nameof(MartingaleStepDistance), 0.005m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Martingale Step", "Distance between averaging levels", "Martingale");
 
 		_maxVolume = Param(nameof(MaxVolume), 0.5m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Max Volume", "Absolute cap for any order", "Trading");
 
 		_volume = Param(nameof(Volume), 0.1m)

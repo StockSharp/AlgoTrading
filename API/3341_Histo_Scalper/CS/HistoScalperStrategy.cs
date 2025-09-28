@@ -84,8 +84,8 @@ public class HistoScalperStrategy : Strategy
 	private AverageTrueRange _atr = null!;
 	private SimpleMovingAverage _atrAverage = null!;
 	private BollingerBands _bollinger = null!;
-	private BullsPower _bulls = null!;
-	private BearsPower _bears = null!;
+	private BullPower _bulls = null!;
+	private BearPower _bears = null!;
 	private CommodityChannelIndex _cci = null!;
 	private MovingAverageConvergenceDivergence _macd = null!;
 	private RelativeStrengthIndex _rsi = null!;
@@ -634,12 +634,12 @@ public class HistoScalperStrategy : Strategy
 			Width = BollingerDeviation
 		};
 
-		_bulls = new BullsPower
+		_bulls = new BullPower
 		{
 			Length = PeriodIndicator4
 		};
 
-		_bears = new BearsPower
+		_bears = new BearPower
 		{
 			Length = PeriodIndicator4
 		};

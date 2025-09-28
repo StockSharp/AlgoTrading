@@ -99,11 +99,11 @@ public class Binario3Strategy : Strategy
 			.SetDisplay("Take Profit (points)", "Target distance in points added to the breakout side.", "Risk");
 
 		_trailingStopPoints = Param(nameof(TrailingStop), 850m)
-			.SetGreaterThanOrEqualToZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (points)", "Distance in points used for trailing exits.", "Risk");
 
 		_pipDifferencePoints = Param(nameof(PipDifference), 25m)
-			.SetGreaterThanOrEqualToZero()
+			.SetNotNegative()
 			.SetDisplay("Offset (points)", "Extra distance added above/below the EMAs before placing pending orders.", "Entries");
 
 		_lots = Param(nameof(Lots), 0.1m)
@@ -111,7 +111,7 @@ public class Binario3Strategy : Strategy
 			.SetDisplay("Lot Size", "Fallback trade volume used when automatic sizing cannot be calculated.", "Volume");
 
 		_maximumRisk = Param(nameof(MaximumRisk), 10m)
-			.SetGreaterThanOrEqualToZero()
+			.SetNotNegative()
 			.SetDisplay("Maximum Risk", "Risk factor copied from the original EA (used for auto lot sizing).", "Volume");
 
 		_emaPeriod = Param(nameof(EmaPeriod), 144)

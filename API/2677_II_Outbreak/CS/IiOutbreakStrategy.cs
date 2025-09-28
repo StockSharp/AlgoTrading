@@ -157,15 +157,15 @@ public class IiOutbreakStrategy : Strategy
 	public IiOutbreakStrategy()
 	{
 		_commission = Param(nameof(Commission), 4m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Commission", "Round lot commission used for stop offset", "Risk Management");
 
 		_epsilonTolerance = Param(nameof(EpsilonTolerance), 0.0000000001m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Epsilon", "Minimum acceleration threshold", "Filters");
 
 		_spreadThreshold = Param(nameof(SpreadThreshold), 6m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Spread Threshold", "Maximum spread allowed to trade (points)", "Execution")
 			.SetCanOptimize(true)
 			.SetOptimize(2m, 15m, 1m);
@@ -177,21 +177,21 @@ public class IiOutbreakStrategy : Strategy
 			.SetOptimize(10m, 40m, 5m);
 
 		_totalEquityRisk = Param(nameof(TotalEquityRisk), 0.5m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Equity Risk %", "Maximum floating loss before closing all trades", "Risk Management");
 
 		_maximumRisk = Param(nameof(MaximumRisk), 0.1m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Risk Fraction", "Fraction of balance allocated per order", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(0.05m, 0.2m, 0.01m);
 
 		_stdDevLimit = Param(nameof(StdDevLimit), 0.002m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("StdDev Limit", "Upper bound for standard deviation filter", "Filters");
 
 		_volatilityThreshold = Param(nameof(VolatilityThreshold), 800m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Volatility Threshold", "Minimum volatility score required for entries", "Filters")
 			.SetCanOptimize(true)
 			.SetOptimize(400m, 1600m, 100m);

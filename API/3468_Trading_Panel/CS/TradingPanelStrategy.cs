@@ -324,9 +324,9 @@ public class TradingPanelStrategy : Strategy
 	{
 		decimal price;
 		if (side == Sides.Buy)
-			price = security.BestAsk?.Price ?? security.LastTrade?.Price ?? 0m;
+			price = security.BestAsk?.Price ?? security.LastTick?.Price ?? 0m;
 		else
-			price = security.BestBid?.Price ?? security.LastTrade?.Price ?? 0m;
+			price = security.BestBid?.Price ?? security.LastTick?.Price ?? 0m;
 
 		return price > 0m ? security.ShrinkPrice(price) : 0m;
 	}

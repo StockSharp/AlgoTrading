@@ -290,7 +290,7 @@ public class CountOrdersStrategy : Strategy
 
 		var bid = security.BestBid?.Price ?? 0m;
 		var ask = security.BestAsk?.Price ?? 0m;
-		var last = security.LastTrade?.Price ?? 0m;
+		var last = security.LastTick?.Price ?? 0m;
 
 		if (side == Sides.Buy)
 		{

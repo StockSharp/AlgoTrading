@@ -727,9 +727,9 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged(decimal delta)
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged(delta);
+		base.OnPositionReceived(position);
 
 		if (Position == 0)
 		{
@@ -1141,10 +1141,10 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 		if (_prevOpen is not decimal openPrev || _prevClose is not decimal closePrev)
 		return SignalDirections.None;
 
-		if (current > previous && Security?.LastTrade?.Price is decimal lastPrice && lastPrice > closePrev)
+		if (current > previous && Security?.LastTick?.Price is decimal lastPrice && lastPrice > closePrev)
 		return SignalDirections.Buy;
 
-		if (current < previous && Security?.LastTrade?.Price is decimal last && last < closePrev)
+		if (current < previous && Security?.LastTick?.Price is decimal last && last < closePrev)
 		return SignalDirections.Sell;
 
 		if (current > previous && openPrev < closePrev)
@@ -1252,7 +1252,7 @@ public class ComboEa4FsfrUpdated5Strategy : Strategy
 		if (balance is null || balance == 0m)
 		return Volume;
 
-		var price = Security.LastTrade?.Price ?? Security.BestBid?.Price ?? Security.BestAsk?.Price ?? 0m;
+		var price = Security.LastTick?.Price ?? Security.BestBid?.Price ?? Security.BestAsk?.Price ?? 0m;
 		if (price <= 0m)
 		return Volume;
 

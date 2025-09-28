@@ -24,7 +24,7 @@ public class SmoothingAverageCrossoverStrategy : Strategy
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<int> _maShift;
 	private readonly StrategyParam<MovingAverageKinds> _maType;
-	private readonly StrategyParam<CandlePrice> _priceSource;
+	private readonly StrategyParam<CandlePrices> _priceSource;
 	private readonly StrategyParam<decimal> _entryDeltaPips;
 	private readonly StrategyParam<decimal> _closeDeltaCoefficient;
 	private readonly StrategyParam<bool> _reverseSignals;
@@ -48,17 +48,17 @@ public class SmoothingAverageCrossoverStrategy : Strategy
 			.SetDisplay("MA Length", "Period of the smoothing average", "Moving Average");
 
 		_maShift = Param(nameof(MaShift), 3)
-			.SetGreaterThanOrEqualToZero()
+			.SetNotNegative()
 			.SetDisplay("MA Shift", "Horizontal shift applied to the average", "Moving Average");
 
 		_maType = Param(nameof(MaType), MovingAverageKinds.Simple)
 			.SetDisplay("MA Type", "Type of smoothing applied", "Moving Average");
 
-		_priceSource = Param(nameof(PriceSource), CandlePrice.Typical)
+		_priceSource = Param(nameof(PriceSource), CandlePrices.Typical)
 			.SetDisplay("Price Source", "Price used for the moving average", "Moving Average");
 
 		_entryDeltaPips = Param(nameof(EntryDeltaPips), 60m)
-			.SetGreaterThanOrEqualToZero()
+			.SetNotNegative()
 			.SetDisplay("Entry Delta (pips)", "Distance from MA to trigger entries", "Trading Rules");
 
 		_closeDeltaCoefficient = Param(nameof(CloseDeltaCoefficient), 1.0m)
@@ -112,7 +112,7 @@ public class SmoothingAverageCrossoverStrategy : Strategy
 	/// <summary>
 	/// Candle price source for the moving average.
 	/// </summary>
-	public CandlePrice PriceSource
+	public CandlePrices PriceSource
 	{
 		get => _priceSource.Value;
 		set => _priceSource.Value = value;
@@ -351,6 +351,17 @@ public class SmoothingAverageCrossoverStrategy : Strategy
 		Exponential,
 		Smoothed,
 		LinearWeighted
+	}
+
+	public enum CandlePrices
+	{
+		Open,
+		Close,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted
 	}
 }
 

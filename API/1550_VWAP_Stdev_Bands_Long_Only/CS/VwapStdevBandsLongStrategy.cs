@@ -74,7 +74,7 @@ public class VwapStdevBandsLongStrategy : Strategy
 			.SetDisplay("Profit Target", "Target in price", "Parameters");
 
 		_gapMinutes = Param(nameof(GapMinutes), 15)
-			.SetGreaterThanOrEqualToZero()
+			.SetNotNegative()
 			.SetDisplay("Gap Minutes", "Gap before new order", "Parameters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

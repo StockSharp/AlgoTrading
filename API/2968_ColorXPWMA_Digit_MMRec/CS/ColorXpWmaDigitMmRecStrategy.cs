@@ -201,7 +201,7 @@ public class ColorXpWmaDigitMmRecStrategy : Strategy
 			.SetDisplay("Smoothing Phase", "Phase parameter for some smoothers", "Indicator")
 			.SetCanOptimize(true);
 
-		_appliedPrice = Param(nameof(AppliedPrices), AppliedPrices.Close)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPrices.Close)
 			.SetDisplay("Applied Price", "Price source for the indicator", "Indicator");
 
 		_roundingDigits = Param(nameof(RoundingDigits), 2)
@@ -315,7 +315,7 @@ public class ColorXpWmaDigitMmRecStrategy : Strategy
 	/// <summary>
 	/// Selected price source.
 	/// </summary>
-	public AppliedPrices AppliedPrices
+	public AppliedPrices AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -465,7 +465,7 @@ public class ColorXpWmaDigitMmRecStrategy : Strategy
 			Method = SmoothingMethod,
 			SmoothingLength = SmoothingLength,
 			Phase = SmoothingPhase,
-			AppliedPrices = AppliedPrices,
+			AppliedPrice = AppliedPrice,
 			RoundingDigits = RoundingDigits,
 		};
 
@@ -733,7 +733,7 @@ public class ColorXpWmaDigitIndicator : BaseIndicator<decimal>
 	/// <summary>
 	/// Price source used by the indicator.
 	/// </summary>
-	public AppliedPrices AppliedPrices { get; set; } = AppliedPrices.Close;
+	public AppliedPrices AppliedPrice { get; set; } = AppliedPrices.Close;
 
 	/// <summary>
 	/// Digits used to round the final line.

@@ -152,8 +152,8 @@ public class EmaSarPowerStrategy : Strategy
 			MaxStep = SarMax,
 		};
 
-		var bears = new BearsPower { Length = PowerLength };
-		var bulls = new BullsPower { Length = PowerLength };
+		var bears = new BearPower { Length = PowerLength };
+		var bulls = new BullPower { Length = PowerLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

@@ -192,13 +192,13 @@ public class MacdPatternTraderTriggerStrategy : Strategy
 			.SetDisplay("Bearish Reset", "MACD pullback threshold for bearish setup", "Logic");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 100m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop-loss distance in points", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(50m, 200m, 25m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 300m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take-profit distance in points", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(100m, 400m, 50m);

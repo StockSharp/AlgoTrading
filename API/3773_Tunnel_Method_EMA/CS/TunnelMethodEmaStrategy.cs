@@ -74,25 +74,25 @@ public class TunnelMethodEmaStrategy : Strategy
 			.SetOptimize(120, 220, 5);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 25m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Protective stop distance expressed in price points", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(10m, 60m, 5m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 230m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Profit target distance expressed in price points", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(100m, 400m, 20m);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 35m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (points)", "Distance maintained by the trailing stop", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(10m, 80m, 5m);
 
 		_trailingTriggerPoints = Param(nameof(TrailingTriggerPoints), 20m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Trailing Trigger (points)", "Profit required before the trailing stop activates", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(5m, 60m, 5m);

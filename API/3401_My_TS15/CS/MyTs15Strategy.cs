@@ -21,7 +21,7 @@ public class MyTs15Strategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
 	private readonly StrategyParam<MovingAverageMethods> _maMethod;
-	private readonly StrategyParam<CandlePrice> _maPrice;
+	private readonly StrategyParam<CandlePrices> _maPrice;
 	private readonly StrategyParam<int> _maBarsTrail;
 	private readonly StrategyParam<decimal> _trailBehindMaPoints;
 	private readonly StrategyParam<decimal> _trailBehindPricePoints;
@@ -53,7 +53,7 @@ public class MyTs15Strategy : Strategy
 		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.LinearWeighted)
 		.SetDisplay("MA Method", "Moving average smoothing method.", "Moving Average");
 
-		_maPrice = Param(nameof(MaPrice), CandlePrice.Weighted)
+		_maPrice = Param(nameof(MaPrice), CandlePrices.Weighted)
 		.SetDisplay("MA Price", "Candle price used by the moving average.", "Moving Average");
 
 		_maBarsTrail = Param(nameof(MaBarsTrail), 1)
@@ -93,7 +93,7 @@ public class MyTs15Strategy : Strategy
 	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
 	public int MaShift { get => _maShift.Value; set => _maShift.Value = value; }
 	public MovingAverageMethods MaMethod { get => _maMethod.Value; set => _maMethod.Value = value; }
-	public CandlePrice MaPrice { get => _maPrice.Value; set => _maPrice.Value = value; }
+	public CandlePrices MaPrice { get => _maPrice.Value; set => _maPrice.Value = value; }
 	public int MaBarsTrail { get => _maBarsTrail.Value; set => _maBarsTrail.Value = value; }
 	public decimal TrailBehindMaPoints { get => _trailBehindMaPoints.Value; set => _trailBehindMaPoints.Value = value; }
 	public decimal TrailBehindPricePoints { get => _trailBehindPricePoints.Value; set => _trailBehindPricePoints.Value = value; }
@@ -370,22 +370,22 @@ public class MyTs15Strategy : Strategy
 		return digits;
 	}
 
-	private static decimal GetPrice(ICandleMessage candle, CandlePrice priceType)
+	private static decimal GetPrice(ICandleMessage candle, CandlePrices priceType)
 	{
 		return priceType switch
 		{
-			CandlePrice.Open => candle.OpenPrice,
-			CandlePrice.High => candle.HighPrice,
-			CandlePrice.Low => candle.LowPrice,
-			CandlePrice.Close => candle.ClosePrice,
-			CandlePrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			CandlePrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			CandlePrice.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			CandlePrices.Open => candle.OpenPrice,
+			CandlePrices.High => candle.HighPrice,
+			CandlePrices.Low => candle.LowPrice,
+			CandlePrices.Close => candle.ClosePrice,
+			CandlePrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			CandlePrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			CandlePrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice,
 		};
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length, CandlePrice price)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMethods method, int length, CandlePrices price)
 	{
 		LengthIndicator<decimal> indicator = method switch
 		{
@@ -440,10 +440,42 @@ public class MyTs15Strategy : Strategy
 		LinearWeighted
 	}
 
-	/// <inheritdoc />
-	protected override void OnPositionChanged(decimal delta)
+	public enum CandlePrices
 	{
-		base.OnPositionChanged(delta);
+		/// <summary>
+		/// Open price.
+		/// </summary>
+		Open,
+		/// <summary>
+		/// High price.
+		/// </summary>
+		High,
+		/// <summary>
+		/// Low price.
+		/// </summary>
+		Low,
+		/// <summary>
+		/// Close price.
+		/// </summary>
+		Close,
+		/// <summary>
+		/// Median price (HL/2).
+		/// </summary>
+		Median,
+		/// <summary>
+		/// Typical price (HLC/3).
+		/// </summary>
+		Typical,
+		/// <summary>
+		/// Weighted price (HLCC/4).
+		/// </summary>
+		Weighted
+	}
+
+	/// <inheritdoc />
+	protected override void OnPositionReceived(Position position)
+	{
+		base.OnPositionReceived(position);
 
 		if (Position == 0m)
 			ResetStops();

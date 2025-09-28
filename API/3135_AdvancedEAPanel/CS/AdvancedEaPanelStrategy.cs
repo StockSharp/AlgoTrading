@@ -174,13 +174,13 @@ public class AdvancedEaPanelStrategy : Strategy
 
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Stop loss distance in price steps", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(10m, 150m, 10m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Take profit distance in price steps", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(20m, 300m, 20m);

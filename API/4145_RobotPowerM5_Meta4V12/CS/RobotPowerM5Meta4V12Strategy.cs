@@ -26,8 +26,8 @@ public class RobotPowerM5Meta4V12Strategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStopPoints;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private BearsPower _bearsPower;
-	private BullsPower _bullsPower;
+	private BearPower _bearsPower;
+	private BullPower _bullsPower;
 
 	private decimal? _previousSum;
 	private decimal _pointSize;
@@ -138,8 +138,8 @@ public class RobotPowerM5Meta4V12Strategy : Strategy
 
 		_pointSize = CalculatePointSize();
 
-		_bearsPower = new BearsPower { Length = BullBearPeriod };
-		_bullsPower = new BullsPower { Length = BullBearPeriod };
+		_bearsPower = new BearPower { Length = BullBearPeriod };
+		_bullsPower = new BullPower { Length = BullBearPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -157,9 +157,9 @@ public class RobotPowerM5Meta4V12Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged(decimal delta)
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged(delta);
+		base.OnPositionReceived(position);
 
 		if (Position > 0m && delta > 0m)
 		{

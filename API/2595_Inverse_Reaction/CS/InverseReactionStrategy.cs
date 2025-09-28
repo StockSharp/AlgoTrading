@@ -134,7 +134,7 @@ public class InverseReactionStrategy : Strategy
 			.SetDisplay("Trade Volume", "Order volume", "Risk");
 
 		_slippagePoints = Param(nameof(SlippagePoints), 3m)
-			.SetGreaterThanOrEqualToZero()
+			.SetNotNegative()
 			.SetDisplay("Slippage", "Allowed slippage in points", "Risk");
 
 		_minCriteriaPoints = Param(nameof(MinCriteriaPoints), 300m)

@@ -118,13 +118,13 @@ public class SidusEmaRsiStrategy : Strategy
 	public SidusEmaRsiStrategy()
 	{
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 80m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Take-profit distance expressed in price steps", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(20m, 160m, 20m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 20m)
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Stop-loss distance expressed in price steps", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(10m, 60m, 10m);

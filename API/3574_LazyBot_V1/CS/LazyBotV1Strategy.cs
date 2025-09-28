@@ -344,7 +344,7 @@ public class LazyBotV1Strategy : Strategy
 
 		if (Position > 0m)
 		{
-			var reference = bid > 0m ? bid : (Security?.LastTrade?.Price ?? 0m);
+			var reference = bid > 0m ? bid : (Security?.LastTick?.Price ?? 0m);
 			if (reference <= 0m)
 			return;
 
@@ -360,7 +360,7 @@ public class LazyBotV1Strategy : Strategy
 		}
 		else if (Position < 0m)
 		{
-			var reference = ask > 0m ? ask : (Security?.LastTrade?.Price ?? 0m);
+			var reference = ask > 0m ? ask : (Security?.LastTick?.Price ?? 0m);
 			if (reference <= 0m)
 			return;
 
@@ -502,9 +502,9 @@ public class LazyBotV1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged(decimal delta)
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged(delta);
+		base.OnPositionReceived(position);
 
 		if (Position == 0m)
 		{

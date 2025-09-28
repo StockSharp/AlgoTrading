@@ -72,7 +72,7 @@ public class Ema235CrossStrategy : Strategy
 		_slowLength = Param(nameof(SlowLength), 35).SetGreaterThanZero().SetDisplay("Slow EMA", "Length of the slow EMA", "Parameters");
 		_stopLoss = Param(nameof(StopLoss), 50m).SetGreaterThanZero().SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
 		_takeProfit = Param(nameof(TakeProfit), 150m).SetGreaterThanZero().SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
-		_trailingStop = Param(nameof(TrailingStop), 50m).SetGreaterThanOrEqual(0m).SetDisplay("Trailing Stop", "Trailing stop in price steps", "Risk");
+		_trailingStop = Param(nameof(TrailingStop), 50m).SetNotNegative().SetDisplay("Trailing Stop", "Trailing stop in price steps", "Risk");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

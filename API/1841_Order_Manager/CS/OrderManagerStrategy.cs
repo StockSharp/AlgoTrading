@@ -129,7 +129,7 @@ public class OrderManagerStrategy : Strategy
 			if (!ManageAllSecurities && position.Security != Security)
 				continue;
 
-			var currentPrice = position.Security.LastTrade?.Price;
+			var currentPrice = position.Security.LastTick?.Price;
 			if (currentPrice == null)
 				continue;
 

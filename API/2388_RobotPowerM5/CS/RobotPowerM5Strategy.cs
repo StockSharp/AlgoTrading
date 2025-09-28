@@ -120,8 +120,8 @@ public class RobotPowerM5Strategy : Strategy
 
 		StartProtection();
 
-		var bulls = new BullsPower { Length = BullBearPeriod };
-		var bears = new BearsPower { Length = BullBearPeriod };
+		var bulls = new BullPower { Length = BullBearPeriod };
+		var bears = new BearPower { Length = BullBearPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription

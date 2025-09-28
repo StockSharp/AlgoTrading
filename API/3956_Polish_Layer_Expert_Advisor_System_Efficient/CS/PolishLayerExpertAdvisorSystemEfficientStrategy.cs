@@ -306,11 +306,11 @@ _williamsSellLevel = Param(nameof(WilliamsSellLevel), -19m)
 .SetDisplay("Williams Sell Level", "Williams %R level for shorts", "Thresholds");
 
 _stopLossPips = Param(nameof(StopLossPips), 7777m)
-.SetGreaterThanOrEqual(0m)
+.SetNotNegative()
 .SetDisplay("Stop Loss", "Stop-loss distance in pips", "Risk");
 
 _takeProfitPips = Param(nameof(TakeProfitPips), 17m)
-.SetGreaterThanOrEqual(0m)
+.SetNotNegative()
 .SetDisplay("Take Profit", "Take-profit distance in pips", "Risk");
 }
 

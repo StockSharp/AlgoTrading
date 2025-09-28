@@ -46,7 +46,7 @@ public class BrunoStrategy : Strategy
 
 	private EMA _fastEma = null!;
 	private EMA _slowEma = null!;
-	private MovingAverageConvergenceDivergence _macd = null!;
+	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 	private AverageDirectionalIndex _adx = null!;
 	private StochasticOscillator _stochastic = null!;
 	private ParabolicSar _sar = null!;
@@ -358,18 +358,20 @@ public class BrunoStrategy : Strategy
 
 		_fastEma = new EMA { Length = FastEmaPeriod };
 		_slowEma = new EMA { Length = SlowEmaPeriod };
-		_macd = new MovingAverageConvergenceDivergence
+		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			ShortPeriod = MacdFastPeriod,
-			LongPeriod = MacdSlowPeriod,
-			SignalPeriod = MacdSignalPeriod
+			Macd =
+			{
+				ShortMa = { Length = MacdFastPeriod },
+				LongMa = { Length = MacdSlowPeriod },
+			},
+			SignalMa = { Length = MacdSignalPeriod },
 		};
 		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
 		_stochastic = new StochasticOscillator
 		{
-			KPeriod = StochasticPeriod,
-			DPeriod = StochasticDsmoothing,
-			Slowing = StochasticKsmoothing
+			K = { Length = StochasticPeriod },
+			D = { Length = StochasticDsmoothing },
 		};
 		_sar = new ParabolicSar
 		{
@@ -406,45 +408,45 @@ public class BrunoStrategy : Strategy
 		IIndicatorValue sarValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		if (CheckProtection(candle))
 		{
-		UpdateSarHistory(sarValue);
-		return;
+			UpdateSarHistory(sarValue);
+			return;
 		}
 
 		UpdateTrailing(candle);
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 		{
-		UpdateSarHistory(sarValue);
-		return;
+			UpdateSarHistory(sarValue);
+			return;
 		}
 
 		if (!fastValue.IsFinal || !slowValue.IsFinal || !macdValue.IsFinal || !adxValue.IsFinal || !stochasticValue.IsFinal || !sarValue.IsFinal)
 		{
-		UpdateSarHistory(sarValue);
-		return;
+			UpdateSarHistory(sarValue);
+			return;
 		}
 
 		var fast = fastValue.ToDecimal();
 		var slow = slowValue.ToDecimal();
 
-		if (macdValue is not MovingAverageConvergenceDivergenceValue macdData ||
-		macdData.Macd is not decimal macdMain ||
-		macdData.Signal is not decimal macdSignal)
+		if (macdValue is not MovingAverageConvergenceDivergenceSignalValue macdData ||
+			macdData.Macd is not decimal macdMain ||
+			macdData.Signal is not decimal macdSignal)
 		{
-		UpdateSarHistory(sarValue);
-		return;
+			UpdateSarHistory(sarValue);
+			return;
 		}
 
 		var adxData = (AverageDirectionalIndexValue)adxValue;
 		var dx = adxData.Dx;
 		if (dx.Plus is not decimal plusDi || dx.Minus is not decimal minusDi)
 		{
-		UpdateSarHistory(sarValue);
-		return;
+			UpdateSarHistory(sarValue);
+			return;
 		}
 
 		var stochastic = (StochasticOscillatorValue)stochasticValue;
@@ -502,31 +504,31 @@ public class BrunoStrategy : Strategy
 
 		if (buyTriggered && sellTriggered)
 		{
-		LogInfo("Both directions triggered on the same bar. Signal skipped.");
-		UpdateSarHistory(sarValue);
-		return;
+			LogInfo("Both directions triggered on the same bar. Signal skipped.");
+			UpdateSarHistory(sarValue);
+			return;
 		}
 
 		if (buyTriggered)
 		{
-		EnterLong(candle, buyVolume);
+			EnterLong(candle, buyVolume);
 		}
 		else if (sellTriggered)
 		{
-		EnterShort(candle, sellVolume);
+			EnterShort(candle, sellVolume);
 		}
 
 		UpdateSarHistory(sarValue);
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged(decimal delta)
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged(delta);
+		base.OnPositionReceived(position);
 
 		if (Position == 0m)
 		{
-		ResetProtection();
+			ResetProtection();
 		}
 	}
 
@@ -534,29 +536,29 @@ public class BrunoStrategy : Strategy
 	{
 		if (Position > 0m)
 		{
-		var stopHit = _stopPrice > 0m && candle.LowPrice <= _stopPrice;
-		var takeHit = _takePrice > 0m && candle.HighPrice >= _takePrice;
+			var stopHit = _stopPrice > 0m && candle.LowPrice <= _stopPrice;
+			var takeHit = _takePrice > 0m && candle.HighPrice >= _takePrice;
 
-		if (stopHit || takeHit)
-		{
-			SellMarket(Position);
-			LogInfo(stopHit ? "Long stop-loss triggered." : "Long take-profit triggered.");
-			ResetProtection();
-			return true;
-		}
+			if (stopHit || takeHit)
+			{
+				SellMarket(Position);
+				LogInfo(stopHit ? "Long stop-loss triggered." : "Long take-profit triggered.");
+				ResetProtection();
+				return true;
+			}
 		}
 		else if (Position < 0m)
 		{
-		var stopHit = _stopPrice > 0m && candle.HighPrice >= _stopPrice;
-		var takeHit = _takePrice > 0m && candle.LowPrice <= _takePrice;
+			var stopHit = _stopPrice > 0m && candle.HighPrice >= _stopPrice;
+			var takeHit = _takePrice > 0m && candle.LowPrice <= _takePrice;
 
-		if (stopHit || takeHit)
-		{
-			BuyMarket(Math.Abs(Position));
-			LogInfo(stopHit ? "Short stop-loss triggered." : "Short take-profit triggered.");
-			ResetProtection();
-			return true;
-		}
+			if (stopHit || takeHit)
+			{
+				BuyMarket(Math.Abs(Position));
+				LogInfo(stopHit ? "Short stop-loss triggered." : "Short take-profit triggered.");
+				ResetProtection();
+				return true;
+			}
 		}
 
 		return false;
@@ -565,51 +567,51 @@ public class BrunoStrategy : Strategy
 	private void UpdateTrailing(ICandleMessage candle)
 	{
 		if (TrailingStopPips <= 0m || TrailingStepPips < 0m || _pipSize <= 0m || _entryPrice == 0m)
-		return;
+			return;
 
 		var trailingDistance = GetOffset(TrailingStopPips);
 		var trailingStep = GetOffset(TrailingStepPips);
 
 		if (Position > 0m)
 		{
-		var profit = candle.ClosePrice - _entryPrice;
-		var threshold = trailingDistance + trailingStep;
-		if (profit > threshold)
-		{
-			var desiredStop = candle.ClosePrice - trailingDistance;
-			var minStop = candle.ClosePrice - threshold;
-			if (_stopPrice < minStop)
+			var profit = candle.ClosePrice - _entryPrice;
+			var threshold = trailingDistance + trailingStep;
+			if (profit > threshold)
 			{
-				_stopPrice = desiredStop;
-				LogInfo($"Update long trailing stop to {_stopPrice}");
+				var desiredStop = candle.ClosePrice - trailingDistance;
+				var minStop = candle.ClosePrice - threshold;
+				if (_stopPrice < minStop)
+				{
+					_stopPrice = desiredStop;
+					LogInfo($"Update long trailing stop to {_stopPrice}");
 				}
-		}
+			}
 		}
 		else if (Position < 0m)
 		{
-		var profit = _entryPrice - candle.ClosePrice;
-		var threshold = trailingDistance + trailingStep;
-		if (profit > threshold)
-		{
-			var desiredStop = candle.ClosePrice + trailingDistance;
-			var maxStop = candle.ClosePrice + threshold;
-			if (_stopPrice == 0m || _stopPrice > maxStop)
+			var profit = _entryPrice - candle.ClosePrice;
+			var threshold = trailingDistance + trailingStep;
+			if (profit > threshold)
 			{
-				_stopPrice = desiredStop;
-				LogInfo($"Update short trailing stop to {_stopPrice}");
+				var desiredStop = candle.ClosePrice + trailingDistance;
+				var maxStop = candle.ClosePrice + threshold;
+				if (_stopPrice == 0m || _stopPrice > maxStop)
+				{
+					_stopPrice = desiredStop;
+					LogInfo($"Update short trailing stop to {_stopPrice}");
+				}
 			}
-		}
 		}
 	}
 
 	private void EnterLong(ICandleMessage candle, decimal volume)
 	{
 		if (volume <= 0m)
-		return;
+			return;
 
 		if (Position < 0m)
 		{
-		BuyMarket(Math.Abs(Position));
+			BuyMarket(Math.Abs(Position));
 		}
 
 		BuyMarket(volume);
@@ -622,11 +624,11 @@ public class BrunoStrategy : Strategy
 	private void EnterShort(ICandleMessage candle, decimal volume)
 	{
 		if (volume <= 0m)
-		return;
+			return;
 
 		if (Position > 0m)
 		{
-		SellMarket(Position);
+			SellMarket(Position);
 		}
 
 		SellMarket(volume);
@@ -639,7 +641,7 @@ public class BrunoStrategy : Strategy
 	private void UpdateSarHistory(IIndicatorValue sarValue)
 	{
 		if (!sarValue.IsFinal)
-		return;
+			return;
 
 		var current = sarValue.ToDecimal();
 		_prePreviousSar = _previousSar;
@@ -648,7 +650,7 @@ public class BrunoStrategy : Strategy
 
 	private decimal GetOffset(decimal pips)
 	{
-	return pips > 0m && _pipSize > 0m ? pips * _pipSize : 0m;
+		return pips > 0m && _pipSize > 0m ? pips * _pipSize : 0m;
 	}
 
 	private void ResetProtection()
@@ -662,7 +664,7 @@ public class BrunoStrategy : Strategy
 	{
 		var step = Security?.PriceStep ?? 0m;
 		if (step <= 0m)
-		return 0m;
+			return 0m;
 
 		var decimals = CountDecimals(step);
 		return decimals == 3 || decimals == 5 ? step * 10m : step;
@@ -682,4 +684,3 @@ public class BrunoStrategy : Strategy
 		return decimals;
 	}
 }
-

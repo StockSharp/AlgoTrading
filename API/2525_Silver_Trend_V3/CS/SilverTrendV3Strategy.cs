@@ -157,19 +157,19 @@ public class SilverTrendV3Strategy : Strategy
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 50m)
 			.SetDisplay("Trailing Stop", "Trailing distance in price steps", "Risk")
-			.SetGreaterThanOrEqualToZero();
+			.SetNotNegative();
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50m)
 			.SetDisplay("Take Profit", "Take profit distance in price steps", "Risk")
-			.SetGreaterThanOrEqualToZero();
+			.SetNotNegative();
 
 		_initialStopLossPoints = Param(nameof(InitialStopLossPoints), 0m)
 			.SetDisplay("Initial Stop Loss", "Initial stop loss in price steps", "Risk")
-			.SetGreaterThanOrEqualToZero();
+			.SetNotNegative();
 
 		_fridayCutoffHour = Param(nameof(FridayCutoffHour), 16)
 			.SetDisplay("Friday Cutoff Hour", "Disable new entries after this hour on Friday", "Sessions")
-			.SetGreaterThanOrEqualToZero()
+			.SetNotNegative()
 			.SetLessThan(24);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

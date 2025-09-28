@@ -222,9 +222,9 @@ public class ESmartTrallingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged(decimal delta)
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged(delta);
+		base.OnPositionReceived(position);
 
 		var sign = Math.Sign(Position);
 		if (sign == 0)

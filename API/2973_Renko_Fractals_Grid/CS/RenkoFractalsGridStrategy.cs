@@ -329,13 +329,13 @@ public class RenkoFractalsGridStrategy : Strategy
 		.SetOptimize(10, 20, 2);
 
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Momentum Buy Threshold", "Minimum deviation from 100 for long entries", "Momentum")
 		.SetCanOptimize(true)
 		.SetOptimize(0.1m, 1.0m, 0.1m);
 
 		_momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Momentum Sell Threshold", "Minimum deviation from 100 for short entries", "Momentum")
 		.SetCanOptimize(true)
 		.SetOptimize(0.1m, 1.0m, 0.1m);
@@ -380,36 +380,36 @@ public class RenkoFractalsGridStrategy : Strategy
 		.SetOptimize(30m, 80m, 5m);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 40m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk");
 
 		_useBreakEven = Param(nameof(UseBreakEven), true)
 		.SetDisplay("Use Break Even", "Move the stop to break even after reaching a profit threshold", "Risk");
 
 		_breakEvenTriggerPips = Param(nameof(BreakEvenTriggerPips), 30m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Break Even Trigger", "Profit in pips required before shifting the stop", "Risk");
 
 		_breakEvenOffsetPips = Param(nameof(BreakEvenOffsetPips), 30m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Break Even Offset", "Additional pips added beyond entry when break even triggers", "Risk");
 
 		_useMoneyTarget = Param(nameof(UseMoneyTarget), false)
 		.SetDisplay("Use Money Trailing", "Enable floating profit trailing in currency units", "Money Management");
 
 		_moneyTakeProfit = Param(nameof(MoneyTakeProfit), 40m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Money Take Profit", "Floating profit required before activating money trailing", "Money Management");
 
 		_moneyStopLoss = Param(nameof(MoneyStopLoss), 10m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Money Stop Loss", "Allowed pullback in floating profit before closing all trades", "Money Management");
 
 		_useEquityStop = Param(nameof(UseEquityStop), true)
 		.SetDisplay("Use Equity Stop", "Enable global equity based stop-out", "Risk");
 
 		_equityRiskPercent = Param(nameof(EquityRiskPercent), 1.0m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Equity Risk %", "Maximum drawdown from equity peak before closing all trades", "Risk");
 	}
 

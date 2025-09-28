@@ -107,7 +107,7 @@ public class RiskManagerStrategy : Strategy
 		if (TradeRisk <= 0m || Position == 0 || _startBalance <= 0m)
 			return;
 
-		var price = Security.LastTrade?.Price ?? Security.LastPrice ?? 0m;
+		var price = Security.LastTick?.Price ?? Security.LastPrice ?? 0m;
 		var openPnL = Position * (price - PositionPrice);
 		var lossPercent = openPnL / _startBalance * 100m;
 

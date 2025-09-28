@@ -133,11 +133,11 @@ public class EmaPredictionStrategy : Strategy
 
 		_takeProfitTicks = Param(nameof(TakeProfitTicks), 2000m)
 			.SetDisplay("Take Profit Ticks", "Take profit in ticks", "Risk Management")
-			.SetGreaterThanOrEqual(0m);
+			.SetNotNegative();
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 1000m)
 			.SetDisplay("Stop Loss Ticks", "Stop loss in ticks", "Risk Management")
-			.SetGreaterThanOrEqual(0m);
+			.SetNotNegative();
 
 		_buyOpen = Param(nameof(BuyOpen), true)
 			.SetDisplay("Open Long", "Allow opening long positions", "Trading");

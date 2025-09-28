@@ -152,17 +152,17 @@ public class ESkochOpenStrategy : Strategy
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 130m)
 		.SetDisplay("Stop Loss Points", "Loss distance measured in adjusted points", "Risk")
-		.SetGreaterThanOrEqual(0m);
+		.SetNotNegative();
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 200m)
 		.SetDisplay("Take Profit Points", "Profit distance measured in adjusted points", "Risk")
-		.SetGreaterThanOrEqual(0m);
+		.SetNotNegative();
 		_enableBuySignals = Param(nameof(EnableBuySignals), true)
 		.SetDisplay("Enable Buy", "Allow opening long positions", "Trading");
 		_enableSellSignals = Param(nameof(EnableSellSignals), true)
 		.SetDisplay("Enable Sell", "Allow opening short positions", "Trading");
 		_targetProfitPercent = Param(nameof(TargetProfitPercent), 1.2m)
 		.SetDisplay("Target Profit %", "Close all positions after reaching this equity growth", "Risk")
-		.SetGreaterThanOrEqual(0m);
+		.SetNotNegative();
 		_closeOnOppositeSignal = Param(nameof(CloseOnOppositeSignal), false)
 		.SetDisplay("Close On Opposite", "Close open positions when an opposite signal appears", "Trading");
 		_maxBuyTrades = Param(nameof(MaxBuyTrades), 1)
@@ -459,9 +459,9 @@ public class ESkochOpenStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged(decimal delta)
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged(delta);
+		base.OnPositionReceived(position);
 
 		if (Position == 0)
 		{

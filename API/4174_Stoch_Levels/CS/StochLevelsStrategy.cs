@@ -87,13 +87,13 @@ public class StochLevelsStrategy : Strategy
 	{
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 20m)
 			.SetDisplay("Take Profit (steps)", "Distance for take profit orders in price steps", "Risk Management")
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(10m, 60m, 10m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 40m)
 			.SetDisplay("Stop Loss (steps)", "Distance for stop loss orders in price steps", "Risk Management")
-			.SetGreaterThanOrEqual(0m)
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(20m, 100m, 10m);
 

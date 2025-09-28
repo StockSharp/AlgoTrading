@@ -22,17 +22,47 @@ using StockSharp.Algo;
 /// </summary>
 public class ExpUltraFatlDuplexStrategy : Strategy
 {
+	public enum AppliedPrices
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted,
+		Simplified,
+		Quarter,
+		TrendFollow0,
+		TrendFollow1,
+		DeMark
+	}
+
+	public enum SmoothMethods
+	{
+		Sma,
+		Ema,
+		Smma,
+		Lwma,
+		Jurik,
+		JurX,
+		Parabolic,
+		T3,
+		Vidya,
+		Ama
+	}
+
 	private readonly StrategyParam<decimal> _longVolume;
 	private readonly StrategyParam<bool> _allowLongEntries;
 	private readonly StrategyParam<bool> _allowLongExits;
 	private readonly StrategyParam<DataType> _longCandleType;
-	private readonly StrategyParam<AppliedPrice> _longAppliedPrice;
-	private readonly StrategyParam<UltraSmoothMethod> _longTrendMethod;
+	private readonly StrategyParam<AppliedPrices> _longAppliedPrice;
+	private readonly StrategyParam<SmoothMethods> _longTrendMethod;
 	private readonly StrategyParam<int> _longStartLength;
 	private readonly StrategyParam<int> _longPhase;
 	private readonly StrategyParam<int> _longStep;
 	private readonly StrategyParam<int> _longStepsTotal;
-	private readonly StrategyParam<UltraSmoothMethod> _longSmoothMethod;
+	private readonly StrategyParam<SmoothMethods> _longSmoothMethod;
 	private readonly StrategyParam<int> _longSmoothLength;
 	private readonly StrategyParam<int> _longSmoothPhase;
 	private readonly StrategyParam<int> _longSignalBar;
@@ -43,13 +73,13 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 	private readonly StrategyParam<bool> _allowShortEntries;
 	private readonly StrategyParam<bool> _allowShortExits;
 	private readonly StrategyParam<DataType> _shortCandleType;
-	private readonly StrategyParam<AppliedPrice> _shortAppliedPrice;
-	private readonly StrategyParam<UltraSmoothMethod> _shortTrendMethod;
+	private readonly StrategyParam<AppliedPrices> _shortAppliedPrice;
+	private readonly StrategyParam<SmoothMethods> _shortTrendMethod;
 	private readonly StrategyParam<int> _shortStartLength;
 	private readonly StrategyParam<int> _shortPhase;
 	private readonly StrategyParam<int> _shortStep;
 	private readonly StrategyParam<int> _shortStepsTotal;
-	private readonly StrategyParam<UltraSmoothMethod> _shortSmoothMethod;
+	private readonly StrategyParam<SmoothMethods> _shortSmoothMethod;
 	private readonly StrategyParam<int> _shortSmoothLength;
 	private readonly StrategyParam<int> _shortSmoothPhase;
 	private readonly StrategyParam<int> _shortSignalBar;
@@ -81,10 +111,10 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromHours(12).TimeFrame())
 			.SetDisplay("Long Candle Type", "Timeframe used by the long UltraFATL block.", "Long");
 
-		_longAppliedPrice = Param(nameof(LongAppliedPrice), AppliedPrice.Close)
+		_longAppliedPrice = Param(nameof(LongAppliedPrice), AppliedPrices.Close)
 			.SetDisplay("Long Applied Price", "Price source fed into the long UltraFATL filter.", "Long");
 
-		_longTrendMethod = Param(nameof(LongTrendMethod), UltraSmoothMethod.Jurik)
+		_longTrendMethod = Param(nameof(LongTrendMethod), SmoothMethods.Jurik)
 			.SetDisplay("Long Trend Method", "Smoothing method for the long FATL ladder.", "Long");
 
 		_longStartLength = Param(nameof(LongStartLength), 3)
@@ -102,7 +132,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Long Steps", "Number of smoothing steps for the ladder.", "Long");
 
-		_longSmoothMethod = Param(nameof(LongSmoothMethod), UltraSmoothMethod.Jurik)
+		_longSmoothMethod = Param(nameof(LongSmoothMethod), SmoothMethods.Jurik)
 			.SetDisplay("Long Counter Method", "Method applied to the bullish/bearish counters.", "Long");
 
 		_longSmoothLength = Param(nameof(LongSmoothLength), 3)
@@ -137,10 +167,10 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromHours(12).TimeFrame())
 			.SetDisplay("Short Candle Type", "Timeframe used by the short UltraFATL block.", "Short");
 
-		_shortAppliedPrice = Param(nameof(ShortAppliedPrice), AppliedPrice.Close)
+		_shortAppliedPrice = Param(nameof(ShortAppliedPrice), AppliedPrices.Close)
 			.SetDisplay("Short Applied Price", "Price source fed into the short UltraFATL filter.", "Short");
 
-		_shortTrendMethod = Param(nameof(ShortTrendMethod), UltraSmoothMethod.Jurik)
+		_shortTrendMethod = Param(nameof(ShortTrendMethod), SmoothMethods.Jurik)
 			.SetDisplay("Short Trend Method", "Smoothing method for the short FATL ladder.", "Short");
 
 		_shortStartLength = Param(nameof(ShortStartLength), 3)
@@ -158,7 +188,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Short Steps", "Number of smoothing steps for the short ladder.", "Short");
 
-		_shortSmoothMethod = Param(nameof(ShortSmoothMethod), UltraSmoothMethod.Jurik)
+		_shortSmoothMethod = Param(nameof(ShortSmoothMethod), SmoothMethods.Jurik)
 			.SetDisplay("Short Counter Method", "Method applied to the bearish counters.", "Short");
 
 		_shortSmoothLength = Param(nameof(ShortSmoothLength), 3)
@@ -194,10 +224,10 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 	public DataType LongCandleType { get => _longCandleType.Value; set => _longCandleType.Value = value; }
 
 	/// <summary>Applied price for the long ladder.</summary>
-	public AppliedPrice LongAppliedPrice { get => _longAppliedPrice.Value; set => _longAppliedPrice.Value = value; }
+	public AppliedPrices LongAppliedPrice { get => _longAppliedPrice.Value; set => _longAppliedPrice.Value = value; }
 
 	/// <summary>Smoothing method for the long ladder.</summary>
-	public UltraSmoothMethod LongTrendMethod { get => _longTrendMethod.Value; set => _longTrendMethod.Value = value; }
+	public SmoothMethods LongTrendMethod { get => _longTrendMethod.Value; set => _longTrendMethod.Value = value; }
 
 	/// <summary>Initial length for the long ladder.</summary>
 	public int LongStartLength { get => _longStartLength.Value; set => _longStartLength.Value = value; }
@@ -212,7 +242,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 	public int LongStepsTotal { get => _longStepsTotal.Value; set => _longStepsTotal.Value = value; }
 
 	/// <summary>Smoothing method for the long counters.</summary>
-	public UltraSmoothMethod LongSmoothMethod { get => _longSmoothMethod.Value; set => _longSmoothMethod.Value = value; }
+	public SmoothMethods LongSmoothMethod { get => _longSmoothMethod.Value; set => _longSmoothMethod.Value = value; }
 
 	/// <summary>Length applied to the long counters.</summary>
 	public int LongSmoothLength { get => _longSmoothLength.Value; set => _longSmoothLength.Value = value; }
@@ -242,10 +272,10 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 	public DataType ShortCandleType { get => _shortCandleType.Value; set => _shortCandleType.Value = value; }
 
 	/// <summary>Applied price for the short ladder.</summary>
-	public AppliedPrice ShortAppliedPrice { get => _shortAppliedPrice.Value; set => _shortAppliedPrice.Value = value; }
+	public AppliedPrices ShortAppliedPrice { get => _shortAppliedPrice.Value; set => _shortAppliedPrice.Value = value; }
 
 	/// <summary>Smoothing method for the short ladder.</summary>
-	public UltraSmoothMethod ShortTrendMethod { get => _shortTrendMethod.Value; set => _shortTrendMethod.Value = value; }
+	public SmoothMethods ShortTrendMethod { get => _shortTrendMethod.Value; set => _shortTrendMethod.Value = value; }
 
 	/// <summary>Initial length for the short ladder.</summary>
 	public int ShortStartLength { get => _shortStartLength.Value; set => _shortStartLength.Value = value; }
@@ -260,7 +290,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 	public int ShortStepsTotal { get => _shortStepsTotal.Value; set => _shortStepsTotal.Value = value; }
 
 	/// <summary>Smoothing method for the short counters.</summary>
-	public UltraSmoothMethod ShortSmoothMethod { get => _shortSmoothMethod.Value; set => _shortSmoothMethod.Value = value; }
+	public SmoothMethods ShortSmoothMethod { get => _shortSmoothMethod.Value; set => _shortSmoothMethod.Value = value; }
 
 	/// <summary>Length applied to the short counters.</summary>
 	public int ShortSmoothLength { get => _shortSmoothLength.Value; set => _shortSmoothLength.Value = value; }
@@ -438,24 +468,24 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		}
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrice priceMode)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrices priceMode)
 	{
 		return priceMode switch
 		{
-			AppliedPrice.Close => candle.ClosePrice,
-			AppliedPrice.Open => candle.OpenPrice,
-			AppliedPrice.High => candle.HighPrice,
-			AppliedPrice.Low => candle.LowPrice,
-			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPrice.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-			AppliedPrice.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.Simplified => (candle.OpenPrice + candle.ClosePrice) / 2m,
-			AppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.TrendFollow0 => candle.ClosePrice >= candle.OpenPrice ? candle.HighPrice : candle.LowPrice,
-			AppliedPrice.TrendFollow1 => candle.ClosePrice >= candle.OpenPrice
+			AppliedPrices.Close => candle.ClosePrice,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+			AppliedPrices.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.Simplified => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			AppliedPrices.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrices.TrendFollow0 => candle.ClosePrice >= candle.OpenPrice ? candle.HighPrice : candle.LowPrice,
+			AppliedPrices.TrendFollow1 => candle.ClosePrice >= candle.OpenPrice
 				? (candle.HighPrice + candle.ClosePrice) / 2m
 				: (candle.LowPrice + candle.ClosePrice) / 2m,
-			AppliedPrice.DeMark => CalculateDeMarkPrice(candle),
+			AppliedPrices.DeMark => CalculateDeMarkPrice(candle),
 			_ => candle.ClosePrice,
 		};
 	}
@@ -474,27 +504,27 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		return ((sum - candle.LowPrice) + (sum - candle.HighPrice)) / 2m;
 	}
 
-	private static IndicatorBase<decimal> CreateMovingAverage(UltraSmoothMethod method, int length, int phase)
+	private static LengthIndicator<decimal> CreateMovingAverage(SmoothMethods method, int length, int phase)
 	{
 		var normalizedLength = Math.Max(1, length);
 
 		return method switch
 		{
-			UltraSmoothMethod.Sma => new SimpleMovingAverage { Length = normalizedLength },
-			UltraSmoothMethod.Ema => new ExponentialMovingAverage { Length = normalizedLength },
-			UltraSmoothMethod.Smma => new SmoothedMovingAverage { Length = normalizedLength },
-			UltraSmoothMethod.Lwma => new WeightedMovingAverage { Length = normalizedLength },
-			UltraSmoothMethod.Jurik => new JurikMovingAverage { Length = normalizedLength, Phase = phase },
-			UltraSmoothMethod.JurX => new JurikMovingAverage { Length = normalizedLength, Phase = phase },
-			UltraSmoothMethod.Parabolic => new ExponentialMovingAverage { Length = normalizedLength },
-			UltraSmoothMethod.T3 => new JurikMovingAverage { Length = normalizedLength, Phase = phase },
-			UltraSmoothMethod.Vidya => new ExponentialMovingAverage { Length = normalizedLength },
-			UltraSmoothMethod.Ama => new KaufmanAdaptiveMovingAverage { Length = normalizedLength },
+			SmoothMethods.Sma => new SimpleMovingAverage { Length = normalizedLength },
+			SmoothMethods.Ema => new ExponentialMovingAverage { Length = normalizedLength },
+			SmoothMethods.Smma => new SmoothedMovingAverage { Length = normalizedLength },
+			SmoothMethods.Lwma => new WeightedMovingAverage { Length = normalizedLength },
+			SmoothMethods.Jurik => new JurikMovingAverage { Length = normalizedLength, Phase = phase },
+			SmoothMethods.JurX => new JurikMovingAverage { Length = normalizedLength, Phase = phase },
+			SmoothMethods.Parabolic => new ExponentialMovingAverage { Length = normalizedLength },
+			SmoothMethods.T3 => new JurikMovingAverage { Length = normalizedLength, Phase = phase },
+			SmoothMethods.Vidya => new ExponentialMovingAverage { Length = normalizedLength },
+			SmoothMethods.Ama => new KaufmanAdaptiveMovingAverage { Length = normalizedLength },
 			_ => new ExponentialMovingAverage { Length = normalizedLength },
 		};
 	}
 
-	private void RegisterPriceChartOnce(MarketDataSubscription subscription)
+	private void RegisterPriceChartOnce(ISubscriptionHandler<ICandleMessage> subscription)
 	{
 		if (_priceChartInitialized)
 			return;
@@ -515,13 +545,13 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		private readonly ExpUltraFatlDuplexStrategy _strategy;
 		private readonly bool _isLong;
 		private readonly DataType _candleType;
-		private readonly AppliedPrice _appliedPrice;
-		private readonly UltraSmoothMethod _trendMethod;
+		private readonly AppliedPrices _appliedPrice;
+		private readonly SmoothMethods _trendMethod;
 		private readonly int _startLength;
 		private readonly int _phase;
 		private readonly int _step;
 		private readonly int _stepsTotal;
-		private readonly UltraSmoothMethod _smoothMethod;
+		private readonly SmoothMethods _smoothMethod;
 		private readonly int _smoothLength;
 		private readonly int _smoothPhase;
 		private readonly int _signalBar;
@@ -532,25 +562,25 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		private readonly int _takeProfitPoints;
 		private readonly decimal _priceStep;
 
-		private readonly List<IndicatorBase<decimal>> _ladder = new();
+		private readonly List<LengthIndicator<decimal>> _ladder = new();
 		private readonly List<decimal?> _previousValues = new();
-		private IndicatorBase<decimal>? _bullsSmoother;
-		private IndicatorBase<decimal>? _bearsSmoother;
+		private LengthIndicator<decimal> _bullsSmoother;
+		private LengthIndicator<decimal> _bearsSmoother;
 		private readonly List<UltraFatlSnapshot> _history = new();
 		private readonly FatlFilter _fatl = new();
-		private MarketDataSubscription _subscription;
+		private ISubscriptionHandler<ICandleMessage> _subscription;
 
 		public UltraFatlContext(
 			ExpUltraFatlDuplexStrategy strategy,
 			bool isLong,
 			DataType candleType,
-			AppliedPrice appliedPrice,
-			UltraSmoothMethod trendMethod,
+			AppliedPrices appliedPrice,
+			SmoothMethods trendMethod,
 			int startLength,
 			int phase,
 			int step,
 			int stepsTotal,
-			UltraSmoothMethod smoothMethod,
+			SmoothMethods smoothMethod,
 			int smoothLength,
 			int smoothPhase,
 			int signalBar,

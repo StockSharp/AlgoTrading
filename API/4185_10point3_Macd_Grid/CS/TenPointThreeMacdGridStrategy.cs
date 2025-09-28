@@ -74,19 +74,19 @@ public class TenPointThreeMacdGridStrategy : Strategy
 	public TenPointThreeMacdGridStrategy()
 	{
 		_takeProfitPips = Param(nameof(TakeProfitPips), 45m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Profit target for each position leg", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(10m, 90m, 5m);
 
 		_initialStopPips = Param(nameof(InitialStopPips), 0m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Initial Stop (pips)", "Base stop distance expanded by remaining grid slots", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(0m, 200m, 20m);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 45m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance activated after sufficient profit", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(0m, 90m, 5m);
@@ -119,7 +119,7 @@ public class TenPointThreeMacdGridStrategy : Strategy
 		.SetDisplay("Account Type", "0=Standard, 1=Normal, 2=Nano (affects risk based sizing)", "Money Management");
 
 		_riskPercent = Param(nameof(RiskPercent), 0.5m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Risk %", "Percentage of equity used when money management is enabled", "Money Management")
 		.SetCanOptimize(true)
 		.SetOptimize(0.1m, 5m, 0.1m);
@@ -152,7 +152,7 @@ public class TenPointThreeMacdGridStrategy : Strategy
 		.SetOptimize(1, 3, 1);
 
 		_tradingRangePips = Param(nameof(TradingRangePips), 0m)
-		.SetGreaterThanOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Trading Range (pips)", "MACD signal bounds required before accepting cross", "Indicator");
 
 		_useTimeFilter = Param(nameof(UseTimeFilter), false)

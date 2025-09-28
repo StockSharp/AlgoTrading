@@ -185,7 +185,7 @@ public class GandalfProStrategy : Strategy
 	public GandalfProStrategy()
 	{
 		_entryBufferSteps = Param(nameof(EntryBufferSteps), 15m)
-			.SetGreaterThanOrEqualToZero()
+			.SetNotNegative()
 			.SetDisplay("Entry Buffer", "Buffer distance in price steps", "General");
 
 		_enableBuy = Param(nameof(EnableBuy), true)

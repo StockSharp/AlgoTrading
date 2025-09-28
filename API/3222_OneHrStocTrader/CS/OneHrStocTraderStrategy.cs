@@ -226,11 +226,11 @@ public class OneHrStocTraderStrategy : Strategy
 
 		_bollingerSpreadLower = Param(nameof(BollingerSpreadLower), 56m)
 		.SetDisplay("BB Spread Min", "Minimum Bollinger spread in pips", "Filters")
-		.SetGreaterThanOrEqual(0m);
+		.SetNotNegative();
 
 		_bollingerSpreadUpper = Param(nameof(BollingerSpreadUpper), 158m)
 		.SetDisplay("BB Spread Max", "Maximum Bollinger spread in pips", "Filters")
-		.SetGreaterThanOrEqual(0m);
+		.SetNotNegative();
 
 		_buyHourStart = Param(nameof(BuyHourStart), 4)
 		.SetDisplay("Buy Hour", "Hour when buy trades are allowed", "Timing")
@@ -260,15 +260,15 @@ public class OneHrStocTraderStrategy : Strategy
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 200m)
 		.SetDisplay("Take Profit", "Take-profit distance in pips", "Risk Management")
-		.SetGreaterThanOrEqual(0m);
+		.SetNotNegative();
 
 		_stopLossPips = Param(nameof(StopLossPips), 95m)
 		.SetDisplay("Stop Loss", "Stop-loss distance in pips", "Risk Management")
-		.SetGreaterThanOrEqual(0m);
+		.SetNotNegative();
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 40m)
 		.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk Management")
-		.SetGreaterThanOrEqual(0m);
+		.SetNotNegative();
 
 		_maxOrdersPerDirection = Param(nameof(MaxOrdersPerDirection), 1)
 		.SetDisplay("Max Orders", "Maximum consecutive entries per side", "Risk Management")

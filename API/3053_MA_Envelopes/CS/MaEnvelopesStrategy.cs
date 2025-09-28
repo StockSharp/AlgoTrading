@@ -19,6 +19,25 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MaEnvelopesStrategy : Strategy
 {
+	public enum MaMethods
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		LinearWeighted
+	}
+
+	public enum AppliedPrices
+	{
+		Open,
+		High,
+		Low,
+		Close,
+		Median,
+		Typical,
+		Weighted
+	}
+
 	private readonly StrategyParam<decimal> _maximumRisk;
 	private readonly StrategyParam<decimal> _decreaseFactor;
 	private readonly StrategyParam<int> _firstStopTakeProfitPips;
@@ -28,8 +47,8 @@ public class MaEnvelopesStrategy : Strategy
 	private readonly StrategyParam<int> _endHour;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MaMethod> _maMethod;
-	private readonly StrategyParam<AppliedPriceType> _appliedPrice;
+	private readonly StrategyParam<MaMethods> _maMethod;
+	private readonly StrategyParam<AppliedPrices> _appliedPrice;
 	private readonly StrategyParam<decimal> _envelopeDeviation;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -131,7 +150,7 @@ public class MaEnvelopesStrategy : Strategy
 	/// <summary>
 	/// Moving average calculation method.
 	/// </summary>
-	public MaMethod MaMethodType
+	public MaMethods MaMethodType
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -140,7 +159,7 @@ public class MaEnvelopesStrategy : Strategy
 	/// <summary>
 	/// Price source used for calculations.
 	/// </summary>
-	public AppliedPriceType AppliedPrice
+	public AppliedPrices AppliedPrice
 	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
@@ -204,10 +223,10 @@ public class MaEnvelopesStrategy : Strategy
 			.SetDisplay("MA Shift", "Bars to shift the moving average", "Indicators")
 			.SetNotNegative();
 
-		_maMethod = Param(nameof(MaMethodType), MaMethod.Exponential)
+		_maMethod = Param(nameof(MaMethodType), MaMethods.Exponential)
 			.SetDisplay("MA Method", "Moving average calculation method", "Indicators");
 
-		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceType.Close)
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPrices.Close)
 			.SetDisplay("Applied Price", "Price source for indicator", "Indicators");
 
 		_envelopeDeviation = Param(nameof(EnvelopeDeviation), 0.05m)
@@ -775,28 +794,28 @@ public class MaEnvelopesStrategy : Strategy
 			slot.Reset();
 	}
 
-	private static IIndicator CreateMovingAverage(MaMethod method, int period)
+	private static IIndicator CreateMovingAverage(MaMethods method, int period)
 	{
 		return method switch
 		{
-			MaMethod.Simple => new SimpleMovingAverage { Length = period },
-			MaMethod.Exponential => new ExponentialMovingAverage { Length = period },
-			MaMethod.Smoothed => new SmoothedMovingAverage { Length = period },
-			MaMethod.LinearWeighted => new WeightedMovingAverage { Length = period },
+			MaMethods.Simple => new SimpleMovingAverage { Length = period },
+			MaMethods.Exponential => new ExponentialMovingAverage { Length = period },
+			MaMethods.Smoothed => new SmoothedMovingAverage { Length = period },
+			MaMethods.LinearWeighted => new WeightedMovingAverage { Length = period },
 			_ => new ExponentialMovingAverage { Length = period }
 		};
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceType type)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPrices type)
 	{
 		return type switch
 		{
-			AppliedPriceType.Open => candle.OpenPrice,
-			AppliedPriceType.High => candle.HighPrice,
-			AppliedPriceType.Low => candle.LowPrice,
-			AppliedPriceType.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceType.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceType.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
+			AppliedPrices.Open => candle.OpenPrice,
+			AppliedPrices.High => candle.HighPrice,
+			AppliedPrices.Low => candle.LowPrice,
+			AppliedPrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPrices.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}

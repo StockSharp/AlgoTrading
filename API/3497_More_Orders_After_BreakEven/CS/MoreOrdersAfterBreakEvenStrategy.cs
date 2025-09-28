@@ -127,19 +127,19 @@ _maximumOrders = Param(nameof(MaximumOrders), 1)
 .SetOptimize(1, 5, 1);
 
 _takeProfitPips = Param(nameof(TakeProfitPips), 100m)
-.SetGreaterThanOrEqual(0m)
+.SetNotNegative()
 .SetDisplay("Take Profit (pips)", "Take-profit distance in MetaTrader pips.", "Risk")
 .SetCanOptimize(true)
 .SetOptimize(0m, 300m, 10m);
 
 _stopLossPips = Param(nameof(StopLossPips), 200m)
-.SetGreaterThanOrEqual(0m)
+.SetNotNegative()
 .SetDisplay("Stop Loss (pips)", "Stop-loss distance in MetaTrader pips.", "Risk")
 .SetCanOptimize(true)
 .SetOptimize(0m, 400m, 10m);
 
 _breakEvenPips = Param(nameof(BreakEvenPips), 10m)
-.SetGreaterThanOrEqual(0m)
+.SetNotNegative()
 .SetDisplay("Break-Even (pips)", "Distance before the stop is moved to the entry price.", "Risk")
 .SetCanOptimize(true)
 .SetOptimize(0m, 50m, 5m);

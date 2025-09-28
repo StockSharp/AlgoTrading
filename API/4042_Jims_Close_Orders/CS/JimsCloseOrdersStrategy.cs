@@ -179,9 +179,9 @@ public class JimsCloseOrdersStrategy : Strategy
 		// Use bid for long exits and ask for short exits to mirror MT4 logic.
 		decimal? closePrice;
 		if (signedVolume > 0m)
-			closePrice = security.BestBid?.Price ?? security.LastTrade?.Price;
+			closePrice = security.BestBid?.Price ?? security.LastTick?.Price;
 		else
-			closePrice = security.BestAsk?.Price ?? security.LastTrade?.Price;
+			closePrice = security.BestAsk?.Price ?? security.LastTick?.Price;
 
 		if (closePrice == null)
 			return null;

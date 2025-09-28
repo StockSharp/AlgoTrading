@@ -103,9 +103,9 @@ public class JimsClosePositionsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnPositionChanged(decimal delta)
+	protected override void OnPositionReceived(Position position)
 	{
-		base.OnPositionChanged(delta);
+		base.OnPositionReceived(position);
 
 		// Reset the closing flag once the position becomes flat.
 		if (Position == 0)

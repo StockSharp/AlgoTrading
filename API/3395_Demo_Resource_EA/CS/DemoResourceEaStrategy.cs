@@ -12,6 +12,7 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 using StockSharp.Algo;
+using StockSharp.Charting;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -26,7 +27,7 @@ public class DemoResourceEaStrategy : Strategy
 	private readonly StrategyParam<TimeSpan> _timeOffset;
 	private readonly StrategyParam<bool> _showDollarIcon;
 
-	private IChartArea? _area;
+	private IChartArea _area;
 	private bool _labelDrawn;
 	private bool _isDollarDisplayed;
 

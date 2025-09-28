@@ -26,7 +26,7 @@ public class JkBullPowerAutoTraderStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStepPoints;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private BullsPower _bullsPower = null!;
+	private BullPower _bullsPower = null!;
 	private decimal? _prevBulls;
 	private decimal? _prevPrevBulls;
 
@@ -157,7 +157,7 @@ public class JkBullPowerAutoTraderStrategy : Strategy
 		if (_priceStep <= 0m)
 			_priceStep = 1m;
 
-		_bullsPower = new BullsPower
+		_bullsPower = new BullPower
 		{
 			Length = BullsPeriod
 		};
